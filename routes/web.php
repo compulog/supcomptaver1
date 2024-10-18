@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\SocieteController;
 
+// Route pour récupérer les données des sociétés
+Route::get('/societes/data', [SocieteController::class, 'getData'])->name('societes.data');
 
 Route::post('/societes', [SocieteController::class, 'store'])->name('societes.store');
 
