@@ -17,15 +17,22 @@ use App\Http\Controllers\ClientController;
 
 
 
-Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
-
-Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
 
 
-Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
+// Routes protégées par middleware 'auth'
+
+Route::group(['middleware' => 'auth'], function () {
 
 
+    Route::post('/clients/update', [ClientController::class, 'update'])->name('client.update');
 
+    Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
+    
+    Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
+    Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
+    Route::put('/clients/{id}', [ClientController::class, 'update'])->name('client.update');
+
+    
 // Route pour récupérer les données des sociétés
 Route::get('/societes/data', [SocieteController::class, 'getData'])->name('societes.data');
 
@@ -38,8 +45,8 @@ Route::put('societes/{id}', [SocieteController::class, 'update'])->name('societe
 // Route pour afficher la liste des sociétés (index)
 Route::get('/societes', [SocieteController::class, 'index'])->name('societes.index');
 
-// Routes protégées par middleware 'auth'
-Route::group(['middleware' => 'auth'], function () {
+
+
     Route::get('dashboard', [SocieteController::class, 'index'])->name('dashboard'); // Afficher le dashboard
    
    

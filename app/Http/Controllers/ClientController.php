@@ -37,4 +37,32 @@ class ClientController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()]);
         }
     }
+
+    public function update(Request $request, $id) {
+        $client = Client::findOrFail($id);
+        $client->update($request->all());
+    
+        return response()->json(['success' => true, 'client' => $client]);
+    }
+    
+    
+
+
+    
+    public function destroy($id) {
+        \Log::info('Attempting to delete client with ID: ' . $id);
+    
+        $client = Client::find($id);
+        if ($client) {
+            $client->delete();
+            \Log::info('Client deleted successfully');
+            return response()->json(['success' => true]);
+        }
+    
+        \Log::error('Client not found');
+        return response()->json(['success' => false, 'error' => 'Client not found']);
+    }
+    
+    
+
 }
