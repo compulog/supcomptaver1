@@ -7,6 +7,9 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\ResetController;
 use App\Http\Controllers\saisiemouvementController;
 use App\Http\Controllers\SessionsController;
+use App\Http\Controllers\FournisseurController;
+use App\Http\Controllers\PlanComptableController;
+use App\Http\Controllers\RacineController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Route;
@@ -38,8 +41,44 @@ Route::group(['middleware' => 'auth'], function () {
 		return view('profile');
 	})->name('profile');
 
+	Route::put('/Fournisseurs/{id}', [FournisseurController::class, 'update'])->name('Fournisseurs.update');
+
+	
+	
+	Route::post('/Fournisseurs', [FournisseurController::class, 'store'])->name('Fournisseurs.store');
+
 	
 
+Route::get('/Fournisseurs', [FournisseurController::class, 'index'])->name('fournisseurs.index');
+	
+
+	
+	
+
+
+Route::prefix('racines')->name('racines.')->group(function () {
+    Route::get('/', [RacineController::class, 'index'])->name('index');
+    Route::get('/create', [RacineController::class, 'create'])->name('create');
+    Route::post('/store', [RacineController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [RacineController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [RacineController::class, 'update'])->name('update');
+    Route::delete('/{id}', [RacineController::class, 'destroy'])->name('destroy');
+});
+
+// Routes pour le Plan Comptable
+Route::prefix('plan-comptable')->name('plan_comptable.')->group(function () {
+    // Afficher la liste des comptes du plan comptable
+    Route::get('/', [PlanComptableController::class, 'index'])->name('index');
+    
+    // Afficher le formulaire d'édition pour un compte spécifique
+    Route::get('/{id}/edit', [PlanComptableController::class, 'edit'])->name('edit');
+    
+    // Mettre à jour un compte spécifique
+    Route::put('/{id}', [PlanComptableController::class, 'update'])->name('update');
+    
+    // Supprimer un compte spécifique
+    Route::delete('/{id}', [PlanComptableController::class, 'destroy'])->name('destroy');
+});
 Route::get('/saisie', [SaisieMouvementController::class, 'index'])->name('saisie.index');
 Route::post('/saisie', [SaisieMouvementController::class, 'store'])->name('saisie.store');
 
@@ -50,6 +89,8 @@ Route::post('/saisie', [SaisieMouvementController::class, 'store'])->name('saisi
 	Route::get('Fournisseurs', function () {
 		return view('Fournisseurs');
 	})->name('Fournisseurs');
+
+
 	Route::get('saisie mouvement(J ACH-VTE)', function () {
 		return view('saisie mouvement(J ACH-VTE)');
 	})->name('saisie mouvement(J ACH-VTE)');

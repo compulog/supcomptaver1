@@ -1,7 +1,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulaire de saisie de mouvements</title>
+    <title></title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -93,7 +93,7 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
-
+<body>
 <div class="row">
   <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
     <div class="card">
@@ -324,12 +324,16 @@
               <input type="number" class="form-control custom-input" id="mod_prorata" name="mod_prorata" required>
             </div>
           </div>
-
           <div class="row">
+  <div class="col-md-6 mb-3">
+    <label for="exercice_en_cours" class="form-label">Exercice en cours</label>
+    <input type="text" class="form-control custom-input" id="exercice_en_cours" name="exercice_en_cours" required>
+  </div>
+          <!-- <div class="row">
             <div class="col-md-6 mb-3">
               <label for="mod_exercice_social" class="form-label">Exercice en cours</label>
               <input type="text" class="form-control custom-input" id="mod_exercice_social" name="mod_exercice_social" required>
-            </div>
+            </div> -->
             <div class="col-md-6 mb-3">
               <label for="mod_date_creation" class="form-label">Date de création</label>
               <input type="date" class="form-control custom-input" id="mod_date_creation" name="mod_date_creation" required>
@@ -473,4 +477,5 @@
 
   loadData();
 </script>
+</body>
 @endsection
