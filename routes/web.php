@@ -12,6 +12,19 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\SocieteController;
+use App\Http\Controllers\ClientController;
+
+
+
+
+Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
+
+Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
+
+
+Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
+
+
 
 // Route pour récupérer les données des sociétés
 Route::get('/societes/data', [SocieteController::class, 'getData'])->name('societes.data');
@@ -21,7 +34,6 @@ Route::post('/societes', [SocieteController::class, 'store'])->name('societes.st
 Route::put('societes/{id}', [SocieteController::class, 'update'])->name('societes.update');
 	
 // Route pour récupérer les données des sociétés
-Route::get('/societes/data', [SocieteController::class, 'getData'])->name('societes.data');
 
 // Route pour afficher la liste des sociétés (index)
 Route::get('/societes', [SocieteController::class, 'index'])->name('societes.index');
@@ -29,10 +41,8 @@ Route::get('/societes', [SocieteController::class, 'index'])->name('societes.ind
 // Routes protégées par middleware 'auth'
 Route::group(['middleware' => 'auth'], function () {
     Route::get('dashboard', [SocieteController::class, 'index'])->name('dashboard'); // Afficher le dashboard
-    Route::post('societes', [SocieteController::class, 'store'])->name('societes.store'); // Ajouter une société
-    Route::put('societes/{id}', [SocieteController::class, 'update'])->name('societes.update'); // Mettre à jour une société
-    Route::delete('societes/{id}', [SocieteController::class, 'destroy'])->name('societes.destroy'); // Supprimer une société
-    
+   
+   
     // Autres routes de l'application
     Route::get('/', [HomeController::class, 'home']);
     Route::get('gestion_des_journaux', function () {

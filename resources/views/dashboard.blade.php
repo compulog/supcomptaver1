@@ -251,7 +251,7 @@
                             <input type="text" class="form-control" id="mod_designation" name="designation" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Modifier</button>
+                    <button type="submit" class="btn btn-primary" id="modifierSocieteForm">Modifier</button>
                 </form>
             </div>
         </div>
@@ -414,6 +414,56 @@ document.getElementById('assujettie_partielle_tva').addEventListener('change', f
     }
 });
  
+</script>
+<script>
+// Logique de remplissage du modal de modification
+document.getElementById('societes-table').addEventListener('click', function(e) {
+    if (e.target.closest('.text-primary')) {
+        const item = e.target.closest('.text-primary');
+        
+        // Remplir les champs de la modale avec les données
+        document.getElementById('mod_raison_sociale').value = item.getAttribute('data-nom-entreprise');
+        document.getElementById('mod_ice').value = item.getAttribute('data-ice');
+        document.getElementById('mod_rc').value = item.getAttribute('data-rc');
+        document.getElementById('mod_identifiant_fiscal').value = item.getAttribute('data-identifiant-fiscal');
+        document.getElementById('mod_patente').value = item.getAttribute('data-patente');
+        document.getElementById('mod_centre_rc').value = item.getAttribute('data-centre-rc');
+        document.getElementById('mod_forme_juridique').value = item.getAttribute('data-forme-juridique');
+        document.getElementById('mod_exercice_social').value = item.getAttribute('data-exercice-social');
+        document.getElementById('mod_date_creation').value = item.getAttribute('data-date-creation');
+        document.getElementById('mod_assujettie_partielle_tva').value = item.getAttribute('data-assujettie-partielle-tva');
+        document.getElementById('mod_prorata_de_deduction').value = item.getAttribute('data-prorata-de-deduction');
+        document.getElementById('mod_nature_activite').value = item.getAttribute('data-nature-activite');
+        document.getElementById('mod_activite').value = item.getAttribute('data-activite');
+        document.getElementById('mod_regime_declaration').value = item.getAttribute('data-regime-declaration');
+        document.getElementById('mod_fait_generateur').value = item.getAttribute('data-fait-generateur');
+        document.getElementById('mod_rubrique_tva').value = item.getAttribute('data-rubrique-tva');
+        document.getElementById('mod_designation').value = item.getAttribute('data-designation');
+        
+        // Stocker l'ID de la société dans une variable globale
+        window.societeId = item.getAttribute('data-id');
+
+        // Afficher la modale de modification
+        var myModal = new bootstrap.Modal(document.getElementById('modifierSocieteModal'));
+        myModal.show();
+    }
+});
+
+// Gérer la soumission du formulaire de modification
+document.getElementById("modifierSocieteForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    var formData = new FormData(this);
+
+    axios.put(`/societes/${window.societeId}`, formData)
+        .then(function(response) {
+            $('#modifierSocieteModal').modal('hide');
+            table.setData("{{ route('societes.index') }}"); // Recharger les données du tableau
+            alert('Société modifiée avec succès.');
+        })
+        .catch(function(error) {
+            console.error("Erreur :", error);
+        });
+});
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
