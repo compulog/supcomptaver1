@@ -7,35 +7,33 @@ use Illuminate\Support\Facades\Schema;
 class CreateFournisseursTable extends Migration
 {
     /**
-     * Exécuter la migration.
+     * Run the migrations.
      *
      * @return void
      */
     public function up()
     {
-        // Utilisez la connexion 'mysql_second' qui pointe vers la base 'supcompta'
-        Schema::connection('supcompta')->create('fournisseurs', function (Blueprint $table) {
-            $table->id();
-            $table->bigInteger('compte');                      // Compte fournisseur
-            $table->string('intitule');                    // Intitulé
-            $table->string('identifiant_fiscal');          // Identifiant fiscal
-            $table->bigInteger('ICE');                         // ICE
-            $table->string('nature_operation');           // Nature de l'opération
-            $table->string('rubrique_tva');                // Rubrique TVA
-            $table->string('designation');                 // Désignation
-            $table->bigInteger('contre_partie');               // Contre partie
-            $table->timestamps();
+        Schema::create('fournisseurs', function (Blueprint $table) {
+            $table->id(); // Crée une colonne id auto-incrémentée
+            $table->string('compte',191)->unique(); // Compte unique
+            $table->string('intitule'); // Intitulé
+            $table->string('identifiant_fiscal'); // Identifiant fiscal
+            $table->string('ICE'); // ICE
+            $table->string('nature_operation'); // Nature de l'opération
+            $table->string('rubrique_tva'); // Rubrique TVA
+            $table->string('designation'); // Désignation
+            $table->string('contre_partie'); // Contre partie
+            $table->timestamps(); // Créée les colonnes created_at et updated_at
         });
     }
 
     /**
-     * Annuler la migration.
+     * Reverse the migrations.
      *
      * @return void
      */
     public function down()
     {
-        // Supprimer la table 'fournisseurs' dans la base 'supcompta'
-        Schema::connection('supcompta')->dropIfExists('fournisseurs');
+        Schema::dropIfExists('fournisseurs'); // Supprime la table si elle existe
     }
 }
