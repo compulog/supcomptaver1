@@ -15,15 +15,23 @@ use App\Http\Controllers\SocieteController;
 use App\Http\Controllers\ClientController;
 
 
+use App\Http\Controllers\ImportExcelController;
 
 
+
+
+
+Route::post('/importer-societes', [SocieteController::class, 'import'])->name('societes.import');
+
+// Route pour obtenir la liste des clients
 
 
 // Routes protégées par middleware 'auth'
 
 Route::group(['middleware' => 'auth'], function () {
+    Route::post('/import-excel', [ImportExcelController::class, 'import'])->name('import.excel');
 
-
+    Route::get('/clients/get', [ClientController::class, 'getClients'])->name('clients.get');
     Route::post('/clients/update', [ClientController::class, 'update'])->name('client.update');
 
     Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
@@ -32,9 +40,13 @@ Route::group(['middleware' => 'auth'], function () {
     Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
     Route::put('/clients/{id}', [ClientController::class, 'update'])->name('client.update');
 
-    
+    Route::delete('/societes/{id}', [SocieteController::class, 'destroy'])->name('societes.destroy');
+    Route::get('/societes/{id}', [SocieteController::class, 'show'])->name('societes.show');
+
 // Route pour récupérer les données des sociétés
 Route::get('/societes/data', [SocieteController::class, 'getData'])->name('societes.data');
+// Route pour afficher le formulaire de modification d'une société
+Route::get('/societes/{id}/edit', [SocieteController::class, 'edit'])->name('societes.edit');
 
 Route::post('/societes', [SocieteController::class, 'store'])->name('societes.store');
 
