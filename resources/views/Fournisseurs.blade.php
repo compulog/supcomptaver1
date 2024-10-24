@@ -10,7 +10,47 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
- 
+    <style>
+       .btn-edit {
+    background-color: orange; /* Couleur pour le bouton Modifier */
+    border: none;
+    color: white;
+    padding: 5px 5px; /* Ajoutez du padding pour un meilleur aspect */
+    cursor: pointer; /* Pour changer le curseur au survol */
+}
+
+.btn-delete {
+    background-color: fuchsia ; /* Couleur pour le bouton Supprimer */
+    border: none;
+    color: white;
+    padding: 5px 5px; /* Ajoutez du padding pour un meilleur aspect */
+    cursor: pointer; /* Pour changer le curseur au survol */
+}
+
+.btn-edit:hover {
+    background-color: darkorange; /* Couleur au survol pour Modifier */
+}
+
+.btn-delete:hover {
+    background-color: hotpink; /* Couleur au survol pour Supprimer */
+}
+    </style>
+    <style>
+    /* Style pour les filtres d'en-tête */
+    .tabulator .tabulator-header .tabulator-header-filter input {
+        font-size: 12px; /* Taille de police plus petite */
+        padding: 4px; /* Réduire l'espace intérieur */
+        height: 28px; /* Hauteur plus petite */
+    }
+
+    /* Si vous utilisez des selects pour les filtres, appliquez également un style */
+    .tabulator .tabulator-header .tabulator-header-filter select {
+        font-size: 12px; /* Taille de police plus petite */
+        padding: 4px; /* Réduire l'espace intérieur */
+        height: 28px; /* Hauteur plus petite */
+    }
+</style>
+
 </head>
 
 
@@ -23,7 +63,7 @@
 
 
 <div class="container mt-5">
-    <h2>Liste des Fournisseurs</h2>
+    <h3>Liste des Fournisseurs</h3>
     <button class="btn btn-primary" id="addFournisseurBtn" data-toggle="modal" data-target="#fournisseurModal">Ajouter Fournisseur</button>
     <button class="btn btn-primary" id="addFournisseurBtn" data-toggle="modal" data-target="#importModal">Importer Fournisseur</button>
     <div id="fournisseur-table"></div>
@@ -92,6 +132,7 @@
 
 
 
+
 <!-- Modal -->
 <div class="modal fade" id="fournisseurModal" tabindex="-1" role="dialog" aria-labelledby="fournisseurModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -105,56 +146,131 @@
             <div class="modal-body">
                 <form id="fournisseurForm">
                     <input type="hidden" id="fournisseurId" value="">
-                    <div class="form-group">
-                        <label for="compte">Compte</label>
-                        <input type="text" class="form-control" id="compte" required>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="compte">Compte</label>
+                                <input type="text" class="form-control" id="compte" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="intitule">Intitulé</label>
+                                <input type="text" class="form-control" id="intitule" required>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="intitule">Intitulé</label>
-                        <input type="text" class="form-control" id="intitule" required>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                            <label for="identifiant_fiscal">Identifiant Fiscal</label>
+    <input type="text" class="form-control" id="identifiant_fiscal" maxlength="8" pattern="\d*" required>
+   
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                            <label for="ICE">ICE</label>
+                            <input type="text" class="form-control" id="ICE" maxlength="15" pattern="\d*" required>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="identifiant_fiscal">Identifiant Fiscal</label>
-                        <input type="text" class="form-control" id="identifiant_fiscal" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="ICE">ICE</label>
-                        <input type="text" class="form-control" id="ICE" required>
-                    </div>
-                    <div class="form-group">
-                    <label for="nature_operation">Nature de l'opération</label>
-    <select id="nature_operation" name="nature_operation" class="form-control">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                            <label for="nature_operation">Nature de l'opération</label>
+    <select class="form-control" id="nature_operation">
+        <option value="">Sélectionner une option</option>
         <option value="Achat de biens d'équipement">Achat de biens d'équipement</option>
         <option value="Achat de travaux">Achat de travaux</option>
         <option value="Achat de services">Achat de services</option>
+      
     </select>
-                    </div>
-                    <div class="form-group">
-    <label for="rubrique_tva">Rubrique TVA</label>
-    <select class="form-control" id="rubrique_tva" required>
-        <!-- Les options seront ajoutées par JavaScript -->
-    </select>
-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
 
-                    <div class="form-group">
-                        <label for="designation">Désignation</label>
-                        <input type="text" class="form-control" id="designation" required>
+                        <div class="form-group">
+                                <label for="contre_partie">Contre Partie</label>
+                                <input type="text" class="form-control" id="contre_partie" required>
+                            </div>
+
+                       
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="contre_partie">Contre Partie</label>
-                        <input type="text" class="form-control" id="contre_partie" required>
+                    <div class="row">
+                        <div class="col-md-6">
+
+                        <div class="form-group">
+                                <label for="rubrique_tva">Rubrique TVA</label>
+                                <select class="form-control" id="rubrique_tva" required>
+                                    <!-- Les options seront ajoutées par JavaScript -->
+                                </select>
+                            </div>
+                     
+                        </div>
+                        <div class="col-md-6">
+                        <div class="form-group">
+                                <label for="designation">Désignation</label>
+                                <input type="text" class="form-control" id="designation" required>
+                            </div>
+
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Enregistrer</button>
                 </form>
             </div>
         </div>
     </div>
-    
 </div>
 
 
-
 <script>
+ // Événement pour la navigation avec la touche Entrée
+ document.getElementById('fournisseurForm').addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Empêche le comportement par défaut du bouton Entrée
+            const inputs = Array.from(this.elements).filter(el => el.tagName === 'INPUT' || el.tagName === 'SELECT');
+            const currentIndex = inputs.indexOf(document.activeElement);
+            if (currentIndex < inputs.length - 1) {
+                inputs[currentIndex + 1].focus(); // Passe au champ suivant
+            }
+        }
+    });
+
+
+      // Événement pour garantir que le champ compte commence par 4411
+      // Initialiser le champ compte avec '4411' et déplacer le curseur à la fin
+    const compteInput = document.getElementById('compte');
+    compteInput.value = '4411';
+
+    // Déplacer le curseur à la fin du texte
+    compteInput.setSelectionRange(compteInput.value.length, compteInput.value.length);
+
+// Validation pour le champ ICE
+$("#ICE").on("input", function() {
+    // Remplacer le contenu du champ par uniquement les chiffres
+    this.value = this.value.replace(/[^0-9]/g, '');
+
+    // Limiter la longueur à 15 caractères
+    if (this.value.length > 15) {
+        this.value = this.value.slice(0, 15);
+    }
+});
+
+// Validation pour le champ identifiant_fiscal
+$("#identifiant_fiscal").on("input", function() {
+    // Remplacer le contenu du champ par uniquement les chiffres
+    this.value = this.value.replace(/[^0-9]/g, '');
+
+    // Limiter la longueur à 15 caractères
+    if (this.value.length > 15) {
+        this.value = this.value.slice(0, 15);
+    }
+});
+
+
+
   var table = new Tabulator("#fournisseur-table", {
     ajaxURL: "/fournisseurs/data", // URL pour récupérer les données
     layout: "fitColumns",
@@ -164,31 +280,11 @@
         {title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input", minWidth: 120},
         {title: "Identifiant Fiscal", field: "identifiant_fiscal", editor: "input", headerFilter: "input", minWidth: 50},
         {title: "ICE", field: "ICE", editor: "input", headerFilter: "input", minWidth: 80},
-        {title: "Nature de l'opération", field: "nature_operation", editor: "select", headerFilter: "select", headerFilterParams: {
-            values: [
-                {value: "Achat de biens d'équipement", label: "Achat de biens d'équipement"},
-                {value: "Achat de travaux", label: "Achat de travaux"},
-                {value: "Achat de services", label: "Achat de services"},
-            ],
-        }, minWidth: 50},
+        {title: "Nature de l'opération", field: "nature_operation",editor: "input", headerFilter: "input", minWidth: 50},
         {
             title: "Rubrique TVA",
             field: "rubrique_tva",
-            editor: "select",
-            headerFilter: "select",
-            headerFilterParams: function() {
-                var options = {};
-                $.ajax({
-                    url: '/rubriques-tva', // Remplacez par votre URL pour récupérer les rubriques
-                    async: false,
-                    success: function(data) {
-                        data.rubriques.forEach(function(rubrique) {
-                            options[rubrique.Nom_racines] = rubrique.Nom_racines;
-                        });
-                    }
-                });
-                return options;
-            },
+            editor: "input", headerFilter: "input", 
             minWidth: 50,
         },
         {title: "Désignation", field: "designation", editor: "input", headerFilter: "input", minWidth: 80},
@@ -198,10 +294,10 @@
             field: "action-icons", 
             formatter: function() {
                 return `
-                    <button class='btn btn-warning btn-edit' title='Modifier'>
+                    <button class='btn-edit' title='Modifier'>
                         <i class='fas fa-edit' style='font-size: 0.8em; line-height:0.5;'></i>
                     </button>
-                    <button class='btn btn-danger btn-delete' title='Supprimer'>
+                    <button class='btn-delete' title='Supprimer'>
                         <i class='fas fa-trash-alt' style='font-size: 0.8em; line-height:0.5;'></i>
                     </button>
                 `;
@@ -269,28 +365,71 @@
         $("#designation").val(data.designation);
         $("#contre_partie").val(data.contre_partie);
         $("#fournisseurModal").modal("show");
-    }
+        remplirRubriquesTva();
+}
 
+   
 
-    function remplirRubriquesTva() {
+    
+const select = document.getElementById('rubrique_tva');
+function remplirRubriquesTva() {
     $.ajax({
-        url: '/rubriques-tva?type=Achat', // URL modifiée pour inclure le paramètre type
+        url: '/rubriques-tva?type=Achat',
         type: 'GET',
         success: function(data) {
             var select = $("#rubrique_tva");
             select.empty(); // Vider le select avant d'ajouter les options
-            data.rubriques.forEach(function(rubrique) {
-                // Ajouter chaque option avec le format souhaité
-                select.append(new Option(`${rubrique.Nom_racines} (${rubrique.Num_racines}) - Taux: ${rubrique.Taux}`, rubrique.Num_racines));
+
+            let categoryCounter = 1; // Compteur pour numéroter les catégories
+
+            // Parcourir chaque catégorie et ses rubriques
+            $.each(data.rubriques, function(categorie, rubriques) {
+                // Vérifier si la catégorie contient des caractères spéciaux
+                let displayCategorie = `${categoryCounter}. ${categorie}`; // Numérotation de la catégorie
+                categoryCounter++; // Incrémenter le compteur
+
+                if (/[\/:]/.test(categorie)) {
+                    // Si un caractère spécial est présent, diviser la catégorie en deux parties
+                    const splitCategorie = categorie.split(/[\/:]/);
+                    // Ajouter une option non cliquable pour la catégorie avec une nouvelle ligne
+                    select.append(new Option(displayCategorie, '', true, true));
+                    select.append(new Option(splitCategorie[1], '', true, true));
+                } else {
+                    // Ajouter l'option pour la catégorie si pas de caractères spéciaux
+                    select.append(new Option(displayCategorie, '', true, true));
+                }
+
+                // Ajouter les rubriques sous la catégorie
+                rubriques.rubriques.forEach(function(rubrique) {
+                    // Préfixer les sous-catégories par un tiret
+                    select.append(new Option(`- ${rubrique.Num_racines}: ${rubrique.Nom_racines} : ${Math.round(rubrique.Taux)}%`, rubrique.Num_racines));
+                });
             });
+
+            // Option pour permettre la sélection d'une valeur vide si nécessaire
+            // select.append(new Option("Sélectionner une rubrique", "", false, true));
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.error('Erreur lors de la récupération des rubriques :', textStatus, errorThrown);
         }
     });
 }
 
-// Appeler la fonction lorsque le modal s'ouvre
-$('#fournisseurModal').on('show.bs.modal', function () {
-    remplirRubriquesTva(); // Remplir les rubriques TVA à chaque ouverture du modal
-});
+// Masquer l'input fournisseur (si nécessaire)
+document.getElementById('fournisseurId').style.display = 'none';
+
+// Placer le curseur sur le champ 'intitule'
+document.getElementById('intitule').focus();
+
+
+$(document).ready(function () {
+
+        $('#fournisseurModal').on('shown.bs.modal', function () {
+
+            $("#compte").focus(); // Mettre le focus sur le champ Compte
+            remplirRubriquesTva();
+        });
+    });
 
 
 // excel

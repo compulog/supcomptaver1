@@ -44,11 +44,39 @@ Route::get('/societes', [SocieteController::class, 'index'])->name('societes.ind
 
 
 
+
+
 // Routes protégées par middleware 'auth'
+
 Route::group(['middleware' => 'auth'], function () {
+
+
+    Route::post('/clients/update', [ClientController::class, 'update'])->name('client.update');
+
+    Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
+    
+    Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
+    Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
+    Route::put('/clients/{id}', [ClientController::class, 'update'])->name('client.update');
+
+    
+// Route pour récupérer les données des sociétés
+Route::get('/societes/data', [SocieteController::class, 'getData'])->name('societes.data');
+
+Route::post('/societes', [SocieteController::class, 'store'])->name('societes.store');
+
+Route::put('societes/{id}', [SocieteController::class, 'update'])->name('societes.update');
+	
+// Route pour récupérer les données des sociétés
+
+// Route pour afficher la liste des sociétés (index)
+Route::get('/societes', [SocieteController::class, 'index'])->name('societes.index');
+
+
+
     Route::get('dashboard', [SocieteController::class, 'index'])->name('dashboard'); // Afficher le dashboard
    
-   
+
     // Autres routes de l'application
     Route::get('/', [HomeController::class, 'home']);
     Route::get('gestion_des_journaux', function () {
@@ -58,15 +86,18 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('profile', function () {
         return view('profile');
     })->name('profile');
-// Routes pour la gestion des fournisseurs
-Route::get('/fournisseurs', [FournisseurController::class, 'index']);
+
 Route::get('/fournisseurs/data', [FournisseurController::class, 'getData']);
+// Routes pour l'API des fournisseurs
+Route::get('/fournisseurs', [FournisseurController::class, 'index']);
 Route::post('/fournisseurs', [FournisseurController::class, 'store']);
-Route::get('/fournisseurs/{id}', [FournisseurController::class, 'show']);
 Route::put('/fournisseurs/{id}', [FournisseurController::class, 'update']);
 Route::delete('/fournisseurs/{id}', [FournisseurController::class, 'destroy']);
+Route::get('/fournisseurs/{id}', [FournisseurController::class, 'show']);
+
+
 Route::get('/rubriques-tva', [FournisseurController::class, 'getRubriquesTva']);
-Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->name('fournisseurs.import');
+Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->name('fournisseurs.import'); 
 
     Route::get('/saisie', [SaisieMouvementController::class, 'index'])->name('saisie.index');
     Route::post('/saisie', [SaisieMouvementController::class, 'store'])->name('saisie.store');
@@ -89,17 +120,28 @@ Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->n
         return view('saisie de mouvement TRESO');
     })->name('saisie de mouvement TRESO');
 
-	
+    Route::get('/saisie', [SaisieMouvementController::class, 'index'])->name('saisie.index');
+    Route::post('/saisie', [SaisieMouvementController::class, 'store'])->name('saisie.store');
 
+    Route::get('client', function () {
+        return view('client');
+    })->name('client');
 
-	Route::get('saisie mouvement(J ACH-VTE)', function () {
-		return view('saisie mouvement(J ACH-VTE)');
-	})->name('saisie mouvement(J ACH-VTE)');
-	
-	
-	Route::get('saisie de mouvement TRESO', function () {
-		return view('saisie de mouvement TRESO');
-	})->name('saisie de mouvement TRESO');
+    Route::get('Fournisseurs', function () {
+        return view('Fournisseurs');
+    })->name('Fournisseurs');
+
+    Route::get('saisie mouvement(J ACH-VTE)', function () {
+        return view('saisie mouvement(J ACH-VTE)');
+    })->name('saisie mouvement(J ACH-VTE)');
+
+    Route::get('plan_comptable', function () {
+        return view('plan_comptable');
+    })->name('plan_comptable');
+
+    Route::get('saisie de mouvement TRESO', function () {
+        return view('saisie de mouvement TRESO');
+    })->name('saisie de mouvement TRESO');
 
     Route::get('Grand_livre', function () {
         return view('Grand_livre');
@@ -120,7 +162,6 @@ Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->n
         return view('dashboard');
     })->name('sign-up');
 });
-
 // Routes accessibles par les utilisateurs non authentifiés
 Route::group(['middleware' => 'guest'], function () {
     Route::get('/register', [RegisterController::class, 'create']);

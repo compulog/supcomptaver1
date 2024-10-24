@@ -5,9 +5,9 @@ use App\Imports\FournisseurImport;
 
 use App\Models\Fournisseur;
 use App\Models\Racine;
-use App\Models\racines;
+
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+
 
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -45,22 +45,20 @@ class FournisseurController extends Controller
             'fournisseur' => $fournisseur,
         ]);
     }
-
-// Modifier un fournisseur
-public function update(Request $request, $id)
-{
-    // Validation des données
-    $validatedData = $request->validate([
-        'compte' => 'required|string|max:255',
-        'intitule' => 'required|string|max:255',
-        'identifiant_fiscal' => 'required|string|max:255',
-        'ICE' => 'required|string|max:255',
-        'nature_operation' => 'required|string|max:255',
-        'rubrique_tva' => 'required|string|max:255',
-        'designation' => 'required|string|max:255',
-        'contre_partie' => 'required|string|max:255',
-    ]);
-
+ // Modifier un fournisseur
+ public function update(Request $request, $id)
+ {
+     // Validation des données
+     $validatedData = $request->validate([
+         'compte' => 'required|string|max:255',
+         'intitule' => 'required|string|max:255',
+         'identifiant_fiscal' => 'required|string|max:255',
+         'ICE' => 'required|string|max:15', // Limité à 15 caractères
+         'nature_operation' => 'required|string|max:255',
+         'rubrique_tva' => 'required|string|max:255',
+         'designation' => 'required|string|max:255',
+         'contre_partie' => 'required|string|max:255',
+     ]);
     // Recherche et mise à jour du fournisseur
     $fournisseur = Fournisseur::findOrFail($id);
     $fournisseur->update($validatedData);
@@ -70,18 +68,27 @@ public function update(Request $request, $id)
 
 public function getRubriquesTva()
 {
-     // Récupérer uniquement les rubriques TVA avec type = 'achat', groupées par 'categorie'
-     $rubriques = Racine::select('id', 'Nom_racines', 'Taux', 'Num_racines', 'categorie')
-     ->where('type', 'Achat') // Assurez-vous que 'type' est bien le nom de la colonne
-     ->groupBy('categorie', 'id', 'Nom_racines', 'Taux', 'Num_racines') // Ajouter les colonnes sélectionnées au GROUP BY
-     ->having('Taux', '>', 0) // Ne garder que les rubriques avec Taux supérieur à 0
-     ->get();
+ // Récupérer les rubriques TVA avec type = 'Achat', groupées par 'categorie'
+$rubriques = Racine::select('categorie', 'Nom_racines', 'Taux', 'Num_racines')
+->where('type', 'Achat') // Assurez-vous que 'type' est bien le nom de la colonne
+->having('Taux', '>', 0) // Ne garder que les rubriques avec Taux supérieur à 0
+->get();
+
+// Organiser les rubriques par catégorie
+$rubriquesParCategorie = [];
+foreach ($rubriques as $rubrique) {
+$rubriquesParCategorie[$rubrique->categorie]['rubriques'][] = [
+    'Nom_racines' => $rubrique->Nom_racines,
+    'Num_racines' => $rubrique->Num_racines,
+    'Taux' => $rubrique->Taux,
+];
+}
+
+// Passer les rubriques organisées à votre vue ou à votre réponse AJAX
+return response()->json(['rubriques' => $rubriquesParCategorie]);
 
 
-    return response()->json( [
-        
-      'rubriques' => $rubriques
-]);
+
 }
 
     public function destroy($id)
@@ -102,7 +109,7 @@ public function getRubriquesTva()
     {
         // Valider le fichier et les colonnes ici
         $validatedData = $request->validate([
-            'file' => 'required|mimes:xlsx,xls',
+            'file' => 'required|mimes:xlsx,xls,csv',
             'colonne_compte' => 'required|integer',
             'colonne_intitule' => 'required|integer',
             'colonne_identifiant_fiscal' => 'required|integer',
@@ -113,19 +120,24 @@ public function getRubriquesTva()
             'colonne_contre_partie' => 'required|integer',
         ]);
     
-        // Charger le fichier Excel
-        Excel::import(new FournisseurImport(
-            $request->colonne_compte,
-            $request->colonne_intitule,
-            $request->colonne_identifiant_fiscal,
-            $request->colonne_ICE,
-            $request->colonne_nature_operation,
-            $request->colonne_rubrique_tva,
-            $request->colonne_designation,
-            $request->colonne_contre_partie
-        ), $request->file('file'));
+        try {
+            Excel::import(new FournisseurImport(
+                $request->colonne_compte,
+                $request->colonne_intitule,
+                $request->colonne_identifiant_fiscal,
+                $request->colonne_ICE,
+                $request->colonne_nature_operation,
+                $request->colonne_rubrique_tva,
+                $request->colonne_designation,
+                $request->colonne_contre_partie
+            ), $request->file('file'));
     
-        return redirect()->route('fournisseurs.index')->with('success', 'Fournisseurs importés avec succès !');
+            return redirect()->route('fournisseurs.index')->with('success', 'Fournisseurs importés avec succès !');
+    
+        } catch (\Exception $e) {
+            // Gérer l'exception en retournant un message d'erreur
+            return redirect()->back()->with('error', 'Erreur lors de l\'importation : ' . $e->getMessage());
+        }
     }
     
 

@@ -8,10 +8,9 @@
     <!-- Tabulator CSS -->
     <link href="https://unpkg.com/tabulator-tables@5.3.2/dist/css/tabulator.min.css" rel="stylesheet">
     <script src="https://unpkg.com/tabulator-tables@5.3.2/dist/js/tabulator.min.js"></script>
-
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <title></title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -230,31 +229,6 @@
         <option value="Vente de services">Vente de services</option>
     </select>
 </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="mod_assujettie_tva" class="form-label">Assujettie partielle à la TVA</label>
-              <input type="text" class="form-control custom-input" id="mod_assujettie_tva" name="mod_assujettie_tva" required>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="mod_prorata" class="form-label">Prorata de déduction %</label>
-              <input type="number" class="form-control custom-input" id="mod_prorata" name="mod_prorata" required>
-            </div>
-          </div>
-          <div class="row">
-  <div class="col-md-6 mb-3">
-    <label for="exercice_en_cours" class="form-label">Exercice en cours</label>
-    <input type="text" class="form-control custom-input" id="exercice_en_cours" name="exercice_en_cours" required>
-  </div>
-          <!-- <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="mod_exercice_social" class="form-label">Exercice en cours</label>
-              <input type="text" class="form-control custom-input" id="mod_exercice_social" name="mod_exercice_social" required>
-            </div> -->
-            <div class="col-md-6 mb-3">
-              <label for="mod_date_creation" class="form-label">Date de création</label>
-              <input type="date" class="form-control custom-input" id="mod_date_creation" name="mod_date_creation" required>
-            </div>
-          </div>
 
                         <div class="col-md-6 mb-3">
                             <label for="mod_activite" class="form-label">Activité</label>
@@ -494,7 +468,6 @@ document.getElementById("modifierSocieteForm").addEventListener("submit", functi
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-</body>
 @endsection
 
 </body>

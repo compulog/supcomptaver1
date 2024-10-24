@@ -39,5 +39,22 @@ class FournisseurImport implements ToModel
             'designation' => $row[$this->colonne_designation - 1],
             'contre_partie' => $row[$this->colonne_contre_partie - 1],
         ]);
+
+        return Fournisseur::updateOrCreate(
+            ['compte' => $row[$this->colonne_compte - 1]], // Identifiant unique pour vérifier les doublons
+            [
+                'intitule' => $row[$this->colonne_intitule - 1],
+                'identifiant_fiscal' => $row[$this->colonne_identifiant_fiscal - 1],
+                'ICE' => $row[$this->colonne_ICE - 1],
+                'nature_operation' => $row[$this->colonne_nature_operation - 1],
+                'rubrique_tva' => $row[$this->colonne_rubrique_tva - 1],
+                'designation' => $row[$this->colonne_designation - 1],
+                'contre_partie' => $row[$this->colonne_contre_partie - 1],
+            ]
+        );
+
     }
+
+  
+
 }
