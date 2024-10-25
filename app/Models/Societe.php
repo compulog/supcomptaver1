@@ -32,7 +32,8 @@ class Societe extends Model
         'fait_generateur',
         'rubrique_tva',
         'designation',
-        'nombre_chiffre_compte'  // Champ pour le nombre de chiffres du compte
+        'nombre_chiffre_compte',  // Champ pour le nombre de chiffres du compte
+        'modele_comptable' ,        // Nouveau champ ajouté
     ];
 
     /**

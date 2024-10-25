@@ -42,20 +42,26 @@ Route::group(['middleware' => 'auth'], function () {
 
     Route::delete('/societes/{id}', [SocieteController::class, 'destroy'])->name('societes.destroy');
     Route::get('/societes/{id}', [SocieteController::class, 'show'])->name('societes.show');
+   
+  
 
+   
 // Route pour récupérer les données des sociétés
 Route::get('/societes/data', [SocieteController::class, 'getData'])->name('societes.data');
 // Route pour afficher le formulaire de modification d'une société
-Route::get('/societes/{id}/edit', [SocieteController::class, 'edit'])->name('societes.edit');
 
 Route::post('/societes', [SocieteController::class, 'store'])->name('societes.store');
+// Dans web.php
+Route::get('/societes/{id}/edit', [SocieteController::class, 'edit'])->name('societes.edit');
 
-Route::put('societes/{id}', [SocieteController::class, 'update'])->name('societes.update');
+Route::put('/societes/{id}', [SocieteController::class, 'update'])->name('societes.update');
 	
 // Route pour récupérer les données des sociétés
 
 // Route pour afficher la liste des sociétés (index)
 Route::get('/societes', [SocieteController::class, 'index'])->name('societes.index');
+
+
 
 
 

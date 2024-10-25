@@ -128,10 +128,9 @@
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
-    <label for="nombre_chiffre_compte" class="form-label">Nombre Chiffre Compte</label>
-    <input type="number" class="form-control" name="nombre_chiffre_compte" required>
-</div>
-
+                            <label for="nombre_chiffre_compte" class="form-label">Nombre Chiffre Compte</label>
+                            <input type="number" class="form-control" name="nombre_chiffre_compte" required>
+                        </div>
                         <div class="col-md-6 mb-3">
                             <label for="nature_activite" class="form-label">Nature de l'Activité</label>
                             <select class="form-control" name="nature_activite">
@@ -161,6 +160,10 @@
                             <label for="designation" class="form-label">Désignation</label>
                             <input type="text" class="form-control" name="designation" required>
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modele_comptable" class="form-label">Modèle Comptable</label>
+                            <input type="text" class="form-control" name="modele_comptable" required>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Ajouter</button>
                 </form>
@@ -168,8 +171,6 @@
         </div>
     </div>
 </div>
-
-
 
 <!-- Modal pour importer des sociétés -->
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
@@ -274,6 +275,14 @@
                         </div>
                     </div>
 
+                    <!-- Nouveau champ pour le Modèle Comptable -->
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="colonne_modele_comptable" class="form-label">Colonne pour le Modèle Comptable</label>
+                            <input type="text" class="form-control" id="colonne_modele_comptable" name="colonne_modele_comptable" placeholder="Ex: Q" required>
+                        </div>
+                    </div>
+
                     <button type="submit" class="btn btn-primary">Importer</button>
                 </form>
             </div>
@@ -282,93 +291,112 @@
 </div>
 
 
-<!-- Modal pour modifier une société -->
+<!-- Modal Modifier Société -->
 <div class="modal fade" id="modifierSocieteModal" tabindex="-1" aria-labelledby="modifierSocieteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modifierSocieteModalLabel">Modifier la Société</h5>
+                <h5 class="modal-title" id="modifierSocieteModalLabel">Modifier Société</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="modifierSocieteForm">
+                    <input type="hidden" id="mod_societe_id" name="id">
                     <div class="mb-3">
                         <label for="mod_raison_sociale" class="form-label">Raison Sociale</label>
-                        <input type="text" class="form-control" id="mod_raison_sociale" required>
+                        <input type="text" class="form-control" id="mod_raison_sociale" name="raison_sociale" required>
                     </div>
                     <div class="mb-3">
-                        <label for="mod_ice" class="form-label">ICE</label>
-                        <input type="text" class="form-control" id="mod_ice" required>
+                        <label for="mod_siège_social" class="form-label">Siège Social</label>
+                        <input type="text" class="form-control" id="mod_siège_social" name="siege_social">
                     </div>
-                    <div class="mb-3">
-                        <label for="mod_rc" class="form-label">RC</label>
-                        <input type="text" class="form-control" id="mod_rc" required>
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="mod_ice" class="form-label">ICE</label>
+                                <input type="text" class="form-control" id="mod_ice" name="ice" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="mod_rc" class="form-label">RC</label>
+                                <input type="text" class="form-control" id="mod_rc" name="rc" required>
+                            </div>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="mod_identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
-                        <input type="text" class="form-control" id="mod_identifiant_fiscal" required>
+                        <input type="text" class="form-control" id="mod_identifiant_fiscal" name="identifiant_fiscal" required>
                     </div>
                     <div class="mb-3">
                         <label for="mod_patente" class="form-label">Patente</label>
-                        <input type="text" class="form-control" id="mod_patente" required>
+                        <input type="text" class="form-control" id="mod_patente" name="patente">
                     </div>
                     <div class="mb-3">
                         <label for="mod_centre_rc" class="form-label">Centre RC</label>
-                        <input type="text" class="form-control" id="mod_centre_rc" required>
+                        <input type="text" class="form-control" id="mod_centre_rc" name="centre_rc">
                     </div>
                     <div class="mb-3">
                         <label for="mod_forme_juridique" class="form-label">Forme Juridique</label>
-                        <input type="text" class="form-control" id="mod_forme_juridique" required>
+                        <input type="text" class="form-control" id="mod_forme_juridique" name="forme_juridique">
                     </div>
-                    <div class="mb-3 row">
+                    <div class="row">
                         <div class="col">
-                            <label for="mod_exercice_social_debut" class="form-label">Exercice Social Début</label>
-                            <input type="text" class="form-control" id="mod_exercice_social_debut" required>
+                            <div class="mb-3">
+                                <label for="mod_exercice_social_debut" class="form-label">Exercice Social Début</label>
+                                <input type="date" class="form-control" id="mod_exercice_social_debut" name="exercice_social_debut">
+                            </div>
                         </div>
                         <div class="col">
-                            <label for="mod_exercice_social_fin" class="form-label">Exercice Social Fin</label>
-                            <input type="text" class="form-control" id="mod_exercice_social_fin" required>
+                            <div class="mb-3">
+                                <label for="mod_exercice_social_fin" class="form-label">Exercice Social Fin</label>
+                                <input type="date" class="form-control" id="mod_exercice_social_fin" name="exercice_social_fin">
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="mod_date_creation" class="form-label">Date de Création</label>
-                        <input type="date" class="form-control" id="mod_date_creation" required>
+                        <input type="date" class="form-control" id="mod_date_creation" name="date_creation">
                     </div>
                     <div class="mb-3">
                         <label for="mod_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
-                        <input type="text" class="form-control" id="mod_assujettie_partielle_tva" required>
+                        <input type="text" class="form-control" id="mod_assujettie_partielle_tva" name="assujettie_partielle_tva">
                     </div>
                     <div class="mb-3">
                         <label for="mod_prorata_de_deduction" class="form-label">Prorata de Déduction</label>
-                        <input type="text" class="form-control" id="mod_prorata_de_deduction" required>
+                        <input type="text" class="form-control" id="mod_prorata_de_deduction" name="prorata_de_deduction">
                     </div>
                     <div class="mb-3">
                         <label for="mod_nature_activite" class="form-label">Nature d'Activité</label>
-                        <input type="text" class="form-control" id="mod_nature_activite" required>
+                        <input type="text" class="form-control" id="mod_nature_activite" name="nature_activite">
                     </div>
                     <div class="mb-3">
                         <label for="mod_activite" class="form-label">Activité</label>
-                        <input type="text" class="form-control" id="mod_activite" required>
+                        <input type="text" class="form-control" id="mod_activite" name="activite">
                     </div>
                     <div class="mb-3">
                         <label for="mod_regime_declaration" class="form-label">Régime de Déclaration</label>
-                        <input type="text" class="form-control" id="mod_regime_declaration" required>
+                        <input type="text" class="form-control" id="mod_regime_declaration" name="regime_declaration">
                     </div>
                     <div class="mb-3">
                         <label for="mod_fait_generateur" class="form-label">Fait Générateur</label>
-                        <input type="text" class="form-control" id="mod_fait_generateur" required>
+                        <input type="text" class="form-control" id="mod_fait_generateur" name="fait_generateur">
                     </div>
                     <div class="mb-3">
                         <label for="mod_rubrique_tva" class="form-label">Rubrique TVA</label>
-                        <input type="text" class="form-control" id="mod_rubrique_tva" required>
+                        <input type="text" class="form-control" id="mod_rubrique_tva" name="rubrique_tva">
                     </div>
                     <div class="mb-3">
                         <label for="mod_designation" class="form-label">Désignation</label>
-                        <input type="text" class="form-control" id="mod_designation" required>
+                        <input type="text" class="form-control" id="mod_designation" name="designation">
                     </div>
                     <div class="mb-3">
-                        <label for="mod_nombre_chiffre_compte" class="form-label">Nombre de Chiffre Compte</label>
-                        <input type="number" class="form-control" id="mod_nombre_chiffre_compte" required>
+                        <label for="mod_nombre_chiffre_compte" class="form-label">Nombre Chiffre Compte</label>
+                        <input type="text" class="form-control" id="mod_nombre_chiffre_compte" name="nombre_chiffre_compte">
+                    </div>
+                    <div class="mb-3">
+                        <label for="mod_model_comptable" class="form-label">Modèle Comptable</label>
+                        <input type="text" class="form-control" id="mod_model_comptable" name="modele_comptable" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Modifier</button>
                 </form>
@@ -376,6 +404,7 @@
         </div>
     </div>
 </div>
+
 
 
 
@@ -403,26 +432,27 @@
             {
             title: "Exercice Social",
             field: "exercice_social",
+            headerFilter: true,
             formatter: function(cell) {
                 const rowData = cell.getRow().getData(); // Obtenir les données de la ligne
                 return `Du ${rowData.exercice_social_debut} au ${rowData.exercice_social_fin}`; // Formater les dates
             },
         },
          {
-                title: "Actions",
-                formatter: function(cell, formatterParams) {
-                    return "<div class='action-icons'>" +
-                        "<a href='#' class='text-primary mx-1' data-bs-toggle='modal' data-bs-target='#modifierSocieteModal' " +
-                        "data-id='" + cell.getRow().getData().id + "' " +
-                        "data-nom-entreprise='" + cell.getRow().getData().raison_sociale + "' " + 
-                        "data-ice='" + cell.getRow().getData().ice + "' " +
-                        "data-rc='" + cell.getRow().getData().rc + "' " +
-                        "data-identifiant-fiscal='" + cell.getRow().getData().identifiant_fiscal + "'>" +
-                        "<i class='fas fa-edit'></i></a>" +
-                        "<a href='#' class='text-danger mx-1 delete-icon' data-id='" + cell.getRow().getData().id + "'>" +
-                        "<i class='fas fa-trash'></i></a>" +
-                        "</div>";
-                },
+            title: "Actions",
+            formatter: function(cell, formatterParams) {
+                return "<div class='action-icons'>" +
+                    "<a href='#' class='text-primary mx-1' data-bs-toggle='modal' data-bs-target='#modifierSocieteModal' " +
+                    "data-id='" + cell.getRow().getData().id + "' " +
+                    "data-nom-entreprise='" + cell.getRow().getData().raison_sociale + "' " +
+                    "data-ice='" + cell.getRow().getData().ice + "' " +
+                    "data-rc='" + cell.getRow().getData().rc + "' " +
+                    "data-identifiant-fiscal='" + cell.getRow().getData().identifiant_fiscal + "'>" +
+                    "<i class='fas fa-edit'></i></a>" +
+                    "<a href='#' class='text-danger mx-1 delete-icon' data-id='" + cell.getRow().getData().id + "'>" +
+                    "<i class='fas fa-trash'></i></a>" +
+                    "</div>";
+            },
                 width: 150,
                 hozAlign: "center"
             }
@@ -483,11 +513,13 @@
                     if (data.success) {
                         table.deleteRow(id); // Supprimer la ligne du tableau
                         alert("Société supprimée avec succès.");
+                        
                     } else {
                         alert("Erreur lors de la suppression : " + data.message);
                     }
                 })
                 .catch(error => console.error("Erreur :", error));
+                
             }
         }
     });
@@ -505,58 +537,6 @@ document.getElementById('assujettie_partielle_tva').addEventListener('change', f
     }
 });
  
-</script>
-<script>
-
-document.getElementById('societes-table').addEventListener('click', function(e) {
-    if (e.target.closest('.text-primary')) {
-        const item = e.target.closest('.text-primary');
-        
-        // Récupérer l'ID de la société
-        const societeId = item.getAttribute('data-id');
-
-        // Faire une requête AJAX pour récupérer les données de la société
-        fetch(`/societes/${societeId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Erreur réseau');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Remplir les champs de la modale avec les données
-                document.getElementById('mod_raison_sociale').value = data.raison_sociale;
-                document.getElementById('mod_ice').value = data.ice;
-                document.getElementById('mod_rc').value = data.rc;
-                document.getElementById('mod_identifiant_fiscal').value = data.identifiant_fiscal;
-                document.getElementById('mod_patente').value = data.patente;
-                document.getElementById('mod_centre_rc').value = data.centre_rc;
-                document.getElementById('mod_forme_juridique').value = data.forme_juridique;
-                document.getElementById('mod_exercice_social_debut').value = data.exercice_social_debut; // Nouveau champ
-                document.getElementById('mod_exercice_social_fin').value = data.exercice_social_fin; // Nouveau champ
-                document.getElementById('mod_date_creation').value = data.date_creation;
-                document.getElementById('mod_assujettie_partielle_tva').value = data.assujettie_partielle_tva;
-                document.getElementById('mod_prorata_de_deduction').value = data.prorata_de_deduction;
-                document.getElementById('mod_nature_activite').value = data.nature_activite;
-                document.getElementById('mod_activite').value = data.activite;
-                document.getElementById('mod_regime_declaration').value = data.regime_declaration;
-                document.getElementById('mod_fait_generateur').value = data.fait_generateur;
-                document.getElementById('mod_rubrique_tva').value = data.rubrique_tva;
-                document.getElementById('mod_designation').value = data.designation;
-                document.getElementById('mod_nombre_chiffre_compte').value = data.nombre_chiffre_compte; // Nouveau champ
-
-                // Afficher la modale de modification
-                var myModal = new bootstrap.Modal(document.getElementById('modifierSocieteModal'));
-                myModal.show();
-            })
-            .catch(error => {
-                console.error('Erreur:', error);
-            });
-    }
-});
-
-
-
 </script>
 
 
@@ -612,7 +592,7 @@ $(function() {
 });
 
 function openImportModal() {
-    // Code pour afficher le modal d'importation
+    // Code pour afficher le modal d'importation 
     $('#importModal').modal('show'); // Utiliser Bootstrap modal si vous l'avez
 }
 
@@ -631,9 +611,89 @@ document.addEventListener("click", function(e) {
         if (confirm("Êtes-vous sûr de vouloir supprimer cette société ?")) {
             // Appeler la fonction pour supprimer la société
             deleteSociete(societeId);
+            
         }
     }
+    
 });
+
+</script>
+
+<script>
+function ouvrirModalModifierSociete(societeId) {
+    $.ajax({
+        url: `/societes/${societeId}/edit`,
+        type: 'GET',
+        success: function(societe) {
+            // Remplir les champs du formulaire avec les données de la société
+            $('#mod_societe_id').val(societe.id);
+            $('#mod_raison_sociale').val(societe.raison_sociale);
+            $('#mod_siège_social').val(societe.siege_social); // Ajout du champ Siège Social
+            $('#mod_ice').val(societe.ice);
+            $('#mod_rc').val(societe.rc);
+            $('#mod_identifiant_fiscal').val(societe.identifiant_fiscal);
+            $('#mod_patente').val(societe.patente);
+            $('#mod_centre_rc').val(societe.centre_rc);
+            $('#mod_forme_juridique').val(societe.forme_juridique);
+            $('#mod_exercice_social_debut').val(societe.exercice_social_debut);
+            $('#mod_exercice_social_fin').val(societe.exercice_social_fin);
+            $('#mod_date_creation').val(societe.date_creation);
+            $('#mod_assujettie_partielle_tva').val(societe.assujettie_partielle_tva);
+            $('#mod_prorata_de_deduction').val(societe.prorata_de_deduction);
+            $('#mod_nature_activite').val(societe.nature_activite);
+            $('#mod_activite').val(societe.activite);
+            $('#mod_regime_declaration').val(societe.regime_declaration);
+            $('#mod_fait_generateur').val(societe.fait_generateur);
+            $('#mod_rubrique_tva').val(societe.rubrique_tva);
+            $('#mod_designation').val(societe.designation);
+            $('#mod_nombre_chiffre_compte').val(societe.nombre_chiffre_compte);
+            $('#mod_model_comptable').val(societe.modele_comptable);
+
+            // Affiche le modal
+            $('#modifierSocieteModal').modal('show');
+        },
+        error: function(error) {
+            console.log("Erreur lors de la récupération des données de la société :", error);
+        }
+    });
+}
+
+// Écouteur d'événement pour le modal de modification
+$(document).on('click', '.text-primary', function() {
+    var societeId = $(this).data('id'); // Récupère l'ID de la société
+    ouvrirModalModifierSociete(societeId);
+});
+
+// Soumettre le formulaire
+$('#modifierSocieteForm').on('submit', function(e) {
+    e.preventDefault(); // Empêche le rechargement de la page
+
+    var societeId = $('#mod_societe_id').val();
+    var formData = $(this).serialize(); // Récupère les données du formulaire
+
+    $.ajax({
+        url: `/societes/${societeId}`,
+        type: 'PUT',
+        data: formData,
+        success: function(response) {
+            // Mettre à jour les données dans le tableau Tabulator
+            table.updateOrAddData([response]);
+
+            // Fermer le modal
+            $('#modifierSocieteModal').modal('hide');
+        },
+        error: function(error) {
+            console.log("Erreur lors de la modification de la société :", error);
+        }
+    });
+});
+
+
+
+
+
+
+
 
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

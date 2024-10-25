@@ -14,7 +14,8 @@ class SocieteController extends Controller
         $societes = Societe::all(); // Changer 'Societes' en 'Societe'
         return view('dashboard', ['societes' => $societes->toJson()]);
     }
-    
+   
+
     public function getData()
     {
         // Récupérer toutes les sociétés et renvoyer en JSON
@@ -46,6 +47,7 @@ class SocieteController extends Controller
             'fait_generateur' => 'required|date',
             'rubrique_tva' => 'required|string|max:255',
             'designation' => 'required|string|max:255',
+            'modele_comptable' => 'nullable|string|max:255', // Nouveau champ ajouté
         ]);
 
         // Créer la société
@@ -58,39 +60,40 @@ class SocieteController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id)
-    {
-        // Validation des données
-        $validatedData = $request->validate([
-            'raison_sociale' => 'required|string|max:255',
-            'ice' => 'required|string|max:15',
-            'rc' => 'required|string|max:50',
-            'identifiant_fiscal' => 'required|string|max:50',
-            'patente' => 'nullable|string|max:50',
-            'centre_rc' => 'nullable|string|max:50',
-            'forme_juridique' => 'nullable|string|max:50',
-            'chiffre_compte' => 'required|integer', // Nouveau champ
-            'exercice_social_debut' => 'required|date', // Nouveau champ
-            'exercice_social_fin' => 'required|date', // Nouveau champ
-            'date_creation' => 'nullable|date',
-            'assujettie_partielle_tva' => 'nullable|boolean',
-            'prorata_de_deduction' => 'nullable|numeric',
-            'nature_activite' => 'nullable|string|max:50',
-            'activite' => 'nullable|string|max:50',
-            'regime_declaration' => 'nullable|string|max:50',
-            'fait_generateur' => 'nullable|date',
-            'rubrique_tva' => 'nullable|string|max:50',
-            'designation' => 'nullable|string|max:50',
-        ]);
+  // Mettre à jour une société
+  public function update(Request $request, $id)
+  {
+      // Valider les données du formulaire
+      $validatedData = $request->validate([
+          'raison_sociale' => 'required|string|max:255',
+          'forme_juridique' => 'required|string|max:255',
+          'siege_social' => 'nullable|string|max:255',
+          'patente' => 'nullable|string|max:50',
+          'rc' => 'nullable|string|max:50',
+          'centre_rc' => 'nullable|string|max:50',
+          'identifiant_fiscal' => 'nullable|string|max:50',
+          'ice' => 'nullable|string|max:50',
+          'nombre_chiffre_compte' => 'nullable|string|max:50',
+          'exercice_social_debut' => 'nullable|date',
+          'exercice_social_fin' => 'nullable|date',
+          'date_creation' => 'nullable|date',
+          'nature_activite' => 'nullable|string|max:255',
+          'activite' => 'nullable|string|max:255',
+          'regime_declaration' => 'nullable|string|max:255',
+          'fait_generateur' => 'nullable|string|max:255',
+          'rubrique_tva' => 'nullable|string|max:255',
+          'designation' => 'nullable|string|max:255',
+          'modele_comptable' => 'nullable|string|max:255',
+      ]);
 
-        // Trouver la société par ID
-        $societe = Societe::findOrFail($id);
+      // Récupérer la société par ID et mettre à jour les informations
+      $societe = Societe::findOrFail($id);
+      $societe->update($validatedData);
 
-        // Mettre à jour les données de la société
-        $societe->update($validatedData);
-
-        return response()->json(['message' => 'Société mise à jour avec succès!', 'societe' => $societe], 200);
-    }
+      // Retourner une réponse JSON avec les données mises à jour
+      return response()->json(['success' => true, 'data' => $societe]);
+  }
+  
 
     public function destroy($id)
     {
@@ -129,4 +132,12 @@ class SocieteController extends Controller
     
         return response()->json($societe);
     }
+
+    // Dans SocieteController.php
+public function edit($id)
+{
+    $societe = Societe::findOrFail($id); // Recherchez la société par son ID
+    return response()->json($societe); // Retourne les données sous forme JSON
+}
+
 }

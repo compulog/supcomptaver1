@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -29,7 +30,8 @@ class CreateSocieteTable extends Migration
             $table->string('rubrique_tva')->nullable(); // Rubrique TVA
             $table->string('designation')->nullable(); // Désignation
             $table->integer('nombre_chiffre_compte')->nullable(); // Nombre de chiffres du compte
-            $table->timestamps(); // Créé les colonnes 'created_at' et 'updated_at'
+            $table->string('modele_comptable')->nullable(); // Modèle comptable
+            $table->timestamps(); // Crée les colonnes 'created_at' et 'updated_at'
         });
     }
 
