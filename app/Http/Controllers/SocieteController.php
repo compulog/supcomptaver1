@@ -6,6 +6,7 @@ use App\Models\Societe;
 use Illuminate\Http\Request;
 use App\Imports\SociétésImport;
 use Maatwebsite\Excel\Facades\Excel; // Assurez-vous d'importer la façade Excel
+use App\Imports\SocietesImport;
 
 class SocieteController extends Controller
 {
@@ -102,25 +103,26 @@ class SocieteController extends Controller
         return redirect()->route('dashboard')->with('success', 'Société supprimée avec succès.');
     }
 
+   
+   
+    // Dans votre méthode d'importation
     public function import(Request $request)
     {
-        // Validation des données d'entrée
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv',
-            'colonne_nom_entreprise' => 'required|string',
-            'colonne_forme_juridique' => 'required|string',
-            'colonne_siege_social' => 'required|string',
-            // Ajoutez des règles de validation pour les autres colonnes si nécessaire
+            'file' => 'required|file|mimes:xlsx,csv,xls',
         ]);
-
-        // Récupérer le fichier
-        $file = $request->file('file');
-
-        // Importer les données
-        Excel::import(new SociétésImport($request->all()), $file);
-
-        return redirect()->back()->with('success', 'Sociétés importées avec succès.');
+    
+        try {
+            Excel::import(new SocietesImport, $request->file('file'));
+            return response()->json(['success' => true, 'message' => 'Sociétés importées avec succès !']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Erreur lors de l\'importation : ' . $e->getMessage()], 500);
+        }
     }
+    
+    
+    
+    
 
     public function show($id)
     {

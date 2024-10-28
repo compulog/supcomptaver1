@@ -22,6 +22,8 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<link href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
+<script src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
 
     <style>
         body {
@@ -181,108 +183,102 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="importForm" action="{{ route('societes.import') }}" method="POST" enctype="multipart/form-data">
+                <!-- Formulaire d'Importation -->
+                <form id="import-societe-form" action="{{ route('societes.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
                     <div class="mb-3">
-                        <label for="file" class="form-label">Choisir un fichier Excel</label>
-                        <input type="file" class="form-control" id="file" name="file" required>
+                        <label for="import_file" class="form-label">Choisir le fichier d'importation</label>
+                        <input type="file" class="form-control" id="import_file" name="file" required>
                     </div>
-
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label for="colonne_nom_entreprise" class="form-label">Colonne pour le Nom d'entreprise</label>
-                            <input type="text" class="form-control" id="colonne_nom_entreprise" name="colonne_nom_entreprise" placeholder="Ex: A" required>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="import_raison_sociale" class="form-label">Raison Sociale</label>
+                            <input type="number" class="form-control" id="import_raison_sociale" name="raison_sociale" required>
                         </div>
-                        <div class="col">
-                            <label for="colonne_forme_juridique" class="form-label">Colonne pour la Forme Juridique</label>
-                            <input type="text" class="form-control" id="colonne_forme_juridique" name="colonne_forme_juridique" placeholder="Ex: B" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_siège_social" class="form-label">Siège Social</label>
+                            <input type="number" class="form-control" id="import_siège_social" name="siege_social">
                         </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label for="colonne_siege_social" class="form-label">Colonne pour le Siège Social</label>
-                            <input type="text" class="form-control" id="colonne_siege_social" name="colonne_siege_social" placeholder="Ex: C" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_ice" class="form-label">ICE</label>
+                            <input type="number" class="form-control" id="import_ice" name="ice" required maxlength="15" title="Veuillez entrer uniquement des chiffres (max 15 chiffres)">
                         </div>
-                        <div class="col">
-                            <label for="colonne_patente" class="form-label">Colonne pour la Patente</label>
-                            <input type="text" class="form-control" id="colonne_patente" name="colonne_patente" placeholder="Ex: D" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_rc" class="form-label">RC</label>
+                            <input type="number" class="form-control" id="import_rc" name="rc" required>
                         </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label for="colonne_rc" class="form-label">Colonne pour le RC</label>
-                            <input type="text" class="form-control" id="colonne_rc" name="colonne_rc" placeholder="Ex: E" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
+                            <input type="number" class="form-control" id="import_identifiant_fiscal" name="identifiant_fiscal" required>
                         </div>
-                        <div class="col">
-                            <label for="colonne_centre_rc" class="form-label">Colonne pour le Centre RC</label>
-                            <input type="text" class="form-control" id="colonne_centre_rc" name="colonne_centre_rc" placeholder="Ex: F" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_patente" class="form-label">Patente</label>
+                            <input type="number" class="form-control" id="import_patente" name="patente">
                         </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label for="colonne_identifiant_fiscal" class="form-label">Colonne pour l'Identifiant Fiscal</label>
-                            <input type="text" class="form-control" id="colonne_identifiant_fiscal" name="colonne_identifiant_fiscal" placeholder="Ex: G" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_centre_rc" class="form-label">Centre RC</label>
+                            <input type="number" class="form-control" id="import_centre_rc" name="centre_rc">
                         </div>
-                        <div class="col">
-                            <label for="colonne_ice" class="form-label">Colonne pour l'ICE</label>
-                            <input type="text" class="form-control" id="colonne_ice" name="colonne_ice" placeholder="Ex: H" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_forme_juridique" class="form-label">Forme Juridique</label>
+                            <input type="number" class="form-control" id="import_forme_juridique" name="forme_juridique">
                         </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label for="colonne_assujettie_partielle_tva" class="form-label">Colonne pour Assujettie Partielle TVA</label>
-                            <input type="text" class="form-control" id="colonne_assujettie_partielle_tva" name="colonne_assujettie_partielle_tva" placeholder="Ex: I" required>
+                        <div class="col-md-6 mb-3 d-flex">
+                            <div class="me-2" style="flex: 1;">
+                                <label for="import_exercice_social_debut" class="form-label">Exercice Social Début</label>
+                                <input type="number" class="form-control" id="import_exercice_social_debut" name="exercice_social_debut">
+                            </div>
+                            <div style="flex: 1;">
+                                <label for="import_exercice_social_fin" class="form-label">Exercice Social Fin</label>
+                                <input type="number" class="form-control" id="import_exercice_social_fin" name="exercice_social_fin">
+                            </div>
                         </div>
-                        <div class="col">
-                            <label for="colonne_prorata_de_deduction" class="form-label">Colonne pour Prorata de Déduction</label>
-                            <input type="text" class="form-control" id="colonne_prorata_de_deduction" name="colonne_prorata_de_deduction" placeholder="Ex: J" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_date_creation" class="form-label">Date de Création</label>
+                            <input type="number" class="form-control" id="import_date_creation" name="date_creation">
                         </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label for="colonne_date_creation" class="form-label">Colonne pour la Date de Création</label>
-                            <input type="text" class="form-control" id="colonne_date_creation" name="colonne_date_creation" placeholder="Ex: K" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
+                            <input type="number" class="form-control" id="import_assujettie_partielle_tva" name="assujettie_partielle_tva">
                         </div>
-                        <div class="col">
-                            <label for="colonne_date_debut_exercice" class="form-label">Colonne pour la Date de Début d'Exercice</label>
-                            <input type="text" class="form-control" id="colonne_date_debut_exercice" name="colonne_date_debut_exercice" placeholder="Ex: L" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_prorata_de_deduction" class="form-label">Prorata de Déduction</label>
+                            <input type="number" class="form-control" id="import_prorata_de_deduction" name="prorata_de_deduction">
                         </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label for="colonne_date_fin_exercice" class="form-label">Colonne pour la Date de Fin d'Exercice</label>
-                            <input type="text" class="form-control" id="colonne_date_fin_exercice" name="colonne_date_fin_exercice" placeholder="Ex: M" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_nature_activite" class="form-label">Nature d'Activité</label>
+                            <input type="number" class="form-control" id="import_nature_activite" name="nature_activite">
                         </div>
-                        <div class="col">
-                            <label for="colonne_nature_activite" class="form-label">Colonne pour la Nature de l'Activité</label>
-                            <input type="text" class="form-control" id="colonne_nature_activite" name="colonne_nature_activite" placeholder="Ex: N" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_activite" class="form-label">Activité</label>
+                            <input type="number" class="form-control" id="import_activite" name="activite">
                         </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label for="colonne_regime_de_declaration" class="form-label">Colonne pour le Régime de Déclaration</label>
-                            <input type="text" class="form-control" id="colonne_regime_de_declaration" name="colonne_regime_de_declaration" placeholder="Ex: O" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_regime_declaration" class="form-label">Régime de Déclaration</label>
+                            <input type="number" class="form-control" id="import_regime_declaration" name="regime_declaration">
                         </div>
-                        <div class="col">
-                            <label for="colonne_nombre_chiffre_compte" class="form-label">Colonne pour le Nombre de Chiffre Compte</label>
-                            <input type="text" class="form-control" id="colonne_nombre_chiffre_compte" name="colonne_nombre_chiffre_compte" placeholder="Ex: P" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_fait_generateur" class="form-label">Fait Générateur</label>
+                            <input type="number" class="form-control" id="import_fait_generateur" name="fait_generateur">
                         </div>
-                    </div>
-
-                    <!-- Nouveau champ pour le Modèle Comptable -->
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label for="colonne_modele_comptable" class="form-label">Colonne pour le Modèle Comptable</label>
-                            <input type="text" class="form-control" id="colonne_modele_comptable" name="colonne_modele_comptable" placeholder="Ex: Q" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_rubrique_tva" class="form-label">Rubrique TVA</label>
+                            <input type="number" class="form-control" id="import_rubrique_tva" name="rubrique_tva">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_designation" class="form-label">Désignation</label>
+                            <input type="number" class="form-control" id="import_designation" name="designation">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
+                            <input type="number" class="form-control" id="import_nombre_chiffre_compte" name="nombre_chiffre_compte">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_model_comptable" class="form-label">Modèle Comptable</label>
+                            <input type="number" class="form-control" id="import_model_comptable" name="modele_comptable" required>
                         </div>
                     </div>
-
                     <button type="submit" class="btn btn-primary">Importer</button>
                 </form>
             </div>
@@ -293,110 +289,104 @@
 
 <!-- Modal Modifier Société -->
 <div class="modal fade" id="modifierSocieteModal" tabindex="-1" aria-labelledby="modifierSocieteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modifierSocieteModalLabel">Modifier Société</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="modifierSocieteForm">
-                    <input type="hidden" id="mod_societe_id" name="id">
-                    <div class="mb-3">
-                        <label for="mod_raison_sociale" class="form-label">Raison Sociale</label>
-                        <input type="text" class="form-control" id="mod_raison_sociale" name="raison_sociale" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_siège_social" class="form-label">Siège Social</label>
-                        <input type="text" class="form-control" id="mod_siège_social" name="siege_social">
-                    </div>
+            <form id="societe-modification-form">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="id" id="modification_id">
                     <div class="row">
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="mod_ice" class="form-label">ICE</label>
-                                <input type="text" class="form-control" id="mod_ice" name="ice" required>
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_raison_sociale" class="form-label">Raison Sociale</label>
+                            <input type="text" class="form-control" id="mod_raison_sociale" name="raison_sociale" required>
                         </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="mod_rc" class="form-label">RC</label>
-                                <input type="text" class="form-control" id="mod_rc" name="rc" required>
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_siège_social" class="form-label">Siège Social</label>
+                            <input type="text" class="form-control" id="mod_siège_social" name="siege_social">
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
-                        <input type="text" class="form-control" id="mod_identifiant_fiscal" name="identifiant_fiscal" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_patente" class="form-label">Patente</label>
-                        <input type="text" class="form-control" id="mod_patente" name="patente">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_centre_rc" class="form-label">Centre RC</label>
-                        <input type="text" class="form-control" id="mod_centre_rc" name="centre_rc">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_forme_juridique" class="form-label">Forme Juridique</label>
-                        <input type="text" class="form-control" id="mod_forme_juridique" name="forme_juridique">
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="mb-3">
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_ice" class="form-label">ICE</label>
+                            <input type="text" class="form-control" id="mod_ice" name="ice" required maxlength="15" title="Veuillez entrer uniquement des chiffres (max 15 chiffres)">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_rc" class="form-label">RC</label>
+                            <input type="text" class="form-control" id="mod_rc" name="rc" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
+                            <input type="text" class="form-control" id="mod_identifiant_fiscal" name="identifiant_fiscal" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_patente" class="form-label">Patente</label>
+                            <input type="text" class="form-control" id="mod_patente" name="patente">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_centre_rc" class="form-label">Centre RC</label>
+                            <input type="text" class="form-control" id="mod_centre_rc" name="centre_rc">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_forme_juridique" class="form-label">Forme Juridique</label>
+                            <input type="text" class="form-control" id="mod_forme_juridique" name="forme_juridique">
+                        </div>
+                        <div class="col-md-6 mb-3 d-flex">
+                            <div class="me-2" style="flex: 1;">
                                 <label for="mod_exercice_social_debut" class="form-label">Exercice Social Début</label>
                                 <input type="date" class="form-control" id="mod_exercice_social_debut" name="exercice_social_debut">
                             </div>
-                        </div>
-                        <div class="col">
-                            <div class="mb-3">
+                            <div style="flex: 1;">
                                 <label for="mod_exercice_social_fin" class="form-label">Exercice Social Fin</label>
                                 <input type="date" class="form-control" id="mod_exercice_social_fin" name="exercice_social_fin">
                             </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_date_creation" class="form-label">Date de Création</label>
-                        <input type="date" class="form-control" id="mod_date_creation" name="date_creation">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
-                        <input type="text" class="form-control" id="mod_assujettie_partielle_tva" name="assujettie_partielle_tva">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_prorata_de_deduction" class="form-label">Prorata de Déduction</label>
-                        <input type="text" class="form-control" id="mod_prorata_de_deduction" name="prorata_de_deduction">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_nature_activite" class="form-label">Nature d'Activité</label>
-                        <input type="text" class="form-control" id="mod_nature_activite" name="nature_activite">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_activite" class="form-label">Activité</label>
-                        <input type="text" class="form-control" id="mod_activite" name="activite">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_regime_declaration" class="form-label">Régime de Déclaration</label>
-                        <input type="text" class="form-control" id="mod_regime_declaration" name="regime_declaration">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_fait_generateur" class="form-label">Fait Générateur</label>
-                        <input type="text" class="form-control" id="mod_fait_generateur" name="fait_generateur">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_rubrique_tva" class="form-label">Rubrique TVA</label>
-                        <input type="text" class="form-control" id="mod_rubrique_tva" name="rubrique_tva">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_designation" class="form-label">Désignation</label>
-                        <input type="text" class="form-control" id="mod_designation" name="designation">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_nombre_chiffre_compte" class="form-label">Nombre Chiffre Compte</label>
-                        <input type="text" class="form-control" id="mod_nombre_chiffre_compte" name="nombre_chiffre_compte">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mod_model_comptable" class="form-label">Modèle Comptable</label>
-                        <input type="text" class="form-control" id="mod_model_comptable" name="modele_comptable" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_date_creation" class="form-label">Date de Création</label>
+                            <input type="date" class="form-control" id="mod_date_creation" name="date_creation">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
+                            <input type="text" class="form-control" id="mod_assujettie_partielle_tva" name="assujettie_partielle_tva">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_prorata_de_deduction" class="form-label">Prorata de Déduction</label>
+                            <input type="text" class="form-control" id="mod_prorata_de_deduction" name="prorata_de_deduction">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_nature_activite" class="form-label">Nature d'Activité</label>
+                            <input type="text" class="form-control" id="mod_nature_activite" name="nature_activite">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_activite" class="form-label">Activité</label>
+                            <input type="text" class="form-control" id="mod_activite" name="activite">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_regime_declaration" class="form-label">Régime de Déclaration</label>
+                            <input type="text" class="form-control" id="mod_regime_declaration" name="regime_declaration">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_fait_generateur" class="form-label">Fait Générateur</label>
+                            <input type="text" class="form-control" id="mod_fait_generateur" name="fait_generateur">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_rubrique_tva" class="form-label">Rubrique TVA</label>
+                            <input type="text" class="form-control" id="mod_rubrique_tva" name="rubrique_tva">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_designation" class="form-label">Désignation</label>
+                            <input type="text" class="form-control" id="mod_designation" name="designation">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
+                            <input type="text" class="form-control" id="mod_nombre_chiffre_compte" name="nombre_chiffre_compte">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_model_comptable" class="form-label">Modèle Comptable</label>
+                            <input type="text" class="form-control" id="mod_model_comptable" name="modele_comptable" required>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Modifier</button>
                 </form>
@@ -407,9 +397,9 @@
 
 
 
-
 <!-- Table Tabulator -->
 <h2>Liste des Sociétés</h2>
+<div id="societes-table"></div>
 
 <!-- Tabulator JS -->
 <script>
@@ -422,42 +412,50 @@
         layout: "fitColumns", // Ajuster les colonnes à la largeur du tableau
         columns: [
             {title: "Raison Sociale", field: "raison_sociale", formatter: function(cell, formatterParams, onRendered){
-            var nomEntreprise = cell.getData()["raison_sociale"];
-            var formeJuridique = cell.getData().forme_juridique;
-            return nomEntreprise + " " + formeJuridique;
-        }, headerFilter: true},
+                var nomEntreprise = cell.getData()["raison_sociale"];
+                var formeJuridique = cell.getData().forme_juridique;
+                return nomEntreprise + " " + formeJuridique;
+            }, headerFilter: true},
             {title: "ICE", field: "ice", headerFilter: true},
             {title: "RC", field: "rc", headerFilter: true},
             {title: "Identifiant Fiscal", field: "identifiant_fiscal", headerFilter: true},
             {
-            title: "Exercice Social",
-            field: "exercice_social",
-            headerFilter: true,
-            formatter: function(cell) {
-                const rowData = cell.getRow().getData(); // Obtenir les données de la ligne
-                return `Du ${rowData.exercice_social_debut} au ${rowData.exercice_social_fin}`; // Formater les dates
+                title: "Exercice Social",
+                field: "exercice_social",
+                headerFilter: true,
+                formatter: function(cell) {
+                    const rowData = cell.getRow().getData(); // Obtenir les données de la ligne
+                    return `Du ${rowData.exercice_social_debut} au ${rowData.exercice_social_fin}`; // Formater les dates
+                },
             },
-        },
-         {
-            title: "Actions",
-            formatter: function(cell, formatterParams) {
-                return "<div class='action-icons'>" +
-                    "<a href='#' class='text-primary mx-1' data-bs-toggle='modal' data-bs-target='#modifierSocieteModal' " +
-                    "data-id='" + cell.getRow().getData().id + "' " +
-                    "data-nom-entreprise='" + cell.getRow().getData().raison_sociale + "' " +
-                    "data-ice='" + cell.getRow().getData().ice + "' " +
-                    "data-rc='" + cell.getRow().getData().rc + "' " +
-                    "data-identifiant-fiscal='" + cell.getRow().getData().identifiant_fiscal + "'>" +
-                    "<i class='fas fa-edit'></i></a>" +
-                    "<a href='#' class='text-danger mx-1 delete-icon' data-id='" + cell.getRow().getData().id + "'>" +
-                    "<i class='fas fa-trash'></i></a>" +
-                    "</div>";
-            },
+            {
+                title: "Actions",
+                formatter: function(cell, formatterParams) {
+                    return "<div class='action-icons'>" +
+                        "<a href='#' class='text-primary mx-1' data-bs-toggle='modal' data-bs-target='#modifierSocieteModal' " +
+                        "data-id='" + cell.getRow().getData().id + "' " +
+                        "data-nom-entreprise='" + cell.getRow().getData().raison_sociale + "' " +
+                        "data-ice='" + cell.getRow().getData().ice + "' " +
+                        "data-rc='" + cell.getRow().getData().rc + "' " +
+                        "data-identifiant-fiscal='" + cell.getRow().getData().identifiant_fiscal + "'>" +
+                        "<i class='fas fa-edit'></i></a>" +
+                        "<a href='#' class='text-danger mx-1 delete-icon' data-id='" + cell.getRow().getData().id + "'>" +
+                        "<i class='fas fa-trash'></i></a>" +
+                        "</div>";
+                },
                 width: 150,
                 hozAlign: "center"
             }
         ],
     });
+
+   // Écouteur d'événement pour le double clic sur une ligne du tableau
+   table.on("rowDblClick", function(row) {
+        var societeId = row.getData().id; // Récupérer l'ID de la société
+        window.location.href = `/exercice/${societeId}`; // Rediriger vers la vue "exercice"
+    });
+
+
 
     // Ouvrir le modal au clic sur le bouton
     document.getElementById('open-modal-btn').addEventListener('click', function() {
@@ -688,6 +686,63 @@ $('#modifierSocieteForm').on('submit', function(e) {
     });
 });
 
+
+
+
+
+
+ 
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('import-societe-form');
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault(); // Empêche le rechargement de la page
+
+        const formData = new FormData(form);
+
+        fetch('{{ route("societes.import") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}', // Pour Laravel
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Affiche le message de succès ou d'erreur
+            if (data.success) {
+                alert(data.message);
+                // Ferme le modal
+                $('#importModal').modal('hide');
+                // Réinitialiser le formulaire si nécessaire
+                form.reset();
+            } else {
+                alert('Erreur : ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue lors de l\'importation.');
+        });
+    });
+});
+
+
+
+form.addEventListener('submit', function (e) {
+    const fileInput = document.getElementById('import_file');
+    const filePath = fileInput.value;
+
+    // Vérifier le format du fichier
+    const allowedExtensions = /(\.xlsx|\.xls|\.csv)$/i;
+    if (!allowedExtensions.exec(filePath)) {
+        alert('Veuillez télécharger un fichier avec une extension .xls, .xlsx ou .csv');
+        fileInput.value = ''; // Réinitialiser le champ de fichier
+        e.preventDefault();
+        return false;
+    }
+});
 
 
 

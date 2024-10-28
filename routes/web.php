@@ -18,10 +18,18 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ImportExcelController;
 
 
+Route::get('/exercice/{id}', function ($id) {
+    // Vous pouvez utiliser la logique pour récupérer les données nécessaires ici, si besoin.
+    
+    // Exemple d'utilisation pour afficher une vue en passant l'ID
+    return view('exercice.show', ['id' => $id]);
+})->name('exercice.show');
 
 
+Route::get('/societes/import', [SocieteController::class, 'showImportForm'])->name('societes.import.form');
 
-Route::post('/importer-societes', [SocieteController::class, 'import'])->name('societes.import');
+Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
+
 
 // Route pour obtenir la liste des clients
 
@@ -55,7 +63,7 @@ Route::post('/societes', [SocieteController::class, 'store'])->name('societes.st
 Route::get('/societes/{id}/edit', [SocieteController::class, 'edit'])->name('societes.edit');
 
 Route::put('/societes/{id}', [SocieteController::class, 'update'])->name('societes.update');
-	
+
 // Route pour récupérer les données des sociétés
 
 // Route pour afficher la liste des sociétés (index)
