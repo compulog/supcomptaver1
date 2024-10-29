@@ -18,6 +18,15 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ImportExcelController;
 
 
+Route::get('/rubriques-tva', [SocieteController::class, 'getRubriquesTVA']);
+
+
+Route::get('/clients/{id}/edit', [ClientController::class, 'edit'])->name('clients.edit');
+Route::put('/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
+
+Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
+
+
 Route::get('/exercice/{id}', function ($id) {
     // Vous pouvez utiliser la logique pour récupérer les données nécessaires ici, si besoin.
     

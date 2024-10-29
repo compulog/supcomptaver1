@@ -7,9 +7,25 @@ use Illuminate\Http\Request;
 use App\Imports\SociétésImport;
 use Maatwebsite\Excel\Facades\Excel; // Assurez-vous d'importer la façade Excel
 use App\Imports\SocietesImport;
-
+use App\Models\Racine; 
 class SocieteController extends Controller
 {
+
+   // Assurez-vous d'importer votre modèle Racine
+
+   public function getRubriquesTVA()
+   {
+       // Récupération des rubriques TVA
+       $rubriques = Racine::where('type', 'achat')->pluck('Nom_racines', 'id');
+   
+       // Vérifiez ce que retourne la requête
+       // dd($rubriques); // Décommentez pour déboguer
+   
+       return response()->json($rubriques);
+   }
+   
+   
+
     public function index()
     {
         $societes = Societe::all(); // Changer 'Societes' en 'Societe'

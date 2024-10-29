@@ -1,7 +1,9 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Imports\ClientsImport;
 
+use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Client;
 use Illuminate\Http\Request;
 
@@ -38,31 +40,59 @@ class ClientController extends Controller
         }
     }
 
-    public function update(Request $request, $id) {
-        $client = Client::findOrFail($id);
+    public function edit($id)
+    {
+        $client = Client::findOrFail($id); // Trouver le client ou lever une exception 404
+        return view('clients.edit', compact('client')); // Passer la variable $client à la vue
+    }
+
+    public function update(Request $request, Client $client)
+    {
+        // Validez les données
+        $request->validate([
+            'compte' => 'required',
+            'intitule' => 'required',
+            'identifiant_fiscal' => 'required',
+            'ICE' => 'required',
+            'type_client' => 'required',
+        ]);
+    
+        // Mettez à jour le client
         $client->update($request->all());
     
-        return response()->json(['success' => true, 'client' => $client]);
+        return response()->json([
+            'success' => true,
+            'client' => $client
+        ]);
     }
     
     
-
+    
 
     
-    public function destroy($id) {
-        \Log::info('Attempting to delete client with ID: ' . $id);
-    
+    public function destroy($id)
+    {
         $client = Client::find($id);
         if ($client) {
             $client->delete();
-            \Log::info('Client deleted successfully');
             return response()->json(['success' => true]);
         }
-    
-        \Log::error('Client not found');
-        return response()->json(['success' => false, 'error' => 'Client not found']);
+        return response()->json(['success' => false], 404);
     }
     
+
+    public function import(Request $request)
+{
+    try {
+        Log::info('Importing file: ' . $request->file('file')->getClientOriginalName());
+        Excel::import(new ClientsImport, $request->file('file'));
+        return response()->json(['success' => true]);
+    } catch (\Exception $e) {
+        Log::error('Import failed: ' . $e->getMessage());
+        return response()->json(['success' => false, 'error' => $e->getMessage()]);
+    }
+}
+
     
 
 }

@@ -38,6 +38,7 @@
 
 @section('content')
 
+<h2>Liste des Sociétés</h2>
 <div class="row">
     <div class="col-12">
         <div class="card mb-4 mx-4">
@@ -104,18 +105,6 @@
                             <input type="text" id="ice" class="form-control" name="ice" required maxlength="15" title="Veuillez entrer uniquement des chiffres (max 15 chiffres)">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
-                            <select class="form-control" name="assujettie_partielle_tva" id="assujettie_partielle_tva" required>
-                                <option value="" disabled selected>Choisir une option</option>
-                                <option value="1">Oui</option>
-                                <option value="0">Non</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="prorata_de_deduction" class="form-label">Prorata de Déduction</label>
-                            <input type="text" class="form-control" name="prorata_de_deduction" id="prorata_de_deduction" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
                             <label for="date_creation" class="form-label">Date de Création</label>
                             <input type="date" class="form-control" name="date_creation" required>
                         </div>
@@ -130,10 +119,6 @@
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="nombre_chiffre_compte" class="form-label">Nombre Chiffre Compte</label>
-                            <input type="number" class="form-control" name="nombre_chiffre_compte" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
                             <label for="nature_activite" class="form-label">Nature de l'Activité</label>
                             <select class="form-control" name="nature_activite">
                                 <option value="">Choisir une activité</option>
@@ -146,6 +131,23 @@
                             <label for="activite" class="form-label">Activité</label>
                             <input type="text" class="form-control" name="activite" required>
                         </div>
+
+                     
+
+
+
+                        <div class="col-md-6 mb-3">
+                            <label for="assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
+                            <select class="form-control" name="assujettie_partielle_tva" id="assujettie_partielle_tva" required>
+                                <option value="" disabled selected>Choisir une option</option>
+                                <option value="1">Oui</option>
+                                <option value="0">Non</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="prorata_de_deduction" class="form-label">Prorata de Déduction</label>
+                            <input type="text" class="form-control" name="prorata_de_deduction" id="prorata_de_deduction" required>
+                        </div>
                         <div class="col-md-6 mb-3">
                             <label for="regime_declaration" class="form-label">Régime de Déclaration</label>
                             <input type="text" class="form-control" name="regime_declaration" required>
@@ -154,6 +156,7 @@
                             <label for="fait_generateur" class="form-label">Fait Générateur</label>
                             <input type="date" class="form-control" name="fait_generateur" required>
                         </div>
+
                         <div class="col-md-6 mb-3">
                             <label for="rubrique_tva" class="form-label">Rubrique TVA</label>
                             <input type="text" class="form-control" name="rubrique_tva" required>
@@ -162,6 +165,16 @@
                             <label for="designation" class="form-label">Désignation</label>
                             <input type="text" class="form-control" name="designation" required>
                         </div>
+
+                     
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre_chiffre_compte" class="form-label">Nombre caractères  Compte</label>
+                            <input type="number" class="form-control" name="nombre_chiffre_compte" required>
+                        </div>
+                        
+                        
+                       
+                   
                         <div class="col-md-6 mb-3">
                             <label for="modele_comptable" class="form-label">Modèle Comptable</label>
                             <input type="text" class="form-control" name="modele_comptable" required>
@@ -398,7 +411,7 @@
 
 
 <!-- Table Tabulator -->
-<h2>Liste des Sociétés</h2>
+
 <div id="societes-table"></div>
 
 <!-- Tabulator JS -->
@@ -505,13 +518,15 @@
                     headers: {
                         "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value
                     }
+                    
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         table.deleteRow(id); // Supprimer la ligne du tableau
-                        alert("Société supprimée avec succès.");
                         
+                        alert("Société supprimée avec succès.");
+                       
                     } else {
                         alert("Erreur lors de la suppression : " + data.message);
                     }
@@ -599,21 +614,21 @@ function openImportModal() {
 
 <script>
 
-    // Écouter l'événement de clic sur les icônes de suppression
-document.addEventListener("click", function(e) {
-    if (e.target && e.target.closest(".delete-icon")) {
-        // Récupérer l'ID de la société à partir de l'attribut data-id
-        var societeId = e.target.closest(".delete-icon").getAttribute("data-id");
+//     // Écouter l'événement de clic sur les icônes de suppression
+// document.addEventListener("click", function(e) {
+//     if (e.target && e.target.closest(".delete-icon")) {
+//         // Récupérer l'ID de la société à partir de l'attribut data-id
+//         var societeId = e.target.closest(".delete-icon").getAttribute("data-id");
 
-        // Demander confirmation avant de supprimer
-        if (confirm("Êtes-vous sûr de vouloir supprimer cette société ?")) {
-            // Appeler la fonction pour supprimer la société
-            deleteSociete(societeId);
+//         // Demander confirmation avant de supprimer
+//         if (confirm("Êtes-vous sûr de vouloir supprimer cette société ?")) {
+//             // Appeler la fonction pour supprimer la société
+//             deleteSociete(societeId);
             
-        }
-    }
+//         }
+//     }
     
-});
+// });
 
 </script>
 
