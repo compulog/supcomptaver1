@@ -17,12 +17,13 @@ use App\Http\Controllers\ClientController;
 
 use App\Http\Controllers\ImportExcelController;
 
+Route::get('/clients/{id}/edit', [ClientController::class, 'edit'])->name('clients.edit');
+
+Route::post('/import-clients', [ClientController::class, 'importClients'])->name('import.clients');
 
 Route::get('/rubriques-tva', [SocieteController::class, 'getRubriquesTVA']);
 
 
-Route::get('/clients/{id}/edit', [ClientController::class, 'edit'])->name('clients.edit');
-Route::put('/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
 
 Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
 
@@ -55,7 +56,11 @@ Route::group(['middleware' => 'auth'], function () {
     
     Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
     Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
-    Route::put('/clients/{id}', [ClientController::class, 'update'])->name('client.update');
+
+
+   
+    Route::put('/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
+
 
     Route::delete('/societes/{id}', [SocieteController::class, 'destroy'])->name('societes.destroy');
     Route::get('/societes/{id}', [SocieteController::class, 'show'])->name('societes.show');
