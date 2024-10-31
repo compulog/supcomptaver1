@@ -47,43 +47,40 @@ class ClientController extends Controller
     
    // Dans ClientController.php
    public function edit($id)
-{
-    $client = Client::findOrFail($id);
-    return response()->json($client);
-}
+   {
+       $client = Client::findOrFail($id);
+       return response()->json($client);
+   }
+   
+   
 
   
 
-    public function update(Request $request, $id)
+public function update(Request $request, $id)
 {
     $client = Client::findOrFail($id);
-    
-    // Validez et mettez à jour les données
-    $request->validate([
-        'compte' => 'required|string',
-        'intitule' => 'required|string',
-        'identifiant_fiscal' => 'required|string',
-        'ICE' => 'nullable|string|max:15', // Utilisez 'ICE' avec la même casse
-        'type_client' => 'required|string',
-    ]);
-    
-    
 
-    // Mettez à jour le client avec les données fournies
+    // Validez les données
+    $request->validate([
+        'compte' => 'required|string|max:255',
+        'intitule' => 'required|string|max:255',
+        'identifiant_fiscal' => 'required|string|max:255',
+        'ICE' => 'nullable|string|max:15',
+        'type_client' => 'required|string|max:255',
+    ]);
+
+    // Mettez à jour le client
     $client->update($request->all());
 
-    return redirect()->route('clients.index')->with('success', 'Client mis à jour avec succès.');
+    // Réponse JSON
+    return response()->json(['success' => true, 'client' => $client]);
 }
+
+
 
     
     
-public function show($id)
-{
-    // Récupérer le client par ID
-    $client = Client::findOrFail($id);
-
-    return response()->json($client);
-}
+    
 
     
     public function destroy($id)

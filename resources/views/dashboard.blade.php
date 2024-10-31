@@ -409,7 +409,79 @@
 </div>
 
 
+<script>
+  // Exemple de fonction pour mettre à jour la société dans le tableau
+  $(document).ready(function() {
+    $('#societe-modification-form').on('submit', function(e) {
+        e.preventDefault();
 
+        var societeId = $('#modification_id').val(); // Obtenir l'ID de la société à mettre à jour
+
+        $.ajax({
+            url: '/societes/' + societeId,
+            type: 'PUT', // Utiliser PUT pour la mise à jour
+            data: {
+                raison_sociale: $('#modification_raison_sociale').val(),
+                siege_social: $('#modification_siege_social').val(),
+                ice: $('#modification_ice').val(),
+                rc: $('#modification_rc').val(),
+                identifiant_fiscal: $('#modification_identifiant_fiscal').val(),
+                patente: $('#modification_patente').val(),
+                centre_rc: $('#modification_centre_rc').val(),
+                forme_juridique: $('#modification_forme_juridique').val(),
+                exercice_social_debut: $('#modification_exercice_social_debut').val(),
+                exercice_social_fin: $('#modification_exercice_social_fin').val(),
+                date_creation: $('#modification_date_creation').val(),
+                assujettie_partielle_tva: $('#modification_assujettie_partielle_tva').val(),
+                prorata_de_deduction: $('#modification_prorata_de_deduction').val(),
+                nature_activite: $('#modification_nature_activite').val(),
+                activite: $('#modification_activite').val(),
+                regime_declaration: $('#modification_regime_declaration').val(),
+                fait_generateur: $('#modification_fait_generateur').val(),
+                rubrique_tva: $('#modification_rubrique_tva').val(),
+                designation: $('#modification_designation').val(),
+                nombre_chiffre_compte: $('#modification_nombre_chiffre_compte').val(),
+                modele_comptable: $('#modification_modele_comptable').val(),
+            },
+            success: function(response) {
+                // Mettre à jour les éléments de la ligne dans le tableau
+                var row = $('tr[data-id="' + response.societe.id + '"]');
+                row.find('.societe-raison-sociale').text(response.societe.raison_sociale);
+                row.find('.societe-siege-social').text(response.societe.siege_social);
+                row.find('.societe-ice').text(response.societe.ice);
+                row.find('.societe-rc').text(response.societe.rc);
+                row.find('.societe-identifiant-fiscal').text(response.societe.identifiant_fiscal);
+                row.find('.societe-patente').text(response.societe.patente);
+                row.find('.societe-centre-rc').text(response.societe.centre_rc);
+                row.find('.societe-forme-juridique').text(response.societe.forme_juridique);
+                row.find('.societe-exercice-social-debut').text(response.societe.exercice_social_debut);
+                row.find('.societe-exercice-social-fin').text(response.societe.exercice_social_fin);
+                row.find('.societe-date-creation').text(response.societe.date_creation);
+                row.find('.societe-assujettie-partielle-tva').text(response.societe.assujettie_partielle_tva);
+                row.find('.societe-prorata-de-deduction').text(response.societe.prorata_de_deduction);
+                row.find('.societe-nature-activite').text(response.societe.nature_activite);
+                row.find('.societe-activite').text(response.societe.activite);
+                row.find('.societe-regime-declaration').text(response.societe.regime_declaration);
+                row.find('.societe-fait-generateur').text(response.societe.fait_generateur);
+                row.find('.societe-rubrique-tva').text(response.societe.rubrique_tva);
+                row.find('.societe-designation').text(response.societe.designation);
+                row.find('.societe-nombre-chiffre-compte').text(response.societe.nombre_chiffre_compte);
+                row.find('.societe-modele-comptable').text(response.societe.modele_comptable);
+                
+                // Fermer le modal
+                $('#modifierSocieteModal').modal('hide');
+                alert(response.message);
+            },
+            error: function(xhr) {
+                console.error('Erreur lors de la modification de la société :', xhr.responseText);
+                alert('Erreur lors de la modification de la société. Veuillez vérifier les champs.');
+            }
+        });
+    });
+});
+
+
+</script>
 <!-- Table Tabulator -->
 
 <div id="societes-table"></div>

@@ -1,6 +1,8 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg">
     <div class="container mt-5">
         <h3>Ajouter un Client</h3>
@@ -159,115 +161,129 @@
 <!-- @foreach($clients as $client)
    
 @endforeach -->
-
-<!-- Modal de Modification du Client -->
-<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editModalLabel">Modifier le client</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Modal pour la modification d'un client -->
+<div class="modal fade" id="editClientModal" tabindex="-1" role="dialog" aria-labelledby="editClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="clientForm" method="POST" action="">
+                @csrf
+                @method('PUT')
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editClientModalLabel">Modifier le Client</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="compte">Compte</label>
+                        <input type="text" class="form-control" name="compte" required>
                     </div>
-                    <div class="modal-body">
-                    <form action="{{ route('clients.update', 'client_id_placeholder') }}" method="POST" id="edit-form">
-    @csrf
-    @method('PUT')
-    <input type="hidden" id="edit-client-id" name="client_id">
-                            <div class="mb-3">
-                                <label for="edit-compte" class="form-label">Compte</label>
-                                <input type="text" class="form-control" id="edit-compte" name="compte" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="edit-intitule" class="form-label">Intitulé</label>
-                                <input type="text" class="form-control" id="edit-intitule" name="intitule" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="edit-identifiant_fiscal" class="form-label">Identifiant fiscal</label>
-                                <input type="text" class="form-control" id="edit-identifiant_fiscal" name="identifiant_fiscal" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="edit-ICE" class="form-label">ICE</label>
-                                <input type="text" class="form-control" id="edit-ICE" name="ICE" maxlength="15" pattern="\d*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="edit-type_client" class="form-label">Type client</label>
-                                <input type="text" class="form-control" id="edit-type_client" name="type_client" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Modifier</button>                        </form>
+                    <div class="form-group">
+                        <label for="intitule">Intitulé</label>
+                        <input type="text" class="form-control" name="intitule" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="identifiant_fiscal">Identifiant Fiscal</label>
+                        <input type="text" class="form-control" name="identifiant_fiscal" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ICE">ICE</label>
+                        <input type="text" class="form-control" name="ICE" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="type_client">Type Client</label>
+                        <select class="form-control" name="type_client" required>
+                            <option value="1.Entreprise de droit privé">1.Entreprise de droit privé</option>
+                            <option value="2.État">2.État</option>
+                            <option value="3.Collectivités territoriales">3.Collectivités territoriales</option>
+                            <option value="4.Entreprise publique">4.Entreprise publique</option>
+                            <option value="5.Autre organisme public">5.Autre organisme public</option>
+                        </select>
                     </div>
                 </div>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                    <button type="submit" class="btn btn-primary">Sauvegarder les modifications</button>
+                </div>
+            </form>
         </div>
     </div>
-</main>
-<script>
-
-    function fillEditModal(client) {
-        // Remplissage des champs du modal avec les données du client
-        document.getElementById('edit-client-id').value = client.id;
-        document.getElementById('edit-compte').value = client.compte;
-        document.getElementById('edit-intitule').value = client.intitule;
-        document.getElementById('edit-identifiant_fiscal').value = client.identifiant_fiscal;
-        document.getElementById('edit-ICE').value = client.ICE;
-        document.getElementById('edit-type_client').value = client.type_client;
-
-        // Met à jour l'action du formulaire avec l'ID du client
-        document.getElementById('edit-form').action = "{{ route('clients.update', '') }}/" + client.id;
-    }
-
-
-    
-    // Exemple d'un clic sur un bouton d'édition
-// document.querySelectorAll('.edit-client-button').forEach(button => {
-//     button.addEventListener('click', function() {
-//         const clientId = this.getAttribute('data-client-id'); // Assurez-vous que l'attribut data-client-id est bien défini
-//         const client = clients.find(c => c.id == clientId); // Rechercher le client dans votre tableau de clients
-//         fillEditModal(client);
-//         $('#editModal').modal('show'); // Affiche le modal
-//     });
-// });
-
-</script>
-
-    <!-- function fillEditModal(client) {
-        document.getElementById('edit-client-id').value = client.id;
-        document.getElementById('edit-compte').value = client.compte;
-        document.getElementById('edit-intitule').value = client.intitule;
-        document.getElementById('edit-identifiant_fiscal').value = client.identifiant_fiscal;
-        document.getElementById('edit-ICE').value = client.ICE;
-        document.getElementById('edit-type_client').value = client.type_client;
-
-        // Met à jour l'action du formulaire avec l'ID du client
-        document.getElementById('edit-form').action = "{{ route('clients.update', '') }}/" + client.id;
-    } -->
-
-    
-
-
-<!-- <script>
-    // Script pour remplir le modal de modification avec les informations du client
-    function fillEditModal(client) {
-        document.getElementById('edit-client-id').value = client.id;
-        document.getElementById('edit-compte').value = client.compte;
-        document.getElementById('edit-intitule').value = client.intitule;
-        document.getElementById('edit-identifiant_fiscal').value = client.identifiant_fiscal;
-        document.getElementById('edit-ICE').value = client.ICE;
-        document.getElementById('edit-type_client').value = client.type_client;
-        
-        // Changer l'action du formulaire pour inclure l'ID du client
-        document.getElementById('edit-form').action = "{{ route('clients.update', '') }}/" + client.id;
-    }
-</script> -->
+</div>
 
 
 
 <script>
-function setEditClient(clientId) {
-    // Code pour remplir les champs du modal avec les données du client
-    // Par exemple, vous pouvez faire une requête AJAX pour obtenir les détails du client par ID
-    // Ensuite, remplissez les champs du formulaire avec ces détails
-}
+$(document).ready(function() {
+    // Événement pour le clic sur le bouton d'édition
+    $(document).on('click', '.edit-client', function() {
+        var clientId = $(this).data('id');
+
+        // Appel AJAX pour récupérer les données du client
+        $.ajax({
+            url: '/clients/' + clientId + '/edit', // Vérifiez que cette route existe
+            method: 'GET',
+            success: function(data) {
+                // Remplir le formulaire dans le pop-up avec les données
+                $('#clientForm [name="compte"]').val(data.compte);
+                $('#clientForm [name="intitule"]').val(data.intitule);
+                $('#clientForm [name="identifiant_fiscal"]').val(data.identifiant_fiscal);
+                $('#clientForm [name="ICE"]').val(data.ICE);
+                // Remplir d'autres champs si nécessaire
+                
+                // Mettre à jour l'URL d'action du formulaire pour la modification
+                $('#clientForm').attr('action', '/clients/' + clientId); // Assurez-vous que cette route est correcte
+
+                // Afficher le pop-up
+                $('#editClientModal').modal('show');
+            },
+            error: function(xhr) {
+                console.error('Erreur lors de la récupération des données :', xhr);
+            }
+        });
+    });
+
+    // Événement pour la soumission du formulaire de modification
+    $('#clientForm').on('submit', function(event) {
+        event.preventDefault(); // Empêche le comportement par défaut du formulaire
+
+        // Appel AJAX pour modifier le client
+        $.ajax({
+            url: $(this).attr('action'), // Utiliser l'URL définie précédemment
+            method: 'PUT', // Assurez-vous que votre méthode est correcte (PUT pour modification)
+            data: $(this).serialize(), // Sérialiser les données du formulaire
+            success: function(data) {
+                // Afficher un message de succès
+                alert("Client modifié avec succès !");
+
+                // Mettre à jour la ligne correspondante dans le tableau Tabulator
+                var updatedClient = {
+                    id: data.client.id, // ID du client
+                    compte: $('#clientForm [name="compte"]').val(), // Nouveau compte
+                    intitule: $('#clientForm [name="intitule"]').val(), // Nouveau intitulé
+                    identifiant_fiscal: $('#clientForm [name="identifiant_fiscal"]').val(), // Nouvel identifiant fiscal
+                    ICE: $('#clientForm [name="ICE"]').val(), // Nouvel ICE
+                    type_client: data.client.type_client // Garder le type client de la réponse
+                };
+
+                // Supposons que votre tableau Tabulator est stocké dans une variable appelée "table"
+                table.updateOrAddData([updatedClient]); // Mettre à jour la ligne correspondante
+
+                // Fermer le modal
+                $('#editClientModal').modal('hide');
+            },
+            error: function(xhr) {
+                console.error('Erreur lors de la modification du client :', xhr);
+                alert("Erreur lors de la modification du client !");
+            }
+        });
+    });
+});
+
+
+
 </script>
+
 
 
 <!-- CSS de Tabulator -->
@@ -302,11 +318,9 @@ function setEditClient(clientId) {
         const rowData = cell.getRow().getData(); // Obtenez les données de la ligne
 
         return `
-            <span class="text-warning" title="Modifier" style="cursor: pointer;" 
-                 data-bs-toggle="modal" data-bs-target="#editModal" onclick="fillEditModal({{ json_encode($client) }})"> <!-- Utilisez rowData.id ici -->
-                <i class="fas fa-edit"></i>
-            </span>
-           
+          <span class="text-warning edit-client" title="Modifier" style="cursor: pointer;" data-id="${id}">
+    <i class="fas fa-edit"></i>
+</span>
 
             <span class="text-danger" title="Supprimer" style="cursor: pointer;" onclick="deleteclients(${id})">
                 <i class="fas fa-trash"></i>
@@ -317,64 +331,6 @@ function setEditClient(clientId) {
 
     ]
 });
-
-
-
-// document.getElementById('submitEditButton').addEventListener('click', function() {
-//     // Récupérez l'ID du client
-//     const id = document.getElementById('edit-client-id').value;
-
-//     // Récupérez les données du formulaire
-//     const formData = {
-//         compte: document.getElementById('edit-compte').value,
-//         intitule: document.getElementById('edit-intitule').value,
-//         identifiant_fiscal: document.getElementById('edit-identifiant_fiscal').value,
-//         ICE: document.getElementById('edit-ice').value,
-//         type_client: document.getElementById('edit-type_client').value,
-        
-//     };
-
-//     // Appel AJAX pour mettre à jour le client
-//     $.ajax({
-//         url: "{{ route('clients.update', '') }}/" + id,
-//         type: 'PUT',
-//         data: formData,
-//         success: function(response) {
-//             if (response.success) {
-//                 alert("Client mis à jour avec succès.");
-//                 // Mettez à jour la ligne du tableau
-//                 table.updateOrAddData([response.client]);
-//                 // Fermer le modal
-//                 const editModal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
-//                 editModal.hide();
-//             } else {
-//                 alert("Erreur lors de la mise à jour : " + response.message);
-//             }
-//         },
-//         error: function(xhr, status, error) {
-//             console.error("Erreur :", error);
-//             alert("Erreur lors de la mise à jour : " + error);
-//         }
-//     });
-// });
-
-// $('#editModal').on('show.bs.modal', function (event) {
-//     var button = $(event.relatedTarget); // Bouton qui a déclenché le modal
-//     var clientId = button.data('client-id'); // Récupère l'ID du client
-    
-//     // Faites une requête AJAX pour obtenir les informations du client par ID
-//     $.ajax({
-//         url: '/clients/' + clientId,
-//         method: 'GET',
-//         success: function(data) {
-//             // Remplissez le formulaire avec les données du client
-//             $('#edit-client-id').val(data.id);
-//             $('#edit-compte').val(data.compte);
-//             $('#edit-intitule').val(data.intitule);
-//             $('#edit-identifiant_fiscal').val(data.identifiant_fiscal);
-//         }
-//     });
-// });
 
 
 </script>
@@ -505,17 +461,7 @@ function setEditClient(clientId) {
     }
 }
 
-axios.put(`/clients/${clientId}`, {
-    compte: 'Nouveau Compte',
-    intitule: 'Nouvel Intitulé',
-    identifiant_fiscal: 'Nouvel Identifiant',
-    ICE: 'Nouveau ICE',
-    type_client: 'Nouveau Type'
-}).then(response => {
-    console.log(response.data);
-}).catch(error => {
-    console.error(error);
-});
+
 
 </script>
 @endsection

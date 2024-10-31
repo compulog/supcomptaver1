@@ -78,38 +78,50 @@ class SocieteController extends Controller
     }
 
   // Mettre à jour une société
-  public function update(Request $request, $id)
-  {
-      // Valider les données du formulaire
-      $validatedData = $request->validate([
-          'raison_sociale' => 'required|string|max:255',
-          'forme_juridique' => 'required|string|max:255',
-          'siege_social' => 'nullable|string|max:255',
-          'patente' => 'nullable|string|max:50',
-          'rc' => 'nullable|string|max:50',
-          'centre_rc' => 'nullable|string|max:50',
-          'identifiant_fiscal' => 'nullable|string|max:50',
-          'ice' => 'nullable|string|max:50',
-          'nombre_chiffre_compte' => 'nullable|string|max:50',
-          'exercice_social_debut' => 'nullable|date',
-          'exercice_social_fin' => 'nullable|date',
-          'date_creation' => 'nullable|date',
-          'nature_activite' => 'nullable|string|max:255',
-          'activite' => 'nullable|string|max:255',
-          'regime_declaration' => 'nullable|string|max:255',
-          'fait_generateur' => 'nullable|string|max:255',
-          'rubrique_tva' => 'nullable|string|max:255',
-          'designation' => 'nullable|string|max:255',
-          'modele_comptable' => 'nullable|string|max:255',
-      ]);
+  
 
-      // Récupérer la société par ID et mettre à jour les informations
-      $societe = Societe::findOrFail($id);
-      $societe->update($validatedData);
+ 
+public function update(Request $request, $id)
+{
+    // Validation des données
+    $request->validate([
+        'raison_sociale' => 'required|string|max:255',
+        'siege_social' => 'nullable|string|max:255',
+        'ice' => 'required|string|max:15',
+        'rc' => 'required|string|max:255',
+        'identifiant_fiscal' => 'required|string|max:255',
+        'patente' => 'nullable|string|max:255',
+        'centre_rc' => 'nullable|string|max:255',
+        'forme_juridique' => 'nullable|string|max:255',
+        'exercice_social_debut' => 'nullable|date',
+        'exercice_social_fin' => 'nullable|date',
+        'date_creation' => 'nullable|date',
+        'assujettie_partielle_tva' => 'nullable|string|max:255',
+        'prorata_de_deduction' => 'nullable|string|max:255',
+        'nature_activite' => 'nullable|string|max:255',
+        'activite' => 'nullable|string|max:255',
+        'regime_declaration' => 'nullable|string|max:255',
+        'fait_generateur' => 'nullable|string|max:255',
+        'rubrique_tva' => 'nullable|string|max:255',
+        'designation' => 'nullable|string|max:255',
+        'nombre_chiffre_compte' => 'nullable|integer',
+        'modele_comptable' => 'required|string|max:255',
+    ]);
 
-      // Retourner une réponse JSON avec les données mises à jour
-      return response()->json(['success' => true, 'data' => $societe]);
-  }
+     // Trouver la société par ID
+     $societe = Societe::find($id);
+
+     if (!$societe) {
+         return redirect()->back()->withErrors(['message' => 'Société non trouvée.']);
+     }
+ 
+     // Mettre à jour les champs
+     $societe->update($request->all());
+ 
+     return redirect()->route('societes.index')->with('success', 'Société mise à jour avec succès.');
+}
+
+
   
 
     public function destroy($id)

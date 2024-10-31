@@ -17,8 +17,18 @@ use App\Http\Controllers\ClientController;
 
 use App\Http\Controllers\ImportExcelController;
 
-Route::get('/clients/{id}/edit', [ClientController::class, 'edit'])->name('clients.edit');
 
+// Route pour obtenir la liste des clients
+
+
+// Routes protégées par middleware 'auth'
+
+Route::group(['middleware' => 'auth'], function () {
+    
+    Route::get('/clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit');
+
+    Route::put('/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
+    
 Route::post('/import-clients', [ClientController::class, 'importClients'])->name('import.clients');
 
 Route::get('/rubriques-tva', [SocieteController::class, 'getRubriquesTVA']);
@@ -40,17 +50,10 @@ Route::get('/societes/import', [SocieteController::class, 'showImportForm'])->na
 
 Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
 
-
-// Route pour obtenir la liste des clients
-
-
-// Routes protégées par middleware 'auth'
-
-Route::group(['middleware' => 'auth'], function () {
     Route::post('/import-excel', [ImportExcelController::class, 'import'])->name('import.excel');
 
-    Route::get('/clients/get', [ClientController::class, 'getClients'])->name('clients.get');
-    Route::post('/clients/update', [ClientController::class, 'update'])->name('client.update');
+   
+
 
     Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
     
@@ -59,7 +62,6 @@ Route::group(['middleware' => 'auth'], function () {
 
 
    
-    Route::put('/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
 
 
     Route::delete('/societes/{id}', [SocieteController::class, 'destroy'])->name('societes.destroy');
