@@ -109,16 +109,13 @@ public function update(Request $request, $id)
     ]);
 
      // Trouver la société par ID
-     $societe = Societe::find($id);
+     $societe = Societe::findOrFail($id);
 
-     if (!$societe) {
-         return redirect()->back()->withErrors(['message' => 'Société non trouvée.']);
-     }
- 
-     // Mettre à jour les champs
+     // Mettre à jour la société
      $societe->update($request->all());
  
-     return redirect()->route('societes.index')->with('success', 'Société mise à jour avec succès.');
+     // Retourner une réponse JSON
+     return response()->json(['message' => 'Société modifiée avec succès.', 'societe' => $societe]);
 }
 
 

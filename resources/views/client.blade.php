@@ -5,7 +5,7 @@
 
 <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg">
     <div class="container mt-5">
-        <h3>Ajouter un Client</h3>
+        <h3>Liste des Clients</h3>
 
         <!-- Affichage du message de succès ou d'erreur -->
         <div id="message" class="alert d-none" role="alert"></div>
@@ -13,7 +13,7 @@
 <!-- Boutons pour ouvrir les modals -->
 <div class="mb-3">
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel">
-        Ajouter
+        créer
     </button>
     <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modal-import-excel">
                 Importer
@@ -44,33 +44,33 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
-                            <input type="text" id="identifiant_fiscal" name="identifiant_fiscal" class="form-control" maxlength="8" pattern="\d*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
-                        
+                            <input type="text" id="identifiant_fiscal" name="identifiant_fiscal" class="form-control" 
+                                   pattern="^\d{7,8}$" maxlength="8" title="L'identifiant fiscal doit comporter 7 ou 8 chiffres" 
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
                         </div>
                         <div class="col-md-6">
                             <label for="ICE" class="form-label">ICE</label>
-                            <input type="text" id="ICE" name="ICE" class="form-control" maxlength="15" pattern="\d*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
-                           
+                            <input type="text" id="ICE" name="ICE" class="form-control" 
+                                   pattern="^\d{15}$" maxlength="15" title="L'ICE doit comporter exactement 15 chiffres" 
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="type_client" class="form-label">Type client</label>
-                           
                             <select class="form-control" name="type_client" required>
-                            <option value="1.Entreprise de droit privé">1.Entreprise de droit privé</option>
-                            <option value="2.État">2.État</option>
-                            <option value="3.Collectivités territoriales">3.Collectivités territoriales</option>
-                            <option value="4.Entreprise publique">4.Entreprise publique</option>
-                            <option value="5.Autre organisme public">5.Autre organisme public</option>
-    
-</select>
-
-</select>
-
+                                <option value="1.Entreprise de droit privé">1.Entreprise de droit privé</option>
+                                <option value="2.État">2.État</option>
+                                <option value="3.Collectivités territoriales">3.Collectivités territoriales</option>
+                                <option value="4.Entreprise publique">4.Entreprise publique</option>
+                                <option value="5.Autre organisme public">5.Autre organisme public</option>
+                            </select>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                    <div class="d-flex justify-content-end">
+                        <button type="reset" class="btn btn-secondary me-2">Réinitialiser</button>
+                        <button type="submit" class="btn btn-primary">Valider</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -203,7 +203,6 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
                     <button type="submit" class="btn btn-primary">Sauvegarder les modifications</button>
                 </div>
             </form>
@@ -294,7 +293,7 @@ $(document).ready(function() {
 
     <!-- Conteneur Tabulator avec recherche -->
 <div class="container mt-4">
-    <h3>Liste des clients</h3>
+    
       
     <!-- Conteneur pour Tabulator -->
     <div id="table-list"></div>

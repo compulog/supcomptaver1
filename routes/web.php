@@ -78,7 +78,7 @@ Route::post('/societes', [SocieteController::class, 'store'])->name('societes.st
 // Dans web.php
 Route::get('/societes/{id}/edit', [SocieteController::class, 'edit'])->name('societes.edit');
 
-Route::put('/societes/{id}', [SocieteController::class, 'update'])->name('societes.update');
+Route::put('/societes/{id}', [SocieteController::class, 'update']);
 
 // Route pour récupérer les données des sociétés
 
