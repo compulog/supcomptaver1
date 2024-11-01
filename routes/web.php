@@ -25,64 +25,71 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ImportExcelController;
 
 
-Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
-
-Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
-
-
-Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
-
-
-
-// Route pour récupérer les données des sociétés
-Route::get('/societes/data', [SocieteController::class, 'getData'])->name('societes.data');
-
-Route::post('/societes', [SocieteController::class, 'store'])->name('societes.store');
-
-Route::put('societes/{id}', [SocieteController::class, 'update'])->name('societes.update');
-	
-// Route pour récupérer les données des sociétés
-
-// Route pour afficher la liste des sociétés (index)
-Route::get('/societes', [SocieteController::class, 'index'])->name('societes.index');
-
-
-Route::post('/importer-societes', [SocieteController::class, 'import'])->name('societes.import');
-
-
-
-
-
 // Routes protégées par middleware 'auth'
 
 Route::group(['middleware' => 'auth'], function () {
+    
+    Route::get('/clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit');
+
+    Route::put('/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
+    
+Route::post('/import-clients', [ClientController::class, 'importClients'])->name('import.clients');
+
+Route::get('/rubriques-tva', [SocieteController::class, 'getRubriquesTVA']);
+
+
+
+Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
+
+
+Route::get('/exercice/{id}', function ($id) {
+    // Vous pouvez utiliser la logique pour récupérer les données nécessaires ici, si besoin.
+    
+    // Exemple d'utilisation pour afficher une vue en passant l'ID
+    return view('exercice.show', ['id' => $id]);
+})->name('exercice.show');
+
+
+Route::get('/societes/import', [SocieteController::class, 'showImportForm'])->name('societes.import.form');
+
+Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
+
     Route::post('/import-excel', [ImportExcelController::class, 'import'])->name('import.excel');
 
-    Route::get('/clients/get', [ClientController::class, 'getClients'])->name('clients.get');
-    Route::post('/clients/update', [ClientController::class, 'update'])->name('client.update');
+   
+
 
     Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
     
     Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
     Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
-    Route::put('/clients/{id}', [ClientController::class, 'update'])->name('client.update');
+
+
+   
+
 
     Route::delete('/societes/{id}', [SocieteController::class, 'destroy'])->name('societes.destroy');
     Route::get('/societes/{id}', [SocieteController::class, 'show'])->name('societes.show');
+   
+  
 
+   
 // Route pour récupérer les données des sociétés
 Route::get('/societes/data', [SocieteController::class, 'getData'])->name('societes.data');
 // Route pour afficher le formulaire de modification d'une société
-Route::get('/societes/{id}/edit', [SocieteController::class, 'edit'])->name('societes.edit');
 
 Route::post('/societes', [SocieteController::class, 'store'])->name('societes.store');
+// Dans web.php
+Route::get('/societes/{id}/edit', [SocieteController::class, 'edit'])->name('societes.edit');
 
-Route::put('societes/{id}', [SocieteController::class, 'update'])->name('societes.update');
-	
+Route::put('/societes/{id}', [SocieteController::class, 'update']);
+
 // Route pour récupérer les données des sociétés
 
 // Route pour afficher la liste des sociétés (index)
 Route::get('/societes', [SocieteController::class, 'index'])->name('societes.index');
+
+
 
 
 
@@ -162,7 +169,9 @@ Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->n
     Route::delete('/plancomptable/{id}', [PlanComptableController::class, 'destroy']);
     Route::put('/plancomptable/{id}', [PlanComptableController::class, 'update']);
         Route::post('/import', [PlanComptableController::class, 'import'])->name('plancomptable.import'); // Pour importer un compte
- 
+        
+        Route::get('/plan-comptable/pdf', [ExportController::class, 'exportPlanComptablePDF'])->name('plan.comptable.pdf');
+        Route::get('/plan-comptable/excel', [PlanComptableController::class, 'exportExcel'])->name('plan.comptable.excel');
 
     Route::get('plancomptable', function () {
         return view('plancomptable');

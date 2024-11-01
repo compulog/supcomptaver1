@@ -22,7 +22,7 @@
     <table>
         <thead>
             <tr>
-                <th>ID</th>
+                {{-- <th>ID</th> --}}
                 <th>Compte</th>
                 <th>Intitulé</th>
                 <th>Identifiant Fiscal</th>
@@ -36,7 +36,7 @@
         <tbody>
             @foreach($fournisseurs as $fournisseur)
                 <tr>
-                    <td>{{ $fournisseur->id }}</td>
+                    {{-- <td>{{ $fournisseur->id }}</td> --}}
                     <td>{{ $fournisseur->compte }}</td>
                     <td>{{ $fournisseur->intitule }}</td>
                     <td>{{ $fournisseur->identifiant_fiscal }}</td>

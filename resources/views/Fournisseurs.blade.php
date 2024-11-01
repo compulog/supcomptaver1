@@ -30,8 +30,6 @@
 }
 
 
-
-
     #tabulator-table .tabulator-header {
     height: 30px; /* Ajustez la hauteur du header */
     font-size: 0.9em; /* Réduisez la taille de la police */
@@ -47,26 +45,37 @@
     height: 20px; /* Diminue la hauteur */
     padding: 1px 3px; /* Ajuste le padding interne */
     font-size: 0.8em; /* Diminue légèrement la police */}
+    .btn-custom-gradient {
+    background-image: linear-gradient(to right, #344767, #31477a); /* Dégradé de gauche à droite */
+    color: white !important; /* Couleur du texte en blanc */
+    border: none; /* Pas de bordure */
+    transition: background-color 0.3s ease; /* Transition douce pour le survol */
+}
 
+.btn-custom-gradient:hover {
+    background-image: linear-gradient(to right, #536fb2, #344767); /* Inverser le dégradé au survol */
+}
 </style>
 
 </head>
 
 
-
+<body>
 
 @extends('layouts.user_type.auth')
 
 @section('content')
-<body>
+
 
 
 <div class="container mt-5">
     <h3>Liste des Fournisseurs</h3>
-    <button class="btn btn-primary" id="addFournisseurBtn" data-toggle="modal" data-target="#fournisseurModaladd">Ajouter</button>
-    <button class="btn btn-primary" id="addFournisseurBtn" data-toggle="modal" data-target="#importModal">Importer</button>
-    <a href="{{ url('/export-fournisseurs-excel') }}" class="btn btn-success">Exporter en Excel</a>
-<a href="{{ url('/export-fournisseurs-pdf') }}" class="btn btn-danger">Exporter en PDF</a>
+    <button class="btn btn-custom-gradient" id="addFournisseurBtn" data-toggle="modal" data-target="#fournisseurModaladd">Ajouter</button>
+    <button class="btn btn-custom-gradient" id="addFournisseurBtn" data-toggle="modal" data-target="#importModal">Importer</button>
+
+    <a href="{{ url('/export-fournisseurs-excel') }}" class="btn btn-custom-gradient">Exporter en Excel</a>
+
+<a href="{{ url('/export-fournisseurs-pdf') }}" class="btn btn-custom-gradient">Exporter en PDF</a>
 
     <div id="fournisseur-table"></div>
 
@@ -74,7 +83,7 @@
 
 
 <!-- Formulaire d'importation Excel -->
-<!-- Modal d'importation -->
+
 <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -172,69 +181,63 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                            <label for="identifiant_fiscal">Identifiant Fiscal</label>
-    <input type="text" class="form-control" id="identifiant_fiscal" maxlength="8" pattern="\d*" required>
-   
+                                <label for="identifiant_fiscal">Identifiant Fiscal</label>
+                                <input type="text" class="form-control" id="identifiant_fiscal" maxlength="8" pattern="\d*" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                            <label for="ICE">ICE</label>
-                            <input type="text" class="form-control" id="ICE" maxlength="15" pattern="\d*" required>
+                                <label for="ICE">ICE</label>
+                                <input type="text" class="form-control" id="ICE" maxlength="15" pattern="\d*" required>
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                            <label for="nature_operation">Nature de l'opération</label>
-    <select class="form-control" id="nature_operation">
-        <option value="">Sélectionner une option</option>
-        <option value="Achat de biens d'équipement">Achat de biens d'équipement</option>
-        <option value="Achat de travaux">Achat de travaux</option>
-        <option value="Achat de services">Achat de services</option>
-      
-    </select>
+                                <label for="nature_operation">Nature de l'opération</label>
+                                <select class="form-control" id="nature_operation">
+                                    <option value="">Sélectionner une option</option>
+                                    <option value="Achat de biens d'équipement">Achat de biens d'équipement</option>
+                                    <option value="Achat de travaux">Achat de travaux</option>
+                                    <option value="Achat de services">Achat de services</option>
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6">
-
-                        <div class="form-group">
-    <label for="contre_partie">Contre Partie</label>
-    <select class="form-control" id="contre_partie" >
-        <option value="">Sélectionnez une contre partie</option>
-        <!-- Les options seront ajoutées dynamiquement ici -->
-    </select>
-</div>
-
-                       
+                            <div class="form-group">
+                                <label for="contre_partie">Contre Partie</label>
+                                <select class="form-control" id="contre_partie">
+                                    <option value="">Sélectionnez une contre partie</option>
+                                    <!-- Les options seront ajoutées dynamiquement ici -->
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
-
-                        <div class="form-group">
+                            <div class="form-group">
                                 <label for="rubrique_tva">Rubrique TVA</label>
-                                <select class="form-control" id="rubrique_tva" >
+                                <select class="form-control" id="rubrique_tva">
                                     <!-- Les options seront ajoutées par JavaScript -->
                                 </select>
                             </div>
-                     
                         </div>
                         <div class="col-md-6">
-                        <div class="form-group">
+                            <div class="form-group">
                                 <label for="designation">Désignation</label>
-                                <input type="text" class="form-control" id="designation" placeholder="Designation" >
+                                <input type="text" class="form-control" id="designation" placeholder="Designation">
                             </div>
-
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" id="resetModal">Réinitialiser</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
 
 <!-- Modal edit-->
 <div class="modal fade" id="fournisseurModaledit" tabindex="-1" role="dialog" aria-labelledby="fournisseurModalLabel" aria-hidden="true">
@@ -506,9 +509,13 @@ function envoyerDonnees() {
             console.error("Erreur lors de l'enregistrement des données :", xhr.responseText);
             alert("Erreur lors de l'enregistrement des données !");
         }
+       
     });
 }
-
+ 
+$('#resetModal').on('click', function () {
+        $('#fournisseurFormAdd')[0].reset(); // Réinitialiser le formulaire
+    });
 // Appel pour remplir les options de contrepartie lors du chargement
 $(document).ready(function() {
     remplirContrePartie('contre_partie');

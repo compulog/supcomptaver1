@@ -11,7 +11,7 @@ class Client extends Model
     protected $connection = 'supcompta';
     // Spécifiez la table si le nom n'est pas le pluriel du modèle
     protected $table = 'clients';
-
+ 
     // Indiquez les champs qui peuvent être remplis
     protected $fillable = [
         'compte',

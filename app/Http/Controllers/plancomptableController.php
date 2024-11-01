@@ -6,6 +6,7 @@ use App\Models\PlanComptable;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\PlanComptableImport;
+use App\Exports\PlanComptableExport;
 use Illuminate\Support\Facades\DB;
 
 class PlanComptableController extends Controller
@@ -122,6 +123,13 @@ public function viderPlanComptable()
 
         return response()->json(['success' => true, 'message' => 'Plan comptable vidé avec succès.']);
     }
+
+// Méthode pour exporter en Excel
+public function exportExcel()
+{
+    return Excel::download(new PlanComptableExport, 'plan_comptable.xlsx');
+}
+
 }
 
 

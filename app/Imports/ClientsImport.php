@@ -4,62 +4,60 @@ namespace App\Imports;
 
 use App\Models\Client;
 use Maatwebsite\Excel\Concerns\ToModel;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Validators\Failure;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 
-class ClientsImport implements ToModel, WithHeadingRow
+class ClientsImport implements ToModel, WithHeadings, WithChunkReading
 {
-    /**
-     * Transforme chaque ligne du fichier Excel en modèle Client.
-     *
-     * @param array $row
-     * @return Client|null
-     */
+    protected $mapping;
+
+    public function __construct(array $mapping)
+    {
+        $this->mapping = $mapping;
+    }
+
     public function model(array $row)
     {
-        // Log chaque ligne importée pour le débogage
-        \Log::info('Importing row: ', $row);
+        // Ignorer la première ligne
+        static $isFirstRow = true; // Variable statique pour garder l'état entre les appels
 
-        // Validation des données avant création
-        $this->validateRow($row);
-
-        // Crée une nouvelle instance du modèle Client
-        return new Client([
-            'compte' => $row['compte'],
-            'intitule' => $row['intitule'],
-            'identifiant_fiscal' => $row['identifiant_fiscal'],
-            'ICE' => $row['ice'],
-            'type_client' => $row['type_client'],
-        ]);
-    }
-
-    /**
-     * Valide les données de la ligne avant l'importation.
-     *
-     * @param array $row
-     * @throws \InvalidArgumentException
-     */
-    protected function validateRow(array $row)
-    {
-        // Vérification des champs requis
-        $requiredFields = ['compte', 'intitule', 'identifiant_fiscal', 'ice', 'type_client'];
-        
-        foreach ($requiredFields as $field) {
-            if (empty($row[$field])) {
-                throw new \InvalidArgumentException("Le champ '$field' est requis.");
-            }
+        if ($isFirstRow) {
+            $isFirstRow = false; // Marquer la première ligne comme traitée
+            return null; // Ne rien retourner pour la première ligne
         }
 
-        // Ajoutez ici d'autres validations si nécessaire (ex. format d'ICE, etc.)
+        if (isset($row[$this->mapping['compte']]) &&
+            isset($row[$this->mapping['intitule']]) &&
+            isset($row[$this->mapping['identifiant_fiscal']]) &&
+            isset($row[$this->mapping['ICE']]) &&
+            isset($row[$this->mapping['type_client']])) {
+
+            return new Client([
+                'compte' => $row[$this->mapping['compte']],
+                'intitule' => $row[$this->mapping['intitule']],
+                'identifiant_fiscal' => $row[$this->mapping['identifiant_fiscal']],
+                'ICE' => $row[$this->mapping['ICE']],
+                'type_client' => $row[$this->mapping['type_client']],
+            ]);
+        }
+
+        return null; // Ne pas enregistrer si une colonne requise est manquante
     }
 
-    /**
-     * Si une erreur de validation se produit, renvoie les échecs.
-     *
-     * @return array
-     */
-    public function getFailedRows(): array
+    public function headings(): array
     {
-        return [];
+        return [
+            'Compte',
+            'Intitule',
+            'Identifiant Fiscal',
+            'ICE',
+            'Type Client',
+        ];
+    }
+
+    public function chunkSize(): int
+    {
+        return 100; // Par exemple, traitez 100 lignes à la fois
     }
 }
+

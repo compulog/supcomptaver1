@@ -16,7 +16,7 @@ class FournisseursExport implements FromCollection, WithHeadings
     public function headings(): array
     {
         return [
-            'ID',
+            
             'Compte',
             'Intitulé',
             'Identifiant Fiscal',

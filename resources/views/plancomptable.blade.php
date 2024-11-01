@@ -2,8 +2,6 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-   
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des comptes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -26,19 +24,33 @@
     height: 20px; /* Diminue la hauteur */
     padding: 1px 3px; /* Ajuste le padding interne */
     font-size: 0.8em; /* Diminue légèrement la police */}
+    .btn-custom-gradient {
+    background-image: linear-gradient(to right, #344767, #31477a); /* Dégradé de gauche à droite */
+    color: white !important; /* Couleur du texte en blanc */
+    border: none; /* Pas de bordure */
+    transition: background-color 0.3s ease; /* Transition douce pour le survol */
+}
+
+.btn-custom-gradient:hover {
+    background-image: linear-gradient(to right, #536fb2, #344767); /* Inverser le dégradé au survol */
+}
+
   </style>
 
 </head>
-
+<body>
 @extends('layouts.user_type.auth')
 
 @section('content')
 
 <div class="container mt-5">
     <h3>Liste des Plans Comptables</h3>
-    <button class="btn btn-primary" id="addPlanComptableBtn" data-toggle="modal" data-target="#planComptableModalAdd">Ajouter</button>
-    <button class="btn btn-primary" id="importPlanComptableBtn" data-toggle="modal" data-target="#importModal">Importer</button>
-    <button id="vider-plan-comptable" class="btn btn-danger">Vider</button>
+    <button class="btn btn-custom-gradient" id="addPlanComptableBtn" data-toggle="modal" data-target="#planComptableModalAdd">Ajouter</button>
+    <button class="btn btn-custom-gradient" id="importPlanComptableBtn" data-toggle="modal" data-target="#importModal">Importer</button>
+    <button id="vider-plan-comptable" class="btn btn-primary">Vider</button>
+
+    <a href="{{ route('plan.comptable.excel') }}" class="btn btn-custom-gradient">Exporter en Excel</a>
+    <a href="{{ route('plan.comptable.pdf') }}" class="btn btn-custom-gradient">Exporter en PDF</a>
     <div id="plan-comptable-table"></div>
 </div>
 
