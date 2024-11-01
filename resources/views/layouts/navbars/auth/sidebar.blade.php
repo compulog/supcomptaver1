@@ -147,11 +147,11 @@
       <a class="nav-link {{ (Request::is('saisie mouvement(J ACH-VTE)') ? 'active' : '') }}" href="{{ url('saisie mouvement(J ACH-VTE)') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
           </div>
-      <span class="nav-link-text ms-1">saisie de mouvement</span>  
+      <span class="nav-link-text ms-1">opération courante</span>  
         </a>
       </li>
 
-
+<!-- 
       <li class="nav-item pb-2">
         <a class="nav-link {{ (Request::is('saisie de mouvement TRESO') ? 'active' : '') }}" href="{{ url('saisie de mouvement TRESO') }}">
             <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -159,7 +159,7 @@
             </div>
             <span class="nav-link-text ms-1">saisie de mouvement TRESO</span>
         </a>
-      </li>
+      </li> -->
 
 
 

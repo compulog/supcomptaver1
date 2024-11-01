@@ -48,7 +48,16 @@
                         <h5 class="mb-0">Sociétés</h5>
                     </div>
                     <button type="button" class="btn bg-gradient-primary btn-sm mb-0" id="open-modal-btn">+&nbsp; Nouvelle société</button>
+                   
                     <button id="import-societes" class="btn bg-gradient-primary btn-sm mb-0" >Importer Sociétés</button>
+                
+                    <button id="export-button" class="btn btn-success">Exporter en Excel</button>
+<script>
+    document.getElementById('export-button').addEventListener('click', function() {
+    window.location.href = '/export-societes';
+});
+
+</script>
                 </div><br>
             </div>
             <div class="card-body px-0 pt-0 pb-2">
@@ -78,7 +87,20 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="forme_juridique" class="form-label">Forme Juridique</label>
-                            <input type="text" class="form-control" name="forme_juridique" required>
+                           
+<select class="form-control" name="forme_juridique" >
+    <option value="">Sélectionnez un type</option>
+    <option value="SARL">SARL</option>
+    <option value="SARL-AU">SARL-AU</option>
+    <option value="SA">SA</option>
+    <option value="SAS">SAS</option>
+    <option value="SNC">SNC</option>
+    <option value="SCS">SCS</option>
+    <option value="SCI">SCI</option>
+    <option value="SEP">SEP</option>
+    <option value="GIE">GIE</option>
+</select>
+
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="siege_social" class="form-label">Siège Social</label>
@@ -198,7 +220,7 @@
             </div>
             <div class="modal-body">
                 <!-- Formulaire d'Importation -->
-                <form id="import-societe-form" action="{{ route('societes.import') }}" method="POST" enctype="multipart/form-data">
+<form id="import-societe-form" action="{{ route('societes.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="mb-3">
                         <label for="import_file" class="form-label">Choisir le fichier d'importation</label>
@@ -411,6 +433,9 @@
 
 
 <script>
+    
+
+    
  $(document).ready(function() {
     // Événement lors de l'ouverture du modal de modification
     $('#modifierSocieteModal').on('show.bs.modal', function(event) {
@@ -470,6 +495,8 @@
         });
     });
 });
+
+
 
 
 </script>
@@ -572,33 +599,43 @@
 
     // Gestion de la suppression d'une société
     document.getElementById('societes-table').addEventListener('click', function(e) {
-        if (e.target.closest('.delete-icon')) {
-            const id = e.target.closest('.delete-icon').getAttribute('data-id');
+    if (e.target.closest('.delete-icon')) {
+        const id = e.target.closest('.delete-icon').getAttribute('data-id');
 
-            if (confirm("Êtes-vous sûr de vouloir supprimer cette société ?")) {
-                fetch("{{ url('societes') }}/" + id, {
-                    method: "DELETE",
-                    headers: {
-                        "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value
-                    }
-                    
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        table.deleteRow(id); // Supprimer la ligne du tableau
-                        
-                        alert("Société supprimée avec succès.");
-                       
-                    } else {
-                        alert("Erreur lors de la suppression : " + data.message);
-                    }
-                })
-                .catch(error => console.error("Erreur :", error));
-                
-            }
+        if (confirm("Êtes-vous sûr de vouloir supprimer cette société ?")) {
+            fetch("{{ url('societes') }}/" + id, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erreur réseau lors de la suppression');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Suppression de la ligne dans Tabulator
+                    table.deleteRow(id); // Utilisez deleteRow avec l'ID pour supprimer la ligne visuellement
+
+                    alert("Société supprimée avec succès.");
+                } else {
+                    alert("Erreur lors de la suppression : " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Erreur :", error);
+                alert("Une erreur s'est produite : " + error.message);
+            });
         }
-    });
+    }
+});
+
+
+
 
 // Gestion du changement de la valeur "Assujettie partielle à la TVA"
 document.getElementById('assujettie_partielle_tva').addEventListener('change', function() {
@@ -770,57 +807,57 @@ $('#modifierSocieteForm').on('submit', function(e) {
 
 
  
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('import-societe-form');
+// document.addEventListener('DOMContentLoaded', function () {
+//     const form = document.getElementById('import-societe-form');
 
-    form.addEventListener('submit', function (e) {
-        e.preventDefault(); // Empêche le rechargement de la page
+//     form.addEventListener('submit', function (e) {
+//         e.preventDefault(); // Empêche le rechargement de la page
 
-        const formData = new FormData(form);
+//         const formData = new FormData(form);
 
-        fetch('{{ route("societes.import") }}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}', // Pour Laravel
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Affiche le message de succès ou d'erreur
-            if (data.success) {
-                alert(data.message);
-                // Ferme le modal
-                $('#importModal').modal('hide');
-                // Réinitialiser le formulaire si nécessaire
-                form.reset();
-            } else {
-                alert('Erreur : ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-            alert('Une erreur est survenue lors de l\'importation.');
-        });
-    });
-});
+//         fetch('{{ route("societes.import") }}', {
+//             method: 'POST',
+//             body: formData,
+//             headers: {
+//                 'X-Requested-With': 'XMLHttpRequest',
+//                 'X-CSRF-TOKEN': '{{ csrf_token() }}', // Pour Laravel
+//             }
+//         })
+//         .then(response => response.json())
+//         .then(data => {
+//             // Affiche le message de succès ou d'erreur
+//             if (data.success) {
+//                 alert(data.message);
+//                 // Ferme le modal
+//                 $('#importModal').modal('hide');
+//                 // Réinitialiser le formulaire si nécessaire
+//                 form.reset();
+//             } else {
+//                 alert('Erreur : ' + data.message);
+//             }
+//         })
+//         .catch(error => {
+//             console.error('Erreur:', error);
+//             alert('Une erreur est survenue lors de l\'importation.');
+//         });
+//     });
+// });
 
 
 
-form.addEventListener('submit', function (e) {
-    const fileInput = document.getElementById('import_file');
-    const filePath = fileInput.value;
+// form.addEventListener('submit', function (e) {
+//     const fileInput = document.getElementById('import_file');
+//     const filePath = fileInput.value;
 
-    // Vérifier le format du fichier
-    const allowedExtensions = /(\.xlsx|\.xls|\.csv)$/i;
-    if (!allowedExtensions.exec(filePath)) {
-        alert('Veuillez télécharger un fichier avec une extension .xls, .xlsx ou .csv');
-        fileInput.value = ''; // Réinitialiser le champ de fichier
-        e.preventDefault();
-        return false;
-    }
-});
+//     // Vérifier le format du fichier
+//     const allowedExtensions = /(\.xlsx|\.xls|\.csv)$/i;
+//     if (!allowedExtensions.exec(filePath)) {
+//         alert('Veuillez télécharger un fichier avec une extension .xls, .xlsx ou .csv');
+//         fileInput.value = ''; // Réinitialiser le champ de fichier
+//         e.preventDefault();
+//         return false;
+//     }
+// });
 
 
 

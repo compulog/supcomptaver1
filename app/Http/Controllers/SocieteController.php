@@ -13,6 +13,17 @@ class SocieteController extends Controller
 
    // Assurez-vous d'importer votre modèle Racine
 
+   public function exportPdf()
+    {
+        // Récupérer les données des sociétés
+        $societes = Societe::all(); // Ajustez cela selon vos besoins
+
+        // Générer le PDF
+        $pdf = PDF::loadView('societes.pdf', compact('societes'));
+
+        // Retourner le PDF au navigateur
+        return $pdf->download('societes.pdf');
+    }
    public function getRubriquesTVA()
    {
        // Récupération des rubriques TVA
@@ -121,33 +132,33 @@ public function update(Request $request, $id)
 
   
 
-    public function destroy($id)
-    {
-        $societe = Societe::findOrFail($id);
-        $societe->delete();
-        return redirect()->route('dashboard')->with('success', 'Société supprimée avec succès.');
-    }
+public function destroy($id)
+{
+    $societe = Societe::findOrFail($id);
+    $societe->delete();
+    
+    // Retourner une réponse JSON pour indiquer que la suppression a réussi
+    return response()->json(['success' => true, 'message' => 'Société supprimée avec succès.']);
+}
+
 
    
    
-    // Dans votre méthode d'importation
-    public function import(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,csv,xls',
-        ]);
     
-        try {
-            Excel::import(new SocietesImport, $request->file('file'));
-            return response()->json(['success' => true, 'message' => 'Sociétés importées avec succès !']);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Erreur lors de l\'importation : ' . $e->getMessage()], 500);
-        }
-    }
-    
-    
-    
-    
+public function import(Request $request)
+{
+    $request->validate([
+        'file' => 'required|file|mimes:xlsx,xls,csv',
+    ]);
+
+    // Importer le fichier Excel
+    Excel::import(new SocietesImport, $request->file('file'));
+
+    return redirect()->back()->with('success', 'Sociétés importées avec succès.');
+}
+
+
+
 
     public function show($id)
     {

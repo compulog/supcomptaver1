@@ -109,10 +109,14 @@
                                 <label for="journal">Journal</label>
                                 <select class="form-control" id="journal" name="journal">
                                     <option value="">Sélectionner un journal</option>
-                                    <option value="journal1">Journal 1</option>
-                                    <option value="journal2">Journal 2</option>
-                                    <option value="journal3">Journal 3</option>
-                                    <option value="journal4">Journal 4</option>
+                                    <option value="ACH">ACH</option>
+                                    <option value="VTE">VTE</option>
+                                    <option value="AWB">AWB</option>
+                                    <option value="CIH">CIH</option>
+                                    <option value="CAI">CAI</option>
+                                    <option value="DOT">DOT</option>
+                                    <option value="IMMO">IMMO</option>
+                                    <option value="OD">OD</option>
                                 </select>
                             </div>
                           
@@ -185,50 +189,82 @@
 
 <!-- JavaScript de Tabulator -->
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.7/js/tabulator.min.js"></script>
+<!-- Bouton "Ajouter ligne" et "Sauvegarder" -->
+<div class="mt-2">
+    <button class="btn btn-primary" id="add-row">Ajouter ligne</button>
+    <button class="btn btn-success" id="save-data">Sauvegarder</button>
+</div>
 
 <script>
+    // Initialisation du tableau Tabulator
     var table = new Tabulator("#example-table", {
         height: "400px",
-        data: [
-            {id: 1, date: "2023-10-10", dossier: "D123", facture: "F001", compte: "Compte A", libelle: "", debit: 1500, credit: 0, contrepartie: "Compte B", rubrique_tva: "T1", taux_tva: 20, compte_tva: "Compte C", prorata: 100, file: ""}, 
-            {id: 2, date: "2023-10-11", dossier: "D124", facture: "F002", compte: "Compte D", libelle: "", debit: 0, credit: 2000, contrepartie: "Compte E", rubrique_tva: "T2", taux_tva: 10, compte_tva: "Compte F", prorata: 50, file: ""}, 
-            {id: 3, date: "2023-10-12", dossier: "D125", facture: "F003", compte: "Compte G", libelle: "", debit: 1000, credit: 0, contrepartie: "Compte H", rubrique_tva: "T3", taux_tva: 5, compte_tva: "Compte I", prorata: 75, file: ""}
-        ],
+        data: [],  // Démarrer avec des lignes vides
         layout: "fitColumns",
         movableColumns: true,
         addRowPos: "top",
         pagination: false,
-        // paginationSize: 5,
         columns: [
-            // {title: "ID", field: "id", width: 50},
             {title: "Date", field: "date", editor: "input"},
             {title: "Dossier", field: "dossier", editor: "input"},
             {title: "Facture", field: "facture", editor: "input"},
             {title: "Compte", field: "compte", editor: "input"},
-            {title: "Libellé", field: "libelle", formatter: function(cell) {
-                var data = cell.getRow().getData();
-                return `F ${data.facture} - N° ${data.dossier} - ${data.compte}`;
-            }},
+            {title: "Libellé", field: "libelle", editor: "input"},
             {title: "Débit", field: "debit", editor: "number", formatter: "money", bottomCalc: "sum"},
             {title: "Crédit", field: "credit", editor: "number", formatter: "money", bottomCalc: "sum"},
-            {title: "Contrepartie", field: "contrepartie", editor: "input"},
+            {title: "Contre partie", field: "contrepartie", editor: "input"},
             {title: "Rubrique TVA", field: "rubrique_tva", editor: "input"},
-            {title: "Taux TVA (%)", field: "taux_tva", editor: "number"},
             {title: "Compte TVA", field: "compte_tva", editor: "input"},
             {title: "Prorata de Déduction (%)", field: "prorata", editor: "number"},
-            {title: "Fichier", field: "file", formatter: function() {
+            {title: "Pièce justificative", field: "file", formatter: function() {
                 return `<input type="file" class="file-input" />`;
             }},
-            {title: "Actions", field: "actions", formatter: function(cell) {
-                return "<i class='fas fa-trash-alt'delete-btn'> </i>"; // Modifié ici
+            {title: "Actions", field: "actions", formatter: function() {
+                return "<i class='fas fa-trash-alt delete-btn'></i>";
             }, width: 100}
         ],
-        footerElement: "<div><strong>Total Crédit:</strong> <span id='total-credit'></span> | <strong>Total Débit:</strong> <span id='total-debit'></span> | <strong>Solde Débit:</strong> <span id='solde-debit'></span> | <strong>Solde Crédit:</strong> <span id='solde-credit'></span></div>",
-        editable: true,
-        rowFormatter: function() {
-            updateTotals();
+        footerElement: "<div><strong>Total Crédit:</strong> <span id='total-credit'></span> | <strong>Total Débit:</strong> <span id='total-debit'></span></div>",
+    });
+
+
+    
+   // Ajouter trois lignes vides au tableau
+document.getElementById("add-row").addEventListener("click", function() {
+    for (let i = 0; i < 3; i++) {
+        table.addRow({});
+    }
+});
+
+
+    // Fonction de sauvegarde des données
+    document.getElementById("save-data").addEventListener("click", function() {
+        var data = table.getData();  // Récupérer les données saisies dans le tableau
+        console.log("Données sauvegardées :", data);
+        // Envoyer les données au backend avec AJAX
+        fetch('/sauvegarder-mouvements', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify(data)
+        }).then(response => response.json()).then(result => {
+            alert("Données sauvegardées avec succès !");
+        }).catch(error => {
+            console.error("Erreur lors de la sauvegarde :", error);
+            alert("Échec de la sauvegarde.");
+        });
+    });
+
+    // Supprimer une ligne au clic sur l'icône de suppression
+    document.getElementById("example-table").addEventListener("click", function(event) {
+        if(event.target.classList.contains("delete-btn")) {
+            var row = table.getRow(event.target.closest(".tabulator-row").getAttribute("data-row"));
+            row.delete();
         }
     });
+
+
 
 
     // Fonction de suppression de ligne avec confirmation

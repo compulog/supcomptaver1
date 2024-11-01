@@ -294,7 +294,20 @@ $(document).ready(function() {
     <!-- Conteneur Tabulator avec recherche -->
 <div class="container mt-4">
     
-      
+<button id="export-clients-button" class="btn btn-success">Exporter les Clients en Excel</button>
+<button id="export-pdf" class="btn btn-primary">Exporter en PDF</button>
+
+<script>
+    document.getElementById('export-clients-button').addEventListener('click', function() {
+    window.location.href = '/export-clients';
+});
+document.getElementById("export-pdf").addEventListener("click", function() {
+    // Faites une requête à la route d'exportation PDF
+    window.location.href = "/export-clients-pdf"; // Changez ce chemin selon votre route
+});
+
+
+</script>
     <!-- Conteneur pour Tabulator -->
     <div id="table-list"></div>
 </div>
