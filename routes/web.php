@@ -9,6 +9,10 @@ use App\Http\Controllers\SaisieMouvementController;
 use App\Http\Controllers\SessionsController;
 use App\Http\Controllers\FournisseurController;
 use App\Http\Controllers\PlanComptableController;
+use App\Http\Controllers\JournalController;
+use App\Http\Controllers\ExportController;
+use App\Exports\FournisseursExport;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\RacineController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
@@ -18,6 +22,7 @@ use App\Http\Controllers\SocieteController;
 use App\Http\Controllers\ClientController;
 
 
+use App\Http\Controllers\ImportExcelController;
 
 
 Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
@@ -42,6 +47,8 @@ Route::put('societes/{id}', [SocieteController::class, 'update'])->name('societe
 Route::get('/societes', [SocieteController::class, 'index'])->name('societes.index');
 
 
+Route::post('/importer-societes', [SocieteController::class, 'import'])->name('societes.import');
+
 
 
 
@@ -49,8 +56,9 @@ Route::get('/societes', [SocieteController::class, 'index'])->name('societes.ind
 // Routes protégées par middleware 'auth'
 
 Route::group(['middleware' => 'auth'], function () {
+    Route::post('/import-excel', [ImportExcelController::class, 'import'])->name('import.excel');
 
-
+    Route::get('/clients/get', [ClientController::class, 'getClients'])->name('clients.get');
     Route::post('/clients/update', [ClientController::class, 'update'])->name('client.update');
 
     Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
@@ -59,9 +67,13 @@ Route::group(['middleware' => 'auth'], function () {
     Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
     Route::put('/clients/{id}', [ClientController::class, 'update'])->name('client.update');
 
-    
+    Route::delete('/societes/{id}', [SocieteController::class, 'destroy'])->name('societes.destroy');
+    Route::get('/societes/{id}', [SocieteController::class, 'show'])->name('societes.show');
+
 // Route pour récupérer les données des sociétés
 Route::get('/societes/data', [SocieteController::class, 'getData'])->name('societes.data');
+// Route pour afficher le formulaire de modification d'une société
+Route::get('/societes/{id}/edit', [SocieteController::class, 'edit'])->name('societes.edit');
 
 Route::post('/societes', [SocieteController::class, 'store'])->name('societes.store');
 
@@ -79,13 +91,41 @@ Route::get('/societes', [SocieteController::class, 'index'])->name('societes.ind
 
     // Autres routes de l'application
     Route::get('/', [HomeController::class, 'home']);
-    Route::get('gestion_des_journaux', function () {
-        return view('gestion_des_journaux');
-    })->name('gestion_des_journaux');
+    Route::get('gestion-des-journaux', function () {
+        return view('gestion-des-journaux');
+    })->name('gestion-des-journaux');
 
+
+
+    Route::get('/get-comptes-achats', [JournalController::class, 'getComptesAchats']);
+Route::get('/get-comptes-ventes', [JournalController::class, 'getComptesVentes']);
+Route::get('/get-comptes-tresoreries', [JournalController::class, 'getComptesTresoreries']);
+ // Route pour afficher tous les journaux
+Route::get('/journaux', [JournalController::class, 'index'])->name('journaux.index');
+
+// Route pour récupérer les données des journaux (pour Tabulator)
+Route::get('/journaux/data', [JournalController::class, 'getData'])->name('journaux.data');
+
+// Route pour ajouter un nouveau journal
+Route::post('/journaux', [JournalController::class, 'store'])->name('journaux.store');
+
+// Route pour afficher un journal spécifique
+Route::get('/journaux/{id}', [JournalController::class, 'show'])->name('journaux.show');
+
+// Route pour mettre à jour un journal
+Route::put('/journaux/{id}', [JournalController::class, 'update'])->name('journaux.update');
+
+// Route pour supprimer un journal
+Route::delete('/journaux/{id}', [JournalController::class, 'destroy'])->name('journaux.destroy');
     Route::get('profile', function () {
         return view('profile');
     })->name('profile');
+
+    Route::get('/export-fournisseurs-excel', function () {
+        return Excel::download(new FournisseursExport, 'fournisseurs.xlsx');
+    });
+    
+    Route::get('/export-fournisseurs-pdf', [ExportController::class, 'exportPDF']);
 
 Route::get('/fournisseurs/data', [FournisseurController::class, 'getData']);
 // Routes pour l'API des fournisseurs
@@ -94,9 +134,11 @@ Route::post('/fournisseurs', [FournisseurController::class, 'store']);
 Route::put('/fournisseurs/{id}', [FournisseurController::class, 'update']);
 Route::delete('/fournisseurs/{id}', [FournisseurController::class, 'destroy']);
 Route::get('/fournisseurs/{id}', [FournisseurController::class, 'show']);
-
+// Route pour afficher le formulaire d'édition
+Route::get('/fournisseurs/{id}/edit', [FournisseurController::class, 'edit']);
 
 Route::get('/rubriques-tva', [FournisseurController::class, 'getRubriquesTva']);
+Route::get('/comptes', [FournisseurController::class, 'getComptes']);
 Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->name('fournisseurs.import'); 
 
     Route::get('/saisie', [SaisieMouvementController::class, 'index'])->name('saisie.index');
@@ -111,10 +153,20 @@ Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->n
     })->name('Fournisseurs');
 
   
+    Route::post('/plancomptable/vider', [PlanComptableController::class, 'viderPlanComptable'])->name('plancomptable.vider');
+    Route::put('/plancomptable/{id}', [PlanComptableController::class, 'edit']);
+    //Route::get('/plancomptable/{id}', [FournisseurController::class, 'show']);
+    Route::get('/plancomptable/data', [PlanComptableController::class, 'getData']);
+    Route::post('/plancomptable', [PlanComptableController::class, 'store']);
+    Route::get('/plancomptable', [PlanComptableController::class, 'index'])->name('plancomptable.index');// Si vous voulez récupérer tous les enregistrements
+    Route::delete('/plancomptable/{id}', [PlanComptableController::class, 'destroy']);
+    Route::put('/plancomptable/{id}', [PlanComptableController::class, 'update']);
+        Route::post('/import', [PlanComptableController::class, 'import'])->name('plancomptable.import'); // Pour importer un compte
+ 
 
-    Route::get('plan_comptable', function () {
-        return view('plan_comptable');
-    })->name('plan_comptable');
+    Route::get('plancomptable', function () {
+        return view('plancomptable');
+    })->name('plancomptable');
 
     Route::get('saisie de mouvement TRESO', function () {
         return view('saisie de mouvement TRESO');
@@ -135,9 +187,6 @@ Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->n
         return view('saisie mouvement(J ACH-VTE)');
     })->name('saisie mouvement(J ACH-VTE)');
 
-    Route::get('plan_comptable', function () {
-        return view('plan_comptable');
-    })->name('plan_comptable');
 
     Route::get('saisie de mouvement TRESO', function () {
         return view('saisie de mouvement TRESO');

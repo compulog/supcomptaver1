@@ -5,10 +5,11 @@ use App\Imports\FournisseurImport;
 
 use App\Models\Fournisseur;
 use App\Models\Racine;
+use App\Models\PlanComptable;
 
 use Illuminate\Http\Request;
 
-
+use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 
 
@@ -17,6 +18,12 @@ class FournisseurController extends Controller
     public function index()
     {
         return view('fournisseurs'); // Assurez-vous que cela correspond à votre vue
+    }
+
+    public function show($id)
+    {
+        $fournisseur = Fournisseur::findOrFail($id);
+        return response()->json($fournisseur, 200);
     }
 
     public function getData()
@@ -34,8 +41,8 @@ class FournisseurController extends Controller
             'ICE' => 'required|string|max:255',
             'nature_operation' => 'required|string|max:255',
             'rubrique_tva' => 'required|string|max:255',
-            'designation' => 'required|string|max:255',
-            'contre_partie' => 'required|string|max:255',
+            'designation' => 'nullable|string|max:255',
+            'contre_partie' => 'nullable|string|max:255',
         ]);
 
         $fournisseur = Fournisseur::create($validatedData);
@@ -46,25 +53,49 @@ class FournisseurController extends Controller
         ]);
     }
  // Modifier un fournisseur
+ // Méthode pour afficher le formulaire d'édition
+ public function edit($id)
+ {
+ $fournisseur = Fournisseur::findOrFail($id);
+return response()->json($fournisseur);
+
+     
+ }
+
+ // Méthode pour mettre à jour le fournisseur
  public function update(Request $request, $id)
  {
      // Validation des données
-     $validatedData = $request->validate([
+     $validator = Validator::make($request->all(), [
          'compte' => 'required|string|max:255',
          'intitule' => 'required|string|max:255',
          'identifiant_fiscal' => 'required|string|max:255',
-         'ICE' => 'required|string|max:15', // Limité à 15 caractères
-         'nature_operation' => 'required|string|max:255',
-         'rubrique_tva' => 'required|string|max:255',
+         'ICE' => 'required|string|max:15',
+         'nature_operation' => 'required|string',
+         'rubrique_tva' => 'required|string',
          'designation' => 'required|string|max:255',
          'contre_partie' => 'required|string|max:255',
      ]);
-    // Recherche et mise à jour du fournisseur
-    $fournisseur = Fournisseur::findOrFail($id);
-    $fournisseur->update($validatedData);
 
-    return response()->json(['message' => 'Fournisseur modifié avec succès', 'fournisseur' => $fournisseur]);
-}
+     if ($validator->fails()) {
+         return response()->json(['message' => 'Erreur de validation', 'errors' => $validator->errors()], 422);
+     }
+
+     // Mise à jour des données
+     $fournisseur = Fournisseur::findOrFail($id);
+     $fournisseur->compte = $request->input('compte');
+     $fournisseur->intitule = $request->input('intitule');
+     $fournisseur->identifiant_fiscal = $request->input('identifiant_fiscal');
+     $fournisseur->ICE = $request->input('ICE');
+     $fournisseur->nature_operation = $request->input('nature_operation');
+     $fournisseur->rubrique_tva = $request->input('rubrique_tva');
+     $fournisseur->designation = $request->input('designation');
+     $fournisseur->contre_partie = $request->input('contre_partie');
+     
+     $fournisseur->save(); // Enregistrer les modifications
+
+     return response()->json(['message' => 'Fournisseur mis à jour avec succès', 'fournisseur' => $fournisseur], 200);
+ }
 
 public function getRubriquesTva()
 {
@@ -91,6 +122,30 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
 
 }
 
+
+public function getComptes()
+{
+    // Récupérer les comptes qui commencent par 21, 22, 23, 24, 25, ou 26
+    $comptes = PlanComptable::where(function($query) {
+        $query->where('compte', 'LIKE', '21%')
+              ->orWhere('compte', 'LIKE', '22%')
+              ->orWhere('compte', 'LIKE', '23%')
+              ->orWhere('compte', 'LIKE', '24%')
+              ->orWhere('compte', 'LIKE', '25%')
+              ->orWhere('compte', 'LIKE', '613%')
+              ->orWhere('compte', 'LIKE', '611%')
+              ->orWhere('compte', 'LIKE', '614%')
+              ->orWhere('compte', 'LIKE', '618%')
+              ->orWhere('compte', 'LIKE', '631%')
+              ->orWhere('compte', 'LIKE', '612%');
+    })
+    ->get(['compte', 'intitule']); // On ne récupère que les champs nécessaires
+
+    return response()->json($comptes);
+}
+
+
+
     public function destroy($id)
     {
         $fournisseur = Fournisseur::findOrFail($id);
@@ -108,7 +163,8 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
     public function import(Request $request)
     {
         // Valider le fichier et les colonnes ici
-        $validatedData = $request->validate([
+        
+        $validatedData= $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
             'colonne_compte' => 'required|integer',
             'colonne_intitule' => 'required|integer',

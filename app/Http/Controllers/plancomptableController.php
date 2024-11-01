@@ -4,80 +4,127 @@ namespace App\Http\Controllers;
 
 use App\Models\PlanComptable;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\PlanComptableImport;
+use Illuminate\Support\Facades\DB;
 
 class PlanComptableController extends Controller
 {
-   
-
-
-    // Afficher la liste des comptes du plan comptable
+    // Afficher la liste des plans comptables
     public function index()
     {
-        $comptes = PlanComptable::all();
-        return view('plan_comptable.index', compact('comptes'));
+        return view('plancomptable'); // Assurez-vous que cela correspond à votre vue
+      
     }
 
-    // Afficher le formulaire pour ajouter un nouveau compte
-    public function create()
+    
+
+    public function getData()
     {
-        return view('plan_comptable.create');
+        $PlanComptable = PlanComptable::all();
+        return response()->json($PlanComptable);
     }
 
-    // Ajouter un nouveau compte au plan comptable
+    // Ajouter un nouveau plan comptable
     public function store(Request $request)
-    {
+    {// Validation des données
         $request->validate([
-            'compte' => 'required|string|unique:plan_comptable',
-            'intitule' => 'required|string',
+            'compte' => 'required|string|max:255',
+            'intitule' => 'required|string|max:255',
         ]);
 
-        PlanComptable::create([
-            'compte' => $request->compte,
-            'intitule' => $request->intitule,
-        ]);
+        try {
+            // Enregistrement du plan comptable
+            $planComptable = new PlanComptable();
+            $planComptable->compte = $request->compte;
+            $planComptable->intitule = $request->intitule;
+            $planComptable->save();
 
-        return redirect()->route('plan_comptable.index')->with('success', 'Compte ajouté avec succès.');
+            return response()->json(['message' => 'Plan comptable ajouté avec succès.'], 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Erreur lors de l\'enregistrement des données.'], 500);
+        }
     }
 
-    // Afficher le formulaire d'édition pour un compte spécifique
-    public function edit($id)
+
+
+    public function edit(Request $request, $id)
     {
-        $compte = PlanComptable::findOrFail($id);
-        return view('plan_comptable.edit', compact('compte'));
+        $validatedData = $request->validate([
+            'compte' => 'required|string|max:255',
+            'intitule' => 'required|string|max:255',
+        ]);
+
+        $planComptable = PlanComptable::findOrFail($id);
+        $planComptable->compte = $validatedData['compte'];
+        $planComptable->intitule = $validatedData['intitule'];
+        $planComptable->save();
+
+        return response()->json(['success' => true]);
     }
 
-    // Mettre à jour un compte spécifique
+    // Modifier un plan comptable existant
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'compte' => 'required|string',
-            'intitule' => 'required|string',
-        ]);
+        // Validation des données
+    $validatedData = $request->validate([
+        'compte' => 'required|string|max:255',
+        'intitule' => 'required|string|max:255',
+    ]);
 
-        return redirect()->route('plan_comptable.index')->with('success', 'Compte mis à jour avec succès.');
+    // Mise à jour du plan comptable
+    $planComptable = PlanComptable::find($id);
+    if ($planComptable) {
+        $planComptable->update($validatedData);
+        return response()->json(['success' => true, 'message' => 'Mise à jour réussie']);
+    } else {
+        return response()->json(['success' => false, 'message' => 'Plan comptable non trouvé'], 404);
+    }
     }
 
-    // Supprimer un compte spécifique
+    // Supprimer un plan comptable
     public function destroy($id)
     {
-        $compte = PlanComptable::findOrFail($id);
-        $compte->delete();
+        // Récupérer le plan comptable par ID
+        $planComptable = PlanComptable::findOrFail($id);
+        
+        // Supprimer le plan comptable
+        $planComptable->delete();
 
-        return redirect()->route('plan_comptable.index')->with('success', 'Compte supprimé avec succès.');
+        // Retourner une réponse JSON
+        return response()->json(['success' => true]);
     }
 
-    // use HasFactory;
+    // Importer des plans comptables à partir d'un fichier Excel
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+            'colonne_compte' => 'required|integer',
+            'colonne_intitule' => 'required|integer',
+        ]);
+    
+        // Importation du fichier Excel sans en-tête
+        Excel::import(new PlanComptableImport($request->colonne_compte, $request->colonne_intitule), $request->file('file'));
+    
+        return response()->json(['message' => 'Importation réussie !'], 200);
+    }
 
-    // protected $fillable = ['compte', 'intitule'];
 
-    // // Relation inverse avec Fournisseur
-    // public function fournisseurs()
-    // {
-    //     return $this->hasMany(Fournisseur::class);
-    // }
+// Vider tous les enregistrements dans le plan comptable
+public function viderPlanComptable()
+    {
+        // Supprimer tous les enregistrements en utilisant le modèle Eloquent
+        PlanComptable::query()->delete(); // Cela supprimera tous les enregistrements
 
+        // Alternativement, vous pouvez utiliser truncate si vous voulez remettre à zéro les ID
+        PlanComptable::truncate();
 
+        return response()->json(['success' => true, 'message' => 'Plan comptable vidé avec succès.']);
+    }
 }
+
+
 
 
 

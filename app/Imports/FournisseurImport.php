@@ -1,10 +1,11 @@
-<?php
+<?php 
 namespace App\Imports;
 
 use App\Models\Fournisseur;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithStartRow; // Importer l'interface WithStartRow
 
-class FournisseurImport implements ToModel
+class FournisseurImport implements ToModel, WithStartRow // Implémentez l'interface WithStartRow
 {
     protected $colonne_compte;
     protected $colonne_intitule;
@@ -27,19 +28,15 @@ class FournisseurImport implements ToModel
         $this->colonne_contre_partie = $colonne_contre_partie;
     }
 
+    // Indique à partir de quelle ligne commencer l'importation
+    public function startRow(): int
+    {
+        return 2; // Commence à la deuxième ligne
+    }
+
     public function model(array $row)
     {
-        return new Fournisseur([
-            'compte' => $row[$this->colonne_compte - 1],
-            'intitule' => $row[$this->colonne_intitule - 1],
-            'identifiant_fiscal' => $row[$this->colonne_identifiant_fiscal - 1],
-            'ICE' => $row[$this->colonne_ICE - 1],
-            'nature_operation' => $row[$this->colonne_nature_operation - 1],
-            'rubrique_tva' => $row[$this->colonne_rubrique_tva - 1],
-            'designation' => $row[$this->colonne_designation - 1],
-            'contre_partie' => $row[$this->colonne_contre_partie - 1],
-        ]);
-
+        // Utiliser updateOrCreate pour vérifier si le fournisseur existe déjà
         return Fournisseur::updateOrCreate(
             ['compte' => $row[$this->colonne_compte - 1]], // Identifiant unique pour vérifier les doublons
             [
@@ -52,9 +49,5 @@ class FournisseurImport implements ToModel
                 'contre_partie' => $row[$this->colonne_contre_partie - 1],
             ]
         );
-
     }
-
-  
-
 }

@@ -16,7 +16,7 @@ class CreatePlanComptableTable extends Migration
         // Créer la table 'plan_comptable' avec les champs spécifiés
         Schema::connection('supcompta')->create('plan_comptable', function (Blueprint $table) {
             $table->id();                              // Champ auto-incrémenté pour l'identifiant
-            $table->string('compte')->unique();       // Compte (doit être unique)
+            $table->string('compte',191)->unique();       // Compte (doit être unique)
             $table->string('intitule');                // Intitulé du compte (string)
             $table->timestamps();                      // Champs pour created_at et updated_at
         });

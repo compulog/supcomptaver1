@@ -19,6 +19,7 @@
         "sass-loader": "^12.3.0"
     },
     "dependencies": {
+        "select2": "^4.1.0-rc.0",
         "tabulator-tables": "^6.3.0"
     }
 }

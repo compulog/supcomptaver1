@@ -75,6 +75,10 @@
                             <label for="identifiant_fiscal-import" class="form-label">Identifiant fiscal</label>
                             <input type="text" class="form-control" id="identifiant_fiscal-import" name="identifiant_fiscal-import" required>
                         </div>
+                        <div class="mb-3">
+                        <label for="edit-ice" class="form-label">ICE</label>
+                        <input type="text" class="form-control" id="edit-ice" name="ICE" required>
+                    </div>
                         <div class="col-md-6 mb-3">
                             <label for="type_client-import" class="form-label">Type client</label>
                             <input type="text" class="form-control" id="type_client-import" name="type_client-import" required>
@@ -201,6 +205,35 @@
         </div>
     </div>
 </div>
+
+
+<script>
+    document.getElementById('form-import-excel').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        let formData = new FormData(this);
+        fetch("{{ route('import.excel') }}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Fichier importé avec succès!');
+                // Actions supplémentaires si nécessaire
+            } else {
+                alert('Erreur lors de l\'importation.');
+            }
+        })
+        .catch(error => console.log(error));
+    });
+</script>
+
+
+
 
 
 <script>
