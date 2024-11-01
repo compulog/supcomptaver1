@@ -26,19 +26,35 @@ class ClientsImport implements ToModel, WithHeadings, WithChunkReading
             return null; // Ne rien retourner pour la première ligne
         }
 
-        if (isset($row[$this->mapping['compte']]) &&
-            isset($row[$this->mapping['intitule']]) &&
-            isset($row[$this->mapping['identifiant_fiscal']]) &&
-            isset($row[$this->mapping['ICE']]) &&
-            isset($row[$this->mapping['type_client']])) {
+        // Vérifiez si les colonnes nécessaires existent
+        if (isset($row[$this->mapping['compte'] - 1]) &&
+            isset($row[$this->mapping['intitule'] - 1]) &&
+            isset($row[$this->mapping['identifiant_fiscal'] - 1]) &&
+            isset($row[$this->mapping['ICE'] - 1]) &&
+            isset($row[$this->mapping['type_client'] - 1])) {
 
-            return new Client([
-                'compte' => $row[$this->mapping['compte']],
-                'intitule' => $row[$this->mapping['intitule']],
-                'identifiant_fiscal' => $row[$this->mapping['identifiant_fiscal']],
-                'ICE' => $row[$this->mapping['ICE']],
-                'type_client' => $row[$this->mapping['type_client']],
-            ]);
+            $compte = $row[$this->mapping['compte'] - 1];
+
+            // Chercher le client existant par le compte
+            $client = Client::where('compte', $compte)->first();
+
+            if ($client) {
+                // Mettre à jour le client existant
+                $client->intitule = $row[$this->mapping['intitule'] - 1];
+                $client->identifiant_fiscal = $row[$this->mapping['identifiant_fiscal'] - 1];
+                $client->ICE = $row[$this->mapping['ICE'] - 1];
+                $client->type_client = $row[$this->mapping['type_client'] - 1];
+                $client->save(); // Enregistrer les modifications
+            } else {
+                // Créer un nouveau client si celui-ci n'existe pas
+                return new Client([
+                    'compte' => $compte,
+                    'intitule' => $row[$this->mapping['intitule'] - 1],
+                    'identifiant_fiscal' => $row[$this->mapping['identifiant_fiscal'] - 1],
+                    'ICE' => $row[$this->mapping['ICE'] - 1],
+                    'type_client' => $row[$this->mapping['type_client'] - 1],
+                ]);
+            }
         }
 
         return null; // Ne pas enregistrer si une colonne requise est manquante
@@ -60,4 +76,3 @@ class ClientsImport implements ToModel, WithHeadings, WithChunkReading
         return 100; // Par exemple, traitez 100 lignes à la fois
     }
 }
-

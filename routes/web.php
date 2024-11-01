@@ -23,6 +23,35 @@ use App\Http\Controllers\ClientController;
 
 
 use App\Http\Controllers\ImportExcelController;
+use App\Exports\SocietesExport;
+use Maatwebsite\Excel\Facades\Excel;
+
+
+use App\Exports\ClientsExport;
+
+use App\Http\Controllers\ClientsPDFExportController;
+
+
+Route::get('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
+
+
+Route::get('/export-clients', function () {
+    return Excel::download(new ClientsExport, 'clients.xlsx');
+})->name('export.clients');
+
+
+Route::get('/export-societes', function () {
+    return Excel::download(new SocietesExport, 'societes.xlsx');
+})->name('export.societes');
+
+Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
+
+
+
+// routes/web.php
+Route::post('/operation-courante', [OperationCouranteController::class, 'store']);
+
+// Route pour obtenir la liste des clients
 
 
 // Routes protégées par middleware 'auth'
@@ -49,10 +78,11 @@ Route::get('/exercice/{id}', function ($id) {
     return view('exercice.show', ['id' => $id]);
 })->name('exercice.show');
 
+// Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
+   
+// Route::get('/societes/import', [SocieteController::class, 'showImportForm'])->name('societes.import.form');
 
-Route::get('/societes/import', [SocieteController::class, 'showImportForm'])->name('societes.import.form');
-
-Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
+// Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
 
     Route::post('/import-excel', [ImportExcelController::class, 'import'])->name('import.excel');
 
