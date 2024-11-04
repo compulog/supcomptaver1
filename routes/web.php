@@ -23,6 +23,19 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ClientsExport;
 
 use App\Http\Controllers\ClientsPDFExportController;
+use App\Http\Controllers\SocietesPDFExportController;
+
+
+Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
+
+
+Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
+
+
+Route::group(['middleware' => 'auth'], function () {
+    
+// Route pour l'exportation PDF
+Route::get('/societes/export', [SocietesPDFExportController::class, 'exportPDF'])->name('societes.export');
 
 
 Route::get('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
@@ -44,12 +57,6 @@ Route::post('/societes/import', [SocieteController::class, 'import'])->name('soc
 // routes/web.php
 Route::post('/operation-courante', [OperationCouranteController::class, 'store']);
 
-// Route pour obtenir la liste des clients
-
-
-// Routes protégées par middleware 'auth'
-
-Route::group(['middleware' => 'auth'], function () {
     
     Route::get('/clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit');
 

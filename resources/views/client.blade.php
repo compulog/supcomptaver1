@@ -12,12 +12,18 @@
 
 <!-- Boutons pour ouvrir les modals -->
 <div class="mb-3">
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel">
-        créer
-    </button>
-    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modal-import-excel">
-                Importer
-            </button>
+<button type="button" id="create-button" class="btn bg-gradient-primary btn-sm mb-0" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel">
+    Créer
+</button>
+
+<button type="button" id="import-button" class="btn bg-gradient-primary btn-sm mb-0" data-bs-toggle="modal" data-bs-target="#modal-import-excel">
+    Importer
+</button>
+                
+<button id="export-clients-button" class="btn bg-gradient-primary btn-sm mb-0">Exporter les Clients en Excel</button>
+
+<button id="export-pdf" class="btn bg-gradient-primary btn-sm mb-0">Exporter en PDF</button>
+
 </div>
 
 <!-- Modal pour le formulaire d'ajout manuel -->
@@ -293,9 +299,6 @@ $(document).ready(function() {
 
     <!-- Conteneur Tabulator avec recherche -->
 <div class="container mt-4">
-    
-<button id="export-clients-button" class="btn btn-success">Exporter les Clients en Excel</button>
-<button id="export-pdf" class="btn btn-primary">Exporter en PDF</button>
 
 <script>
     document.getElementById('export-clients-button').addEventListener('click', function() {

@@ -25,6 +25,17 @@
 <link href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
 <script src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
 
+
+
+
+<!-- Chargement de Select2 CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<!-- Chargement de Select2 JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<!-- Chargement de Bootstrap JS -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+
     <style>
         body {
             background-color: #f9f9f9; 
@@ -44,14 +55,19 @@
         <div class="card mb-4 mx-4">
             <div class="card-header pb-0">
                 <div class="d-flex flex-row justify-content-between">
-                    <div>
-                        <h5 class="mb-0">Sociétés</h5>
-                    </div>
+                 
                     <button type="button" class="btn bg-gradient-primary btn-sm mb-0" id="open-modal-btn">+&nbsp; Nouvelle société</button>
-                   
-                    <button id="import-societes" class="btn bg-gradient-primary btn-sm mb-0" >Importer Sociétés</button>
-                
-                    <button id="export-button" class="btn btn-success">Exporter en Excel</button>
+
+                    <button id="import-societes" class="btn bg-gradient-primary btn-sm mb-0">Importer Sociétés</button>
+
+                    <button id="export-button" class="btn bg-gradient-primary btn-sm mb-0">Exporter en Excel</button>
+
+                    <button id="export-pdf" class="btn bg-gradient-primary btn-sm mb-0">Exporter en PDF</button>
+
+<script>document.getElementById("export-pdf").addEventListener("click", function() {
+    window.location.href = "{{ route('societes.export') }}";
+});
+</script>
 <script>
     document.getElementById('export-button').addEventListener('click', function() {
     window.location.href = '/export-societes';
@@ -78,8 +94,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="societe-form">
-                    @csrf
+            <form id="societe-form" action="{{ route('societes.store') }}" method="POST">
+            @csrf
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="raison_sociale" class="form-label">Raison sociale</label>
@@ -87,20 +103,18 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="forme_juridique" class="form-label">Forme Juridique</label>
-                           
-<select class="form-control" name="forme_juridique" >
-    <option value="">Sélectionnez un type</option>
-    <option value="SARL">SARL</option>
-    <option value="SARL-AU">SARL-AU</option>
-    <option value="SA">SA</option>
-    <option value="SAS">SAS</option>
-    <option value="SNC">SNC</option>
-    <option value="SCS">SCS</option>
-    <option value="SCI">SCI</option>
-    <option value="SEP">SEP</option>
-    <option value="GIE">GIE</option>
-</select>
-
+                            <select class="form-control" name="forme_juridique">
+                                <option value="">Sélectionnez un type</option>
+                                <option value="SARL">SARL</option>
+                                <option value="SARL-AU">SARL-AU</option>
+                                <option value="SA">SA</option>
+                                <option value="SAS">SAS</option>
+                                <option value="SNC">SNC</option>
+                                <option value="SCS">SCS</option>
+                                <option value="SCI">SCI</option>
+                                <option value="SEP">SEP</option>
+                                <option value="GIE">GIE</option>
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="siege_social" class="form-label">Siège Social</label>
@@ -130,15 +144,13 @@
                             <label for="date_creation" class="form-label">Date de Création</label>
                             <input type="date" class="form-control" name="date_creation" required>
                         </div>
-                        <div class="col-md-6 mb-3 d-flex">
-                            <div class="me-2" style="flex: 1;">
-                                <label for="exercice_social_debut" class="form-label">Exercice Social Début</label>
-                                <input type="date" name="exercice_social_debut" class="form-control" required>
-                            </div>
-                            <div style="flex: 1;">
-                                <label for="exercice_social_fin" class="form-label">Exercice Social Fin</label>
-                                <input type="date" name="exercice_social_fin" class="form-control" required>
-                            </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="exercice_social_debut" class="form-label">Exercice Social Début</label>
+                            <input type="date" name="exercice_social_debut" class="form-control" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="exercice_social_fin" class="form-label">Exercice Social Fin</label>
+                            <input type="date" name="exercice_social_fin" class="form-control" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="nature_activite" class="form-label">Nature de l'Activité</label>
@@ -153,11 +165,6 @@
                             <label for="activite" class="form-label">Activité</label>
                             <input type="text" class="form-control" name="activite" required>
                         </div>
-
-                     
-
-
-
                         <div class="col-md-6 mb-3">
                             <label for="assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
                             <select class="form-control" name="assujettie_partielle_tva" id="assujettie_partielle_tva" required>
@@ -178,25 +185,22 @@
                             <label for="fait_generateur" class="form-label">Fait Générateur</label>
                             <input type="date" class="form-control" name="fait_generateur" required>
                         </div>
-
                         <div class="col-md-6 mb-3">
-                            <label for="rubrique_tva" class="form-label">Rubrique TVA</label>
-                            <input type="text" class="form-control" name="rubrique_tva" required>
+                            <div class="form-group">
+                                <label for="rubrique_tva">Rubrique TVA</label>
+                                <select class="form-control" id="rubrique_tva"  name="rubrique_tva">
+                                    <!-- Les options seront ajoutées par JavaScript -->
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="designation" class="form-label">Désignation</label>
                             <input type="text" class="form-control" name="designation" required>
                         </div>
-
-                     
                         <div class="col-md-6 mb-3">
-                            <label for="nombre_chiffre_compte" class="form-label">Nombre caractères  Compte</label>
+                            <label for="nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
                             <input type="number" class="form-control" name="nombre_chiffre_compte" required>
                         </div>
-                        
-                        
-                       
-                   
                         <div class="col-md-6 mb-3">
                             <label for="modele_comptable" class="form-label">Modèle Comptable</label>
                             <input type="text" class="form-control" name="modele_comptable" required>
@@ -210,6 +214,114 @@
     </div>
 </div>
 
+  <script>
+
+
+
+$(document).ready(function() {
+    $('#nouvelleSocieteModal').on('show.bs.modal', function (event) {
+        // Réinitialiser le formulaire lors de l'ouverture du modal
+        $('#societe-form')[0].reset();
+    });
+});
+
+
+
+
+
+    // Fonction pour remplir les options de rubrique TVA dans le select
+function remplirRubriquesTva(selectId, selectedValue = null) {
+  $.ajax({
+      url: '/rubriques-tva?type=Achat',
+      type: 'GET',
+      success: function(data) {
+          var select = $("#" + selectId);
+          
+        //   // Détruire Select2 s'il est déjà initialisé
+        //   if (select.hasClass("select2-hidden-accessible")) {
+        //       select.select2("destroy");
+        //   }
+          
+          select.empty();
+
+          let categoriesArray = [];
+          $.each(data.rubriques, function(categorie, rubriques) {
+              let categories = categorie.split('/').map(cat => cat.trim());
+              let mainCategory = categories[0];
+              let subCategory = categories[1] ? categories[1].trim() : '';
+              categoriesArray.push({
+                  mainCategory: mainCategory,
+                  subCategory: subCategory,
+                  rubriques: rubriques.rubriques
+              });
+          });
+
+          categoriesArray.sort((a, b) => a.mainCategory.localeCompare(b.mainCategory));
+          let categoryCounter = 1;
+          const excludedNumRacines = [147, 151, 152, 148, 144];
+
+          $.each(categoriesArray, function(index, categoryObj) {
+              let mainCategoryOption = new Option(`${categoryCounter}. ${categoryObj.mainCategory}`, '', true, true);
+              mainCategoryOption.className = 'category';
+              mainCategoryOption.disabled = true;
+              select.append(mainCategoryOption);
+              categoryCounter++;
+
+              if (categoryObj.subCategory) {
+                  let subCategoryOption = new Option(` ${categoryObj.subCategory}`, '', true, true);
+                  subCategoryOption.className = 'subcategory';
+                  subCategoryOption.disabled = true;
+                  select.append(subCategoryOption);
+              }
+
+              categoryObj.rubriques.forEach(function(rubrique) {
+                  if (!excludedNumRacines.includes(rubrique.Num_racines)) {
+                      let searchText = `${rubrique.Num_racines} ${rubrique.Nom_racines} ${categoryObj.mainCategory}`;
+                      let option = new Option(`${rubrique.Num_racines}: ${rubrique.Nom_racines} : ${Math.round(rubrique.Taux)}%`, rubrique.Num_racines);
+                      option.setAttribute('data-search-text', searchText);
+                      option.setAttribute('data-nom-racine', rubrique.Nom_racines);
+                      select.append(option);
+                  }
+              });
+          });
+
+          select.select2({
+              width: '100%',
+              minimumResultsForSearch: 0,
+              dropdownAutoWidth: true,
+              templateResult: function(data) {
+                  if (!data.id) return data.text;
+                  if ($(data.element).hasClass('category')) {
+                      return $('<span style="font-weight: bold;">' + data.text + '</span>');
+                  } else if ($(data.element).hasClass('subcategory')) {
+                      return $('<span style="font-weight: bold; padding-left: 10px;">' + data.text + '</span>');
+                  }
+                  return $('<span>' + data.text + '</span>');
+              },
+              matcher: function(params, data) {
+                  if ($.trim(params.term) === '') return data;
+                  var searchText = $(data.element).data('search-text');
+                  return searchText && searchText.toLowerCase().includes(params.term.toLowerCase()) ? data : null;
+              }
+          });
+
+          select.on("select2:open", function() {
+              setTimeout(function() {
+                  $('.select2-search__field').focus();
+              }, 10);
+          });
+
+          if (selectedValue) {
+              select.val(selectedValue).trigger('change');
+          }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+          console.error('Erreur lors de la récupération des rubriques :', textStatus, errorThrown);
+      }
+  });
+}
+
+  </script>
 <!-- Modal pour importer des sociétés -->
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -220,8 +332,8 @@
             </div>
             <div class="modal-body">
                 <!-- Formulaire d'Importation -->
-<form id="import-societe-form" action="{{ route('societes.import') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
+                <form id="import-societe-form" action="{{ route('societes.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
                     <div class="mb-3">
                         <label for="import_file" class="form-label">Choisir le fichier d'importation</label>
                         <input type="file" class="form-control" id="import_file" name="file" required>
@@ -408,9 +520,13 @@
                             <input type="text" class="form-control" id="mod_fait_generateur" name="fait_generateur">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="mod_rubrique_tva" class="form-label">Rubrique TVA</label>
-                            <input type="text" class="form-control" id="mod_rubrique_tva" name="rubrique_tva">
-                        </div>
+                        <label for="editRubriqueTVA">Rubrique TVA</label>
+                               
+                               <select class="form-control select2" id="editRubriqueTVA" name="rubrique_tva" required>
+                               
+                                   <!-- Les options seront ajoutées par JavaScript -->
+                               </select>
+                              </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_designation" class="form-label">Désignation</label>
                             <input type="text" class="form-control" id="mod_designation" name="designation">
@@ -435,9 +551,13 @@
 <script>
     
 
-    
+    $(document).ready(function() {
+    remplirRubriquesTva('editRubriqueTVA');
+});
+
  $(document).ready(function() {
     // Événement lors de l'ouverture du modal de modification
+    
     $('#modifierSocieteModal').on('show.bs.modal', function(event) {
         var button = $(event.relatedTarget); // bouton qui a déclenché le modal
         var societeId = button.data('id'); // récupère l'ID de la société
@@ -464,7 +584,7 @@
             $('#mod_activite').val(data.activite);
             $('#mod_regime_declaration').val(data.regime_declaration);
             $('#mod_fait_generateur').val(data.fait_generateur);
-            $('#mod_rubrique_tva').val(data.rubrique_tva);
+            $('#editRubriqueTVA').val(data.rubrique_tva);
             $('#mod_designation').val(data.designation);
             $('#mod_nombre_chiffre_compte').val(data.nombre_chiffre_compte);
             $('#mod_model_comptable').val(data.modele_comptable);
@@ -502,8 +622,8 @@
 </script>
 <!-- Table Tabulator -->
 
-<div id="societes-table"></div>
 
+<div id="societes-table"></div>
 <!-- Tabulator JS -->
 <script>
     // Assigner les données des sociétés à une variable JS depuis PHP
@@ -558,44 +678,42 @@
         window.location.href = `/exercice/${societeId}`; // Rediriger vers la vue "exercice"
     });
 
+	$(document).ready(function() {
+  remplirRubriquesTva('rubrique_tva');
+});
 
 
     // Ouvrir le modal au clic sur le bouton
     document.getElementById('open-modal-btn').addEventListener('click', function() {
         var myModal = new bootstrap.Modal(document.getElementById('nouvelleSocieteModal'));
         myModal.show();
+        remplirRubriquesTva();
     });
+//AJOUTER SOCIETES 
+//   $(document).ready(function() {
+//     $("#societe-form").on("submit", function(e) {
+//         e.preventDefault(); // Empêche le rechargement de la page
 
-    // Ajouter une société via Ajax sans rafraîchir la page
-    document.getElementById('societe-form').addEventListener('submit', function(e) {
-        e.preventDefault(); // Empêcher l'envoi classique du formulaire
+//         // Récupérer les données du formulaire
+//         var formData = $(this).serialize();
 
-        let formData = new FormData(this);
-
-        // Envoi Ajax
-        fetch("{{ route('societes.store') }}", {
-            method: "POST",
-            headers: {
-                "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if(data.success) {
-                // Ajouter la nouvelle société à la table Tabulator
-                table.addData([data.societe]);
-                // Réinitialiser le formulaire après l'ajout
-                document.getElementById('societe-form').reset();
-                // Fermer le modal
-                var myModal = bootstrap.Modal.getInstance(document.getElementById('nouvelleSocieteModal'));
-                myModal.hide();
-            } else {
-                alert("Erreur lors de l'ajout de la société : " + data.message);
-            }
-        })
-        .catch(error => console.error("Erreur :", error));
-    });
+//         // Envoyer les données au serveur
+//         $.ajax({
+//             url: '/societes', // Assurez-vous que cette URL est correcte
+//             type: 'POST',
+//             data: formData,
+//             success: function(response) {
+//                 console.log(response);
+//                 $('#nouvelleSocieteModal').modal('hide');
+//                 // Vous pouvez aussi recharger le tableau Tabulator ou afficher un message de succès
+//             },
+//             error: function(xhr, status, error) {
+//                 console.error("Erreur lors de l'ajout de la société:", error);
+//                 alert("Une erreur s'est produite lors de l'ajout de la société.");
+//             }
+//         });
+//     });
+// });
 
     // Gestion de la suppression d'une société
     document.getElementById('societes-table').addEventListener('click', function(e) {
@@ -733,73 +851,75 @@ function openImportModal() {
 </script>
 
 <script>
-function ouvrirModalModifierSociete(societeId) {
-    $.ajax({
-        url: `/societes/${societeId}/edit`,
-        type: 'GET',
-        success: function(societe) {
-            // Remplir les champs du formulaire avec les données de la société
-            $('#mod_societe_id').val(societe.id);
-            $('#mod_raison_sociale').val(societe.raison_sociale);
-            $('#mod_siège_social').val(societe.siege_social); // Ajout du champ Siège Social
-            $('#mod_ice').val(societe.ice);
-            $('#mod_rc').val(societe.rc);
-            $('#mod_identifiant_fiscal').val(societe.identifiant_fiscal);
-            $('#mod_patente').val(societe.patente);
-            $('#mod_centre_rc').val(societe.centre_rc);
-            $('#mod_forme_juridique').val(societe.forme_juridique);
-            $('#mod_exercice_social_debut').val(societe.exercice_social_debut);
-            $('#mod_exercice_social_fin').val(societe.exercice_social_fin);
-            $('#mod_date_creation').val(societe.date_creation);
-            $('#mod_assujettie_partielle_tva').val(societe.assujettie_partielle_tva);
-            $('#mod_prorata_de_deduction').val(societe.prorata_de_deduction);
-            $('#mod_nature_activite').val(societe.nature_activite);
-            $('#mod_activite').val(societe.activite);
-            $('#mod_regime_declaration').val(societe.regime_declaration);
-            $('#mod_fait_generateur').val(societe.fait_generateur);
-            $('#mod_rubrique_tva').val(societe.rubrique_tva);
-            $('#mod_designation').val(societe.designation);
-            $('#mod_nombre_chiffre_compte').val(societe.nombre_chiffre_compte);
-            $('#mod_model_comptable').val(societe.modele_comptable);
+// function ouvrirModalModifierSociete(societeId) {
+//     $.ajax({
+//         url: `/societes/${societeId}/edit`,
+//         type: 'GET',
+//         success: function(societe) {
+//             // Remplir les champs du formulaire avec les données de la société
+//             $('#mod_societe_id').val(societe.id);
+//             $('#mod_raison_sociale').val(societe.raison_sociale);
+//             $('#mod_siège_social').val(societe.siege_social); // Ajout du champ Siège Social
+//             $('#mod_ice').val(societe.ice);
+//             $('#mod_rc').val(societe.rc);
+//             $('#mod_identifiant_fiscal').val(societe.identifiant_fiscal);
+//             $('#mod_patente').val(societe.patente);
+//             $('#mod_centre_rc').val(societe.centre_rc);
+//             $('#mod_forme_juridique').val(societe.forme_juridique);
+//             $('#mod_exercice_social_debut').val(societe.exercice_social_debut);
+//             $('#mod_exercice_social_fin').val(societe.exercice_social_fin);
+//             $('#mod_date_creation').val(societe.date_creation);
+//             $('#mod_assujettie_partielle_tva').val(societe.assujettie_partielle_tva);
+//             $('#mod_prorata_de_deduction').val(societe.prorata_de_deduction);
+//             $('#mod_nature_activite').val(societe.nature_activite);
+//             $('#mod_activite').val(societe.activite);
+//             $('#mod_regime_declaration').val(societe.regime_declaration);
+//             $('#mod_fait_generateur').val(societe.fait_generateur);
+//             $('#editRubriqueTVA').val(societe.rubrique_tva);
+//             $('#mod_designation').val(societe.designation);
+//             $('#mod_nombre_chiffre_compte').val(societe.nombre_chiffre_compte);
+//             $('#mod_model_comptable').val(societe.modele_comptable);
 
-            // Affiche le modal
-            $('#modifierSocieteModal').modal('show');
-        },
-        error: function(error) {
-            console.log("Erreur lors de la récupération des données de la société :", error);
-        }
-    });
-}
+//             // Affiche le modal
+//             $('#modifierSocieteModal').modal('show');
+            
+//         },
+//         error: function(error) {
+//             console.log("Erreur lors de la récupération des données de la société :", error);
+//         }
+//     });
+// }
 
-// Écouteur d'événement pour le modal de modification
-$(document).on('click', '.text-primary', function() {
-    var societeId = $(this).data('id'); // Récupère l'ID de la société
-    ouvrirModalModifierSociete(societeId);
-});
+// // Écouteur d'événement pour le modal de modification
+// $(document).on('click', '.text-primary', function() {
+//     var societeId = $(this).data('id'); // Récupère l'ID de la société
+//     ouvrirModalModifierSociete(societeId);
+    
+// });
 
-// Soumettre le formulaire
-$('#modifierSocieteForm').on('submit', function(e) {
-    e.preventDefault(); // Empêche le rechargement de la page
+// // Soumettre le formulaire
+// $('#modifierSocieteForm').on('submit', function(e) {
+//     e.preventDefault(); // Empêche le rechargement de la page
 
-    var societeId = $('#mod_societe_id').val();
-    var formData = $(this).serialize(); // Récupère les données du formulaire
+//     var societeId = $('#mod_societe_id').val();
+//     var formData = $(this).serialize(); // Récupère les données du formulaire
 
-    $.ajax({
-        url: `/societes/${societeId}`,
-        type: 'PUT',
-        data: formData,
-        success: function(response) {
-            // Mettre à jour les données dans le tableau Tabulator
-            table.updateOrAddData([response]);
+//     $.ajax({
+//         url: `/societes/${societeId}`,
+//         type: 'PUT',
+//         data: formData,
+//         success: function(response) {
+//             // Mettre à jour les données dans le tableau Tabulator
+//             table.updateOrAddData([response]);
 
-            // Fermer le modal
-            $('#modifierSocieteModal').modal('hide');
-        },
-        error: function(error) {
-            console.log("Erreur lors de la modification de la société :", error);
-        }
-    });
-});
+//             // Fermer le modal
+//             $('#modifierSocieteModal').modal('hide');
+//         },
+//         error: function(error) {
+//             console.log("Erreur lors de la modification de la société :", error);
+//         }
+//     });
+// }); -->
 
 
 
