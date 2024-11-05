@@ -65,11 +65,11 @@
                         <div class="col-md-6 mb-3">
                             <label for="type_client" class="form-label">Type client</label>
                             <select class="form-control" name="type_client" required>
-                                <option value="1.Entreprise de droit privé">1.Entreprise de droit privé</option>
-                                <option value="2.État">2.État</option>
-                                <option value="3.Collectivités territoriales">3.Collectivités territoriales</option>
-                                <option value="4.Entreprise publique">4.Entreprise publique</option>
-                                <option value="5.Autre organisme public">5.Autre organisme public</option>
+                                <option value="5.Entreprise de droit privé">5.Entreprise de droit privé</option>
+                                <option value="1.État">1.État</option>
+                                <option value="2.Collectivités territoriales">2.Collectivités territoriales</option>
+                                <option value="3.Entreprise publique">3.Entreprise publique</option>
+                                <option value="4.Autre organisme public">4.Autre organisme public</option>
                             </select>
                         </div>
                     </div>
@@ -200,11 +200,11 @@
                     <div class="form-group">
                         <label for="type_client">Type Client</label>
                         <select class="form-control" name="type_client" required>
-                            <option value="1.Entreprise de droit privé">1.Entreprise de droit privé</option>
-                            <option value="2.État">2.État</option>
-                            <option value="3.Collectivités territoriales">3.Collectivités territoriales</option>
-                            <option value="4.Entreprise publique">4.Entreprise publique</option>
-                            <option value="5.Autre organisme public">5.Autre organisme public</option>
+                            <option value="5.Entreprise de droit privé">5.Entreprise de droit privé</option>
+                            <option value="1.État">1.État</option>
+                            <option value="2.Collectivités territoriales">2.Collectivités territoriales</option>
+                            <option value="3.Entreprise publique">3.Entreprise publique</option>
+                            <option value="4.Autre organisme public">4.Autre organisme public</option>
                         </select>
                     </div>
                 </div>

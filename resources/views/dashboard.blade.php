@@ -45,7 +45,7 @@
 </head>
 <body>
 
-@extends('layouts.user_type.auth')
+@extends('layouts.user_type.auths')
 
 @section('content')
 
@@ -178,12 +178,23 @@
                             <input type="text" class="form-control" name="prorata_de_deduction" id="prorata_de_deduction" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="regime_declaration" class="form-label">Régime de Déclaration</label>
-                            <input type="text" class="form-control" name="regime_declaration" required>
+                            <label for="regime_declaration" class="form-label">Régime de Déclaration de TVA</label>
+                         
+                            <select class="form-control" name="regime_declaration" required>
+                                <option value="" disabled selected>Choisir une option</option>
+                                <option value="Mensuel de droit commun">Mensuel de droit commun</option>
+                                <option value="Trimestriel de droit commun">Trimestriel de droit commun</option>
+                                <option value="Mensuel de la marge">Mensuel de la marge</option>
+                                <option value="Trimestriel de la marge">Trimestriel de la marge</option>
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="fait_generateur" class="form-label">Fait Générateur</label>
-                            <input type="date" class="form-control" name="fait_generateur" required>
+                            <select class="form-control" name="fait_generateur" required>
+                                <option value="" disabled selected>Choisir une option</option>
+                                <option value="Encaissement">Encaissement</option>
+                                <option value="Débit">Débit</option>
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <div class="form-group">
@@ -202,28 +213,54 @@
                             <input type="number" class="form-control" name="nombre_chiffre_compte" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="modele_comptable" class="form-label">Modèle Comptable</label>
-                            <input type="text" class="form-control" name="modele_comptable" required>
-                        </div>
+                    <label for="modele_comptable" class="form-label">Modèle Comptable</label>
+                    <select class="form-control" name="modele_comptable" id="modele_comptable" required>
+                        <option value="" disabled selected>Choisir un modèle</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Simplifié">Simplifié</option>
+                    </select>
+                </div>
+
                     </div>
                     <button type="reset" class="btn btn-secondary me-2">Réinitialiser</button>
-                    <button type="submit" class="btn btn-primary">Ajouter</button>
-                </form>
+                    <button type="submit" class="btn btn-primary" id="ajouter-societe">Ajouter</button>
+                    </form>
             </div>
         </div>
     </div>
 </div>
+<script>
+    $(document).ready(function() {
+        // Réinitialiser le formulaire lors de l'ouverture du modal
+        $('#nouvelleSocieteModal').on('show.bs.modal', function (event) {
+            $('#societe-form')[0].reset();
+        });
+
+        // Lorsqu'on clique sur le bouton "Ajouter"
+        $('#ajouter-societe').on('click', function(event) {
+            // Sélectionner les éléments Rubrique TVA et Désignation
+            const rubriqueTvaSelect = $('#rubrique_tva');
+            const designationInput = $('input[name="designation"]');
+
+            // Vérifier si Désignation est vide et si Rubrique TVA a une option sélectionnée
+            if (designationInput.val().trim() === '' && rubriqueTvaSelect.val()) {
+                // Mettre à jour la valeur de Désignation avec l'option Rubrique TVA sélectionnée
+                designationInput.val(rubriqueTvaSelect.find('option:selected').text());
+            }
+        });
+    });
+</script>
 
   <script>
 
 
 
-$(document).ready(function() {
-    $('#nouvelleSocieteModal').on('show.bs.modal', function (event) {
-        // Réinitialiser le formulaire lors de l'ouverture du modal
-        $('#societe-form')[0].reset();
-    });
-});
+// $(document).ready(function() {
+//     $('#nouvelleSocieteModal').on('show.bs.modal', function (event) {
+//         // Réinitialiser le formulaire lors de l'ouverture du modal
+//         $('#societe-form')[0].reset();
+//     });
+// });
 
 
 
@@ -345,32 +382,42 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             <input type="number" class="form-control" id="import_raison_sociale" name="raison_sociale" required>
                         </div>
                         <div class="col-md-6 mb-3">
+                            <label for="import_forme_juridique" class="form-label">Forme Juridique</label>
+                            <input type="number" class="form-control" id="import_forme_juridique" name="forme_juridique">
+                        </div>
+                        <div class="col-md-6 mb-3">
                             <label for="import_siège_social" class="form-label">Siège Social</label>
                             <input type="number" class="form-control" id="import_siège_social" name="siege_social">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="import_ice" class="form-label">ICE</label>
-                            <input type="number" class="form-control" id="import_ice" name="ice" required maxlength="15" title="Veuillez entrer uniquement des chiffres (max 15 chiffres)">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="import_rc" class="form-label">RC</label>
-                            <input type="number" class="form-control" id="import_rc" name="rc" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="import_identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
-                            <input type="number" class="form-control" id="import_identifiant_fiscal" name="identifiant_fiscal" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="import_patente" class="form-label">Patente</label>
                             <input type="number" class="form-control" id="import_patente" name="patente">
                         </div>
+                       
+                        <div class="col-md-6 mb-3">
+                            <label for="import_rc" class="form-label">RC</label>
+                            <input type="number" class="form-control" id="import_rc" name="rc" required>
+                        </div>
                         <div class="col-md-6 mb-3">
                             <label for="import_centre_rc" class="form-label">Centre RC</label>
                             <input type="number" class="form-control" id="import_centre_rc" name="centre_rc">
                         </div>
+                       
                         <div class="col-md-6 mb-3">
-                            <label for="import_forme_juridique" class="form-label">Forme Juridique</label>
-                            <input type="number" class="form-control" id="import_forme_juridique" name="forme_juridique">
+                            <label for="import_identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
+                            <input type="number" class="form-control" id="import_identifiant_fiscal" name="identifiant_fiscal" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_ice" class="form-label">ICE</label>
+                            <input type="number" class="form-control" id="import_ice" name="ice" required maxlength="15" title="Veuillez entrer uniquement des chiffres (max 15 chiffres)">
+                        </div>
+                      
+                   
+                     
+                      
+                        <div class="col-md-6 mb-3">
+                            <label for="import_date_creation" class="form-label">Date de Création</label>
+                            <input type="number" class="form-control" id="import_date_creation" name="date_creation">
                         </div>
                         <div class="col-md-6 mb-3 d-flex">
                             <div class="me-2" style="flex: 1;">
@@ -383,16 +430,12 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="import_date_creation" class="form-label">Date de Création</label>
-                            <input type="number" class="form-control" id="import_date_creation" name="date_creation">
+                            <label for="import_model_comptable" class="form-label">Modèle Comptable</label>
+                            <input type="number" class="form-control" id="import_model_comptable" name="modele_comptable" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="import_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
-                            <input type="number" class="form-control" id="import_assujettie_partielle_tva" name="assujettie_partielle_tva">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="import_prorata_de_deduction" class="form-label">Prorata de Déduction</label>
-                            <input type="number" class="form-control" id="import_prorata_de_deduction" name="prorata_de_deduction">
+                            <label for="import_nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
+                            <input type="number" class="form-control" id="import_nombre_chiffre_compte" name="nombre_chiffre_compte">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="import_nature_activite" class="form-label">Nature d'Activité</label>
@@ -402,8 +445,20 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             <label for="import_activite" class="form-label">Activité</label>
                             <input type="number" class="form-control" id="import_activite" name="activite">
                         </div>
+
+
                         <div class="col-md-6 mb-3">
-                            <label for="import_regime_declaration" class="form-label">Régime de Déclaration</label>
+                            <label for="import_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
+                            <input type="number" class="form-control" id="import_assujettie_partielle_tva" name="assujettie_partielle_tva">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="import_prorata_de_deduction" class="form-label">Prorata de Déduction</label>
+                            <input type="number" class="form-control" id="import_prorata_de_deduction" name="prorata_de_deduction">
+                        </div>
+                       
+                    
+                        <div class="col-md-6 mb-3">
+                            <label for="import_regime_declaration" class="form-label">Régime de Déclaration de TVA</label>
                             <input type="number" class="form-control" id="import_regime_declaration" name="regime_declaration">
                         </div>
                         <div class="col-md-6 mb-3">
@@ -418,14 +473,8 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             <label for="import_designation" class="form-label">Désignation</label>
                             <input type="number" class="form-control" id="import_designation" name="designation">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="import_nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
-                            <input type="number" class="form-control" id="import_nombre_chiffre_compte" name="nombre_chiffre_compte">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="import_model_comptable" class="form-label">Modèle Comptable</label>
-                            <input type="number" class="form-control" id="import_model_comptable" name="modele_comptable" required>
-                        </div>
+                      
+                      
                     </div>
                     <button type="submit" class="btn btn-primary">Importer</button>
                 </form>
@@ -512,7 +561,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             <input type="text" class="form-control" id="mod_activite" name="activite">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="mod_regime_declaration" class="form-label">Régime de Déclaration</label>
+                            <label for="mod_regime_declaration" class="form-label">Régime de Déclaration de TVA</label>
                             <input type="text" class="form-control" id="mod_regime_declaration" name="regime_declaration">
                         </div>
                         <div class="col-md-6 mb-3">
@@ -622,7 +671,6 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 </script>
 <!-- Table Tabulator -->
 
-
 <div id="societes-table"></div>
 <!-- Tabulator JS -->
 <script>
@@ -634,7 +682,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         data: societes, // Charger les données passées depuis le contrôleur
         layout: "fitColumns", // Ajuster les colonnes à la largeur du tableau
         columns: [
-            {title: "Raison Sociale", field: "raison_sociale", formatter: function(cell, formatterParams, onRendered){
+            {title: "Raison Sociale", field: "raison_sociale", formatter: function(cell) {
                 var nomEntreprise = cell.getData()["raison_sociale"];
                 var formeJuridique = cell.getData().forme_juridique;
                 return nomEntreprise + " " + formeJuridique;
@@ -653,17 +701,20 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
             },
             {
                 title: "Actions",
-                formatter: function(cell, formatterParams) {
+                formatter: function(cell) {
+                    var rowData = cell.getRow().getData();
                     return "<div class='action-icons'>" +
                         "<a href='#' class='text-primary mx-1' data-bs-toggle='modal' data-bs-target='#modifierSocieteModal' " +
-                        "data-id='" + cell.getRow().getData().id + "' " +
-                        "data-nom-entreprise='" + cell.getRow().getData().raison_sociale + "' " +
-                        "data-ice='" + cell.getRow().getData().ice + "' " +
-                        "data-rc='" + cell.getRow().getData().rc + "' " +
-                        "data-identifiant-fiscal='" + cell.getRow().getData().identifiant_fiscal + "'>" +
+                        "data-id='" + rowData.id + "' " +
+                        "data-nom-entreprise='" + rowData.raison_sociale + "' " +
+                        "data-ice='" + rowData.ice + "' " +
+                        "data-rc='" + rowData.rc + "' " +
+                        "data-identifiant-fiscal='" + rowData.identifiant_fiscal + "'>" +
                         "<i class='fas fa-edit'></i></a>" +
-                        "<a href='#' class='text-danger mx-1 delete-icon' data-id='" + cell.getRow().getData().id + "'>" +
+                        "<a href='#' class='text-danger mx-1 delete-icon' data-id='" + rowData.id + "'>" +
                         "<i class='fas fa-trash'></i></a>" +
+                        "<a href='/exercices/" + rowData.id + "' class='text-info mx-1'>" +
+                        "<i class='fas fa-book' onclick='window.location=\"/exercices/" + rowData.id + "\"'></i></a>" +
                         "</div>";
                 },
                 width: 150,
@@ -671,12 +722,18 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
             }
         ],
     });
+    
+  // Ajouter un gestionnaire d'événements pour le double clic sur une ligne
+// table.on("rowDblClick", function(row) {
+//     var rowData = row.getData(); // Obtenir les données de la ligne
+//     window.location.href = "{{ route('exercices.show', '') }}/" + rowData.id; // Rediriger vers la vue 'exercices'
+// });
 
-   // Écouteur d'événement pour le double clic sur une ligne du tableau
-   table.on("rowDblClick", function(row) {
-        var societeId = row.getData().id; // Récupérer l'ID de la société
-        window.location.href = `/exercice/${societeId}`; // Rediriger vers la vue "exercice"
-    });
+//    // Écouteur d'événement pour le double clic sur une ligne du tableau
+//    table.on("rowDblClick", function(row) {
+//         var societeId = row.getData().id; // Récupérer l'ID de la société
+//         window.location.href = `/exercice/${societeId}`; // Rediriger vers la vue "exercice"
+//     });
 
 	$(document).ready(function() {
   remplirRubriquesTva('rubrique_tva');
@@ -689,31 +746,6 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         myModal.show();
         remplirRubriquesTva();
     });
-//AJOUTER SOCIETES 
-//   $(document).ready(function() {
-//     $("#societe-form").on("submit", function(e) {
-//         e.preventDefault(); // Empêche le rechargement de la page
-
-//         // Récupérer les données du formulaire
-//         var formData = $(this).serialize();
-
-//         // Envoyer les données au serveur
-//         $.ajax({
-//             url: '/societes', // Assurez-vous que cette URL est correcte
-//             type: 'POST',
-//             data: formData,
-//             success: function(response) {
-//                 console.log(response);
-//                 $('#nouvelleSocieteModal').modal('hide');
-//                 // Vous pouvez aussi recharger le tableau Tabulator ou afficher un message de succès
-//             },
-//             error: function(xhr, status, error) {
-//                 console.error("Erreur lors de l'ajout de la société:", error);
-//                 alert("Une erreur s'est produite lors de l'ajout de la société.");
-//             }
-//         });
-//     });
-// });
 
     // Gestion de la suppression d'une société
     document.getElementById('societes-table').addEventListener('click', function(e) {
@@ -830,162 +862,6 @@ function openImportModal() {
 </script>
 
 
-<script>
-
-//     // Écouter l'événement de clic sur les icônes de suppression
-// document.addEventListener("click", function(e) {
-//     if (e.target && e.target.closest(".delete-icon")) {
-//         // Récupérer l'ID de la société à partir de l'attribut data-id
-//         var societeId = e.target.closest(".delete-icon").getAttribute("data-id");
-
-//         // Demander confirmation avant de supprimer
-//         if (confirm("Êtes-vous sûr de vouloir supprimer cette société ?")) {
-//             // Appeler la fonction pour supprimer la société
-//             deleteSociete(societeId);
-            
-//         }
-//     }
-    
-// });
-
-</script>
-
-<script>
-// function ouvrirModalModifierSociete(societeId) {
-//     $.ajax({
-//         url: `/societes/${societeId}/edit`,
-//         type: 'GET',
-//         success: function(societe) {
-//             // Remplir les champs du formulaire avec les données de la société
-//             $('#mod_societe_id').val(societe.id);
-//             $('#mod_raison_sociale').val(societe.raison_sociale);
-//             $('#mod_siège_social').val(societe.siege_social); // Ajout du champ Siège Social
-//             $('#mod_ice').val(societe.ice);
-//             $('#mod_rc').val(societe.rc);
-//             $('#mod_identifiant_fiscal').val(societe.identifiant_fiscal);
-//             $('#mod_patente').val(societe.patente);
-//             $('#mod_centre_rc').val(societe.centre_rc);
-//             $('#mod_forme_juridique').val(societe.forme_juridique);
-//             $('#mod_exercice_social_debut').val(societe.exercice_social_debut);
-//             $('#mod_exercice_social_fin').val(societe.exercice_social_fin);
-//             $('#mod_date_creation').val(societe.date_creation);
-//             $('#mod_assujettie_partielle_tva').val(societe.assujettie_partielle_tva);
-//             $('#mod_prorata_de_deduction').val(societe.prorata_de_deduction);
-//             $('#mod_nature_activite').val(societe.nature_activite);
-//             $('#mod_activite').val(societe.activite);
-//             $('#mod_regime_declaration').val(societe.regime_declaration);
-//             $('#mod_fait_generateur').val(societe.fait_generateur);
-//             $('#editRubriqueTVA').val(societe.rubrique_tva);
-//             $('#mod_designation').val(societe.designation);
-//             $('#mod_nombre_chiffre_compte').val(societe.nombre_chiffre_compte);
-//             $('#mod_model_comptable').val(societe.modele_comptable);
-
-//             // Affiche le modal
-//             $('#modifierSocieteModal').modal('show');
-            
-//         },
-//         error: function(error) {
-//             console.log("Erreur lors de la récupération des données de la société :", error);
-//         }
-//     });
-// }
-
-// // Écouteur d'événement pour le modal de modification
-// $(document).on('click', '.text-primary', function() {
-//     var societeId = $(this).data('id'); // Récupère l'ID de la société
-//     ouvrirModalModifierSociete(societeId);
-    
-// });
-
-// // Soumettre le formulaire
-// $('#modifierSocieteForm').on('submit', function(e) {
-//     e.preventDefault(); // Empêche le rechargement de la page
-
-//     var societeId = $('#mod_societe_id').val();
-//     var formData = $(this).serialize(); // Récupère les données du formulaire
-
-//     $.ajax({
-//         url: `/societes/${societeId}`,
-//         type: 'PUT',
-//         data: formData,
-//         success: function(response) {
-//             // Mettre à jour les données dans le tableau Tabulator
-//             table.updateOrAddData([response]);
-
-//             // Fermer le modal
-//             $('#modifierSocieteModal').modal('hide');
-//         },
-//         error: function(error) {
-//             console.log("Erreur lors de la modification de la société :", error);
-//         }
-//     });
-// }); -->
-
-
-
-
-
-
- 
-// document.addEventListener('DOMContentLoaded', function () {
-//     const form = document.getElementById('import-societe-form');
-
-//     form.addEventListener('submit', function (e) {
-//         e.preventDefault(); // Empêche le rechargement de la page
-
-//         const formData = new FormData(form);
-
-//         fetch('{{ route("societes.import") }}', {
-//             method: 'POST',
-//             body: formData,
-//             headers: {
-//                 'X-Requested-With': 'XMLHttpRequest',
-//                 'X-CSRF-TOKEN': '{{ csrf_token() }}', // Pour Laravel
-//             }
-//         })
-//         .then(response => response.json())
-//         .then(data => {
-//             // Affiche le message de succès ou d'erreur
-//             if (data.success) {
-//                 alert(data.message);
-//                 // Ferme le modal
-//                 $('#importModal').modal('hide');
-//                 // Réinitialiser le formulaire si nécessaire
-//                 form.reset();
-//             } else {
-//                 alert('Erreur : ' + data.message);
-//             }
-//         })
-//         .catch(error => {
-//             console.error('Erreur:', error);
-//             alert('Une erreur est survenue lors de l\'importation.');
-//         });
-//     });
-// });
-
-
-
-// form.addEventListener('submit', function (e) {
-//     const fileInput = document.getElementById('import_file');
-//     const filePath = fileInput.value;
-
-//     // Vérifier le format du fichier
-//     const allowedExtensions = /(\.xlsx|\.xls|\.csv)$/i;
-//     if (!allowedExtensions.exec(filePath)) {
-//         alert('Veuillez télécharger un fichier avec une extension .xls, .xlsx ou .csv');
-//         fileInput.value = ''; // Réinitialiser le champ de fichier
-//         e.preventDefault();
-//         return false;
-//     }
-// });
-
-
-
-
-
-
-
-</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
 @endsection

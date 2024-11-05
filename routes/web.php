@@ -24,9 +24,11 @@ use App\Exports\ClientsExport;
 
 use App\Http\Controllers\ClientsPDFExportController;
 use App\Http\Controllers\SocietesPDFExportController;
-
+use App\Http\Controllers\ExerciceController;
+    Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
 
 Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
+
 
 
 Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
@@ -50,7 +52,6 @@ Route::get('/export-societes', function () {
     return Excel::download(new SocietesExport, 'societes.xlsx');
 })->name('export.societes');
 
-Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
 
 
 
