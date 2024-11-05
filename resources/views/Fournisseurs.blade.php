@@ -55,6 +55,11 @@
 .btn-custom-gradient:hover {
     background-image: linear-gradient(to right, #536fb2, #344767); /* Inverser le dégradé au survol */
 }
+
+#fournisseur-table {
+    overflow: auto; /* Permet le défilement */
+    max-height: 800px; /* Hauteur maximale du conteneur */
+}
 </style>
 
 </head>
@@ -219,6 +224,7 @@
                             <div class="form-group">
                                 <label for="rubrique_tva">Rubrique TVA</label>
                                 <select class="form-control" id="rubrique_tva">
+                                    <option value="">Sélectionnez une Rubrique</option>
                                     <!-- Les options seront ajoutées par JavaScript -->
                                 </select>
                             </div>
@@ -232,6 +238,7 @@
                     </div>
                     <button type="submit" class="btn btn-primary">Enregistrer</button>
                     <button type="button" class="btn btn-secondary" id="resetModal">Réinitialiser</button>
+                 
                 </form>
             </div>
         </div>
@@ -284,7 +291,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editNatureOperation">Nature de l'opération</label>
-                                <select class="form-control select2" id="editNatureOperation">
+                                <select class="form-control" id="editNatureOperation">
                                     <option value="">Sélectionner une option</option>
                                     <option value="Achat de biens d'équipement">Achat de biens d'équipement</option>
                                     <option value="Achat de travaux">Achat de travaux</option>
@@ -295,7 +302,7 @@
                         <div class="col-md-6">
     <div class="form-group">
         <label for="editContrePartie">Contre Partie</label>
-        <select class="form-control select2" id="editContrePartie" required>
+        <select class="form-control" id="editContrePartie" required>
             <option value="">Sélectionnez une contre partie</option>
         </select>
     </div>
@@ -306,8 +313,8 @@
                             <div class="form-group">
                                 <label for="editRubriqueTVA">Rubrique TVA</label>
                                
-                                <select class="form-control select2" id="editRubriqueTVA" required>
-                                
+                                <select class="form-control" id="editRubriqueTVA" required>
+                                    <option value="">Sélectionnez une Rubrique</option>
                                     <!-- Les options seront ajoutées par JavaScript -->
                                 </select>
                             </div>
@@ -315,7 +322,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editDesignation">Désignation</label>
-                                <input type="text" class="form-control" id="editDesignation" required>
+                                <input type="text" class="form-control" id="editDesignation"placeholder="Designation" >
                             </div>
                         </div>
                     </div>
@@ -328,68 +335,7 @@
 
 
  <script >
-// Fonction pour gérer la navigation entre les champs avec la touche Entrée
-function setupEnterNavigation(formId) {
-  document.getElementById(formId).addEventListener('keypress', function(event) {
-      // Vérifie si la touche appuyée est "Entrée"
-      if (event.key === 'Enter') {
-          event.preventDefault(); // Empêche le comportement par défaut du bouton Entrée
-          
-          // Récupère tous les éléments INPUT et SELECT du formulaire
-          const inputs = Array.from(this.elements).filter(el => el.tagName === 'INPUT' || el.tagName === 'SELECT');
-          
-          // Trouve l'index de l'élément actuellement actif
-          const currentIndex = inputs.indexOf(document.activeElement);
-          
-          // Si l'élément actuel n'est pas le dernier, passe au champ suivant
-          if (currentIndex < inputs.length - 1) {
-              inputs[currentIndex + 1].focus(); // Passe au champ suivant
-          } else {
-              // Si c'est le dernier champ, vous pouvez éventuellement soumettre le formulaire ici
-              // this.submit(); // Décommentez cette ligne si vous voulez soumettre le formulaire après le dernier champ
-          }
-      }
-  });
 
-  // Ajout d'un gestionnaire d'événements pour les sélections de listes déroulantes
-  const selects = document.querySelectorAll(`#${formId} select`);
-  selects.forEach(select => {
-      select.addEventListener('keydown', function(event) {
-          if (event.key === 'ArrowDown') {
-              // Sélectionne l'option suivante
-              if (this.selectedIndex < this.options.length - 1) {
-                  this.selectedIndex++;
-              }
-              event.preventDefault(); // Empêche le défilement de la page
-          } else if (event.key === 'ArrowUp') {
-              // Sélectionne l'option précédente
-              if (this.selectedIndex > 0) {
-                  this.selectedIndex--;
-              }
-              event.preventDefault(); // Empêche le défilement de la page
-          } else if (event.key === 'Enter') {
-              // Si la touche "Entrée" est pressée après la sélection, passe au champ suivant
-              event.preventDefault(); // Empêche le comportement par défaut
-              const currentInput = document.activeElement; // Récupère l'élément actif
-              const inputs = Array.from(document.getElementById(formId).elements).filter(el => el.tagName === 'INPUT' || el.tagName === 'SELECT');
-              const currentIndex = inputs.indexOf(currentInput);
-              
-              // Vérifie si l'élément actif est un <select>
-              if (currentInput.tagName === 'SELECT') {
-                  if (currentIndex < inputs.length - 1) {
-                      inputs[currentIndex + 1].focus(); // Passe au champ suivant
-                  }
-              }
-          }
-      });
-  });
-}
-
-
-// Initialiser la navigation pour les deux formulaires
-setupEnterNavigation('fournisseurFormAdd');
-setupEnterNavigation('fournisseurFormEdit');
-setupEnterNavigation('importModal');
 
 
     // Événement pour garantir que le champ compte commence par 4411
@@ -427,7 +373,7 @@ $("#identifiant_fiscal").on("input", function() {
 var table = new Tabulator("#fournisseur-table", {
   ajaxURL: "/fournisseurs/data", // URL pour récupérer les données
   layout: "fitColumns",
-  Height:  "500px", // Hauteur minimale du tableau
+  Height:  "800px", // Hauteur minimale du tableau
   columns: [
       {title: "Compte", field: "compte", editor: "input", headerFilter: "input", minWidth: 80},
       {title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input", minWidth: 120},
@@ -468,15 +414,108 @@ var table = new Tabulator("#fournisseur-table", {
   ],
   
 });
+var designationValue = ''; // Variable globale pour stocker l'intitulé
 
+// Fonction pour remplir les rubriques TVA
+function remplirRubriquesTva(selectId, selectedValue = null) {
+    $.ajax({
+        url: '/rubriques-tva?type=Achat',
+        type: 'GET',
+        success: function(data) {
+            var select = $("#" + selectId);
+            
+            // Détruire Select2 s'il est déjà initialisé
+            if (select.hasClass("select2-hidden-accessible")) {
+                select.select2("destroy");
+            }
+            
+            select.empty();
+              // Ajouter l'option vide
+              select.append(new Option("Sélectionnez une Rubrique", ""));
+
+            let categoriesArray = [];
+            $.each(data.rubriques, function(categorie, rubriques) {
+                let categories = categorie.split('/').map(cat => cat.trim());
+                let mainCategory = categories[0];
+                let subCategory = categories[1] ? categories[1].trim() : '';
+                categoriesArray.push({
+                    mainCategory: mainCategory,
+                    subCategory: subCategory,
+                    rubriques: rubriques.rubriques
+                });
+            });
+
+            categoriesArray.sort((a, b) => a.mainCategory.localeCompare(b.mainCategory));
+            let categoryCounter = 1;
+            const excludedNumRacines = [147, 151, 152, 148, 144];
+
+            $.each(categoriesArray, function(index, categoryObj) {
+                let mainCategoryOption = new Option(`${categoryCounter}. ${categoryObj.mainCategory}`, '', true, true);
+                mainCategoryOption.className = 'category';
+                mainCategoryOption.disabled = true;
+                select.append(mainCategoryOption);
+                categoryCounter++;
+
+                if (categoryObj.subCategory) {
+                    let subCategoryOption = new Option(` ${categoryObj.subCategory}`, '', true, true);
+                    subCategoryOption.className = 'subcategory';
+                    subCategoryOption.disabled = true;
+                    select.append(subCategoryOption);
+                }
+
+                categoryObj.rubriques.forEach(function(rubrique) {
+                    if (!excludedNumRacines.includes(rubrique.Num_racines)) {
+                        let searchText = `${rubrique.Num_racines} ${rubrique.Nom_racines} ${categoryObj.mainCategory}`;
+                        let option = new Option(`${rubrique.Num_racines}: ${rubrique.Nom_racines} : ${Math.round(rubrique.Taux)}%`, rubrique.Num_racines);
+                        option.setAttribute('data-search-text', searchText);
+                        option.setAttribute('data-nom-racine', rubrique.Nom_racines);
+                        select.append(option);
+                    }
+                });
+            });
+
+            select.select2({
+                width: '100%',
+                minimumResultsForSearch: 0,
+                dropdownAutoWidth: true,
+                templateResult: function(data) {
+                    if (!data.id) return data.text;
+                    if ($(data.element).hasClass('category')) {
+                        return $('<span style="font-weight: bold;">' + data.text + '</span>');
+                    } else if ($(data.element).hasClass('subcategory')) {
+                        return $('<span style="font-weight: bold; padding-left: 10px;">' + data.text + '</span>');
+                    }
+                    return $('<span>' + data.text + '</span>');
+                },
+                matcher: function(params, data) {
+                    if ($.trim(params.term) === '') return data;
+                    var searchText = $(data.element).data('search-text');
+                    return searchText && searchText.toLowerCase().includes(params.term.toLowerCase()) ? data : null;
+                }
+            });
+
+            select.on("select2:open", function() {
+                setTimeout(function() {
+                    $('.select2-search__field').focus();
+                }, 10);
+            });
+
+            if (selectedValue) {
+                select.val(selectedValue).trigger('change');
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.error('Erreur lors de la récupération des rubriques :', textStatus, errorThrown);
+        }
+    });
+}
+
+// Gestion de la soumission du formulaire d'ajout
 $("#fournisseurFormAdd").on("submit", function(e) {
     e.preventDefault(); // Empêche la soumission par défaut du formulaire
 
-    // Récupérer la valeur du champ contre_partie
-    var contrePartieVal = $("#contre_partie").val();
-
-    // Remplir le champ designation avec designationValue
-    $("#designation").val(designationValue); // Remplir le champ designation avant d'envoyer
+    // Mettre à jour le champ designation avec la valeur sélectionnée
+    $("#designation").val(designationValue);
 
     // Appeler la fonction d'envoi des données
     envoyerDonnees(); // Ne pas passer de paramètres car designation est déjà mise à jour
@@ -502,29 +541,32 @@ function envoyerDonnees() {
         },
         success: function(response) {
             table.setData("/fournisseurs/data"); // Recharger les données
-            $("#fournisseurModaladd").modal("hide");
+            $("#fournisseurModaladd").modal("hide"); // Fermer le modal
             $("#fournisseurFormAdd")[0].reset(); // Réinitialiser le formulaire d'ajout
         },
         error: function(xhr) {
             console.error("Erreur lors de l'enregistrement des données :", xhr.responseText);
             alert("Erreur lors de l'enregistrement des données !");
         }
-       
     });
 }
- 
+
+// Réinitialiser le formulaire à la fermeture
 $('#resetModal').on('click', function () {
-        $('#fournisseurFormAdd')[0].reset(); // Réinitialiser le formulaire
-    });
+    $('#fournisseurFormAdd')[0].reset(); // Réinitialiser le formulaire
+});
+
 // Appel pour remplir les options de contrepartie lors du chargement
 $(document).ready(function() {
     remplirContrePartie('contre_partie');
+
+    // Remplir les rubriques TVA lors de l'ouverture du modal
+    $('#fournisseurModaladd').on('shown.bs.modal', function () {
+        remplirRubriquesTva('rubrique_tva'); // Remplir les rubriques TVA
+    });
 });
 
-
-
-var designationValue = ''; // Variable globale pour stocker l'intitulé
-
+// Fonction pour remplir les options de contrepartie
 function remplirContrePartie(selectId, selectedValue = null, callback = null) {
     $.ajax({
         url: '/comptes', // La route pour récupérer les comptes
@@ -532,13 +574,17 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
         success: function(data) {
             var select = $("#" + selectId);
 
-            // // Détruire Select2 s'il est déjà initialisé
-            // if (select.hasClass("select2-hidden-accessible")) {
-            //     select.select2("destroy");
-            // }
+            // Détruire Select2 s'il est déjà initialisé
+            if (select.hasClass("select2-hidden-accessible")) {
+                select.select2("destroy");
+            }
 
             // Vider le sélecteur et ajouter les nouvelles options
-            select.empty();
+            select.empty(); 
+
+              // Ajouter l'option vide
+              select.append(new Option("Sélectionnez une contre partie", ""));
+
 
             // Tri des comptes par numéro
             data.sort((a, b) => a.compte.localeCompare(b.compte));
@@ -552,7 +598,7 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
             // Réinitialiser Select2 avec les paramètres de configuration
             select.select2({
                 width: '100%',
-                minimumResultsForSearch: 0, // Afficher la barre de recherche
+                minimumResultsForSearch: 0,
                 dropdownAutoWidth: true
             });
 
@@ -583,185 +629,71 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
         }
     });
 }
-$(document).ready(function() {
-  // Appel de la fonction pour remplir le sélecteur à l'ouverture du modal
-  $('#fournisseurModaladd').on('shown.bs.modal', function() {
-      remplirContrePartie('contre_partie'); // ID du sélecteur
-      setupSelect2KeyboardNavigation('fournisseurFormAdd'); 
-  });
-
-});
 
 
-$(document).ready(function() {
-  remplirRubriquesTva('rubrique_tva');
-});
 
-
-// Soumission du formulaire de modification de fournisseur
 $("#fournisseurFormEdit").on("submit", function(e) {
-  e.preventDefault();
+    e.preventDefault(); // Empêche la soumission par défaut du formulaire
 
-  var fournisseurId = $("#editFournisseurId").val();
-  var url = "/fournisseurs/" + fournisseurId; // URL pour la modification
+    var fournisseurId = $("#editFournisseurId").val();
+    var url = "/fournisseurs/" + fournisseurId; // URL pour la modification
 
-  $.ajax({
-      url: url,
-      type: "PUT",
-      data: {
-          compte: $("#editCompte").val(),
-          intitule: $("#editIntitule").val(),
-          identifiant_fiscal: $("#editIdentifiantFiscal").val(),
-          ICE: $("#editICE").val(),
-          nature_operation: $("#editNatureOperation").val(),
-          rubrique_tva: $("#editRubriqueTVA").val(), // Inclure la valeur sélectionnée dans les données
-          designation: $("#editDesignation").val(),
-          contre_partie: $("#editContrePartie").val(),
-          _token: '{{ csrf_token() }}' // Assurez-vous que le token CSRF est inclus
-      },
-      success: function(response) {
-          table.setData("/fournisseurs/data"); // Recharger les données
-          $("#fournisseurModaledit").modal("hide");
-          $("#fournisseurFormEdit")[0].reset(); // Réinitialiser le formulaire de modification
-          $("#editFournisseurId").val(""); // Réinitialiser l'ID
-          // Remplir de nouveau les rubriques TVA pour le prochain affichage
-          remplirRubriquesTva('rubrique_tva'); 
-          remplirContrePartie('contre_partie');
-      },
-      error: function(xhr) {
-          alert("Erreur lors de l'enregistrement des données !");
-      }
-  });
+  
+    // Vérifier si le champ editDesignation est vide
+    if ($("#editDesignation").val().trim() === '') {
+        // Remplir editDesignation avec le designationValue
+        $("#editDesignation").val(designationValue.trim());
+    }
+
+    $.ajax({
+        url: url,
+        type: "PUT",
+        data: {
+            compte: $("#editCompte").val(),
+            intitule: $("#editIntitule").val(),
+            identifiant_fiscal: $("#editIdentifiantFiscal").val(),
+            ICE: $("#editICE").val(),
+            nature_operation: $("#editNatureOperation").val(),
+            rubrique_tva: $("#editRubriqueTVA").val(), // Inclure la valeur sélectionnée dans les données
+            designation: $("#editDesignation").val(), // Utiliser la designation remplie
+            contre_partie: $("#editContrePartie").val(),
+            _token: '{{ csrf_token() }}' // Assurez-vous que le token CSRF est inclus
+        },
+        success: function(response) {
+            table.setData("/fournisseurs/data"); // Recharger les données
+            $("#fournisseurModaledit").modal("hide");
+            $("#fournisseurFormEdit")[0].reset(); // Réinitialiser le formulaire de modification
+            $("#editFournisseurId").val(""); // Réinitialiser l'ID
+            // Remplir de nouveau les rubriques TVA pour le prochain affichage
+            remplirRubriquesTva('rubrique_tva'); 
+            remplirContrePartie('contre_partie');
+        },
+        error: function(xhr) {
+            alert("Erreur lors de l'enregistrement des données !");
+        }
+    });
 });
 
 // Fonction pour remplir le formulaire pour la modification
 function editFournisseur(data) {
-  $("#editFournisseurId").val(data.id);
-  $("#editCompte").val(data.compte);
-  $("#editIntitule").val(data.intitule);
-  $("#editIdentifiantFiscal").val(data.identifiant_fiscal);
-  $("#editICE").val(data.ICE);
-  $("#editNatureOperation").val(data.nature_operation);
-  remplirRubriquesTva('rubrique_tva'); 
-  remplirContrePartie('contre_partie');
-  // Remplir la liste déroulante de rubrique TVA avec la valeur actuelle
-  remplirRubriquesTva("editRubriqueTVA", data.rubrique_tva);
+    $("#editFournisseurId").val(data.id);
+    $("#editCompte").val(data.compte);
+    $("#editIntitule").val(data.intitule);
+    $("#editIdentifiantFiscal").val(data.identifiant_fiscal);
+    $("#editICE").val(data.ICE);
+    $("#editNatureOperation").val(data.nature_operation);
+    remplirRubriquesTva('rubrique_tva'); 
+    remplirContrePartie('contre_partie');
+    
+    // Remplir la liste déroulante de rubrique TVA avec la valeur actuelle
+    remplirRubriquesTva("editRubriqueTVA", data.rubrique_tva);
 
-  $("#editDesignation").val(data.designation);
-  $("#editContrePartie").val(data.contre_partie);
-  remplirContrePartie("editContrePartie", data.contre_partie);
-  
-  $("#fournisseurModaledit").modal("show");
+    $("#editDesignation").val(data.designation);
+    $("#editContrePartie").val(data.contre_partie);
+    remplirContrePartie("editContrePartie", data.contre_partie);
+    
+    $("#fournisseurModaledit").modal("show");
 }
-
-// Fonction pour remplir les options de rubrique TVA dans le select
-function remplirRubriquesTva(selectId, selectedValue = null) {
-  $.ajax({
-      url: '/rubriques-tva?type=Achat',
-      type: 'GET',
-      success: function(data) {
-          var select = $("#" + selectId);
-          
-        //   // Détruire Select2 s'il est déjà initialisé
-        //   if (select.hasClass("select2-hidden-accessible")) {
-        //       select.select2("destroy");
-        //   }
-          
-          select.empty();
-
-          let categoriesArray = [];
-          $.each(data.rubriques, function(categorie, rubriques) {
-              let categories = categorie.split('/').map(cat => cat.trim());
-              let mainCategory = categories[0];
-              let subCategory = categories[1] ? categories[1].trim() : '';
-              categoriesArray.push({
-                  mainCategory: mainCategory,
-                  subCategory: subCategory,
-                  rubriques: rubriques.rubriques
-              });
-          });
-
-          categoriesArray.sort((a, b) => a.mainCategory.localeCompare(b.mainCategory));
-          let categoryCounter = 1;
-          const excludedNumRacines = [147, 151, 152, 148, 144];
-
-          $.each(categoriesArray, function(index, categoryObj) {
-              let mainCategoryOption = new Option(`${categoryCounter}. ${categoryObj.mainCategory}`, '', true, true);
-              mainCategoryOption.className = 'category';
-              mainCategoryOption.disabled = true;
-              select.append(mainCategoryOption);
-              categoryCounter++;
-
-              if (categoryObj.subCategory) {
-                  let subCategoryOption = new Option(` ${categoryObj.subCategory}`, '', true, true);
-                  subCategoryOption.className = 'subcategory';
-                  subCategoryOption.disabled = true;
-                  select.append(subCategoryOption);
-              }
-
-              categoryObj.rubriques.forEach(function(rubrique) {
-                  if (!excludedNumRacines.includes(rubrique.Num_racines)) {
-                      let searchText = `${rubrique.Num_racines} ${rubrique.Nom_racines} ${categoryObj.mainCategory}`;
-                      let option = new Option(`${rubrique.Num_racines}: ${rubrique.Nom_racines} : ${Math.round(rubrique.Taux)}%`, rubrique.Num_racines);
-                      option.setAttribute('data-search-text', searchText);
-                      option.setAttribute('data-nom-racine', rubrique.Nom_racines);
-                      select.append(option);
-                  }
-              });
-          });
-
-          select.select2({
-              width: '100%',
-              minimumResultsForSearch: 0,
-              dropdownAutoWidth: true,
-              templateResult: function(data) {
-                  if (!data.id) return data.text;
-                  if ($(data.element).hasClass('category')) {
-                      return $('<span style="font-weight: bold;">' + data.text + '</span>');
-                  } else if ($(data.element).hasClass('subcategory')) {
-                      return $('<span style="font-weight: bold; padding-left: 10px;">' + data.text + '</span>');
-                  }
-                  return $('<span>' + data.text + '</span>');
-              },
-              matcher: function(params, data) {
-                  if ($.trim(params.term) === '') return data;
-                  var searchText = $(data.element).data('search-text');
-                  return searchText && searchText.toLowerCase().includes(params.term.toLowerCase()) ? data : null;
-              }
-          });
-
-          select.on("select2:open", function() {
-              setTimeout(function() {
-                  $('.select2-search__field').focus();
-              }, 10);
-          });
-
-          if (selectedValue) {
-              select.val(selectedValue).trigger('change');
-          }
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-          console.error('Erreur lors de la récupération des rubriques :', textStatus, errorThrown);
-      }
-  });
-}
-
-// Masquer l'input fournisseur (si nécessaire)
-document.getElementById('fournisseurId').style.display = 'none';
-
-// Placer le curseur sur le champ 'intitule'
-document.getElementById('intitule').focus();
-
-
-$(document).ready(function () {
-
-        $('#fournisseurModal').on('shown.bs.modal', function () {
-
-            $("#compte").focus(); // Mettre le focus sur le champ Compte
-            remplirRubriquesTva();
-        });
-    });
-
 
 // excel
 

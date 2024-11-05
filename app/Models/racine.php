@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes; // Pour utiliser le soft delete
 class Racine extends Model
 {
     use HasFactory, SoftDeletes; // Ajoutez SoftDeletes pour gérer le champ deleted_at
-
+    protected $connection = 'supcompta';
     protected $table = 'racines'; // Nom de la table
 
     protected $fillable = [

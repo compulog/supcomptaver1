@@ -69,9 +69,9 @@ class JournalController extends Controller
         {
             $request->validate([
                 'code_journal' => 'required|string|max:255',
-                'type_journal' => 'required|string|max:255',
-                'intitule' => 'required|string|max:255',
-                'contre_partie' => 'required|string|max:255',
+                'type_journal' => 'nullable|string|max:255',
+                'intitule' => 'nullable|string|max:255',
+                'contre_partie' => 'nullable|string|max:255',
             ]);
     
             Journal::create($request->all());
@@ -89,9 +89,9 @@ class JournalController extends Controller
         {
             $request->validate([
                 'code_journal' => 'required|string|max:255',
-                'type_journal' => 'required|string|max:255',
-                'intitule' => 'required|string|max:255',
-                'contre_partie' => 'required|string|max:255',
+                'type_journal' => 'nullable|string|max:255',
+                'intitule' => 'nullable|string|max:255',
+                'contre_partie' => 'nullable|string|max:255',
             ]);
     
             $journaux = Journal::findOrFail($id);

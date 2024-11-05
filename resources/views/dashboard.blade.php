@@ -37,37 +37,43 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
-
-<h2>Liste des Sociétés</h2>
+<div class="container mt-5">
+    <div>
+        @if(Auth::check())
+            <span>Bonjour, {{ Auth::user()->name }}</span>
+        @else
+            <span>Bienvenue, Invité</span>
+        @endif
+    </div>
+<h4>Liste des Sociétés</h4>
 <div class="row">
-    <div class="col-12">
-        <div class="card mb-4 mx-4">
+     <div class="col-12">
+      
+     {{--   <div class="card mb-4 mx-4">
             <div class="card-header pb-0">
-                <div class="d-flex flex-row justify-content-between">
-                    <div>
+                <div class="d-flex flex-row justify-content-between"> --}}
+                    {{-- <div>
                         <h5 class="mb-0">Sociétés</h5>
-                    </div>
-                    <button type="button" class="btn bg-gradient-primary btn-sm mb-0" id="open-modal-btn">+&nbsp; Nouvelle société</button>
+                    </div> --}}
+                    <button type="button" class="btn bg-gradient-primary" id="open-modal-btn">+&nbsp; Nouvelle société</button>
                    
-                    <button id="import-societes" class="btn bg-gradient-primary btn-sm mb-0" >Importer Sociétés</button>
+                    <button id="import-societes" class="btn btn-secondary" >Importer Sociétés</button>
                 
-                    <button id="export-button" class="btn btn-success">Exporter en Excel</button>
-<script>
-    document.getElementById('export-button').addEventListener('click', function() {
-    window.location.href = '/export-societes';
-});
+                    <button id="export-button" class="btn btn-secondary">Exporter en Excel</button>
 
-</script>
                 </div><br>
             </div>
-            <div class="card-body px-0 pt-0 pb-2">
+             <div class="card-body px-0 pt-0 pb-2"> 
                 <div class="table-responsive p-0">
                     <div id="societes-table"></div>
+                
+
+                </div>
                 </div>
             </div>
-        </div>
+       {{--  </div>
     </div>
-</div>
+</div> --}}
 
 <!-- Modal pour ajouter une nouvelle société -->
 <div class="modal fade" id="nouvelleSocieteModal" tabindex="-1" aria-labelledby="nouvelleSocieteModalLabel" aria-hidden="true">
@@ -433,7 +439,12 @@
 
 
 <script>
-    
+   
+    document.getElementById('export-button').addEventListener('click', function() {
+    window.location.href = '/export-societes';
+});
+
+
 
     
  $(document).ready(function() {
@@ -803,72 +814,11 @@ $('#modifierSocieteForm').on('submit', function(e) {
 
 
 
-
-
-
- 
-// document.addEventListener('DOMContentLoaded', function () {
-//     const form = document.getElementById('import-societe-form');
-
-//     form.addEventListener('submit', function (e) {
-//         e.preventDefault(); // Empêche le rechargement de la page
-
-//         const formData = new FormData(form);
-
-//         fetch('{{ route("societes.import") }}', {
-//             method: 'POST',
-//             body: formData,
-//             headers: {
-//                 'X-Requested-With': 'XMLHttpRequest',
-//                 'X-CSRF-TOKEN': '{{ csrf_token() }}', // Pour Laravel
-//             }
-//         })
-//         .then(response => response.json())
-//         .then(data => {
-//             // Affiche le message de succès ou d'erreur
-//             if (data.success) {
-//                 alert(data.message);
-//                 // Ferme le modal
-//                 $('#importModal').modal('hide');
-//                 // Réinitialiser le formulaire si nécessaire
-//                 form.reset();
-//             } else {
-//                 alert('Erreur : ' + data.message);
-//             }
-//         })
-//         .catch(error => {
-//             console.error('Erreur:', error);
-//             alert('Une erreur est survenue lors de l\'importation.');
-//         });
-//     });
-// });
-
-
-
-// form.addEventListener('submit', function (e) {
-//     const fileInput = document.getElementById('import_file');
-//     const filePath = fileInput.value;
-
-//     // Vérifier le format du fichier
-//     const allowedExtensions = /(\.xlsx|\.xls|\.csv)$/i;
-//     if (!allowedExtensions.exec(filePath)) {
-//         alert('Veuillez télécharger un fichier avec une extension .xls, .xlsx ou .csv');
-//         fileInput.value = ''; // Réinitialiser le champ de fichier
-//         e.preventDefault();
-//         return false;
-//     }
-// });
-
-
-
-
-
-
-
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-@endsection
+
 
 </body>
 </html>
+@endsection

@@ -14,6 +14,7 @@ use App\Http\Controllers\ExportController;
 use App\Exports\FournisseursExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\RacineController;
+use App\Http\Controllers\OperationCouranteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Route;
@@ -24,7 +25,7 @@ use App\Http\Controllers\ClientController;
 
 use App\Http\Controllers\ImportExcelController;
 use App\Exports\SocietesExport;
-use Maatwebsite\Excel\Facades\Excel;
+
 
 
 use App\Exports\ClientsExport;
@@ -32,31 +33,34 @@ use App\Exports\ClientsExport;
 use App\Http\Controllers\ClientsPDFExportController;
 
 
-Route::get('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
 
 
-Route::get('/export-clients', function () {
-    return Excel::download(new ClientsExport, 'clients.xlsx');
-})->name('export.clients');
-
-
-Route::get('/export-societes', function () {
-    return Excel::download(new SocietesExport, 'societes.xlsx');
-})->name('export.societes');
-
-Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
-
-
-
-// routes/web.php
-Route::post('/operation-courante', [OperationCouranteController::class, 'store']);
-
-// Route pour obtenir la liste des clients
 
 
 // Routes protégées par middleware 'auth'
 
 Route::group(['middleware' => 'auth'], function () {
+
+
+    Route::get('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
+
+
+    Route::get('/export-clients', function () {
+        return Excel::download(new ClientsExport, 'clients.xlsx');
+    })->name('export.clients');
+    
+    
+    Route::get('/export-societes', function () {
+        return Excel::download(new SocietesExport, 'societes.xlsx');
+    })->name('export.societes');
+    
+    Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
+    
+    
+    
+    // routes/web.php
+     Route::post('/operation-courante', [OperationCouranteController::class, 'store']);
+
     
     Route::get('/clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit');
 

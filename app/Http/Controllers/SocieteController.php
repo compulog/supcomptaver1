@@ -18,16 +18,13 @@ class SocieteController extends Controller
         // Récupérer les données des sociétés
         $societes = Societe::all(); // Ajustez cela selon vos besoins
 
-        // Générer le PDF
-        $pdf = PDF::loadView('societes.pdf', compact('societes'));
+        
 
-        // Retourner le PDF au navigateur
-        return $pdf->download('societes.pdf');
     }
    public function getRubriquesTVA()
    {
        // Récupération des rubriques TVA
-       $rubriques = Racine::where('type', 'achat')->pluck('Nom_racines', 'id');
+       $rubriques = Racine::where('type', 'vente')->pluck('Nom_racines', 'id');
    
        // Vérifiez ce que retourne la requête
        // dd($rubriques); // Décommentez pour déboguer

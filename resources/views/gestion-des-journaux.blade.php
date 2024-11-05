@@ -84,7 +84,8 @@
                     <div class="form-group">
                         <label for="type_journal">Type Journal</label>
                         <select class="form-control" id="type_journal" name="type_journal" required>
-                            <option value="">Sélectionner un type</option>
+                            <option value=""  disabled selected>Sélectionner un type</option>
+                            <option value="" ></option>
                             <option value="Achats">Achats</option>
                             <option value="Ventes">Ventes</option>
                             <option value="Trésoreries">Trésoreries</option>
@@ -94,7 +95,8 @@
                     <div class="form-group contre-partie-container"> <!-- Conteneur pour le champ Contre Partie -->
                         <label for="contre_partie">Contre Partie</label>
                         <select class="form-control" id="contre_partie" name="contre_partie">
-                            <option value="">Sélectionner une contre partie</option>
+                            <option value=""disabled selected>Sélectionner une contre partie</option>
+                            <option value=""></option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -130,8 +132,9 @@
                     </div>
                     <div class="form-group">
                         <label for="type_journal_modif">Type Journal</label>
-                        <select class="form-control select2" id="type_journal_modif" name="type_journal_modif" required>
-                            <option value="">Sélectionner un type</option>
+                        <select class="form-control" id="type_journal_modif" name="type_journal_modif" >
+                            <option value=""disabled selected>Sélectionner un type</option>
+                            <option value=""></option>
                             <option value="Achats">Achats</option>
                             <option value="Ventes">Ventes</option>
                             <option value="Trésoreries">Trésoreries</option>
@@ -140,13 +143,14 @@
                     </div>
                     <div class="form-group contre-partie-container"> <!-- Conteneur pour le champ Contre Partie -->
                         <label for="contre_partie_modif">Contre Partie</label>
-                        <select class="form-control select2" id="contre_partie_modif" name="contre_partie_modif">
-                            <option value="">Sélectionner une contre partie</option>
+                        <select class="form-control" id="contre_partie_modif" name="contre_partie_modif">
+                            <option value=""disabled selected>Sélectionner une contre partie</option>
+                            <option value=""></option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="intitule_modif">Intitulé</label>
-                        <input type="text" class="form-control" id="intitule_modif" required>
+                        <input type="text" class="form-control" id="intitule_modif" >
                     </div>
                     <button type="submit" class="btn btn-primary">Sauvegarder</button>
                 </form>
