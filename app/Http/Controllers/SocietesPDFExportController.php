@@ -17,7 +17,9 @@ class SocietesPDFExportController extends Controller
     public function exportPDF()
     {
         // Récupérer les données des sociétés
-        $societes = Societe::all([  'raison_sociale',
+        $societes = Societe::all([ 
+        'id',  
+        'raison_sociale',
         'forme_juridique',
         'siege_social',
         'patente',

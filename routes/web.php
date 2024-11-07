@@ -25,6 +25,21 @@ use App\Exports\ClientsExport;
 use App\Http\Controllers\ClientsPDFExportController;
 use App\Http\Controllers\SocietesPDFExportController;
 use App\Http\Controllers\ExerciceController;
+
+
+use App\Http\Controllers\FileUploadController;
+
+Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
+Route::get('/vente', [VenteController::class, 'index'])->name('vente.view');
+Route::get('/banque', [BanqueController::class, 'index'])->name('banque.view');
+Route::get('/caisse', [CaisseController::class, 'index'])->name('caisse.view');
+Route::get('/impot', [ImpotController::class, 'index'])->name('impot.view');
+Route::get('/paie', [PaieController::class, 'index'])->name('paie.view');
+
+// Route pour le téléchargement de fichiers
+Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
+
+
     Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
 
 Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');

@@ -31,7 +31,7 @@ class SocieteController extends Controller
        // Récupération des rubriques TVA
        $rubriques = Racine::select('categorie', 'Nom_racines','Taux','Num_racines')
    ->where('type','vente')
-   ->having('Taux' , '>' , 0)
+   ->having('Taux' , '>=' , 0)
    ->get();
        // Vérifiez ce que retourne la requête
        // dd($rubriques); // Décommentez pour déboguer

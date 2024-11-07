@@ -60,9 +60,8 @@
 
                     <button id="import-societes" class="btn bg-gradient-primary btn-sm mb-0">Importer Sociétés</button>
 
-                    <button id="export-button" class="btn bg-gradient-primary btn-sm mb-0">Exporter en Excel</button>
+                    <button id="export-button" class="btn bg-gradient-primary btn-sm mb-0">Liste Des Dossier</button>
 
-                    <button id="export-pdf" class="btn bg-gradient-primary btn-sm mb-0">Exporter en PDF</button>
 
 <script>document.getElementById("export-pdf").addEventListener("click", function() {
     window.location.href = "{{ route('societes.export') }}";
@@ -156,9 +155,9 @@
                             <label for="nature_activite" class="form-label">Nature de l'Activité</label>
                             <select class="form-control" name="nature_activite">
                                 <option value="">Choisir une activité</option>
-                                <option value="Vente de biens d'équipement">Vente de biens d'équipement</option>
-                                <option value="Vente de travaux">Vente de travaux</option>
-                                <option value="Vente de services">Vente de services</option>
+                                <option value="4.Vente de biens d'équipement">4.Vente de biens d'équipement</option>
+                                <option value="5.Vente de travaux">5.Vente de travaux</option>
+                                <option value="6.Vente de services">6.Vente de services</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -674,55 +673,88 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 <div id="societes-table"></div>
 <!-- Tabulator JS -->
 <script>
-    // Assigner les données des sociétés à une variable JS depuis PHP
-    var societes = {!! $societes !!};
+        // Assigner les données des sociétés à une variable JS depuis PHP
+        var societes = {!! $societes !!};
 
-    // Initialiser Tabulator avec les données
-    var table = new Tabulator("#societes-table", {
-        data: societes, // Charger les données passées depuis le contrôleur
-        layout: "fitColumns", // Ajuster les colonnes à la largeur du tableau
-        columns: [
-            {title: "Raison Sociale", field: "raison_sociale", formatter: function(cell) {
-                var nomEntreprise = cell.getData()["raison_sociale"];
-                var formeJuridique = cell.getData().forme_juridique;
-                return nomEntreprise + " " + formeJuridique;
-            }, headerFilter: true},
-            {title: "ICE", field: "ice", headerFilter: true},
-            {title: "RC", field: "rc", headerFilter: true},
-            {title: "Identifiant Fiscal", field: "identifiant_fiscal", headerFilter: true},
-            {
-                title: "Exercice Social",
-                field: "exercice_social",
-                headerFilter: true,
-                formatter: function(cell) {
-                    const rowData = cell.getRow().getData(); // Obtenir les données de la ligne
-                    return `Du ${rowData.exercice_social_debut} au ${rowData.exercice_social_fin}`; // Formater les dates
-                },
+        // Initialiser Tabulator avec les données
+        var table = new Tabulator("#societes-table", {
+            data: societes, // Charger les données passées depuis le contrôleur
+            layout: "fitColumns", // Ajuster les colonnes à la largeur du tableau
+            columns: [
+                {title: "Raison Sociale", field: "raison_sociale", formatter: function(cell) {
+                    var nomEntreprise = cell.getData()["raison_sociale"];
+                    var formeJuridique = cell.getData().forme_juridique;
+                    return nomEntreprise + " " + formeJuridique;
+                }, headerFilter: true},
+                {title: "ICE", field: "ice", headerFilter: true},
+                {title: "RC", field: "rc", headerFilter: true},
+                {title: "Identifiant Fiscal", field: "identifiant_fiscal", headerFilter: true},
+                {
+            title: "Exercice en cours",
+            field: "exercice_social", // Nom du champ dans vos données
+            headerFilter: true,
+            formatter: function(cell) {
+                const rowData = cell.getRow().getData(); // Obtenir les données de la ligne
+                return `Du ${rowData.exercice_social_debut} au ${rowData.exercice_social_fin}`; // Formater les dates
             },
-            {
-                title: "Actions",
-                formatter: function(cell) {
-                    var rowData = cell.getRow().getData();
-                    return "<div class='action-icons'>" +
-                        "<a href='#' class='text-primary mx-1' data-bs-toggle='modal' data-bs-target='#modifierSocieteModal' " +
-                        "data-id='" + rowData.id + "' " +
-                        "data-nom-entreprise='" + rowData.raison_sociale + "' " +
-                        "data-ice='" + rowData.ice + "' " +
-                        "data-rc='" + rowData.rc + "' " +
-                        "data-identifiant-fiscal='" + rowData.identifiant_fiscal + "'>" +
-                        "<i class='fas fa-edit'></i></a>" +
-                        "<a href='#' class='text-danger mx-1 delete-icon' data-id='" + rowData.id + "'>" +
-                        "<i class='fas fa-trash'></i></a>" +
-                        "<a href='/exercices/" + rowData.id + "' class='text-info mx-1'>" +
-                        "<i class='fas fa-book' onclick='window.location=\"/exercices/" + rowData.id + "\"'></i></a>" +
-                        "</div>";
-                },
-                width: 150,
-                hozAlign: "center"
+            editor: "input", // Utiliser un éditeur de type input pour permettre la modification
+            editorParams: {
+                maxLength: 10, // Limiter la longueur de l'entrée, ajustez selon vos besoins
+                placeholder: "Ex: 2023-2024", // Ajouter un placeholder pour guider l'utilisateur
+            },
+            validator: function(value) {
+                // Valider que la valeur saisie est correcte, ajustez selon votre format de date
+                return /^(\d{4})-(\d{4})$/.test(value); // Ex: 2023-2024
+            },
+            cellEdited: function(cell) {
+                var newValue = cell.getValue();
+                var rowData = cell.getRow().getData();
+                // Ici vous pouvez envoyer les nouvelles données au serveur avec une requête AJAX
+                console.log("Nouvelle valeur pour l'exercice social:", newValue);
+                // Exemple : envoyer la mise à jour à votre serveur via AJAX
+                fetch('/update-exercice-social', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: rowData.id,
+                        exercice_social: newValue
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Données mises à jour:", data);
+                })
+                .catch(error => {
+                    console.error("Erreur lors de la mise à jour:", error);
+                });
             }
-        ],
-    });
-    
+        },
+                {
+                    title: "Actions",
+                    formatter: function(cell) {
+                        var rowData = cell.getRow().getData();
+                        return "<div class='action-icons'>" +
+                            "<a href='#' class='text-primary mx-1' data-bs-toggle='modal' data-bs-target='#modifierSocieteModal' " +
+                            "data-id='" + rowData.id + "' " +
+                            "data-nom-entreprise='" + rowData.raison_sociale + "' " +
+                            "data-ice='" + rowData.ice + "' " +
+                            "data-rc='" + rowData.rc + "' " +
+                            "data-identifiant-fiscal='" + rowData.identifiant_fiscal + "'>" +
+                            "<i class='fas fa-edit'></i></a>" +
+                            "<a href='#' class='text-danger mx-1 delete-icon' data-id='" + rowData.id + "'>" +
+                            "<i class='fas fa-trash'></i></a>" +
+                            "<a href='/exercices/" + rowData.id + "' class='text-info mx-1'>" +
+                            "<i class='fas fa-door-open' onclick='window.location=\"/exercices/" + rowData.id + "\"'></i></a>" +
+                            "</div>";
+                    },
+                    width: 150,
+                    hozAlign: "center"
+                }
+            ],
+        });
+        
   // Ajouter un gestionnaire d'événements pour le double clic sur une ligne
 // table.on("rowDblClick", function(row) {
 //     var rowData = row.getData(); // Obtenir les données de la ligne
