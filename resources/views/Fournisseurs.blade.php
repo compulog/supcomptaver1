@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Fournisseurs</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://unpkg.com/tabulator-tables@5.0.7/dist/css/tabulator.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.2.4/dist/css/tabulator.min.css" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.0.7/dist/js/tabulator.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
@@ -17,6 +17,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <!-- Chargement de Bootstrap JS -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
     <style>
 /* Style pour le conteneur du tableau */
 #tabulator-table {
@@ -34,7 +37,9 @@
     height: 30px; /* Ajustez la hauteur du header */
     font-size: 0.9em; /* Réduisez la taille de la police */
     padding: 2px 5px; /* Ajustez le padding pour réduire l'espacement */
+    background-color: #f8f9fa; /* Couleur de l'en-tête */
 }
+
 
 #tabulator-table .tabulator-header .tabulator-col-title {
     font-size: 0.85em; /* Taille de police des titres des colonnes */
@@ -46,20 +51,59 @@
     padding: 1px 3px; /* Ajuste le padding interne */
     font-size: 0.8em; /* Diminue légèrement la police */}
     .btn-custom-gradient {
-    background-image: linear-gradient(to right, #344767, #31477a); /* Dégradé de gauche à droite */
+    background-image: linear-gradient(to right, #344767, #31477a) !important; /* Dégradé de gauche à droite */
     color: white !important; /* Couleur du texte en blanc */
     border: none; /* Pas de bordure */
-    transition: background-color 0.3s ease; /* Transition douce pour le survol */
+    transition: background-color!important 0.1s ease; /* Transition douce pour le survol */
 }
 
+
+   
+
+#fournisseur-table .tabulator-row {
+    transition: all 0.1s ease-in-out; /* Animation pour un effet dynamique */
+}
+
+    /* background-color: #e9ecef !important; Fond gris clair au survol */
+    .tabulator .tabulator-row:hover {
+    background-color: #31477a !important;  /* Couleur de survol */
+    color: white;  /* Texte en blanc lors du survol pour plus de contraste */
+}
+
+
+.bg-light {
+    background-color: #d1ecf1 !important; /* Fond bleu clair pour la sélection de ligne */
+}
+
+.tabulator .tabulator-col, .tabulator .tabulator-header {
+    font-weight: bold;
+    color: #495057 !important; /* Couleur de texte sombre */
+}
+
+
 .btn-custom-gradient:hover {
-    background-image: linear-gradient(to right, #536fb2, #344767); /* Inverser le dégradé au survol */
+    background-image: linear-gradient(to right, #536fb2, #344767)!important; /* Inverser le dégradé au survol */
 }
 
 #fournisseur-table {
     overflow: auto; /* Permet le défilement */
     max-height: 800px; /* Hauteur maximale du conteneur */
 }
+/* Applique un style ajusté tout en gardant le style du bouton btn-secondary */
+.input-group .btn-secondary {
+    padding: 0.375rem 0.75rem; /* Ajuste le padding horizontal et vertical */
+    font-size: 1rem; /* Taille du texte cohérente avec celle de l'input */
+    font-weight: 400; /* Poids de police standard */
+    color: #6c757d; /* Couleur par défaut du bouton secondaire (qui est la couleur d'origine de btn-secondary) */
+    background-color: #e2e6ea; /* Couleur d'arrière-plan du bouton secondaire */
+    border-color: #adb5bd; /* Bordure du bouton secondaire */
+    border-radius: 0.25rem; /* Coins arrondis pour un look plus moderne */
+   
+}
+
+
+
+
 </style>
 
 </head>
@@ -168,63 +212,77 @@
             </div>
             <div class="modal-body">
                 <form id="fournisseurFormAdd">
-                    <input type="hidden" id="fournisseurId" value="">
+                    @csrf <!-- Token CSRF pour la sécurité -->
+                    {{-- <!-- Champ masqué pour societe_id -->
+                    <input type="hidden" id="societe_id" name="societe_id" value="{{ old('societe_id', session('societe_id')) }}"> --}}
+                    
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="compte">Compte</label>
-                                <input type="text" class="form-control" id="compte" required>
+                                
+                                <!-- Options pour choisir entre saisie et auto-incrémentation -->
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="compte" name="compte" placeholder="4411XXXX" required>
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-secondary" id="autoIncrementBtn">Auto</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="intitule">Intitulé</label>
-                                <input type="text" class="form-control" id="intitule" required>
+                                <input type="text" class="form-control" id="intitule" name="intitule" >
                             </div>
                         </div>
                     </div>
+                    
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="identifiant_fiscal">Identifiant Fiscal</label>
-                                <input type="text" class="form-control" id="identifiant_fiscal" maxlength="8" pattern="\d*" required>
+                                <input type="text" class="form-control" id="identifiant_fiscal" name="identifiant_fiscal" maxlength="8" pattern="\d*" >
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="ICE">ICE</label>
-                                <input type="text" class="form-control" id="ICE" maxlength="15" pattern="\d*" required>
+                                <input type="text" class="form-control" id="ICE" name="ICE" maxlength="15" pattern="\d*" >
                             </div>
                         </div>
                     </div>
+                    
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="nature_operation">Nature de l'opération</label>
-                                <select class="form-control" id="nature_operation">
+                                <select class="form-control" id="nature_operation" name="nature_operation">
                                     <option value="">Sélectionner une option</option>
-                                    <option value="Achat de biens d'équipement">Achat de biens d'équipement</option>
-                                    <option value="Achat de travaux">Achat de travaux</option>
-                                    <option value="Achat de services">Achat de services</option>
+                                    <option value="1-Achat de biens d'équipement">1-Achat de biens d'équipement</option>
+                                    <option value="2-Achat de travaux">2-Achat de travaux</option>
+                                    <option value="3-Achat de services">3-Achat de services</option>
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="contre_partie">Contre Partie</label>
-                                <select class="form-control" id="contre_partie">
+                                <select class="form-control" id="contre_partie" name="contre_partie">
+                                    
                                     <option value="">Sélectionnez une contre partie</option>
                                     <!-- Les options seront ajoutées dynamiquement ici -->
                                 </select>
                             </div>
                         </div>
                     </div>
+                    
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="rubrique_tva">Rubrique TVA</label>
-                                <select class="form-control" id="rubrique_tva">
-                                    <option value="">Sélectionnez une Rubrique</option>
+                                <select class="form-control" id="rubrique_tva" name="rubrique_tva">
+                                    <option value="" selected>Sélectionnez une Rubrique</option>
                                     <!-- Les options seront ajoutées par JavaScript -->
                                 </select>
                             </div>
@@ -232,13 +290,16 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="designation">Désignation</label>
-                                <input type="text" class="form-control" id="designation" placeholder="Designation">
+                                <input type="text" class="form-control" id="designation" name="designation" placeholder="Designation" >
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Enregistrer</button>
-                    <button type="button" class="btn btn-secondary" id="resetModal">Réinitialiser</button>
-                 
+                    
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary mr-2" id="resetModal"> <i class="bi bi-arrow-clockwise fs-6"></i> <!-- Icône de réinitialisation --></button>
+                        <button type="submit" class="btn btn-primary ml-2">Valider<i class="bi bi-check-lg  bi-2x"></i>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -261,6 +322,7 @@
                     <input type="hidden" id="editFournisseurId" value="">
                     <div class="row">
                         <div class="col-md-6">
+                           
                             <div class="form-group">
                                 <label for="editCompte">Compte</label>
                                 <input type="text" class="form-control" id="editCompte" required>
@@ -293,9 +355,9 @@
                                 <label for="editNatureOperation">Nature de l'opération</label>
                                 <select class="form-control" id="editNatureOperation">
                                     <option value="">Sélectionner une option</option>
-                                    <option value="Achat de biens d'équipement">Achat de biens d'équipement</option>
-                                    <option value="Achat de travaux">Achat de travaux</option>
-                                    <option value="Achat de services">Achat de services</option>
+                                    <option value="1-Achat de biens d'équipement">1-Achat de biens d'équipement</option>
+                                    <option value="2-Achat de travaux">2-Achat de travaux</option>
+                                    <option value="3-Achat de services">3-Achat de services</option>
                                 </select>
                             </div>
                         </div>
@@ -326,7 +388,7 @@
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Sauvegarder</button>
+                    <button type="submit" class=" btn btn-secondary ladda-button">Sauvegarder  <i class="bi bi-save"></i> </button>
                 </form>
             </div>
         </div>
@@ -337,14 +399,48 @@
  <script >
 
 
+// Écouter le clic sur le bouton auto-incrément
+document.getElementById("autoIncrementBtn").addEventListener("click", function() {
+    fetchNextCompte();
+});
 
-    // Événement pour garantir que le champ compte commence par 4411
-    // Initialiser le champ compte avec '4411' et déplacer le curseur à la fin
-  const compteInput = document.getElementById('compte');
-  compteInput.value = '4411';
+function fetchNextCompte() {
+    fetch('/get-next-compte')
+        .then(response => response.json())
+        .then(data => {
+            const nextCompte = data.next_compte;
+            document.getElementById("compte").value = nextCompte;
+        })
+        .catch(error => console.error('Erreur lors de la récupération du numéro de compte:', error));
+}
 
-  // Déplacer le curseur à la fin du texte
-  compteInput.setSelectionRange(compteInput.value.length, compteInput.value.length);
+document.getElementById("compte").addEventListener("input", function() {
+    const compteField = document.getElementById("compte");
+    if (!compteField.value.startsWith("4411")) {
+        compteField.setCustomValidity("Le compte doit commencer par 4411");
+    } else {
+        compteField.setCustomValidity("");
+    }
+});
+
+// Gérer le déplacement automatique du focus lors de l'appui sur "Entrée"
+document.getElementById("fournisseurFormAdd").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault(); // Empêche le formulaire de se soumettre à la pression de la touche "Entrée"
+        
+        // Récupère tous les champs du formulaire
+        const inputs = Array.from(this.querySelectorAll("input, select,select2"));
+        
+        // Trouve l'index de l'élément actuellement focus
+        const currentIndex = inputs.indexOf(document.activeElement);
+        
+        // Si un élément suivant existe, place le focus dessus
+        if (currentIndex > -1 && currentIndex < inputs.length - 1) {
+            inputs[currentIndex + 1].focus();
+        }
+    }
+});
+
 
 // Validation pour le champ ICE
 $("#ICE").on("input", function() {
@@ -369,51 +465,95 @@ $("#identifiant_fiscal").on("input", function() {
 });
 
 
-
 var table = new Tabulator("#fournisseur-table", {
-  ajaxURL: "/fournisseurs/data", // URL pour récupérer les données
-  layout: "fitColumns",
-  Height:  "800px", // Hauteur minimale du tableau
-  columns: [
-      {title: "Compte", field: "compte", editor: "input", headerFilter: "input", minWidth: 80},
-      {title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input", minWidth: 120},
-      {title: "Identifiant Fiscal", field: "identifiant_fiscal", editor: "input", headerFilter: "input", minWidth: 50},
-      {title: "ICE", field: "ICE", editor: "input", headerFilter: "input", minWidth: 80},
-      {title: "Nature de l'opération", field: "nature_operation",editor: "input", headerFilter: "input", minWidth: 50},
-      {
-          title: "Rubrique TVA",
-          field: "rubrique_tva",
-          editor: "input",
-          headerFilter: "input", 
-          minWidth: 50,
-      },
-      {title: "Désignation", field: "designation", editor: "input", headerFilter: "input", minWidth: 80},
-      {title: "Contre Partie", field: "contre_partie", editor: "input", headerFilter: "input", minWidth: 80},
-      {
-          title: "Actions", 
-          field: "action-icons", 
-          formatter: function() {
-              return `
-               
-            <i class='fas fa-edit text-primary edit-icon' style='font-size: 0.9em; line-height:0.8; style='cursor: pointer;'></i>
-  <i class='fas fa-trash-alt text-danger delete-icon' style='font-size: 0.9em; line-height:0.8; style='cursor: pointer;'></i>
-`;
-          },
-          cellClick: function(e, cell) {
-              if (e.target.classList.contains('edit-icon')) {
-                  var rowData = cell.getRow().getData();
-                  editFournisseur(rowData);
-                 
-              } else if (e.target.classList.contains('delete-icon')) {
-                  var rowData = cell.getRow().getData();
-                  deleteFournisseur(rowData.id);
-              }
-          },
-          minWidth: 50,
-      }
-  ],
-  
+    ajaxURL: "/fournisseurs/data", // URL pour récupérer les données
+    layout: "fitColumns",
+    height: "800px", // Hauteur du tableau
+    selectable: true, // Permet de sélectionner les lignes
+    selectableRollingSelection: false, // Limite la sélection de lignes à une seule (désactiver si vous voulez plusieurs sélections)
+    pagination: "local", // Pagination locale pour un chargement rapide
+    paginationSize: 10, // Afficher 10 lignes par page
+    paginationSizeSelector: [5, 10, 20, 50], // Options pour sélectionner la taille de la page
+    responsiveLayout: "collapse", // Rend le tableau responsive en petits écrans
+    initialSort: [ // Tri initial par colonne 'Compte'
+        { column: "compte", dir: "asc" }
+    ],
+    columns: [
+        {
+            titleFormatter: function() {
+                // Ajout de la case de sélection et de l'icône de suppression dans l'en-tête
+                return `
+                    <div class="d-flex align-items-center">
+                        <input type="checkbox" id="selectAllCheckbox" title="Sélectionner tout" />
+                        <i class="fas fa-trash-alt text-danger ml-2" id="deleteSelectedIcon" title="Supprimer les lignes sélectionnées" style="cursor: pointer;"></i>
+                    </div>`;
+            },
+            formatter: "rowSelection", // Ajoute des cases de sélection pour chaque ligne
+            hozAlign: "center",
+            headerSort: false,
+            width: 70,
+        },
+        {title: "Compte", field: "compte", editor: "input", headerFilter: "input", minWidth: 80},
+        {title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input", minWidth: 120},
+        {title: "Identifiant Fiscal", field: "identifiant_fiscal", editor: "input", headerFilter: "input", minWidth: 50},
+        {title: "ICE", field: "ICE", editor: "input", headerFilter: "input", minWidth: 80},
+        {title: "Nature de l'opération", field: "nature_operation", editor: "input", headerFilter: "input", minWidth: 50},
+        {title: "Rubrique TVA", field: "rubrique_tva", editor: "input", headerFilter: "input", minWidth: 50},
+        {title: "Désignation", field: "designation", editor: "input", headerFilter: "input", minWidth: 80},
+        {title: "Contre Partie", field: "contre_partie", editor: "input", headerFilter: "input", minWidth: 80},
+        {
+            title: "Actions", 
+            field: "action-icons", 
+            formatter: function() {
+                return `
+                    <i class='fas fa-edit text-primary edit-icon' style='font-size: 0.9em; cursor: pointer;'></i>
+                    <i class='fas fa-trash-alt text-danger delete-icon' style='font-size: 0.9em; cursor: pointer;'></i>
+                `;
+            },
+            cellClick: function(e, cell) {
+                if (e.target.classList.contains('edit-icon')) {
+                    var rowData = cell.getRow().getData();
+                    editFournisseur(rowData);
+                } else if (e.target.classList.contains('delete-icon')) {
+                    var rowData = cell.getRow().getData();
+                    deleteFournisseur(rowData.id);
+                }
+            },
+            minWidth: 50,
+        }
+    ],
+    rowSelected: function(row) {
+        row.getElement().classList.add("bg-light"); // Ajoute une couleur de fond à la ligne sélectionnée
+    },
+    rowDeselected: function(row) {
+        row.getElement().classList.remove("bg-light"); // Supprime la couleur de fond si la ligne est désélectionnée
+    }
 });
+
+// Fonction pour supprimer les lignes sélectionnées
+function deleteSelectedRows() {
+    var selectedRows = table.getSelectedRows(); // Récupère les lignes sélectionnées
+    selectedRows.forEach(function(row) {
+        row.delete(); // Supprime chaque ligne sélectionnée
+    });
+}
+
+// Gestionnaire d'événements pour la case de sélection de toutes les lignes et l'icône de suppression
+document.getElementById("fournisseur-table").addEventListener("click", function(e) {
+    if (e.target.id === "selectAllCheckbox") {
+        if (e.target.checked) {
+            table.selectRow(); // Sélectionne toutes les lignes
+        } else {
+            table.deselectRow(); // Désélectionne toutes les lignes
+        }
+    }
+    if (e.target.id === "deleteSelectedIcon") {
+        deleteSelectedRows(); // Appelle la fonction de suppression pour les lignes sélectionnées
+    }
+});
+
+
+
 var designationValue = ''; // Variable globale pour stocker l'intitulé
 
 // Fonction pour remplir les rubriques TVA
@@ -525,6 +665,9 @@ $("#fournisseurFormAdd").on("submit", function(e) {
 function envoyerDonnees() {
     var url = "/fournisseurs"; // URL pour l'ajout
 
+ // Debug: Vérifiez que l'ID de la société est bien récupéré
+ console.log("ID de la société :", $("#societe_id").val());
+
     $.ajax({
         url: url,
         type: "POST",
@@ -537,6 +680,7 @@ function envoyerDonnees() {
             rubrique_tva: $("#rubrique_tva").val(),
             designation: $("#designation").val(), // Utiliser la designation remplie
             contre_partie: $("#contre_partie").val(),
+            //societe_id: $("#societe_id").val(), // Ajout de l'ID de la société ici
             _token: '{{ csrf_token() }}' // Assurez-vous d'inclure votre CSRF token
         },
         success: function(response) {
@@ -554,15 +698,22 @@ function envoyerDonnees() {
 // Réinitialiser le formulaire à la fermeture
 $('#resetModal').on('click', function () {
     $('#fournisseurFormAdd')[0].reset(); // Réinitialiser le formulaire
+
+    // Réinitialiser les champs select2
+    $('#fournisseurFormAdd select').each(function() {
+        $(this).val('').trigger('change'); // Réinitialise les champs select2
+    });
 });
 
 // Appel pour remplir les options de contrepartie lors du chargement
 $(document).ready(function() {
     remplirContrePartie('contre_partie');
-
+    $('.select2').select2(); // Initialisation de select2
     // Remplir les rubriques TVA lors de l'ouverture du modal
     $('#fournisseurModaladd').on('shown.bs.modal', function () {
         remplirRubriquesTva('rubrique_tva'); // Remplir les rubriques TVA
+        $('#compte').focus();
+        $('#rubrique_tva').val('').trigger('change');
     });
 });
 
@@ -631,6 +782,21 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
 }
 
 
+ // Fonction pour obtenir le prochain compte
+ function getNextCompte() {
+        $.ajax({
+            url: '/get-next-compte', // Route vers votre contrôleur
+            type: 'GET',
+            success: function(data) {
+                $('#compte').val(data.compte); // Remplir le champ compte
+                $('#intitule').focus(); // Mettre le focus sur le champ intitule
+            },
+            error: function() {
+                alert('Erreur lors de la récupération du compte.');
+            }
+        });
+    }
+
 
 $("#fournisseurFormEdit").on("submit", function(e) {
     e.preventDefault(); // Empêche la soumission par défaut du formulaire
@@ -657,6 +823,7 @@ $("#fournisseurFormEdit").on("submit", function(e) {
             rubrique_tva: $("#editRubriqueTVA").val(), // Inclure la valeur sélectionnée dans les données
             designation: $("#editDesignation").val(), // Utiliser la designation remplie
             contre_partie: $("#editContrePartie").val(),
+           // societe_id: $("#societe_id").val(), // Ajout de l'ID de la société ici
             _token: '{{ csrf_token() }}' // Assurez-vous que le token CSRF est inclus
         },
         success: function(response) {
@@ -682,6 +849,7 @@ function editFournisseur(data) {
     $("#editIdentifiantFiscal").val(data.identifiant_fiscal);
     $("#editICE").val(data.ICE);
     $("#editNatureOperation").val(data.nature_operation);
+    //$("#societe_id").val(data.societe_id); // Remplir l'ID de la société si nécessaire
     remplirRubriquesTva('rubrique_tva'); 
     remplirContrePartie('contre_partie');
     

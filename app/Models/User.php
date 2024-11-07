@@ -24,6 +24,7 @@ class User extends Authenticatable
         'phone',
         'location',
         'about_me',
+        'societe_id', // Ajoutez le champ societe_id ici si vous l'avez dans la base de données
     ];
 
     /**
@@ -44,5 +45,12 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
-    
+
+    /**
+     * La relation avec la société
+     */
+    public function societe()
+    {
+        return $this->belongsTo(Societe::class);
+    }
 }

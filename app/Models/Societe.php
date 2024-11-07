@@ -48,4 +48,8 @@ class Societe extends Model
     }
 
     // Ajouter d'autres relations ou méthodes ici si nécessaire
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }

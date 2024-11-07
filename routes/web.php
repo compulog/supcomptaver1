@@ -101,7 +101,7 @@ Route::get('/exercice/{id}', function ($id) {
 
    
 
-
+    Route::middleware(['setsocieteid'])->group(function () {
     Route::delete('/societes/{id}', [SocieteController::class, 'destroy'])->name('societes.destroy');
     Route::get('/societes/{id}', [SocieteController::class, 'show'])->name('societes.show');
    
@@ -124,7 +124,7 @@ Route::put('/societes/{id}', [SocieteController::class, 'update']);
 Route::get('/societes', [SocieteController::class, 'index'])->name('societes.index');
 
 
-
+});
 
 
     Route::get('dashboard', [SocieteController::class, 'index'])->name('dashboard'); // Afficher le dashboard
@@ -166,17 +166,20 @@ Route::delete('/journaux/{id}', [JournalController::class, 'destroy'])->name('jo
         return Excel::download(new FournisseursExport, 'fournisseurs.xlsx');
     });
     
-    Route::get('/export-fournisseurs-pdf', [ExportController::class, 'exportPDF']);
+    Route::get('/export-fournisseurs-pdf', [ExportController::class, 'exportPDF']) ;
 
-Route::get('/fournisseurs/data', [FournisseurController::class, 'getData']);
+Route::get('/fournisseurs/data', [FournisseurController::class, 'getData']) ;
 // Routes pour l'API des fournisseurs
-Route::get('/fournisseurs', [FournisseurController::class, 'index']);
+Route::get('/fournisseurs', [FournisseurController::class, 'index']) ;
 Route::post('/fournisseurs', [FournisseurController::class, 'store']);
-Route::put('/fournisseurs/{id}', [FournisseurController::class, 'update']);
+Route::put('/fournisseurs/{id}', [FournisseurController::class, 'update']) ;
 Route::delete('/fournisseurs/{id}', [FournisseurController::class, 'destroy']);
 Route::get('/fournisseurs/{id}', [FournisseurController::class, 'show']);
 // Route pour afficher le formulaire d'édition
-Route::get('/fournisseurs/{id}/edit', [FournisseurController::class, 'edit']);
+Route::get('/fournisseurs/{id}/edit', [FournisseurController::class, 'edit']) ;
+
+Route::get('/get-next-compte', [FournisseurController::class, 'getNextCompte']);
+
 
 Route::get('/rubriques-tva', [FournisseurController::class, 'getRubriquesTva']);
 Route::get('/comptes', [FournisseurController::class, 'getComptes']);

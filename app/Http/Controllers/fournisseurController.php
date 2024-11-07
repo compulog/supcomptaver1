@@ -6,7 +6,7 @@ use App\Imports\FournisseurImport;
 use App\Models\Fournisseur;
 use App\Models\Racine;
 use App\Models\PlanComptable;
-
+use Illuminate\Support\Facades\DB; 
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Validator;
@@ -69,12 +69,12 @@ return response()->json($fournisseur);
      $validator = Validator::make($request->all(), [
          'compte' => 'required|string|max:255',
          'intitule' => 'required|string|max:255',
-         'identifiant_fiscal' => 'required|string|max:255',
-         'ICE' => 'required|string|max:15',
-         'nature_operation' => 'required|string',
-         'rubrique_tva' => 'required|string',
-         'designation' => 'required|string|max:255',
-         'contre_partie' => 'required|string|max:255',
+         'identifiant_fiscal' => 'nullable|string|max:255',
+         'ICE' => 'nullable|string|max:15',
+         'nature_operation' => 'nullable|string',
+         'rubrique_tva' => 'nullable|string',
+         'designation' => 'nullable|string|max:255',
+         'contre_partie' => 'nullable|string|max:255',
      ]);
 
      if ($validator->fails()) {
@@ -121,6 +121,43 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
 
 
 }
+
+public function getNextCompte()
+{
+    // Récupérer tous les comptes qui commencent par "4411" et les trier par ordre croissant
+    $comptes = Fournisseur::where('compte', 'like', '4411%')
+        ->orderBy('compte', 'asc')
+        ->pluck('compte')
+        ->toArray();
+
+    $prefix = '4411'; // Le préfixe du compte
+    $nextCompte = $prefix . '0001'; // Compte de départ
+
+    if (count($comptes) > 0) {
+        // Vérifier s'il y a des comptes manquants
+        $lastSequence = (int)substr($comptes[count($comptes) - 1], 4); // Extraire le dernier numéro de compte existant
+        $nextCompte = $prefix . str_pad($lastSequence + 1, 4, '0', STR_PAD_LEFT); // Générer le prochain compte
+
+        // Vérifier s'il y a des numéros manquants entre les comptes
+        for ($i = 0; $i < count($comptes) - 1; $i++) {
+            $currentSequence = (int)substr($comptes[$i], 4); // Extraire la séquence du compte actuel
+            $nextSequence = (int)substr($comptes[$i + 1], 4); // Extraire la séquence du compte suivant
+
+            // Si la séquence suivante est plus grande de 1, cela signifie qu'il y a un compte manquant
+            if ($nextSequence - $currentSequence > 1) {
+                // Générer le premier numéro manquant
+                $nextCompte = $prefix . str_pad($currentSequence + 1, 4, '0', STR_PAD_LEFT);
+                break; // Une fois le premier compte manquant trouvé, on sort de la boucle
+            }
+        }
+    }
+
+    return response()->json(['next_compte' => $nextCompte]);
+}
+
+
+
+
 
 
 public function getComptes()
