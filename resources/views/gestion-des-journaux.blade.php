@@ -19,6 +19,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <!-- Chargement de Bootstrap JS -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<link href="/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
     <style>
 /* Style pour le conteneur du tableau */
 #tabulator-table {
@@ -107,7 +108,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                <button type="submit" form="ajouterJournalForm" class="btn btn-primary">Enregistrer</button>
+                <button type="submit" form="ajouterJournalForm" class="btn btn-primary">Valider</button>
             </div>
         </div>
     </div>

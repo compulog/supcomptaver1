@@ -10,7 +10,8 @@ class Racine extends Model
 {
     use HasFactory, SoftDeletes; // Ajoutez SoftDeletes pour gérer le champ deleted_at
     protected $connection = 'supcompta';
-    protected $table = 'racines'; // Nom de la table
+    protected $table = 'racines';
+
 
     protected $fillable = [
         'type',

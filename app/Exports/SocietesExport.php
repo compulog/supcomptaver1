@@ -16,7 +16,8 @@ class SocietesExport implements FromCollection, WithHeadings
     public function headings(): array
     {
         return [
-            'raison_sociale',
+            'id',
+        'raison_sociale',
         'forme_juridique',
         'siege_social',
         'patente',

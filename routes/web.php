@@ -11,6 +11,12 @@ use App\Http\Controllers\FournisseurController;
 use App\Http\Controllers\PlanComptableController;
 use App\Http\Controllers\JournalController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\AchatController;
+use App\Http\Controllers\VenteController;
+use App\Http\Controllers\BanqueController;
+use App\Http\Controllers\PaieController;
+use App\Http\Controllers\ImpotController;
+use App\Http\Controllers\CaisseController;
 use App\Exports\FournisseursExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\RacineController;
@@ -31,35 +37,70 @@ use App\Exports\SocietesExport;
 use App\Exports\ClientsExport;
 
 use App\Http\Controllers\ClientsPDFExportController;
+use App\Http\Controllers\SocietesPDFExportController;
+use App\Http\Controllers\ExerciceController;
+
+
+use App\Http\Controllers\FileUploadController;
+
+Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
+Route::get('/vente', [VenteController::class, 'index'])->name('vente.view');
+Route::get('/banque', [BanqueController::class, 'index'])->name('banque.view');
+Route::get('/caisse', [CaisseController::class, 'index'])->name('caisse.view');
+Route::get('/impot', [ImpotController::class, 'index'])->name('impot.view');
+Route::get('/paie', [PaieController::class, 'index'])->name('paie.view');
 
 
 
-
-
-
-// Routes protégées par middleware 'auth'
 
 Route::group(['middleware' => 'auth'], function () {
+
+// Route pour le téléchargement de fichiers
+Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
+
+
+    Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
+
+Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
+
+
+
+Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
+
+// Route pour le téléchargement de fichiers
+Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
+
+
+    Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
+
+Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
+
+
+
+Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
+
+    
+// Route pour l'exportation PDF
+Route::get('/societes/export', [SocietesPDFExportController::class, 'exportPDF'])->name('societes.export');
 
 
     Route::get('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
 
 
-    Route::get('/export-clients', function () {
-        return Excel::download(new ClientsExport, 'clients.xlsx');
-    })->name('export.clients');
-    
-    
-    Route::get('/export-societes', function () {
-        return Excel::download(new SocietesExport, 'societes.xlsx');
-    })->name('export.societes');
-    
-    Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
-    
-    
-    
-    // routes/web.php
-     Route::post('/operation-courante', [OperationCouranteController::class, 'store']);
+Route::get('/export-clients', function () {
+    return Excel::download(new ClientsExport, 'clients.xlsx');
+})->name('export.clients');
+
+
+Route::get('/export-societes', function () {
+    return Excel::download(new SocietesExport, 'societes.xlsx');
+})->name('export.societes');
+
+
+
+
+// routes/web.php
+Route::post('/operation-courante', [OperationCouranteController::class, 'store']);
 
     
     Route::get('/clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit');
@@ -101,7 +142,7 @@ Route::get('/exercice/{id}', function ($id) {
 
    
 
-    Route::middleware(['setsocieteid'])->group(function () {
+   
     Route::delete('/societes/{id}', [SocieteController::class, 'destroy'])->name('societes.destroy');
     Route::get('/societes/{id}', [SocieteController::class, 'show'])->name('societes.show');
    
@@ -124,7 +165,7 @@ Route::put('/societes/{id}', [SocieteController::class, 'update']);
 Route::get('/societes', [SocieteController::class, 'index'])->name('societes.index');
 
 
-});
+
 
 
     Route::get('dashboard', [SocieteController::class, 'index'])->name('dashboard'); // Afficher le dashboard

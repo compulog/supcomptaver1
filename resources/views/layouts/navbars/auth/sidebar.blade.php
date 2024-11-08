@@ -27,7 +27,7 @@
               </g>
             </svg>
           </div>
-          <span class="nav-link-text ms-1">Acceuil</span>
+          <span class="nav-link-text ms-1">Tableau De Board</span>
         </a>
       </li>
       <li class="nav-item mt-2">

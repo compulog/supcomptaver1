@@ -26,7 +26,7 @@ class CreateSocieteTable extends Migration
             $table->string('nature_activite')->nullable(); // Nature de l'activité
             $table->string('activite')->nullable(); // Activité
             $table->string('regime_declaration')->nullable(); // Régime de déclaration
-            $table->date('fait_generateur')->nullable(); // Fait générateur
+            $table->string('fait_generateur')->nullable(); // Fait générateur (modifiable en string)
             $table->string('rubrique_tva')->nullable(); // Rubrique TVA
             $table->string('designation')->nullable(); // Désignation
             $table->integer('nombre_chiffre_compte')->nullable(); // Nombre de chiffres du compte

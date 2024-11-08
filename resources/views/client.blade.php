@@ -3,6 +3,21 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
+<style>
+    .input-group .btn-secondary {
+    padding: 0.375rem 0.75rem; /* Ajuste le padding horizontal et vertical */
+    font-size: 1rem; /* Taille du texte cohérente avec celle de l'input */
+    font-weight: 400; /* Poids de police standard */
+    color: #6c757d; /* Couleur par défaut du bouton secondaire (qui est la couleur d'origine de btn-secondary) */
+    background-color: #e2e6ea; /* Couleur d'arrière-plan du bouton secondaire */
+    border-color: #adb5bd; /* Bordure du bouton secondaire */
+    border-radius: 0.25rem; /* Coins arrondis pour un look plus moderne */
+   height:40px;
+}
+#compte{
+    height:40px
+}
+</style>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg">
@@ -14,12 +29,18 @@
 
 <!-- Boutons pour ouvrir les modals -->
 <div class="mb-3">
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel">
-        créer
-    </button>
-    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modal-import-excel">
-                Importer
-            </button>
+<button type="button" id="create-button" class="btn bg-gradient-primary btn-sm mb-0" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel">
+    Créer
+</button>
+
+<button type="button" id="import-button" class="btn bg-gradient-primary btn-sm mb-0" data-bs-toggle="modal" data-bs-target="#modal-import-excel">
+    Importer
+</button>
+                
+<button id="export-clients-button" class="btn bg-gradient-primary btn-sm mb-0">Exporter les Clients en Excel</button>
+
+<button id="export-pdf" class="btn bg-gradient-primary btn-sm mb-0">Exporter en PDF</button>
+
 </div>
 
 <!-- Modal pour le formulaire d'ajout manuel -->
@@ -33,14 +54,27 @@
             <div class="modal-body">
                 <form action="{{ route('client.store') }}" method="POST" id="form-saisie-manuel">
                     @csrf
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
+                   
+                        
+
+                        <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
                             <label for="compte" class="form-label">Compte</label>
-                            <input type="text" class="form-control" name="compte" placeholder="Compte" required>
+                                
+                                <!-- Options pour choisir entre saisie et auto-incrémentation -->
+                                <div class="input-group">
+                                <input type="text" class="form-control" name="compte" id="compte" value="3421" required>
+                                <div class="input-group-append">
+                                <button type="button" class="btn btn-secondary" id="auto-increment">Auto</button>
+                                </div>
+                                </div>
+                            </div>
                         </div>
+					
                         <div class="col-md-6 mb-3">
                             <label for="intitule" class="form-label">Intitulé</label>
-                            <input type="text" class="form-control" name="intitule" placeholder="Intitulé" required>
+                            <input type="text" class="form-control" name="intitule" required>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -61,11 +95,11 @@
                         <div class="col-md-6 mb-3">
                             <label for="type_client" class="form-label">Type client</label>
                             <select class="form-control" name="type_client" required>
-                                <option value="1.Entreprise de droit privé">1.Entreprise de droit privé</option>
-                                <option value="2.État">2.État</option>
-                                <option value="3.Collectivités territoriales">3.Collectivités territoriales</option>
-                                <option value="4.Entreprise publique">4.Entreprise publique</option>
-                                <option value="5.Autre organisme public">5.Autre organisme public</option>
+                                <option value="5.Entreprise de droit privé">5.Entreprise de droit privé</option>
+                                <option value="1.État">1.État</option>
+                                <option value="2.Collectivités territoriales">2.Collectivités territoriales</option>
+                                <option value="3.Entreprise publique">3.Entreprise publique</option>
+                                <option value="4.Autre organisme public">4.Autre organisme public</option>
                             </select>
                         </div>
                     </div>
@@ -78,6 +112,66 @@
         </div>
     </div>
 </div>
+
+<!-- Script pour gérer l'affichage et l'ajout dans le champ "compte" -->
+<script>
+$(document).ready(function () {
+    var initialValue = '3421'; // La valeur initiale à ne pas modifier
+
+    $('#compte').on('input', function () {
+        var currentValue = $(this).val();
+
+        // Si l'utilisateur modifie la partie "3421", on la restaure à chaque fois
+        if (currentValue.length < initialValue.length || currentValue.substring(0, initialValue.length) !== initialValue) {
+            $(this).val(initialValue);
+        }
+    });
+
+    $('#modal-saisie-manuel').on('shown.bs.modal', function () {
+        // Positionner le curseur juste après le "1" (index 3)
+        var input = $('#compte')[0];
+        input.setSelectionRange(4, 4); // Positionner le curseur après le "1" dans "3421"
+        
+        // Focus sur le champ "compte" lorsque le modal s'ouvre
+        $('#compte').focus();
+    });
+    
+    $('#auto-increment').on('click', function () {
+        // Récupérer toutes les valeurs du champ "compte" dans le tableau
+        const comptes = table.getData().map(row => row.compte);
+
+        // Filtrer et récupérer uniquement les comptes qui commencent par "3421"
+        const comptesFiltrés = comptes.filter(compte => compte.startsWith("3421"));
+
+        // Extraire les numéros des comptes après "3421" et les convertir en entiers
+        const numeraux = comptesFiltrés.map(compte => parseInt(compte.substring(4))); 
+
+        // Trier les numéros extraits par ordre croissant
+        numeraux.sort((a, b) => a - b);
+
+        // Recherche d'une valeur manquante (trou) dans la séquence
+        let newCompte = null;
+        for (let i = 0; i < numeraux.length - 1; i++) {
+            if (numeraux[i + 1] > numeraux[i] + 1) {
+                // Trouvé un trou, on prend la valeur suivante manquante
+                newCompte = numeraux[i] + 1;
+                break;
+            }
+        }
+
+        // Si aucun trou n'est trouvé, on prend le numéro suivant après le plus grand
+        if (newCompte === null) {
+            newCompte = numeraux[numeraux.length - 1] + 1;
+        }
+
+        // Mettre à jour le champ "compte" avec la nouvelle valeur
+        $('#compte').val("3421" + newCompte.toString().padStart(4, '0')); // Ajouter le préfixe "3421" et formater le numéro sur 4 chiffres
+    });
+});
+
+
+</script>
+
 
   <!-- Modal pour le formulaire d'importation Excel -->
   <div class="modal fade" id="modal-import-excel" tabindex="-1" aria-labelledby="modalImportExcelLabel" aria-hidden="true">
@@ -177,11 +271,11 @@
                     <div class="form-group">
                         <label for="type_client">Type Client</label>
                         <select class="form-control" name="type_client" required>
-                            <option value="1.Entreprise de droit privé">1.Entreprise de droit privé</option>
-                            <option value="2.État">2.État</option>
-                            <option value="3.Collectivités territoriales">3.Collectivités territoriales</option>
-                            <option value="4.Entreprise publique">4.Entreprise publique</option>
-                            <option value="5.Autre organisme public">5.Autre organisme public</option>
+                            <option value="5.Entreprise de droit privé">5.Entreprise de droit privé</option>
+                            <option value="1.État">1.État</option>
+                            <option value="2.Collectivités territoriales">2.Collectivités territoriales</option>
+                            <option value="3.Entreprise publique">3.Entreprise publique</option>
+                            <option value="4.Autre organisme public">4.Autre organisme public</option>
                         </select>
                     </div>
                 </div>
@@ -276,9 +370,6 @@ $(document).ready(function() {
 
     <!-- Conteneur Tabulator avec recherche -->
 <div class="container mt-4">
-    
-<button id="export-clients-button" class="btn btn-success">Exporter les Clients en Excel</button>
-<button id="export-pdf" class="btn btn-primary">Exporter en PDF</button>
 
 <script>
     document.getElementById('export-clients-button').addEventListener('click', function() {
