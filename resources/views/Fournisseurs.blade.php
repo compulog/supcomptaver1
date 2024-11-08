@@ -471,28 +471,11 @@ var table = new Tabulator("#fournisseur-table", {
     height: "800px", // Hauteur du tableau
     selectable: true, // Permet de sélectionner les lignes
     selectableRollingSelection: false, // Limite la sélection de lignes à une seule (désactiver si vous voulez plusieurs sélections)
-    pagination: "local", // Pagination locale pour un chargement rapide
-    paginationSize: 10, // Afficher 10 lignes par page
-    paginationSizeSelector: [5, 10, 20, 50], // Options pour sélectionner la taille de la page
     responsiveLayout: "collapse", // Rend le tableau responsive en petits écrans
     initialSort: [ // Tri initial par colonne 'Compte'
         { column: "compte", dir: "asc" }
     ],
     columns: [
-        {
-            titleFormatter: function() {
-                // Ajout de la case de sélection et de l'icône de suppression dans l'en-tête
-                return `
-                    <div class="d-flex align-items-center">
-                        <input type="checkbox" id="selectAllCheckbox" title="Sélectionner tout" />
-                        <i class="fas fa-trash-alt text-danger ml-2" id="deleteSelectedIcon" title="Supprimer les lignes sélectionnées" style="cursor: pointer;"></i>
-                    </div>`;
-            },
-            formatter: "rowSelection", // Ajoute des cases de sélection pour chaque ligne
-            hozAlign: "center",
-            headerSort: false,
-            width: 70,
-        },
         {title: "Compte", field: "compte", editor: "input", headerFilter: "input", minWidth: 80},
         {title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input", minWidth: 120},
         {title: "Identifiant Fiscal", field: "identifiant_fiscal", editor: "input", headerFilter: "input", minWidth: 50},
@@ -502,16 +485,40 @@ var table = new Tabulator("#fournisseur-table", {
         {title: "Désignation", field: "designation", editor: "input", headerFilter: "input", minWidth: 80},
         {title: "Contre Partie", field: "contre_partie", editor: "input", headerFilter: "input", minWidth: 80},
         {
-            title: "Actions", 
-            field: "action-icons", 
-            formatter: function() {
+            title: `
+                <div class="text-center">
+                    <span>Actions</span>
+                    <div class="d-flex align-items-center justify-content-center mt-1">
+                        <input type="checkbox" id="selectAllCheckbox" title="Sélectionner tout" />
+                        <i class="fas fa-trash-alt text-danger ml-2" id="deleteSelectedIcon" title="Supprimer les lignes sélectionnées" style="cursor: pointer;"></i>
+                    </div>
+                </div>
+            `,
+            field: "action-icons",
+            formatter: function(cell, formatterParams, onRendered) {
+                onRendered(function() {
+                    var checkbox = cell.getElement().querySelector(".row-select-checkbox");
+                    var row = cell.getRow();
+                    checkbox.checked = row.isSelected(); // Syncronise l'état de la checkbox avec la sélection de la ligne
+                });
+
                 return `
+                    <input type="checkbox" class="row-select-checkbox" title="Sélectionner" />
                     <i class='fas fa-edit text-primary edit-icon' style='font-size: 0.9em; cursor: pointer;'></i>
                     <i class='fas fa-trash-alt text-danger delete-icon' style='font-size: 0.9em; cursor: pointer;'></i>
                 `;
             },
             cellClick: function(e, cell) {
-                if (e.target.classList.contains('edit-icon')) {
+                var row = cell.getRow();
+                
+                if (e.target.classList.contains('row-select-checkbox')) {
+                    // Synchronise la sélection de la ligne avec l'état de la checkbox
+                    if (e.target.checked) {
+                        row.select();
+                    } else {
+                        row.deselect();
+                    }
+                } else if (e.target.classList.contains('edit-icon')) {
                     var rowData = cell.getRow().getData();
                     editFournisseur(rowData);
                 } else if (e.target.classList.contains('delete-icon')) {
@@ -519,14 +526,18 @@ var table = new Tabulator("#fournisseur-table", {
                     deleteFournisseur(rowData.id);
                 }
             },
-            minWidth: 50,
+            hozAlign: "center",
+            headerSort: false,
+            minWidth: 100,
         }
     ],
     rowSelected: function(row) {
         row.getElement().classList.add("bg-light"); // Ajoute une couleur de fond à la ligne sélectionnée
+        row.getCell("action-icons").getElement().querySelector(".row-select-checkbox").checked = true; // Coche la case quand la ligne est sélectionnée
     },
     rowDeselected: function(row) {
         row.getElement().classList.remove("bg-light"); // Supprime la couleur de fond si la ligne est désélectionnée
+        row.getCell("action-icons").getElement().querySelector(".row-select-checkbox").checked = false; // Décoche la case quand la ligne est désélectionnée
     }
 });
 
@@ -538,7 +549,7 @@ function deleteSelectedRows() {
     });
 }
 
-// Gestionnaire d'événements pour la case de sélection de toutes les lignes et l'icône de suppression
+// Gestionnaire d'événements pour sélectionner/désélectionner toutes les lignes et supprimer les lignes sélectionnées
 document.getElementById("fournisseur-table").addEventListener("click", function(e) {
     if (e.target.id === "selectAllCheckbox") {
         if (e.target.checked) {
@@ -551,7 +562,6 @@ document.getElementById("fournisseur-table").addEventListener("click", function(
         deleteSelectedRows(); // Appelle la fonction de suppression pour les lignes sélectionnées
     }
 });
-
 
 
 var designationValue = ''; // Variable globale pour stocker l'intitulé

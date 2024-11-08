@@ -12,18 +12,7 @@ class SocieteController extends Controller
 {
   
 
-   // Assurez-vous d'importer votre modèle Racine
-// Dans votre contrôleur (par exemple SocieteController)
-
-// public function dashboard()
-// {
-//     // Récupérer toutes les entrées de la table racines
-//     $racines = Racine::all();
-
-
-//     // Passer la variable à la vue
-//     return view('dashboard', ['racines' => $racines]); 
-// }
+ 
 
  
    public function getRubriquesTVA()
@@ -230,21 +219,9 @@ public function import(Request $request)
 
     // Dans SocieteController.php
 public function edit($id)
-{  
-    // $societe = Societe::findOrFail($id); // Recherchez la société par son ID
-    // return response()->json($societe); // Retourne les données sous forme JSON
-
-    // Récupérer l'ID de la société à partir de la session
-    $societeId = session('societe_id');
-
-    // Optionnel : Vous pouvez choisir d'utiliser l'ID passé en paramètre $id ou celui de la session
-    // Assurez-vous que cela correspond à votre logique métier
-
-    // Rechercher la société dans la base de données
-    $societe = Societe::findOrFail($societeId);
-
-    // Retourner la vue avec les données de la société
-    return view('societes.edit', compact('societe'));
+{
+    $societe = Societe::findOrFail($id); // Recherchez la société par son ID
+    return response()->json($societe); // Retourne les données sous forme JSON
 }
 
 }

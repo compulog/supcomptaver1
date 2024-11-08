@@ -36,20 +36,4 @@ class Societe extends Model
         'modele_comptable' ,        // Nouveau champ ajouté
     ];
 
-    /**
-     * Scope pour filtrer les sociétés actives.
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeActives($query)
-    {
-        return $query->where('active', true);
-    }
-
-    // Ajouter d'autres relations ou méthodes ici si nécessaire
-    public function users()
-    {
-        return $this->hasMany(User::class);
-    }
 }

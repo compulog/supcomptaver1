@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>Gestion des Journaux</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
     <link href="https://unpkg.com/tabulator-tables@5.0.7/dist/css/tabulator.min.css" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.0.7/dist/js/tabulator.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -22,6 +22,7 @@
 <link href="/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
     <style>
 /* Style pour le conteneur du tableau */
+
 #tabulator-table {
     overflow-y: auto; /* Activer le défilement vertical */
     border: 1px solid #ddd; /* Ajouter une bordure si nécessaire */
@@ -32,11 +33,14 @@
     border-collapse: collapse; /* Pour un meilleur rendu visuel */
 }
 
+
     #tabulator-table .tabulator-header {
     height: 30px; /* Ajustez la hauteur du header */
     font-size: 0.9em; /* Réduisez la taille de la police */
     padding: 2px 5px; /* Ajustez le padding pour réduire l'espacement */
+    background-color: #f8f9fa; /* Couleur de l'en-tête */
 }
+
 
 #tabulator-table .tabulator-header .tabulator-col-title {
     font-size: 0.85em; /* Taille de police des titres des colonnes */
@@ -47,6 +51,57 @@
     height: 20px; /* Diminue la hauteur */
     padding: 1px 3px; /* Ajuste le padding interne */
     font-size: 0.8em; /* Diminue légèrement la police */}
+    .btn-custom-gradient {
+    background-image: linear-gradient(to right, #344767, #31477a) !important; /* Dégradé de gauche à droite */
+    color: white !important; /* Couleur du texte en blanc */
+    border: none; /* Pas de bordure */
+    transition: background-color!important 0.1s ease; /* Transition douce pour le survol */
+}
+
+
+   
+
+#tabulator-table .tabulator-row {
+    transition: all 0.1s ease-in-out; /* Animation pour un effet dynamique */
+}
+
+    /* background-color: #e9ecef !important; Fond gris clair au survol */
+    .tabulator .tabulator-row:hover {
+    background-color: #31477a !important;  /* Couleur de survol */
+    color: white;  /* Texte en blanc lors du survol pour plus de contraste */
+}
+
+
+.bg-light {
+    background-color: #d1ecf1 !important; /* Fond bleu clair pour la sélection de ligne */
+}
+
+.tabulator .tabulator-col, .tabulator .tabulator-header {
+    font-weight: bold;
+    color: #495057 !important; /* Couleur de texte sombre */
+}
+
+
+.btn-custom-gradient:hover {
+    background-image: linear-gradient(to right, #536fb2, #344767)!important; /* Inverser le dégradé au survol */
+}
+
+#fournisseur-table {
+    overflow: auto; /* Permet le défilement */
+    max-height: 800px; /* Hauteur maximale du conteneur */
+}
+/* Applique un style ajusté tout en gardant le style du bouton btn-secondary */
+.input-group .btn-secondary {
+    padding: 0.375rem 0.75rem; /* Ajuste le padding horizontal et vertical */
+    font-size: 1rem; /* Taille du texte cohérente avec celle de l'input */
+    font-weight: 400; /* Poids de police standard */
+    color: #6c757d; /* Couleur par défaut du bouton secondaire (qui est la couleur d'origine de btn-secondary) */
+    background-color: #e2e6ea; /* Couleur d'arrière-plan du bouton secondaire */
+    border-color: #adb5bd; /* Bordure du bouton secondaire */
+    border-radius: 0.25rem; /* Coins arrondis pour un look plus moderne */
+   
+}
+
 
 </style>
 
@@ -60,59 +115,84 @@
 
 <div class="container mt-5">
         <h1>Gestion des Journaux</h1>
-        <button class="btn btn-primary" data-toggle="modal" data-target="#ajouterJournalModal">Ajouter Journal</button>
+        <button class="btn btn-custom-gradient" data-toggle="modal" data-target="#ajouterJournalModal"> + Journal</button>
        
         <div id="journal-table"></div>
     </div>
 
  <!-- Modal pour Ajouter Journal -->
-<div class="modal fade" id="ajouterJournalModal" tabindex="-1" role="dialog" aria-labelledby="ajouterJournalModalLabel" aria-hidden="true">
+ <div class="modal fade" id="ajouterJournalModal" tabindex="-1" role="dialog" aria-labelledby="ajouterJournalModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="ajouterJournalModalLabel">Créer</h5>
-                @csrf 
+                @csrf
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
                 <form id="ajouterJournalForm">
-                    <div class="form-group">
-                        <label for="code_journal">Code Journal</label>
-                        <input type="text" class="form-control" id="code_journal" name="code_journal" required>
+                    <div class="row">
+                        <!-- Type Journal en premier -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="type_journal">Type Journal</label>
+                                <select class="form-control" id="type_journal" name="type_journal" required>
+                                    <option value="" disabled selected>Sélectionner un type</option>
+                                    <option value="Achats">Achats</option>
+                                    <option value="Ventes">Ventes</option>
+                                    <option value="Trésoreries">Trésoreries</option>
+                                    <option value="Opérations Diverses">Opérations Diverses</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Contre Partie en deuxième position -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="contre_partie">Contre Partie</label>
+                                <select class="form-control" id="contre_partie" name="contre_partie">
+                                    <option value="" selected>Sélectionner une contre partie</option>
+                                    <option value="Option1">Option 1</option>
+                                    <option value="Option2">Option 2</option>
+                                    <!-- Ajoutez d'autres options ici -->
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="type_journal">Type Journal</label>
-                        <select class="form-control" id="type_journal" name="type_journal" required>
-                            <option value=""  disabled selected>Sélectionner un type</option>
-                            <option value="" ></option>
-                            <option value="Achats">Achats</option>
-                            <option value="Ventes">Ventes</option>
-                            <option value="Trésoreries">Trésoreries</option>
-                            <option value="Opérations Diverses">Opérations Diverses</option>
-                        </select>
-                    </div>
-                    <div class="form-group contre-partie-container"> <!-- Conteneur pour le champ Contre Partie -->
-                        <label for="contre_partie">Contre Partie</label>
-                        <select class="form-control" id="contre_partie" name="contre_partie">
-                            <option value=""disabled selected>Sélectionner une contre partie</option>
-                            <option value=""></option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="intitule">Intitulé</label>
-                        <input type="text" class="form-control" id="intitule" name="intitule" required>
+
+                    <div class="row">
+                        <!-- Code Journal en troisième position -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="code_journal">Code Journal</label>
+                                <input type="text" class="form-control" id="code_journal" name="code_journal" required>
+                            </div>
+                        </div>
+                        <!-- Intitulé en quatrième position -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="intitule">Intitulé</label>
+                                <input type="text" class="form-control" id="intitule" name="intitule" required>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                <button type="submit" form="ajouterJournalForm" class="btn btn-primary">Valider</button>
+            <div class="modal-footer d-flex justify-content-between">
+                <!-- Bouton Réinitialiser aligné à gauche avec icône -->
+                <button type="button" class="btn btn-secondary" id="resetFormBtn">
+                    <i class="fas fa-sync-alt"></i> Réinitialiser
+                </button>
+                <!-- Bouton Valider aligné à droite avec icône de coche -->
+                <button type="submit" form="ajouterJournalForm" class="btn btn-custom-gradient">
+                    <i class="fas fa-check"></i> Valider
+                </button>
             </div>
         </div>
     </div>
 </div>
+
 
 <!-- Modal d'édition -->
 <div id="modifierJournalModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modifierJournalModalLabel" aria-hidden="true">
@@ -125,48 +205,80 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="modifierJournalForm">
+                <form id="modifierJournalForm" class="d-flex flex-wrap">
                     <input type="hidden" id="journal_id_modif">
-                    <div class="form-group">
-                        <label for="code_journal_modif">Code Journal</label>
-                        <input type="text" class="form-control" id="code_journal_modif" required>
-                    </div>
-                    <div class="form-group">
+                    
+                    <!-- Type Journal -->
+                    <div class="form-group flex-grow-1 mr-2">
                         <label for="type_journal_modif">Type Journal</label>
-                        <select class="form-control" id="type_journal_modif" name="type_journal_modif" >
-                            <option value=""disabled selected>Sélectionner un type</option>
-                            <option value=""></option>
+                        <select class="form-control" id="type_journal_modif" name="type_journal_modif">
+                            <option value="" selected>Sélectionner un type</option>
                             <option value="Achats">Achats</option>
                             <option value="Ventes">Ventes</option>
                             <option value="Trésoreries">Trésoreries</option>
                             <option value="Opérations Diverses">Opérations Diverses</option>
                         </select>
                     </div>
-                    <div class="form-group contre-partie-container"> <!-- Conteneur pour le champ Contre Partie -->
+                    
+                    <!-- Contre Partie -->
+                    <div class="form-group flex-grow-1 mr-2">
                         <label for="contre_partie_modif">Contre Partie</label>
                         <select class="form-control" id="contre_partie_modif" name="contre_partie_modif">
-                            <option value=""disabled selected>Sélectionner une contre partie</option>
-                            <option value=""></option>
+                            <option value="" selected>Sélectionner une contre partie</option>
+                            
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="intitule_modif">Intitulé</label>
-                        <input type="text" class="form-control" id="intitule_modif" >
+                    
+                    <!-- Code Journal -->
+                    <div class="form-group flex-grow-1 mr-2">
+                        <label for="code_journal_modif">Code Journal</label>
+                        <input type="text" class="form-control" id="code_journal_modif" required>
                     </div>
-                    <button type="submit" class="btn btn-primary">Sauvegarder</button>
+                    
+                    <!-- Intitulé -->
+                    <div class="form-group flex-grow-1">
+                        <label for="intitule_modif">Intitulé</label>
+                        <input type="text" class="form-control" id="intitule_modif">
+                    </div>
                 </form>
+            </div>
+            <div class="modal-footer">
+                <!-- Bouton Sauvegarder avec icône de coche -->
+                <button type="submit" form="modifierJournalForm" class="btn btn-custom-gradient">
+                    <i class="fas fa-check"></i> Sauvegarder
+                </button>
             </div>
         </div>
     </div>
 </div>
-
- </div>
 
        
 </main>
 
 
 <script>
+
+// Fonction pour passer automatiquement au champ suivant lors de la pression sur "Entrée"
+document.addEventListener("DOMContentLoaded", function() {
+        // Rendre le bouton "Réinitialiser" fonctionnel
+        document.getElementById("resetFormBtn").addEventListener("click", function() {
+            document.getElementById("ajouterJournalForm").reset();
+        });
+
+        // Empêcher la touche Entrée de soumettre le formulaire, sauf si elle est utilisée dans le champ "Intitulé"
+        const form = document.getElementById("ajouterJournalForm");
+        form.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                const formElements = Array.from(form.elements);
+                const currentIndex = formElements.indexOf(event.target);
+                if (currentIndex > -1 && currentIndex < formElements.length - 1) {
+                    formElements[currentIndex + 1].focus();
+                    event.preventDefault();
+                }
+            }
+        });
+    });
+
 
 $(document).ready(function() {
     // Lorsque le type de journal change
@@ -231,7 +343,8 @@ $(document).ready(function() {
     });
 
     // Au chargement du modal, mettre le focus sur le champ Type Journal
-    $('#ajouterJournalModal, #modifierJournalModal').on('shown.bs.modal', function () {
+    $('#ajouterJournalModal, #modifierJournalModal').on('shown.bs.modal', function () 
+    {
         $(this).find('select[name="type_journal"], select[name="type_journal_modif"]').focus();
     });
 });
@@ -246,31 +359,90 @@ var table = new Tabulator("#journal-table", {
     ajaxURL: "/journaux/data", // URL pour récupérer les données
     height: "600px", // Hauteur du tableau
     layout: "fitColumns",
+    selectable: true, // Permet la sélection des lignes
     columns: [
         { title: "Code Journal", field: "code_journal", editor: "input", headerFilter: "input" },
         { title: "Type Journal", field: "type_journal", editor: "input", headerFilter: "input" },
         { title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input" },
         { title: "Contre Partie", field: "contre_partie", editor: "input", headerFilter: "input" },
         {
-            title: "Actions",
+            title: `
+                <div class="text-center">
+                    <span>Actions</span>
+                    <div class="d-flex align-items-center justify-content-center mt-1">
+                        <input type="checkbox" id="selectAllCheckbox" title="Sélectionner tout" />
+                        <i class="fas fa-trash-alt text-danger ml-2" id="deleteSelectedIcon" title="Supprimer les lignes sélectionnées" style="cursor: pointer;"></i>
+                    </div>
+                </div>
+            `,
             field: "action-icons",
-            formatter: function () {
+            formatter: function(cell, formatterParams, onRendered) {
+                onRendered(function() {
+                    var checkbox = cell.getElement().querySelector(".row-select-checkbox");
+                    var row = cell.getRow();
+                    checkbox.checked = row.isSelected(); // Synchronise la case avec l'état de la sélection
+                });
+
                 return `
+                    <input type="checkbox" class="row-select-checkbox" title="Sélectionner" />
                     <i class='fas fa-edit text-primary edit-icon' style='cursor: pointer;'></i>
                     <i class='fas fa-trash-alt text-danger delete-icon' style='cursor: pointer;'></i>
                 `;
             },
-            cellClick: function (e, cell) {
-                var rowData = cell.getRow().getData();
-                if (e.target.classList.contains('edit-icon')) {
-                    editJournal(rowData); // Ouvre le modal d'édition avec les données
+            cellClick: function(e, cell) {
+                var row = cell.getRow();
+                
+                if (e.target.classList.contains('row-select-checkbox')) {
+                    // Syncronise la sélection de la ligne avec l'état de la case
+                    if (e.target.checked) {
+                        row.select();
+                    } else {
+                        row.deselect();
+                    }
+                } else if (e.target.classList.contains('edit-icon')) {
+                    var rowData = cell.getRow().getData();
+                    editJournal(rowData); // Appelle la fonction d'édition
                 } else if (e.target.classList.contains('delete-icon')) {
-                    deleteJournal(rowData.id); // Supprime l'enregistrement
+                    var rowData = cell.getRow().getData();
+                    deleteJournal(rowData.id); // Appelle la fonction de suppression
                 }
             },
+            hozAlign: "center",
+            headerSort: false,
         }
     ],
+    rowSelected: function(row) {
+        row.getElement().classList.add("bg-light"); // Ajoute un fond à la ligne sélectionnée
+        row.getCell("action-icons").getElement().querySelector(".row-select-checkbox").checked = true; // Coche la case
+    },
+    rowDeselected: function(row) {
+        row.getElement().classList.remove("bg-light"); // Supprime le fond de la ligne désélectionnée
+        row.getCell("action-icons").getElement().querySelector(".row-select-checkbox").checked = false; // Décoche la case
+    }
 });
+
+// Fonction pour supprimer les lignes sélectionnées
+function deleteSelectedRows() {
+    var selectedRows = table.getSelectedRows(); // Récupère les lignes sélectionnées
+    selectedRows.forEach(function(row) {
+        row.delete(); // Supprime chaque ligne sélectionnée
+    });
+}
+
+// Gestionnaire d'événements pour sélectionner/désélectionner toutes les lignes et supprimer les lignes sélectionnées
+document.getElementById("journal-table").addEventListener("click", function(e) {
+    if (e.target.id === "selectAllCheckbox") {
+        if (e.target.checked) {
+            table.selectRow(); // Sélectionne toutes les lignes
+        } else {
+            table.deselectRow(); // Désélectionne toutes les lignes
+        }
+    }
+    if (e.target.id === "deleteSelectedIcon") {
+        deleteSelectedRows(); // Supprime les lignes sélectionnées
+    }
+});
+
 
 // Fonction pour ajouter un nouveau journal
 $('#ajouterJournalForm').on('submit', function (e) {
@@ -376,13 +548,7 @@ $(document).ready(function () {
         $('#type_journal_modif').focus(); // Met le focus sur le champ "Type Journal"
     });
 
-    // Gérer la soumission du formulaire avec la touche Entrée
-    $('#ajouterJournalForm').on('keypress', function (e) {
-        if (e.which === 13) {
-            e.preventDefault(); // Empêche le comportement par défaut
-            $(this).submit(); // Soumettre le formulaire
-        }
-    });
+  
 
     $('#modifierJournalForm').on('keypress', function (e) {
         if (e.which === 13) {
