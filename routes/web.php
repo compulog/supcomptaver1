@@ -28,6 +28,15 @@ use App\Http\Controllers\ExerciceController;
 
 
 use App\Http\Controllers\FileUploadController;
+use App\Http\Controllers\AchatController;
+use App\Http\Controllers\VenteController;
+use App\Http\Controllers\BanqueController;
+use App\Http\Controllers\CaisseController;
+use App\Http\Controllers\ImpotController;
+use App\Http\Controllers\PaieController;
+
+
+Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
 
 Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
 Route::get('/vente', [VenteController::class, 'index'])->name('vente.view');

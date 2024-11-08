@@ -9,6 +9,21 @@ use Illuminate\Support\Facades\Storage;
 
 class FileUploadController extends Controller
 {
+    public function show($id)
+    {
+        // Récupérer le nombre de fichiers par type
+        $achatCount = File::where('type', 'Achat')->count();
+        $venteCount = File::where('type', 'Vente')->count();
+        $banqueCount = File::where('type', 'Banque')->count();
+        $caisseCount = File::where('type', 'Caisse')->count();
+        $impotCount = File::where('type', 'Impot')->count();
+        $paieCount = File::where('type', 'Paie')->count();
+    
+        // Retourner la vue avec les données
+        return view('exercices', compact('achatCount', 'venteCount', 'banqueCount', 'caisseCount', 'impotCount', 'paieCount'));
+    }
+    
+    
     public function upload(Request $request)
     {
         // Validation des fichiers uploadés

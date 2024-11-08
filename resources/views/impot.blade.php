@@ -1,5 +1,5 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
-achat
+impot
 @endsection

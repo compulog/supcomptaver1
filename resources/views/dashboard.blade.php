@@ -60,7 +60,7 @@
 
                     <button id="import-societes" class="btn bg-gradient-primary btn-sm mb-0">Importer Sociétés</button>
 
-                    <button id="export-button" class="btn bg-gradient-primary btn-sm mb-0">Liste Des Dossier</button>
+                    <button id="export-button" class="btn bg-gradient-primary btn-sm mb-0">Liste Des Dossiers    </button>
 
 
 <script>document.getElementById("export-pdf").addEventListener("click", function() {
@@ -129,8 +129,84 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="centre_rc" class="form-label">Centre RC</label>
-                            <input type="text" class="form-control" name="centre_rc" required>
-                        </div>
+                           
+                      
+
+
+                        <select id="ctl00_ctl36_g_69b20002_9278_429e_be53_84b78f0af32b_ctl00_DropDownList_Ville" class="form-control" name="centre_rc" required>
+						<option value="AGADIR">AGADIR</option>
+						<option value="AL HOCEIMA">AL HOCEIMA</option>
+						<option value="AZILAL">AZILAL</option>
+						<option value="AZROU">AZROU</option>
+						<option value="BEN AHMED">BEN AHMED</option>
+						<option value="BEN GUERIR">BEN GUERIR</option>
+						<option value="BENI MELLAL">BENI MELLAL</option>
+						<option value="BENSLIMANE">BENSLIMANE</option>
+						<option value="BERKANE">BERKANE</option>
+						<option value="BERRECHID">BERRECHID</option>
+						<option value="BOUARFA">BOUARFA</option>
+						<option value="BOUJAAD">BOUJAAD</option>
+						<option value="BOULEMANE">BOULEMANE</option>
+						<option value="CASABLANCA">CASABLANCA</option>
+						<option value="CHEFCHAOUEN">CHEFCHAOUEN</option>
+						<option value="CHICHAOUA">CHICHAOUA</option>
+						<option value="DAKHLA">DAKHLA</option>
+						<option value="EL JADIDA">EL JADIDA</option>
+						<option value="EL KALAA SRAGHNA">EL KALAA SRAGHNA</option>
+						<option value="ERRACHIDIA">ERRACHIDIA</option>
+						<option value="ES SMARA">ES SMARA</option>
+						<option value="ESSAOUIRA">ESSAOUIRA</option>
+						<option value="FES">FES</option>
+						<option value="FIGUIG">FIGUIG</option>
+						<option value="FKIH BEN SALEH">FKIH BEN SALEH</option>
+						<option value="GUELMIM">GUELMIM</option>
+						<option value="GUERCIF">GUERCIF</option>
+						<option value="IMINTANOUTE">IMINTANOUTE</option>
+						<option value="INZEGANE">INZEGANE</option>
+						<option value="KASBA TADLA">KASBA TADLA</option>
+						<option value="KENITRA">KENITRA</option>
+						<option value="KHEMISSET">KHEMISSET</option>
+						<option value="KHENIFRA">KHENIFRA</option>
+						<option value="KHOURIBGA">KHOURIBGA</option>
+						<option value="KSAR EL KEBIR">KSAR EL KEBIR</option>
+						<option value="LAAYOUNE">LAAYOUNE</option>
+						<option value="LARACHE">LARACHE</option>
+						<option value="MARRAKECH">MARRAKECH</option>
+						<option value="MEKNES">MEKNES</option>
+						<option value="MIDELT">MIDELT</option>
+						<option value="MOHAMMEDIA">MOHAMMEDIA</option>
+						<option value="NADOR">NADOR</option>
+						<option value="OUARZAZATE">OUARZAZATE</option>
+						<option value="Oued Ed-Dahab">Oued Ed-Dahab</option>
+						<option value="OUED ZEM">OUED ZEM</option>
+						<option value="OUEZZANE">OUEZZANE</option>
+						<option value="OUJDA">OUJDA</option>
+						<option value="RABAT">RABAT</option>
+						<option value="SAFI">SAFI</option>
+						<option value="SALE">SALE</option>
+						<option value="SEFROU">SEFROU</option>
+						<option value="SETTAT">SETTAT</option>
+						<option value="SIDI BENNOUR">SIDI BENNOUR</option>
+						<option value="SIDI KACEM">SIDI KACEM</option>
+						<option value="SIDI SLIMANE">SIDI SLIMANE</option>
+						<option value="SOUK LARBAA">SOUK LARBAA</option>
+						<option value="TAN TAN">TAN TAN</option>
+						<option value="TANGER">TANGER</option>
+						<option value="TAOUNATE">TAOUNATE</option>
+						<option value="TAOURIRT">TAOURIRT</option>
+						<option value="TAROUDANT">TAROUDANT</option>
+						<option value="TATA">TATA</option>
+						<option value="TAZA">TAZA</option>
+						<option value="TEMARA">TEMARA</option>
+						<option value="TETOUAN">TETOUAN</option>
+						<option value="TIFELT">TIFELT</option>
+						<option value="TINGHIR">TINGHIR</option>
+						<option value="TIZNIT">TIZNIT</option>
+						<option value="YOUSSOUFIA">YOUSSOUFIA</option>
+						<option value="ZAGORA">ZAGORA</option>
+
+					</select>
+                    </div>
                         <div class="col-md-6 mb-3">
                             <label for="identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
                             <input type="text" class="form-control" name="identifiant_fiscal" required id="identifiant_fiscal" maxlength="8" title="Veuillez entrer uniquement des chiffres (max 8 chiffres)">
@@ -155,9 +231,9 @@
                             <label for="nature_activite" class="form-label">Nature de l'Activité</label>
                             <select class="form-control" name="nature_activite">
                                 <option value="">Choisir une activité</option>
-                                <option value="4.Vente de biens d'équipement">4.Vente de biens d'équipement</option>
-                                <option value="5.Vente de travaux">5.Vente de travaux</option>
-                                <option value="6.Vente de services">6.Vente de services</option>
+                                <option value="4.Vente de biens d'équipement">Vente de biens d'équipement</option>
+                                <option value="5.Vente de travaux">Vente de travaux</option>
+                                <option value="6.Vente de services">Vente de services</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -736,6 +812,8 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                     formatter: function(cell) {
                         var rowData = cell.getRow().getData();
                         return "<div class='action-icons'>" +
+                        "<a href='/exercices/" + rowData.id + "' class='text-info mx-1'>" +
+                        "<i class='fas fa-door-open' onclick='window.location=\"/exercices/" + rowData.id + "\"'></i></a>" +
                             "<a href='#' class='text-primary mx-1' data-bs-toggle='modal' data-bs-target='#modifierSocieteModal' " +
                             "data-id='" + rowData.id + "' " +
                             "data-nom-entreprise='" + rowData.raison_sociale + "' " +
@@ -745,8 +823,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             "<i class='fas fa-edit'></i></a>" +
                             "<a href='#' class='text-danger mx-1 delete-icon' data-id='" + rowData.id + "'>" +
                             "<i class='fas fa-trash'></i></a>" +
-                            "<a href='/exercices/" + rowData.id + "' class='text-info mx-1'>" +
-                            "<i class='fas fa-door-open' onclick='window.location=\"/exercices/" + rowData.id + "\"'></i></a>" +
+                           
                             "</div>";
                     },
                     width: 150,
