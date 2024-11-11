@@ -55,6 +55,7 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
     public function index()
     {
         $societes = Societe::all(); // Changer 'Societes' en 'Societe'
+
         return view('dashboard', ['societes' => $societes->toJson()]);
     }
    

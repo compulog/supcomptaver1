@@ -30,6 +30,8 @@ class FileUploadController extends Controller
         $request->validate([
             'file' => 'required|file|mimes:jpg,png,pdf,docx,xlsx', // Types de fichiers acceptés
             'type' => 'required|string', // Le type (Achat, Vente, etc.)
+            'societe_id' => 'required|integer', // Ajouter la validation pour societe_id
+
         ]);
 
         // Obtenez le fichier téléchargé
@@ -46,6 +48,8 @@ class FileUploadController extends Controller
         $fileRecord->name = $filename;
         $fileRecord->path = $filePath;
         $fileRecord->type = $request->input('type');  // Assigner la valeur du type
+            $fileRecord->societe_id = $request->input('societe_id'); // Ajouter la valeur pour societe_id
+
         $fileRecord->save();  // Sauvegarder dans la base de données
 
         // Retourner un message de succès à l'utilisateur

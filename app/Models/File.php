@@ -9,8 +9,14 @@ class File extends Model
 {
     use HasFactory;
     protected $connection = 'supcompta'; // Le nom de votre connexion
-    protected $fillable = ['name', 'path', 'type'];  // Ajoutez 'type' ici
+    protected $table = 'files';
 
+    protected $fillable = ['name', 'path', 'type', 'societe_id'];  // Assurez-vous que 'societe_id' est inclus si nécessaire
+    public function societe()
+    {
+        return $this->belongsTo(Societe::class);
+    }
+    
 }
 
 

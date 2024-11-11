@@ -17,33 +17,49 @@ class ClientController extends Controller
     // }
 
     // Enregistrer un nouveau client
+    
+    // Enregistrer un nouveau client
     public function store(Request $request)
     {
-        // Validez les données du formulaire
-        $validatedData = $request->validate([
-            'compte' => 'required|string|max:255',
-            'intitule' => 'required|string|max:255',
-            'identifiant_fiscal' => 'required|string|max:255',
-            'ICE' => 'required|string|max:255',
-            'type_client' => 'required|string|max:255',
-        ]);
-
-        try {
-            // Créez un nouveau client avec les données validées
-            $client = Client::create($validatedData);
-
-            // Retournez une réponse JSON avec le nouveau client
-            return response()->json(['success' => true, 'client' => $client]);
-        } catch (\Exception $e) {
-            // Retournez une réponse JSON en cas d'erreur
-            return response()->json(['success' => false, 'error' => $e->getMessage()]);
-        }
+        // Récupérer l'ID de la société depuis les données envoyées du formulaire
+    $societeId = $request->input('societe_id'); // Utilisez 'societe_id' ici
+    if (!$societeId) {
+        return response()->json(['success' => false, 'error' => 'Aucune société sélectionnée dans la session.']);
     }
+
+    // Valider les données du formulaire
+    $validatedData = $request->validate([
+        'compte' => 'required|string|max:255',
+        'intitule' => 'required|string|max:255',
+        'identifiant_fiscal' => 'nullable|string|max:255',
+        'ICE' => 'nullable|string|max:255',
+        'type_client' => 'nullable|string|max:255',
+    ]);
+
+    // Ajouter l'ID de la société aux données validées
+    $validatedData['societe_id'] = $societeId;
+
+    try {
+        // Créez un nouveau client avec les données validées et l'ID de la société
+        $client = Client::create($validatedData);
+
+        // Retourner une réponse JSON avec le nouveau client
+        return response()->json(['success' => true, 'client' => $client]);
+    } catch (\Exception $e) {
+        // Retourner une réponse JSON en cas d'erreur
+        return response()->json(['success' => false, 'error' => $e->getMessage()]);
+    }
+    }
+    
+    
     public function index()
     {
-        $clients = Client::all(); // Récupérer tous les clients
-        return view('client', compact('clients')); // Passer la collection de clients
+        $societeId = session('societeId'); // Récupérer l'ID de la société de la session
+        $clients = Client::where('societe_id', $societeId)->get(); // Récupérer les clients de la société
+        
+        return view('client', compact('clients', 'societeId'));
     }
+    
     
    // Dans ClientController.php
    public function edit($id)

@@ -1,6 +1,7 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
+
 <style>
     .input-group .btn-secondary {
     padding: 0.375rem 0.75rem; /* Ajuste le padding horizontal et vertical */
@@ -19,6 +20,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg">
+
     <div class="container mt-5">
         <h3>Liste des Clients</h3>
 
@@ -63,6 +65,8 @@
                                 <!-- Options pour choisir entre saisie et auto-incrémentation -->
                                 <div class="input-group">
                                 <input type="text" class="form-control" name="compte" id="compte" value="3421" required>
+                                <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
+
                                 <div class="input-group-append">
                                 <button type="button" class="btn btn-secondary" id="auto-increment">Auto</button>
                                 </div>
@@ -113,8 +117,12 @@
 
 <!-- Script pour gérer l'affichage et l'ajout dans le champ "compte" -->
 <script>
-$(document).ready(function () {
+    
+    $(document).ready(function () {
     var initialValue = '3421'; // La valeur initiale à ne pas modifier
+
+    // Récupérer l'ID de la société à partir du champ caché
+    var societeId = $('#societe_id').val(); // Assurez-vous que ce champ caché existe
 
     $('#compte').on('input', function () {
         var currentValue = $(this).val();
@@ -128,7 +136,7 @@ $(document).ready(function () {
     $('#modal-saisie-manuel').on('shown.bs.modal', function () {
         // Positionner le curseur juste après le "1" (index 3)
         var input = $('#compte')[0];
-        input.setSelectionRange(4, 4); // Positionner le curseur après le "1" dans "3421"
+        input.setSelectionRange(4, 4); // Positionner le curseur après le "3421"
         
         // Focus sur le champ "compte" lorsque le modal s'ouvre
         $('#compte').focus();
@@ -164,7 +172,12 @@ $(document).ready(function () {
 
         // Mettre à jour le champ "compte" avec la nouvelle valeur
         $('#compte').val("3421" + newCompte.toString().padStart(4, '0')); // Ajouter le préfixe "3421" et formater le numéro sur 4 chiffres
+        
+        // Si vous souhaitez associer également l'ID de la société dans le compte généré, vous pouvez faire ceci :
+        // Par exemple, vous pouvez ajouter l'ID de la société dans une variable ou l'envoyer via AJAX, selon votre besoin.
+        console.log("ID de la société : ", societeId);  // Exemple de console log de l'ID de la société
     });
+    
 });
 
 
@@ -484,48 +497,52 @@ document.getElementById("export-pdf").addEventListener("click", function() {
 
 <script>
     // Fonction pour soumettre le formulaire d'ajout de client
+ // Récupérer l'ID de la société depuis la session Laravel
+ const societeId = '{{ session('societeId') }}';
+    console.log("Societe ID: ", societeId); // Ajoutez un log pour vérifier si l'ID est bien récupéré
+
     document.getElementById('form-saisie-manuel').onsubmit = function(event) {
-    event.preventDefault(); // Empêche le rechargement de la page
+        event.preventDefault(); // Empêche le rechargement de la page
 
-    const data = new FormData(this); // Récupère les données du formulaire
+        const data = new FormData(this); // Récupère les données du formulaire
 
-    fetch(this.action, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: data
-    })
-    .then(response => response.json())
-    .then(data => {
-        const messageDiv = document.getElementById('message');
-        if (data.success) {
-            // Afficher un message de succès
-            messageDiv.className = 'alert alert-success';
-            messageDiv.textContent = 'Client ajouté avec succès !';
-            messageDiv.classList.remove('d-none');
-
-            // Ajouter le nouveau client dans Tabulator
-            table.addRow(data.client);
-
+        // Ajouter l'ID de la société aux données
+        if (societeId) {
+            console.log("Ajout de societe_id aux données");
+            data.append('societe_id', societeId); // Ajouter societe_id dans les données du formulaire
         } else {
-            // Afficher un message d'erreur
-            messageDiv.className = 'alert alert-danger';
-            // messageDiv.textContent = 'Erreur lors de l\'ajout du client : ' + data.error;
-            messageDiv.classList.remove('d-none');
+            console.log("Pas de societeId dans la session");
         }
 
-        // Réinitialiser le formulaire
-        this.reset();
-    })
-    .catch(error => {
-        const messageDiv = document.getElementById('message');
-        messageDiv.className = 'alert alert-danger';
-        messageDiv.textContent = 'Erreur de connexion : ' + error.message;
-        messageDiv.classList.remove('d-none');
-        console.error('Erreur:', error);
-    });
-    }       
+        fetch(this.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: data
+        })
+        .then(response => response.json())
+        .then(data => {
+            const messageDiv = document.getElementById('message');
+            if (data.success) {
+                messageDiv.classList.remove('d-none');
+                table.addRow(data.client);
+            } else {
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.classList.remove('d-none');
+            }
+
+            this.reset();
+        })
+        .catch(error => {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = 'alert alert-danger';
+            messageDiv.textContent = 'Erreur de connexion : ' + error.message;
+            messageDiv.classList.remove('d-none');
+            console.error('Erreur:', error);
+        });
+    }
+         
 </script>
 
 

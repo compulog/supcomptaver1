@@ -13,6 +13,8 @@
                         @csrf
                         <input type="hidden" name="type" value="Achat">
                         <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
+                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #007bff; border: 1px solid white; border-radius: 10px; color: white;" onclick="document.getElementById('file-achat').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>
                     </form>
@@ -32,6 +34,7 @@
                         @csrf
                         <input type="hidden" name="type" value="Vente">
                         <input type="file" name="file" id="file-vente" style="display: none;" onchange="handleFileSelect(event, 'Vente')">
+                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #28a745; border: 1px solid white; border-radius: 10px; color: white;" onclick="document.getElementById('file-vente').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
                     </form>
@@ -51,6 +54,7 @@
                         @csrf
                         <input type="hidden" name="type" value="Banque">
                         <input type="file" name="file" id="file-banque" style="display: none;" onchange="handleFileSelect(event, 'Banque')">
+                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #ffc107; border: 1px solid white; border-radius: 10px; color: white;" onclick="document.getElementById('file-banque').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-banque">Envoyer</button>
                     </form>
@@ -70,6 +74,7 @@
                         @csrf
                         <input type="hidden" name="type" value="Caisse">
                         <input type="file" name="file" id="file-caisse" style="display: none;" onchange="handleFileSelect(event, 'Caisse')">
+                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #dc3545; border: 1px solid white; border-radius: 10px; color: white;" onclick="document.getElementById('file-caisse').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-caisse">Envoyer</button>
                     </form>
@@ -95,6 +100,7 @@
                         @csrf
                         <input type="hidden" name="type" value="Impot">
                         <input type="file" name="file" id="file-impot" style="display: none;" onchange="handleFileSelect(event, 'Impot')">
+                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #6f42c1; border: 1px solid white; border-radius: 10px; color: white;" onclick="document.getElementById('file-impot').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-impot">Envoyer</button>
                     </form>
@@ -120,6 +126,7 @@
                         @csrf
                         <input type="hidden" name="type" value="Paie">
                         <input type="file" name="file" id="file-paie" style="display: none;" onchange="handleFileSelect(event, 'Paie')">
+                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #17a2b8; border: 1px solid white; border-radius: 10px; color: white;" onclick="document.getElementById('file-paie').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-paie">Envoyer</button>
                     </form>
