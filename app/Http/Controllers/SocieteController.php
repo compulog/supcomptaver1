@@ -5,7 +5,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 use App\Models\Societe;
 use Illuminate\Http\Request;
-use App\Imports\SociétésImport;
+
 use App\Imports\SocietesImport;
 use App\Models\Racine; // Assurez-vous que le modèle Racine est importé
 class SocieteController extends Controller

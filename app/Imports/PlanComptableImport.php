@@ -4,31 +4,27 @@ namespace App\Imports;
 
 use App\Models\PlanComptable;
 use Maatwebsite\Excel\Concerns\ToModel;
-use Maatwebsite\Excel\Concerns\WithStartRow; // Importer l'interface WithStartRow
 
-class PlanComptableImport implements ToModel, WithStartRow // Implémentez l'interface WithStartRow
+class PlanComptableImport implements ToModel
 {
-    protected $colonne_compte;
-    protected $colonne_intitule;
+    protected $colonneCompte;
+    protected $colonneIntitule;
 
-    public function __construct($colonne_compte, $colonne_intitule)
+    public function __construct($colonneCompte, $colonneIntitule)
     {
-        $this->colonne_compte = $colonne_compte;
-        $this->colonne_intitule = $colonne_intitule;
+        $this->colonneCompte = $colonneCompte;
+        $this->colonneIntitule = $colonneIntitule;
     }
 
-    // Indique à partir de quelle ligne commencer l'importation
-    public function startRow(): int
-    {
-        return 2; // Commence à la deuxième ligne
-    }
-
+    // Cette fonction est appelée pour chaque ligne du fichier Excel
     public function model(array $row)
     {
-        // Assurez-vous de traiter les colonnes sans en-tête
+        // Si les indices sont valides dans le tableau Excel, insérez-les dans la base de données
         return new PlanComptable([
-            'compte' => $row[$this->colonne_compte - 1], // Soustrayez 1 pour un index de tableau
-            'intitule' => $row[$this->colonne_intitule - 1], // Soustrayez 1 pour un index de tableau
+            'compte' => $row[$this->colonneCompte - 1],  // Le compte est dans la colonne spécifiée
+            'intitule' => $row[$this->colonneIntitule - 1],  // L'intitulé est dans la colonne spécifiée
+            'societe_id' => session('societeId'), // Associer la société de l'utilisateur
         ]);
     }
 }
+

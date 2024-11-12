@@ -43,12 +43,11 @@ use App\Http\Controllers\ExerciceController;
 
 use App\Http\Controllers\FileUploadController;
 
-Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
-Route::get('/vente', [VenteController::class, 'index'])->name('vente.view');
-Route::get('/banque', [BanqueController::class, 'index'])->name('banque.view');
-Route::get('/caisse', [CaisseController::class, 'index'])->name('caisse.view');
-Route::get('/impot', [ImpotController::class, 'index'])->name('impot.view');
-Route::get('/paie', [PaieController::class, 'index'])->name('paie.view');
+
+
+
+
+
 
 
 
@@ -69,15 +68,14 @@ Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
 
 // Route pour le téléchargement de fichiers
 Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
+Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
+Route::get('/vente', [VenteController::class, 'index'])->name('vente.view');
+Route::get('/banque', [BanqueController::class, 'index'])->name('banque.view');
+Route::get('/caisse', [CaisseController::class, 'index'])->name('caisse.view');
+Route::get('/impot', [ImpotController::class, 'index'])->name('impot.view');
+Route::get('/paie', [PaieController::class, 'index'])->name('paie.view');
 
 
-    Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
-
-Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
-
-
-
-Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
 
     
 // Route pour l'exportation PDF
@@ -237,17 +235,29 @@ Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->n
         return view('Fournisseurs');
     })->name('Fournisseurs');
 
-  
+// Route pour supprimer plusieurs lignes sélectionnées
+// Route pour supprimer plusieurs plans comptables
+
+
+
+
     Route::post('/plancomptable/vider', [PlanComptableController::class, 'viderPlanComptable'])->name('plancomptable.vider');
     Route::put('/plancomptable/{id}', [PlanComptableController::class, 'edit']);
     //Route::get('/plancomptable/{id}', [FournisseurController::class, 'show']);
     Route::get('/plancomptable/data', [PlanComptableController::class, 'getData']);
     Route::post('/plancomptable', [PlanComptableController::class, 'store']);
-    Route::get('/plancomptable', [PlanComptableController::class, 'index'])->name('plancomptable.index');// Si vous voulez récupérer tous les enregistrements
+   
     Route::delete('/plancomptable/{id}', [PlanComptableController::class, 'destroy']);
     Route::put('/plancomptable/{id}', [PlanComptableController::class, 'update']);
-        Route::post('/import', [PlanComptableController::class, 'import'])->name('plancomptable.import'); // Pour importer un compte
-        
+    Route::post('/plancomptable/import', [PlanComptableController::class, 'import'])->name('plancomptable.import');
+    Route::get('/plancomptable/data', [PlanComptableController::class, 'index'])->name('plancomptable.index');
+    
+    // Route dans web.php
+    Route::post('/plancomptable/deleteSelected', [PlanComptableController::class, 'deleteSelected']);
+
+
+    Route::get('/plan-comptable/import', [PlanComptableController::class, 'showImportForm'])->name('plancomptable.importForm');
+    Route::post('/plan-comptable/import', [PlanComptableController::class, 'import'])->name('plancomptable.import');
         Route::get('/plan-comptable/pdf', [ExportController::class, 'exportPlanComptablePDF'])->name('plan.comptable.pdf');
         Route::get('/plan-comptable/excel', [PlanComptableController::class, 'exportExcel'])->name('plan.comptable.excel');
 

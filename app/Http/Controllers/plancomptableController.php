@@ -1,53 +1,69 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\societe;
 use App\Models\PlanComptable;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\PlanComptableImport;
 use App\Exports\PlanComptableExport;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
 class PlanComptableController extends Controller
 {
-    // Afficher la liste des plans comptables
+   
+    // Méthode pour afficher tous les plans comptables d'une société
     public function index()
     {
-        return view('plancomptable'); // Assurez-vous que cela correspond à votre vue
-      
+        // Récupérer l'ID de la société dans la session
+        $societeId = session('societeId');
+        
+        // Vérifier si l'ID de la société existe
+        if (!$societeId) {
+            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+        }
+
+        // Récupérer tous les plans comptables pour la société spécifiée
+        $plansComptables = PlanComptable::where('societe_id', $societeId)->get();
+
+        return response()->json($plansComptables);
     }
 
-    
-
+    // Méthode pour récupérer les données du plan comptable
     public function getData()
     {
-        $PlanComptable = PlanComptable::all();
-        return response()->json($PlanComptable);
+        $plansComptables = PlanComptable::all();
+        return response()->json($plansComptables);
     }
 
-    // Ajouter un nouveau plan comptable
+    // Méthode pour ajouter un nouveau plan comptable
     public function store(Request $request)
-    {// Validation des données
+    {
+        // Validation des données reçues
         $request->validate([
             'compte' => 'required|string|max:255',
             'intitule' => 'required|string|max:255',
         ]);
 
-        try {
-            // Enregistrement du plan comptable
-            $planComptable = new PlanComptable();
-            $planComptable->compte = $request->compte;
-            $planComptable->intitule = $request->intitule;
-            $planComptable->save();
+        // Récupérer l'ID de la société depuis la session
+        $societeId = session('societeId');
 
-            return response()->json(['message' => 'Plan comptable ajouté avec succès.'], 201);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Erreur lors de l\'enregistrement des données.'], 500);
+        // Vérifier si l'ID de la société existe
+        if (!$societeId) {
+            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
         }
+
+        // Créer un nouveau plan comptable
+        $planComptable = new PlanComptable();
+        $planComptable->compte = $request->compte;
+        $planComptable->intitule = $request->intitule;
+        $planComptable->societe_id = $societeId;  // Associer l'ID de la société
+        $planComptable->save();
+
+        // Retourner une réponse JSON de succès
+        return response()->json(['success' => 'Plan comptable ajouté avec succès!']);
     }
-
-
 
     public function edit(Request $request, $id)
     {
@@ -96,33 +112,47 @@ class PlanComptableController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // Importer des plans comptables à partir d'un fichier Excel
+      
+
+
+    // Afficher le formulaire d'importation
+    public function showImportForm()
+    {
+        return view('plancomptable.import'); // La vue avec le formulaire d'import
+    }
+
+    /**
+     * Traite l'importation du fichier Excel
+     */
     public function import(Request $request)
     {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv',
-            'colonne_compte' => 'required|integer',
-            'colonne_intitule' => 'required|integer',
+        // Validation des données envoyées par le formulaire
+        $validatedData = $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv',  // Validation du fichier Excel
+            
+            'colonne_compte' => 'required|integer', // Validation de la colonne compte
+            'colonne_intitule' => 'required|integer', // Validation de la colonne intitulé
         ]);
-    
-        // Importation du fichier Excel sans en-tête
-        Excel::import(new PlanComptableImport($request->colonne_compte, $request->colonne_intitule), $request->file('file'));
-    
-        return response()->json(['message' => 'Importation réussie !'], 200);
+
+        try {
+            // Récupérer l'ID de la société
+            $societeId = $request->input('societe_id');
+            
+            // Importation du fichier avec les colonnes spécifiées et la société associée
+            Excel::import(new PlanComptableImport(
+                $societeId,
+                $request->colonne_compte,
+                $request->colonne_intitule
+            ), $request->file('file'));
+
+            return redirect()->route('plancomptable.index')
+                             ->with('success', 'Plan comptable importé avec succès pour la société ID ' . $societeId);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erreur lors de l\'importation : ' . $e->getMessage());
+        }
     }
-
-
-// Vider tous les enregistrements dans le plan comptable
-public function viderPlanComptable()
-    {
-        // Supprimer tous les enregistrements en utilisant le modèle Eloquent
-        PlanComptable::query()->delete(); // Cela supprimera tous les enregistrements
-
-        // Alternativement, vous pouvez utiliser truncate si vous voulez remettre à zéro les ID
-        PlanComptable::truncate();
-
-        return response()->json(['success' => true, 'message' => 'Plan comptable vidé avec succès.']);
-    }
+    
+    
 
 // Méthode pour exporter en Excel
 public function exportExcel()
@@ -130,10 +160,8 @@ public function exportExcel()
     return Excel::download(new PlanComptableExport, 'plan_comptable.xlsx');
 }
 
+
 }
-
-
-
 
 
 

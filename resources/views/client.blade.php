@@ -3,6 +3,12 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
+@if(isset($societe))
+    <p>Societe ID: {{ $societe->id }}</p>
+    <p>Nom de la société: {{ $societe->raison_sociale }}</p>
+@endif
+
+
 <style>
     .input-group .btn-secondary {
     padding: 0.375rem 0.75rem; /* Ajuste le padding horizontal et vertical */
@@ -71,7 +77,7 @@
                                 </div>
                             </div>
                         </div>
-					
+                      
                         <div class="col-md-6 mb-3">
                             <label for="intitule" class="form-label">Intitulé</label>
                             <input type="text" class="form-control" name="intitule" required>
@@ -79,6 +85,7 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
+                            <input type="hidden" id="societe_id" name="societe_id" value="{{ session('societeId') }}">
                             <label for="identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
                             <input type="text" id="identifiant_fiscal" name="identifiant_fiscal" class="form-control" 
                                    pattern="^\d{7,8}$" maxlength="8" title="L'identifiant fiscal doit comporter 7 ou 8 chiffres" 
@@ -95,11 +102,11 @@
                         <div class="col-md-6 mb-3">
                             <label for="type_client" class="form-label">Type client</label>
                             <select class="form-control" name="type_client" required>
-                                <option value="5.Entreprise de droit privé">5.Entreprise de droit privé</option>
-                                <option value="1.État">1.État</option>
-                                <option value="2.Collectivités territoriales">2.Collectivités territoriales</option>
-                                <option value="3.Entreprise publique">3.Entreprise publique</option>
-                                <option value="4.Autre organisme public">4.Autre organisme public</option>
+                                <option value="5.Entreprise de droit privé">Entreprise de droit privé</option>
+                                <option value="1.État">État</option>
+                                <option value="2.Collectivités territoriales">Collectivités territoriales</option>
+                                <option value="3.Entreprise publique">Entreprise publique</option>
+                                <option value="4.Autre organisme public">Autre organisme public</option>
                             </select>
                         </div>
                     </div>
@@ -271,11 +278,11 @@ $(document).ready(function () {
                     <div class="form-group">
                         <label for="type_client">Type Client</label>
                         <select class="form-control" name="type_client" required>
-                            <option value="5.Entreprise de droit privé">5.Entreprise de droit privé</option>
-                            <option value="1.État">1.État</option>
-                            <option value="2.Collectivités territoriales">2.Collectivités territoriales</option>
-                            <option value="3.Entreprise publique">3.Entreprise publique</option>
-                            <option value="4.Autre organisme public">4.Autre organisme public</option>
+                            <option value="5.Entreprise de droit privé">Entreprise de droit privé</option>
+                            <option value="1.État">État</option>
+                            <option value="2.Collectivités territoriales">Collectivités territoriales</option>
+                            <option value="3.Entreprise publique">Entreprise publique</option>
+                            <option value="4.Autre organisme public">Autre organisme public</option>
                         </select>
                     </div>
                 </div>
@@ -459,55 +466,57 @@ document.getElementById("export-pdf").addEventListener("click", function() {
 
 
 
-
 <script>
-    // Fonction pour soumettre le formulaire d'ajout de client
+ // Récupérer l'ID de la société depuis la session Laravel
+ const societeId = '{{ session('societeId') }}';
+    console.log("Societe ID: ", societeId); // Ajoutez un log pour vérifier si l'ID est bien récupéré
+
     document.getElementById('form-saisie-manuel').onsubmit = function(event) {
-    event.preventDefault(); // Empêche le rechargement de la page
+        event.preventDefault(); // Empêche le rechargement de la page
 
-    const data = new FormData(this); // Récupère les données du formulaire
+        const data = new FormData(this); // Récupère les données du formulaire
 
-    fetch(this.action, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: data
-    })
-    .then(response => response.json())
-    .then(data => {
-        const messageDiv = document.getElementById('message');
-        if (data.success) {
-            // Afficher un message de succès
-            //messageDiv.className = 'alert alert-success';
-       //messageDiv.textContent = 'Client ajouté avec succès !';
-            messageDiv.classList.remove('d-none');
-
-            // Ajouter le nouveau client dans Tabulator
-            table.addRow(data.client);
-
+        // Ajouter l'ID de la société aux données
+        if (societeId) {
+            console.log("Ajout de societe_id aux données");
+            data.append('societe_id', societeId); // Ajouter societe_id dans les données du formulaire
         } else {
-            // Afficher un message d'erreur
-            messageDiv.className = 'alert alert-danger';
-            // messageDiv.textContent = 'Erreur lors de l\'ajout du client : ' + data.error;
-            messageDiv.classList.remove('d-none');
+            console.log("Pas de societeId dans la session");
         }
 
-        // Réinitialiser le formulaire
-        this.reset();
-    })
-    .catch(error => {
-        const messageDiv = document.getElementById('message');
-        messageDiv.className = 'alert alert-danger';
-        messageDiv.textContent = 'Erreur de connexion : ' + error.message;
-        messageDiv.classList.remove('d-none');
-        console.error('Erreur:', error);
-    });
-    }       
-</script>
+        fetch(this.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: data
+        })
+        .then(response => response.json())
+        .then(data => {
+            const messageDiv = document.getElementById('message');
+            if (data.success) {
+                messageDiv.classList.remove('d-none');
+                table.addRow(data.client);
+            } else {
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.classList.remove('d-none');
+            }
+
+            this.reset();
+        })
+        .catch(error => {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = 'alert alert-danger';
+            messageDiv.textContent = 'Erreur de connexion : ' + error.message;
+            messageDiv.classList.remove('d-none');
+            console.error('Erreur:', error);
+        });
+    }
+         
 
 
-<script>
+
+
     // Fonction pour supprimer un client
     function deleteclients(id) {
     if (confirm("Êtes-vous sûr de vouloir supprimer ce client ?")) {

@@ -6,19 +6,35 @@ use App\Imports\FournisseurImport;
 use App\Models\Fournisseur;
 use App\Models\Racine;
 use App\Models\PlanComptable;
+use App\Models\societe;
 use Illuminate\Support\Facades\DB; 
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Log;
 
 
 class FournisseurController extends Controller
 {
     public function index()
     {
-        return view('fournisseurs'); // Assurez-vous que cela correspond à votre vue
+        // Vous pouvez directement utiliser l'objet $societe dans vos méthodes de contrôleur
+        $societe = session('societe');
+        
+        if (!$societe) {
+            // Gérer le cas où la société n'est pas trouvée
+            return redirect()->route('societe.select')->with('error', 'Veuillez sélectionner une société.');
+        }
+    
+        // Récupérer tous les fournisseurs associés à la société spécifiée
+        $fournisseurs = Fournisseur::where('societe_id', $societe->id)->get();
+    
+        // Retourner la vue avec les fournisseurs et la société
+        return view('fournisseurs.index', compact('fournisseurs', 'societe'));
     }
+    
+    
 
     public function show($id)
     {
@@ -34,24 +50,48 @@ class FournisseurController extends Controller
 
     public function store(Request $request)
     {
+        // Vérifier si 'societeId' existe dans la session
+        $societeId = session('societeId');
+        Log::debug('societeId dans la session : ' . $societeId);
+
+        if (!$societeId) {
+            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+        }
+
+        // Validation des données
         $validatedData = $request->validate([
-            'compte' => 'required|string|max:255',
+            'compte' => 'nullable|string|max:255', // Le compte peut être généré automatiquement si vide
             'intitule' => 'required|string|max:255',
-            'identifiant_fiscal' => 'required|string|max:255',
-            'ICE' => 'required|string|max:255',
-            'nature_operation' => 'required|string|max:255',
-            'rubrique_tva' => 'required|string|max:255',
+            'identifiant_fiscal' => 'nullable|string|max:255',
+            'ICE' => 'nullable|string|max:255',
+            'nature_operation' => 'nullable|string|max:255',
+            'rubrique_tva' => 'nullable|string|max:255',
             'designation' => 'nullable|string|max:255',
             'contre_partie' => 'nullable|string|max:255',
         ]);
 
-        $fournisseur = Fournisseur::create($validatedData);
+        // Si le compte n'est pas spécifié, générer un compte unique
+        if (empty($validatedData['compte'])) {
+            $nextCompte = $this->generateNextCompte();
+            $validatedData['compte'] = $nextCompte; // Attribuer le nouveau compte
+        }
 
-        return response()->json([
-            'success' => true,
-            'fournisseur' => $fournisseur,
-        ]);
+        // Ajouter l'ID de la société au tableau de données validées
+        $validatedData['societe_id'] = $societeId;
+
+        try {
+            // Créer un nouveau fournisseur avec les données validées
+            $fournisseur = Fournisseur::create($validatedData);
+
+            return response()->json([
+                'success' => true,
+                'fournisseur' => $fournisseur,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Une erreur est survenue lors de la création du fournisseur: ' . $e->getMessage()], 500);
+        }
     }
+    
  // Modifier un fournisseur
  // Méthode pour afficher le formulaire d'édition
  public function edit($id)
@@ -75,6 +115,7 @@ return response()->json($fournisseur);
          'rubrique_tva' => 'nullable|string',
          'designation' => 'nullable|string|max:255',
          'contre_partie' => 'nullable|string|max:255',
+       
      ]);
 
      if ($validator->fails()) {

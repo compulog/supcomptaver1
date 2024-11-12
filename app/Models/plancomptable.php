@@ -14,13 +14,16 @@ class PlanComptable extends Model // Notez le "P" majuscule
     protected $table = 'plan_comptable';
 
     // Les attributs qui peuvent être assignés en masse
-    protected $fillable = [
+    protected $fillable = ['societe_id',
         'compte',
         'intitule',
-    ];
+        ];
+         // Ajoutez 'societe_id' dans le tableau des champs autorisés 
 
-    // Si vous utilisez des timestamps, vous pouvez laisser cette propriété à true
-    public $timestamps = true; 
-
+    // Définir la relation avec le modèle Societe
+    public function societe()
+    {
+        return $this->belongsTo(Societe::class);
+    }
     
 }

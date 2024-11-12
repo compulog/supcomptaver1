@@ -4,30 +4,20 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use App\Models\Societe;
 
 class SetSocieteId
 {
-    /**
-     * Gérer une demande entrante.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
-     */
     public function handle(Request $request, Closure $next)
     {
-        // Vérifier si l'ID de société est présent dans la route
-        if ($request->route('id')) {
-            // Stocker l'ID de société dans la session
-            session(['societe_id' => $request->route('id')]);
-        }
+        $societeId = session('societeId');
 
-        // Assurez-vous que l'ID de société existe dans la session
-        if (!session()->has('societe_id')) {
-            // Vous pouvez gérer cette situation selon votre logique métier, par exemple :
-            // Retourner une réponse d'erreur ou rediriger
-            // return response()->json(['error' => 'ID de société manquant.'], 400);
-        }
+        if ($societeId) {
+            $societe = Societe::find($societeId);
+            view()->share('societe', $societe);
+        // Ajouter l'ID de la société à la requête pour qu'il soit accessible dans le contrôleur
+      
+    }
 
         return $next($request);
     }

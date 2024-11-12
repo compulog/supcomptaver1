@@ -115,7 +115,10 @@
 
 @section('content')
 
-
+@if(isset($societe))
+    <p>Societe ID: {{ $societe->id }}</p>
+    <p>Nom de la société: {{ $societe->raison_sociale }}</p>
+@endif
 
 <div class="container mt-5">
     <h3>Liste des Fournisseurs</h3>
@@ -212,15 +215,14 @@
             </div>
             <div class="modal-body">
                 <form id="fournisseurFormAdd">
-                    @csrf <!-- Token CSRF pour la sécurité -->
-                    {{-- <!-- Champ masqué pour societe_id -->
-                    <input type="hidden" id="societe_id" name="societe_id" value="{{ old('societe_id', session('societe_id')) }}"> --}}
-                    
+                    @csrf 
+                   
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="compte">Compte</label>
-                                
+                                <input type="hidden" id="societe_id" name="societe_id" value="{{ session('societeId') }}"> <!-- Societe ID ici -->
+                               
                                 <!-- Options pour choisir entre saisie et auto-incrémentation -->
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="compte" name="compte" placeholder="4411XXXX" required>
@@ -666,7 +668,8 @@ $("#fournisseurFormAdd").on("submit", function(e) {
 
     // Mettre à jour le champ designation avec la valeur sélectionnée
     $("#designation").val(designationValue);
-
+ // Debug : vérifier la valeur du champ caché 'societe_id'
+ console.log("Valeur de societe_id :", $("#societe_id").val());
     // Appeler la fonction d'envoi des données
     envoyerDonnees(); // Ne pas passer de paramètres car designation est déjà mise à jour
 });
@@ -675,8 +678,7 @@ $("#fournisseurFormAdd").on("submit", function(e) {
 function envoyerDonnees() {
     var url = "/fournisseurs"; // URL pour l'ajout
 
- // Debug: Vérifiez que l'ID de la société est bien récupéré
- console.log("ID de la société :", $("#societe_id").val());
+ 
 
     $.ajax({
         url: url,
@@ -690,7 +692,7 @@ function envoyerDonnees() {
             rubrique_tva: $("#rubrique_tva").val(),
             designation: $("#designation").val(), // Utiliser la designation remplie
             contre_partie: $("#contre_partie").val(),
-            //societe_id: $("#societe_id").val(), // Ajout de l'ID de la société ici
+            societe_id: $("#societe_id").val(), // Ajout de l'ID de la société ici
             _token: '{{ csrf_token() }}' // Assurez-vous d'inclure votre CSRF token
         },
         success: function(response) {

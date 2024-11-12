@@ -36,4 +36,29 @@ class Societe extends Model
         'modele_comptable' ,        // Nouveau champ ajouté
     ];
 
+    public function files()
+    {
+        return $this->hasMany(File::class); // Une société a plusieurs fichiers
+    }
+    public function fournisseurs()
+    {
+        return $this->hasMany(Fournisseur::class);
+    }
+
+    public function clients()
+    {
+        return $this->hasMany(Client::class);
+    }
+
+    public function planComptable()
+    {
+        return $this->hasMany(PlanComptable::class);
+    }
+
+    public function journaux()
+    {
+        return $this->hasMany(Journal::class);
+    }
+    
+
 }

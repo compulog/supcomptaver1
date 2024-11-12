@@ -19,5 +19,12 @@ class Client extends Model
         'identifiant_fiscal',
         'ICE',
         'type_client',
+        'societe_id', // Ajoutez 'societe_id' ici
     ];
+
+
+    public function societe()
+    {
+        return $this->belongsTo(Societe::class);
+    }
 }
