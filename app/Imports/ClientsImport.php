@@ -10,10 +10,12 @@ use Maatwebsite\Excel\Concerns\WithChunkReading;
 class ClientsImport implements ToModel, WithHeadings, WithChunkReading
 {
     protected $mapping;
+    protected $societe_id; // Déclaration de la variable pour le societe_id
 
-    public function __construct(array $mapping)
+    public function __construct(array $mapping, $societe_id)
     {
         $this->mapping = $mapping;
+        $this->societe_id = $societe_id; // Récupération de societe_id
     }
 
     public function model(array $row)
@@ -35,8 +37,10 @@ class ClientsImport implements ToModel, WithHeadings, WithChunkReading
 
             $compte = $row[$this->mapping['compte'] - 1];
 
-            // Chercher le client existant par le compte
-            $client = Client::where('compte', $compte)->first();
+            // Chercher le client existant par le compte et societe_id
+            $client = Client::where('compte', $compte)
+                            ->where('societe_id', $this->societe_id) // Filtrer par societe_id
+                            ->first();
 
             if ($client) {
                 // Mettre à jour le client existant
@@ -53,6 +57,7 @@ class ClientsImport implements ToModel, WithHeadings, WithChunkReading
                     'identifiant_fiscal' => $row[$this->mapping['identifiant_fiscal'] - 1],
                     'ICE' => $row[$this->mapping['ICE'] - 1],
                     'type_client' => $row[$this->mapping['type_client'] - 1],
+                    'societe_id' => $this->societe_id, // Ajouter societe_id ici
                 ]);
             }
         }
@@ -76,3 +81,4 @@ class ClientsImport implements ToModel, WithHeadings, WithChunkReading
         return 100; // Par exemple, traitez 100 lignes à la fois
     }
 }
+

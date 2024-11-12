@@ -36,6 +36,11 @@ use App\Http\Controllers\ImpotController;
 use App\Http\Controllers\PaieController;
 
 
+Route::post('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
+
+Route::post('/export-clients', [ClientController::class, 'export'])->name('export.clients');
+
+
 Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
 
 Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');

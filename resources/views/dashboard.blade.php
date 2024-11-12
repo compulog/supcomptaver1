@@ -103,7 +103,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="forme_juridique" class="form-label">Forme Juridique</label>
                             <select class="form-control" name="forme_juridique">
-                                <option value="">Sélectionnez un type</option>
+                                <<option value="Null">choisir un option</option>
                                 <option value="SARL">SARL</option>
                                 <option value="SARL-AU">SARL-AU</option>
                                 <option value="SA">SA</option>
@@ -134,6 +134,7 @@
 
 
                         <select id="ctl00_ctl36_g_69b20002_9278_429e_be53_84b78f0af32b_ctl00_DropDownList_Ville" class="form-control" name="centre_rc" required>
+                        <option value="Null">choisir un option</option>
 						<option value="AGADIR">AGADIR</option>
 						<option value="AL HOCEIMA">AL HOCEIMA</option>
 						<option value="AZILAL">AZILAL</option>
@@ -228,9 +229,25 @@
                             <input type="date" name="exercice_social_fin" class="form-control" required>
                         </div>
                         <div class="col-md-6 mb-3">
+                    <label for="modele_comptable" class="form-label">Modèle Comptable</label>
+                    <select class="form-control" name="modele_comptable" id="modele_comptable" required>
+                    <option value="Null">choisir un option</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Simplifié">Simplifié</option>
+                    </select>
+                </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
+                            <input type="number" class="form-control" name="nombre_chiffre_compte" required>
+                        </div>
+                     
+
+                        <div class="col-md-6 mb-3">
                             <label for="nature_activite" class="form-label">Nature de l'Activité</label>
                             <select class="form-control" name="nature_activite">
-                                <option value="">Choisir une activité</option>
+                            <option value="Null">choisir un option</option>
+                                
                                 <option value="4.Vente de biens d'équipement">Vente de biens d'équipement</option>
                                 <option value="5.Vente de travaux">Vente de travaux</option>
                                 <option value="6.Vente de services">Vente de services</option>
@@ -243,7 +260,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
                             <select class="form-control" name="assujettie_partielle_tva" id="assujettie_partielle_tva" required>
-                                <option value="" disabled selected>Choisir une option</option>
+                            <option value="Null">choisir un option</option>
                                 <option value="1">Oui</option>
                                 <option value="0">Non</option>
                             </select>
@@ -256,7 +273,7 @@
                             <label for="regime_declaration" class="form-label">Régime de Déclaration de TVA</label>
                          
                             <select class="form-control" name="regime_declaration" required>
-                                <option value="" disabled selected>Choisir une option</option>
+                            <option value="Null">choisir un option</option>
                                 <option value="Mensuel de droit commun">Mensuel de droit commun</option>
                                 <option value="Trimestriel de droit commun">Trimestriel de droit commun</option>
                                 <option value="Mensuel de la marge">Mensuel de la marge</option>
@@ -266,7 +283,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="fait_generateur" class="form-label">Fait Générateur</label>
                             <select class="form-control" name="fait_generateur" required>
-                                <option value="" disabled selected>Choisir une option</option>
+                            <option value="Null">choisir un option</option>
                                 <option value="Encaissement">Encaissement</option>
                                 <option value="Débit">Débit</option>
                             </select>
@@ -283,22 +300,19 @@
                             <label for="designation" class="form-label">Désignation</label>
                             <input type="text" class="form-control" name="designation" required>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
-                            <input type="number" class="form-control" name="nombre_chiffre_compte" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                    <label for="modele_comptable" class="form-label">Modèle Comptable</label>
-                    <select class="form-control" name="modele_comptable" id="modele_comptable" required>
-                        <option value="" disabled selected>Choisir un modèle</option>
-                        <option value="Normal">Normal</option>
-                        <option value="Simplifié">Simplifié</option>
-                    </select>
-                </div>
-
+                  
                     </div>
-                    <button type="reset" class="btn btn-secondary me-2">Réinitialiser</button>
-                    <button type="submit" class="btn btn-primary" id="ajouter-societe">Ajouter</button>
+                   <!-- Boutons -->
+                   <div class="d-flex justify-content-end">
+                            <!-- Bouton Réinitialiser avec une très grande marge droite -->
+                            <button type="reset" class="btn btn-secondary me-12">
+                                <i class="fas fa-undo"></i> 
+                            </button>
+                            <!-- Bouton Ajouter avec une très grande marge gauche -->
+                            <button type="submit" class="btn btn-primary ms-12" id="ajouter-societe">
+                                <i class="fas fa-check"></i> Ajouter
+                            </button>
+                        </div>
                     </form>
             </div>
         </div>
@@ -557,6 +571,26 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputs = document.querySelectorAll('#import-societe-form input:not([type="file"]):not([type="submit"])');
+
+        inputs.forEach((input, index) => {
+            input.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Empêche le formulaire de se soumettre
+                    // Si c'est le dernier champ, soumettre le formulaire
+                    if (!inputs[index + 1]) {
+                        document.getElementById('import-societe-form').submit();
+                    } else {
+                        // Focus sur le champ suivant
+                        inputs[index + 1].focus();
+                    }
+                }
+            });
+        });
+    });
+</script>
 
 
 <!-- Modal Modifier Société -->
@@ -615,6 +649,15 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                                 <input type="date" class="form-control" id="mod_exercice_social_fin" name="exercice_social_fin">
                             </div>
                         </div>
+                       
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_model_comptable" class="form-label">Modèle Comptable</label>
+                            <input type="text" class="form-control" id="mod_model_comptable" name="modele_comptable" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
+                            <input type="text" class="form-control" id="mod_nombre_chiffre_compte" name="nombre_chiffre_compte">
+                        </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_date_creation" class="form-label">Date de Création</label>
                             <input type="date" class="form-control" id="mod_date_creation" name="date_creation">
@@ -655,14 +698,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             <label for="mod_designation" class="form-label">Désignation</label>
                             <input type="text" class="form-control" id="mod_designation" name="designation">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="mod_nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
-                            <input type="text" class="form-control" id="mod_nombre_chiffre_compte" name="nombre_chiffre_compte">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="mod_model_comptable" class="form-label">Modèle Comptable</label>
-                            <input type="text" class="form-control" id="mod_model_comptable" name="modele_comptable" required>
-                        </div>
+                       
                     </div>
                     <button type="submit" class="btn btn-primary">Modifier</button>
                 </form>
