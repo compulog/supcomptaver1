@@ -1,6 +1,5 @@
 
 
-
 @extends('layouts.app')
 
 @section('auth')
@@ -17,12 +16,13 @@
         @include('layouts.footers.guest.footer')
     
    
-     
+        @extends('layouts.navbars.auth.navdashboard')
+
 
         @elseif (\Request::is('profile'))  
             
             <div class="main-content position-relative bg-gray-100 max-height-vh-100 h-100">
-                @include('layouts.navbars.auth.nav')
+               
                 @yield('content')
             </div>
 
@@ -39,7 +39,6 @@
         @else
            
             <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg {{ (Request::is('rtl') ? 'overflow-hidden' : '') }}">
-                @include('layouts.navbars.auth.nav')
                 <div class="container-fluid py-4">
                     @yield('content')
                    @include('layouts.footers.auth.footer')

@@ -175,11 +175,19 @@
             window.location.href = '{{ route("paie.view") }}';
         });
     });
-
-function handleFileSelect(event, type) {
+    function handleFileSelect(event, type) {
+    const fileInput = document.getElementById(`file-${type.toLowerCase()}`);
     const formId = `form-${type.toLowerCase()}`;  // Générer l'ID du formulaire
-    document.getElementById(formId).submit();  // Soumettre le formulaire
+    
+    if (!fileInput.files.length) {
+        alert("Veuillez sélectionner un fichier.");
+        return;
+    }
+
+    // Soumettre le formulaire si un fichier est sélectionné
+    document.getElementById(formId).submit();
 }
+
 
 
 // Fonction de gestion des graphiques

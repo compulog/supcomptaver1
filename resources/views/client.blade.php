@@ -445,26 +445,56 @@ $(document).ready(function() {
     $(document).on('click', '.edit-client', function() {
         var clientId = $(this).data('id');
 
-        // Appel AJAX pour récupérer les données du client
-        $.ajax({
-            url: '/clients/' + clientId + '/edit', // Vérifiez que cette route existe
-            method: 'GET',
-            success: function(data) {
-                // Remplir le formulaire dans le pop-up avec les données
-                $('#clientForm [name="compte"]').val(data.compte);
-                $('#clientForm [name="intitule"]').val(data.intitule);
-                $('#clientForm [name="identifiant_fiscal"]').val(data.identifiant_fiscal);
-                $('#clientForm [name="ICE"]').val(data.ICE);
-                // Remplir d'autres champs si nécessaire
-                
-                // Mettre à jour l'URL d'action du formulaire pour la modification
-                $('#clientForm').attr('action', '/clients/' + clientId); // Assurez-vous que cette route est correcte
+        // Demander le mot de passe avant d'ouvrir le modal
+        var password = prompt("Veuillez entrer votre mot de passe pour modifier ce client :");
 
-                // Afficher le pop-up
-                $('#editClientModal').modal('show');
+        // Vérifier si un mot de passe a été saisi
+        if (password === null || password === "") {
+            alert("Mot de passe requis pour modifier ce client.");
+            return;  // Arrêter le processus si le mot de passe est vide ou annulé
+        }
+
+        // Requête AJAX pour vérifier le mot de passe
+        $.ajax({
+            url: '/check-client-password',  // Route pour vérifier le mot de passe
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            data: JSON.stringify({ password: password }),
+            success: function(data) {
+                if (data.success) {
+                    // Si le mot de passe est correct, récupérer les données du client
+                    $.ajax({
+                        url: '/clients/' + clientId + '/edit',
+                        method: 'GET',
+                        success: function(data) {
+                            // Remplir le formulaire dans le pop-up avec les données
+                            $('#clientForm [name="compte"]').val(data.compte);
+                            $('#clientForm [name="intitule"]').val(data.intitule);
+                            $('#clientForm [name="identifiant_fiscal"]').val(data.identifiant_fiscal);
+                            $('#clientForm [name="ICE"]').val(data.ICE);
+                            // Remplir d'autres champs si nécessaire
+                            
+                            // Mettre à jour l'URL d'action du formulaire pour la modification
+                            $('#clientForm').attr('action', '/clients/' + clientId);
+
+                            // Afficher le pop-up
+                            $('#editClientModal').modal('show');
+                        },
+                        error: function(xhr) {
+                            console.error('Erreur lors de la récupération des données :', xhr);
+                        }
+                    });
+                } else {
+                    // Si le mot de passe est incorrect
+                    alert("Mot de passe incorrect. Vous ne pouvez pas modifier ce client.");
+                }
             },
             error: function(xhr) {
-                console.error('Erreur lors de la récupération des données :', xhr);
+                console.error("Erreur de vérification du mot de passe :", xhr);
+                alert("Une erreur s'est produite lors de la vérification du mot de passe.");
             }
         });
     });
@@ -505,6 +535,7 @@ $(document).ready(function() {
         });
     });
 });
+
 
 
 
@@ -704,38 +735,69 @@ document.getElementById('form-saisie-manuel').onsubmit = function(event) {
 
 
 <script>
-    // Fonction pour supprimer un client
-    function deleteclients(id) {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce client ?")) {
-        fetch(`{{ url('clients') }}/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const messageDiv = document.getElementById('message');
-            if (data.success) {
-                // Afficher un message de succès
-                messageDiv.className = 'alert alert-success';
-                messageDiv.textContent = 'Client supprimé avec succès !';
-                messageDiv.classList.remove('d-none');
+  // Fonction pour supprimer un client avec demande de mot de passe
+function deleteclients(id) {
+    // Demander le mot de passe via un prompt
+    var password = prompt("Veuillez entrer votre mot de passe pour confirmer la suppression du client :");
 
-                // Supprimer le client du tableau Tabulator
-                table.deleteRow(id);
-            } else {
-                // Afficher un message d'erreur
-                messageDiv.className = 'alert alert-danger';
-                messageDiv.textContent = 'Erreur lors de la suppression.';
-                messageDiv.classList.remove('d-none');
-            }
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-        });
+    // Vérifier si un mot de passe a été saisi
+    if (password === null || password === "") {
+        alert("Mot de passe requis pour confirmer la suppression.");
+        return;  // Arrêter le processus si le mot de passe est vide ou annulé
     }
+
+    // Requête AJAX pour vérifier le mot de passe
+    fetch('/check-client-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ password: password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Si le mot de passe est correct, procéder à la suppression du client
+            if (confirm("Êtes-vous sûr de vouloir supprimer ce client ?")) {
+                fetch(`{{ url('clients') }}/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const messageDiv = document.getElementById('message');
+                    if (data.success) {
+                        // Afficher un message de succès
+                        messageDiv.className = 'alert alert-success';
+                        messageDiv.textContent = 'Client supprimé avec succès !';
+                        messageDiv.classList.remove('d-none');
+
+                        // Supprimer le client du tableau Tabulator
+                        table.deleteRow(id);
+                    } else {
+                        // Afficher un message d'erreur
+                        messageDiv.className = 'alert alert-danger';
+                        messageDiv.textContent = 'Erreur lors de la suppression.';
+                        messageDiv.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                });
+            }
+        } else {
+            // Si le mot de passe est incorrect, afficher un message d'erreur
+            alert("Mot de passe incorrect. Vous ne pouvez pas supprimer ce client.");
+        }
+    })
+    .catch(error => {
+        console.error("Erreur de vérification du mot de passe :", error);
+        alert("Une erreur s'est produite lors de la vérification du mot de passe.");
+    });
 }
 
 

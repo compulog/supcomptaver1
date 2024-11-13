@@ -7,11 +7,28 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Client;
 use Illuminate\Http\Request;
 use App\Exports\ClientsExport;
-
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 class ClientController extends Controller
 
 {
+    public function checkPassword(Request $request)
+    {
+        // Valider que le mot de passe est bien présent
+        $request->validate([
+            'password' => 'required|string',
+        ]);
 
+        // Récupérer l'utilisateur actuellement connecté
+        $user = Auth::user();
+
+        // Vérifier si le mot de passe correspond à celui de l'utilisateur
+        if (Hash::check($request->password, $user->password)) {
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['success' => false], 401); // Mot de passe incorrect
+        }
+    }
     public function export(Request $request)
     {
         // Récupère l'ID de la société à partir du champ caché

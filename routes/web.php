@@ -36,6 +36,19 @@ use App\Http\Controllers\ImpotController;
 use App\Http\Controllers\PaieController;
 
 
+// Route pour vérifier le mot de passe de l'utilisateur avant suppression du client
+Route::post('/check-client-password', [App\Http\Controllers\ClientController::class, 'checkPassword']);
+
+// Route pour vérifier le mot de passe de l'utilisateur
+Route::post('/check-password', [App\Http\Controllers\SocieteController::class, 'checkPassword']);
+
+// Route pour vérifier le mot de passe de l'utilisateur avant la suppression
+Route::post('/societes/check-password', [SocieteController::class, 'checkPassword'])->name('societes.check-password');
+
+
+Route::get('file/{fileId}/download', [AchatController::class, 'download'])->name('file.download');
+
+
 Route::post('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
 
 Route::post('/export-clients', [ClientController::class, 'export'])->name('export.clients');
@@ -72,9 +85,9 @@ Route::get('/societes/export', [SocietesPDFExportController::class, 'exportPDF']
 Route::get('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
 
 
-Route::get('/export-clients', function () {
-    return Excel::download(new ClientsExport, 'clients.xlsx');
-})->name('export.clients');
+// Route::get('/export-clients', function () {
+//     return Excel::download(new ClientsExport, 'clients.xlsx');
+// })->name('export.clients');
 
 
 Route::get('/export-societes', function () {
