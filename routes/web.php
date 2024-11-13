@@ -18,6 +18,7 @@ use App\Http\Controllers\PaieController;
 use App\Http\Controllers\ImpotController;
 use App\Http\Controllers\CaisseController;
 use App\Exports\FournisseursExport;
+
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\RacineController;
 use App\Http\Controllers\OperationCouranteController;
@@ -45,14 +46,19 @@ use App\Http\Controllers\FileUploadController;
 
 
 
+Route::post('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
+
+Route::post('/export-clients', [ClientController::class, 'export'])->name('export.clients');
 
 
+Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
 
-
-
-
-
-Route::group(['middleware' => 'auth'], function () {
+Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
+Route::get('/vente', [VenteController::class, 'index'])->name('vente.view');
+Route::get('/banque', [BanqueController::class, 'index'])->name('banque.view');
+Route::get('/caisse', [CaisseController::class, 'index'])->name('caisse.view');
+Route::get('/impot', [ImpotController::class, 'index'])->name('impot.view');
+Route::get('/paie', [PaieController::class, 'index'])->name('paie.view');
 
 // Route pour le téléchargement de fichiers
 Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
@@ -63,7 +69,7 @@ Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uplo
 Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
 
 
-
+Route::group(['middleware' => 'auth'], function () {
 Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
 
 // Route pour le téléchargement de fichiers
@@ -85,9 +91,9 @@ Route::get('/societes/export', [SocietesPDFExportController::class, 'exportPDF']
     Route::get('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
 
 
-Route::get('/export-clients', function () {
-    return Excel::download(new ClientsExport, 'clients.xlsx');
-})->name('export.clients');
+// Route::get('/export-clients', function () {
+//     return Excel::download(new ClientsExport, 'clients.xlsx');
+// })->name('export.clients');
 
 
 Route::get('/export-societes', function () {
@@ -258,7 +264,12 @@ Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->n
 
     Route::get('/plan-comptable/import', [PlanComptableController::class, 'showImportForm'])->name('plancomptable.importForm');
     Route::post('/plan-comptable/import', [PlanComptableController::class, 'import'])->name('plancomptable.import');
-        Route::get('/plan-comptable/pdf', [ExportController::class, 'exportPlanComptablePDF'])->name('plan.comptable.pdf');
+
+
+// Route pour exporter le plan comptable au format PDF pour une société spécifique
+Route::get('export-plan-comptable', [ExportController::class, 'export'])->name('export.plan_comptable');
+
+
         Route::get('/plan-comptable/excel', [PlanComptableController::class, 'exportExcel'])->name('plan.comptable.excel');
 
     Route::get('plancomptable', function () {

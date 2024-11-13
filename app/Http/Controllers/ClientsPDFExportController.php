@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Client;
@@ -9,18 +8,23 @@ use Dompdf\Options;
 
 class ClientsPDFExportController extends Controller
 {
-    public function export()
+    public function export(Request $request)
     {
-        // Récupérer les données des clients
-        $clients = Client::all(['compte', 'intitule', 'identifiant_fiscal', 'ICE', 'type_client']);
+        // Récupérer l'ID de la société depuis la requête
+        $societeId = $request->input('societe_id');
+        
+        // Récupérer les clients en fonction de l'ID de la société
+        $clients = Client::where('societe_id', $societeId)
+            ->get(['compte', 'intitule', 'identifiant_fiscal', 'ICE', 'type_client']);
     
-        // Vérifiez si des données sont récupérées
+        // Vérifie si des clients ont été trouvés
         if ($clients->isEmpty()) {
-            dd("Aucun client trouvé."); // Cela devrait afficher un message si aucune donnée n'est trouvée
+            // Si aucun client n'est trouvé, crée un PDF vide ou avec un message
+            $html = view('pdf.clients_empty')->render();
+        } else {
+            // Si des clients sont trouvés, génère le PDF avec les clients
+            $html = view('pdf.clients', compact('clients'))->render();
         }
-    
-        // Rendre la vue
-        $html = view('pdf.clients', compact('clients'))->render();
     
         // Instancier Dompdf
         $dompdf = new Dompdf();
@@ -28,8 +32,7 @@ class ClientsPDFExportController extends Controller
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
     
+        // Télécharger le fichier PDF
         return $dompdf->stream('clients.pdf');
     }
-    
-    
 }

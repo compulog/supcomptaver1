@@ -6,9 +6,28 @@ use App\Imports\ClientsImport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Client;
 use Illuminate\Http\Request;
+use App\Exports\ClientsExport;
 
 class ClientController extends Controller
+
 {
+
+    public function export(Request $request)
+    {
+        // Récupère l'ID de la société à partir du champ caché
+        $societeId = $request->input('societe_id');
+
+        // Effectuer l'export des clients de cette société
+        return Excel::download(new ClientsExport($societeId), 'clients.xlsx');
+    }
+    // Afficher la liste des clients
+    // public function index()
+    // {
+    //     $clients = Client::all();
+    //     return view('client', compact('clients'));
+    // }
+
+    // Enregistrer un nouveau client
     
     // Enregistrer un nouveau client
     public function store(Request $request)
@@ -46,11 +65,13 @@ class ClientController extends Controller
     
     public function index()
     {
-        $clients = Client::all(); // Récupérer tous les clients
-    $societeId = session('societeId'); // Récupérer l'ID de la société de la session
-    
-    return view('client', compact('clients', 'societeId'));
+        $societeId = session('societeId'); // Récupérer l'ID de la société de la session
+        $clients = Client::where('societe_id', $societeId)->get(); // Récupérer les clients de la société
+        
+        return view('client', compact('clients', 'societeId'));
     }
+    
+    
     
    // Dans ClientController.php
    public function edit($id)
@@ -98,32 +119,36 @@ public function update(Request $request, $id)
     }
     
 
-    public function import(Request $request)
-    {
-        // Validation   
-        $request->validate([
-            'excel-file' => 'required|mimes:xlsx,xls,csv|max:2048',
-        ]);
+    // public function import(Request $request)
+    // {
+    //     // Validation   
+    //     $request->validate([
+    //         'excel-file' => 'required|mimes:xlsx,xls,csv|max:2048',
+    //     ]);
     
-        try {
-            Excel::import(new ClientsImport, $request->file('excel-file'));
-            return response()->json(['success' => true, 'message' => 'Importation réussie !']);
-        }catch (\Exception $e) {
-            // Gérer l'exception en retournant un message d'erreur
-            return redirect()->back()->with('error', 'Erreur lors de l\'importation : ' . $e->getMessage());
-        }
-    }
+    //     try {
+    //         Excel::import(new ClientsImport, $request->file('excel-file'));
+    //         return response()->json(['success' => true, 'message' => 'Importation réussie !']);
+    //     } catch (\Exception $e) {
+    //         Log::error('Erreur lors de l\'importation : ' . $e->getMessage());
+    //         return response()->json(['success' => false, 'message' => 'Une erreur est survenue lors de l\'importation.']);
+    //     }
+    // }
     
     public function importClients(Request $request)
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
             'mapping' => 'required|array', // Assurez-vous que le mapping est fourni
+            'societe_id' => 'required|integer', // Ajouter la validation pour societe_id
+
         ]);
 
         $mapping = $request->input('mapping'); // Récupérez le mapping depuis la requête
+        $societe_id = $request->input('societe_id'); // Récupérer l'ID de la société
 
-        Excel::import(new ClientsImport($mapping), $request->file('file'));
+
+        Excel::import(new ClientsImport($mapping, $societe_id), $request->file('file'));
 
         return redirect()->back()->with('success', 'Clients imported successfully.');
     }

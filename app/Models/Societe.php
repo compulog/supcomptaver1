@@ -9,7 +9,7 @@ class Societe extends Model
 {
     use HasFactory; // Utiliser le trait HasFactory si vous envisagez de créer des factories
 
-    protected $connection = 'supcompta';
+    protected $connection = 'supcompta'; // Assurez-vous que la connexion est correcte
     protected $table = 'societe';
     
     protected $fillable = [
@@ -36,29 +36,39 @@ class Societe extends Model
         'modele_comptable' ,        // Nouveau champ ajouté
     ];
 
+    // /**
+    //  * Scope pour filtrer les sociétés actives.
+    //  *
+    //  * @param \Illuminate\Database\Eloquent\Builder $query
+    //  * @return \Illuminate\Database\Eloquent\Builder
+    //  */
+    // public function scopeActives($query)
+    // {
+    //     return $query->where('active', true);
+    // }
+
     public function files()
-    {
-        return $this->hasMany(File::class); // Une société a plusieurs fichiers
-    }
-    public function fournisseurs()
-    {
-        return $this->hasMany(Fournisseur::class);
-    }
+{
+    return $this->hasMany(File::class);
+}
+public function fournisseurs()
+{
+    return $this->hasMany(Fournisseur::class);
+}
 
-    public function clients()
-    {
-        return $this->hasMany(Client::class);
-    }
+public function clients()
+{
+    return $this->hasMany(Client::class);
+}
 
-    public function planComptable()
-    {
-        return $this->hasMany(PlanComptable::class);
-    }
+public function planComptable()
+{
+    return $this->hasMany(PlanComptable::class);
+}
 
-    public function journaux()
-    {
-        return $this->hasMany(Journal::class);
-    }
-    
+public function journaux()
+{
+    return $this->hasMany(Journal::class);
+}
 
 }

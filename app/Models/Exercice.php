@@ -7,34 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class Exercice extends Model
 {
+    protected $connection = 'supcompta';
+
     use HasFactory;
 
-    /**
-     * Le nom de la table associée au modèle.
-     *
-     * @var string
-     */
-    protected $connection = 'supcompta';
-    protected $table = 'files';
-
-    /**
-     * Les attributs qui sont assignables en masse.
-     *
-     * @var array
-     */
+    // Définir les colonnes que vous pouvez remplir via l'assignation de masse
     protected $fillable = [
-        // Ajoutez ici les colonnes de votre table exercices, par exemple :
-        'name',        // Nom de l'exercice
-        'start_date',  // Date de début
-        'end_date',    // Date de fin
-        'societe_id',  // ID de la société associée (si applicable)
+        'societe_id',
+        'type',
+        'file_path',
+        'filename',
     ];
 
     /**
-     * Relation avec le modèle Societe.
+     * Relation avec la société
      */
     public function societe()
     {
-        return $this->belongsTo(Societe::class);
+        return $this->belongsTo(Societe::class); // Relation inverse avec la table 'societes'
     }
 }

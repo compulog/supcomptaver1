@@ -9,21 +9,14 @@ class File extends Model
 {
     use HasFactory;
     protected $connection = 'supcompta'; // Le nom de votre connexion
-    // Définir les champs remplissables
-    protected $fillable = [
-        'name',
-        'path',
-        'type',
-        'societe_id',
-    ];
+    protected $table = 'files';
 
-    /**
-     * La société à laquelle ce fichier appartient.
-     */
+    protected $fillable = ['name', 'path', 'type', 'societe_id'];  // Assurez-vous que 'societe_id' est inclus si nécessaire
     public function societe()
     {
-        return $this->belongsTo(Societe::class); // La relation appartient à une société
+        return $this->belongsTo(Societe::class);
     }
+    
 }
 
 

@@ -15,9 +15,7 @@ class SetSocieteId
         if ($societeId) {
             $societe = Societe::find($societeId);
             view()->share('societe', $societe);
-        // Ajouter l'ID de la société à la requête pour qu'il soit accessible dans le contrôleur
-      
-    }
+        }
 
         return $next($request);
     }

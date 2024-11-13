@@ -10,9 +10,10 @@
         </nav>
         <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar"> 
             <div class="nav-item d-flex align-self-end">
-                <a href="" target="_blank" class="btn btn-primary active mb-0 text-white" role="button" aria-pressed="true">
-                   ACCEUIL
-                </a>
+            <a href="{{ route('dashboard') }}" target="_blank" class="btn btn-primary active mb-0 text-white" role="button" aria-pressed="true">
+   ACCEUIL
+</a>
+
             </div>
             <div class="ms-md-3 pe-md-3 d-flex align-items-center">
                 <div class="input-group">

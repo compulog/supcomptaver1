@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Exercice;
-use App\Models\Societe;  // Assurez-vous que le modèle est correctement importé
+use App\Models\Exercice; // Assurez-vous que le modèle Exercice est bien importé
+use App\Models\Societe; // Importez le modèle Societe
 use Illuminate\Http\Request;
 
 class ExerciceController extends Controller
@@ -17,12 +17,10 @@ class ExerciceController extends Controller
      */
     public function show($id)
     {
-        // Trouver l'exercice par ID
+        // Récupérez l'entité "Societe" en fonction de l'id
         $societe = Societe::findOrFail($id);
         session()->put('societeId',$societe->id);
-
-        // Retourner la vue avec les données de l'exercice
+        // Passez la variable societeId à la vue
         return view('exercices');
     }
-    
 }

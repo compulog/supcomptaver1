@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use Exception;
 use App\Models\societe;
 use App\Models\PlanComptable;
 use Illuminate\Http\Request;
@@ -120,44 +121,103 @@ class PlanComptableController extends Controller
     {
         return view('plancomptable.import'); // La vue avec le formulaire d'import
     }
+    
+    
+    
+        /**
+         * Méthode pour gérer l'importation du plan comptable
+         */
+        public function import(Request $request)
+        {
+              // Validation des données
+    $request->validate([
+        'file' => 'required|file|mimes:xlsx,xls,csv',
+        'colonne_compte' => 'required|integer',
+        'colonne_intitule' => 'required|integer',
+    ]);
 
-    /**
-     * Traite l'importation du fichier Excel
-     */
-    public function import(Request $request)
-    {
-        // Validation des données envoyées par le formulaire
-        $validatedData = $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv',  // Validation du fichier Excel
-            
-            'colonne_compte' => 'required|integer', // Validation de la colonne compte
-            'colonne_intitule' => 'required|integer', // Validation de la colonne intitulé
-        ]);
+    // Récupérer l'ID de la société à partir de la session
+    $societeId = session('societeId');
 
-        try {
-            // Récupérer l'ID de la société
-            $societeId = $request->input('societe_id');
-            
-            // Importation du fichier avec les colonnes spécifiées et la société associée
-            Excel::import(new PlanComptableImport(
-                $societeId,
-                $request->colonne_compte,
-                $request->colonne_intitule
-            ), $request->file('file'));
-
-            return redirect()->route('plancomptable.index')
-                             ->with('success', 'Plan comptable importé avec succès pour la société ID ' . $societeId);
-        } catch (\Exception $e) {
-            return back()->with('error', 'Erreur lors de l\'importation : ' . $e->getMessage());
-        }
+    // Si l'ID de la société est modifié (par exemple, depuis un formulaire ou une sélection), le mettre à jour
+    if ($request->has('societe_id')) {
+        $societeId = $request->societe_id;
     }
+
+    try {
+        // Récupérer les données du fichier Excel
+        $importedData = $this->parseExcelFile($request->file('file'), $request->colonne_compte, $request->colonne_intitule);
+
+        // Insérer les données si le compte n'existe pas déjà pour la société
+        foreach ($importedData as $data) {
+            // Vérifier si le compte existe déjà pour la société
+            $existingPlanComptable = PlanComptable::where('compte', $data['compte'])
+                                                  ->where('societe_id', $societeId)
+                                                  ->first();
+
+            // Si le compte n'existe pas, insérer le nouveau plan comptable
+            if (!$existingPlanComptable) {
+                PlanComptable::create([
+                    'compte' => $data['compte'],
+                    'intitule' => $data['intitule'],
+                    'societe_id' => $societeId,  // Utiliser l'ID de la société actuel
+                ]);
+            }
+        }
+
+        // Retourner à la page précédente avec un message de succès
+        return redirect()->back()->with('success', 'Importation réussie.');
+    } catch (\Exception $e) {
+        // En cas d'erreur
+        return redirect()->back()->with('error', 'Erreur lors de l\'importation : ' . $e->getMessage());
+    }
+        }
+    /**
+     * Parser le fichier Excel (en ignorant la première ligne)
+     */
+    protected function parseExcelFile($file, $compteColumn, $intituleColumn)
+    {
+        // Utilisation de la bibliothèque Laravel Excel pour lire le fichier
+        $data = Excel::toArray([], $file);  // Lire toutes les feuilles du fichier Excel
+
+        // Extraire les données en ignorant la première ligne (index 0)
+        $importedData = [];
+        foreach (array_slice($data[0], 1) as $row) {  // On commence à partir de la deuxième ligne (index 1)
+            $importedData[] = [
+                'compte' => $row[$compteColumn - 1],  // Compte basé sur l'index de la colonne
+                'intitule' => $row[$intituleColumn - 1],  // Intitulé basé sur l'index de la colonne
+            ];
+        }
+
+        return $importedData;
+    }
+        
     
     
 
 // Méthode pour exporter en Excel
 public function exportExcel()
 {
-    return Excel::download(new PlanComptableExport, 'plan_comptable.xlsx');
+    
+    $societeId = session('societeId'); // Récupérer l'ID de la société depuis la session
+    
+    // Créer l'export avec l'ID de la société
+    return Excel::download(new PlanComptableExport($societeId), 'plan_comptable_societe_' . $societeId . '.xlsx');
+}
+
+
+// PlanComptableController.php
+public function deleteSelected(Request $request)
+{
+    $ids = $request->input('ids'); // Récupérer les IDs envoyés depuis le frontend
+    
+    // Suppression des lignes dans la base de données
+    try {
+        PlanComptable::whereIn('id', $ids)->delete(); // Suppression des enregistrements correspondants
+        return response()->json(['status' => 'success']);
+    } catch (\Exception $e) {
+        return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+    }
 }
 
 
