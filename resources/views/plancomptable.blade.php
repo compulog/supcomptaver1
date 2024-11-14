@@ -2,6 +2,8 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des comptes</title>
 
@@ -19,15 +21,61 @@
 
     <!-- Styles personnalisés -->
     <style>
-        .tabulator {
-            border: 1px solid #ccc;
-            overflow: auto;
-        }
-        .tabulator .tabulator-header input[type="search"] {
-            height: 20px;
-            padding: 1px 3px;
-            font-size: 0.8em;
-        }
+        #tabulator-table {
+    overflow-y: auto; /* Activer le défilement vertical */
+    border: 1px solid #ddd; /* Ajouter une bordure si nécessaire */
+}
+
+/* Optionnel : Style pour le tableau */
+.tabulator {
+    border-collapse: collapse; /* Pour un meilleur rendu visuel */
+}
+
+
+    #tabulator-table .tabulator-header {
+    height: 15px; /* Ajustez la hauteur du header */
+    font-size: 0.9em; /* Réduisez la taille de la police */
+    padding: 2px 5px; /* Ajustez le padding pour réduire l'espacement */
+    background-color: #f8f9fa; /* Couleur de l'en-tête */
+}
+
+
+#tabulator-table .tabulator-header .tabulator-col-title {
+    font-size: 0.85em; /* Taille de police des titres des colonnes */
+}
+
+/* Ajuste le champ de recherche dans le header */
+.tabulator .tabulator-header input[type="search"] {
+    height: 20px; /* Diminue la hauteur */
+    padding: 1px 3px; /* Ajuste le padding interne */
+    font-size: 0.8em; /* Diminue légèrement la police */}
+    .btn-custom-gradient {
+    background-image: linear-gradient(to right, #344767, #31477a) !important; /* Dégradé de gauche à droite */
+    color: white !important; /* Couleur du texte en blanc */
+    border: none; /* Pas de bordure */
+    transition: background-color!important 0.1s ease; /* Transition douce pour le survol */
+}
+       
+#plan-comptable-table .tabulator-row {
+    transition: all 0.1s ease-in-out; /* Animation pour un effet dynamique */
+}
+
+    /* background-color: #e9ecef !important; Fond gris clair au survol */
+    .tabulator .tabulator-row:hover {
+    background-color: #31477a !important;  /* Couleur de survol */
+    color: white;  /* Texte en blanc lors du survol pour plus de contraste */
+}
+
+
+.bg-light {
+    background-color: #d1ecf1 !important; /* Fond bleu clair pour la sélection de ligne */
+}
+
+.tabulator .tabulator-col, .tabulator .tabulator-header {
+    font-weight: bold;
+    color: #495057 !important; /* Couleur de texte sombre */
+} 
+        
         .btn-custom-gradient {
             background-image: linear-gradient(to right, #344767, #31477a);
             color: white !important;
@@ -43,32 +91,33 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
-    {{-- Vérifiez si une société est sélectionnée --}}
-    @if(isset($societe))
-        <div class="alert alert-info">
-            <strong>Société sélectionnée :</strong> {{ $societe->raison_sociale }} (ID : {{ $societe->id }})
-        </div>
-    @else
-        <div class="alert alert-warning">
-            Aucune société sélectionnée. Veuillez en sélectionner une.
-        </div>
-    @endif
+   
 
     <div class="container mt-5">
         <h3>Liste des Plans Comptables</h3>
-        <button class="btn btn-custom-gradient" id="addPlanComptableBtn" data-toggle="modal" data-target="#planComptableModalAdd">Ajouter</button>
-        <button class="btn btn-custom-gradient" id="importPlanComptableBtn" data-toggle="modal" data-target="#importModal">Importer</button>
-        <a href="{{ route('plan.comptable.excel') }}" class="btn btn-custom-gradient">Exporter en Excel</a>
+        
+        <button class="btn btn-custom-gradient" id="addPlanComptableBtn" data-toggle="modal" data-target="#planComptableModalAdd">
+            <i class="fas fa-plus"></i> Ajouter
+        </button>
+        
+        <button class="btn btn-custom-gradient" id="importPlanComptableBtn" data-toggle="modal" data-target="#importModal">
+            <i class="fas fa-file-import"></i> Importer
+        </button>
+        
+        <a href="{{ route('plan.comptable.excel') }}" class="btn btn-custom-gradient">
+            <i class="fas fa-file-export"></i> Exporter en Excel
+        </a>
         
         <!-- Formulaire pour exporter en PDF -->
         <form action="{{ route('export.plan_comptable') }}" method="GET" style="display: inline;">
             <input type="hidden" name="societe_id" value="{{ session('societe_id') }}">
-            <button type="submit" class="btn btn-custom-gradient">Exporter le Plan Comptable en PDF</button>
+            <button type="submit" class="btn btn-custom-gradient">
+                <i class="fas fa-file-pdf"></i> Exporter en PDF
+            </button>
         </form>
-        <div class="header-actions">
-             <span id="select-stats"></span>
-          
-        </div>
+        
+        <span id="select-stats"></span>
+        
        
         <div id="plan-comptable-table" class="mt-3"></div>
     </div>
@@ -330,20 +379,22 @@ function editPlanComptable(data) {
     
 var table = new Tabulator("#plan-comptable-table", {
     ajaxURL: "/plancomptable/data", // Votre route pour récupérer les données
-    height: "600px",
+    height: "800px",
     layout: "fitColumns",
+    selectable: true,
     rowSelection: true, // Activer la sélection des lignes
 
     columns: [
         {
             title: ` 
                 <input type='checkbox' id='select-all' /> 
-                <i class="fas fa-trash-alt text-danger" id="delete-all-icon" style="cursor: pointer;" title="Supprimer les lignes sélectionnées"></i>
+                <i class="fas fa-trash-alt" id="delete-all-icon" style="cursor: pointer;" title="Supprimer les lignes sélectionnées"></i>
             `,
             field: "select",
             formatter: "rowSelection", // Active la sélection de ligne
             headerSort: false,
             hozAlign: "center",
+            width: 60, // Fixe la largeur de la colonne de sélection
             cellClick: function(e, cell) {
                 cell.getRow().toggleSelect();  // Basculer la sélection de ligne
             }

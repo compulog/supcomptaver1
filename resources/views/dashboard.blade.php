@@ -45,8 +45,8 @@
 </head>
 <body>
 
-@extends('layouts.user_type.auths')
 
+@extends('layouts.user_type.auths')
 @section('content')
 
 <h2>Liste des Sociétés</h2>
@@ -879,42 +879,69 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         remplirRubriquesTva();
     });
 
-    // Gestion de la suppression d'une société
     document.getElementById('societes-table').addEventListener('click', function(e) {
     if (e.target.closest('.delete-icon')) {
         const id = e.target.closest('.delete-icon').getAttribute('data-id');
+        
+        // Afficher une fenêtre de saisie du mot de passe pour confirmer la suppression
+        const password = prompt("Pour confirmer la suppression, veuillez entrer votre mot de passe");
 
-        if (confirm("Êtes-vous sûr de vouloir supprimer cette société ?")) {
-            fetch("{{ url('societes') }}/" + id, {
-                method: "DELETE",
-                headers: {
-                    "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
-                    "Content-Type": "application/json"
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Erreur réseau lors de la suppression');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Suppression de la ligne dans Tabulator
-                    table.deleteRow(id); // Utilisez deleteRow avec l'ID pour supprimer la ligne visuellement
-
-                    alert("Société supprimée avec succès.");
-                } else {
-                    alert("Erreur lors de la suppression : " + data.message);
-                }
-            })
-            .catch(error => {
-                console.error("Erreur :", error);
-                alert("Une erreur s'est produite : " + error.message);
-            });
+        if (password === null) {
+            // Si l'utilisateur annule la saisie
+            return;
         }
+
+        // Envoyer une requête pour vérifier le mot de passe
+        fetch("{{ route('societes.check-password') }}", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ password: password })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mot de passe correct, procéder à la suppression de la société
+                fetch("{{ url('societes') }}/" + id, {
+                    method: "DELETE",
+                    headers: {
+                        "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
+                        "Content-Type": "application/json"
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur réseau lors de la suppression');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Suppression de la ligne dans Tabulator
+                        table.deleteRow(id); // Utilisez deleteRow avec l'ID pour supprimer la ligne visuellement
+                        alert("Société supprimée avec succès.");
+                    } else {
+                        alert("Erreur lors de la suppression : " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Erreur :", error);
+                    alert("Une erreur s'est produite : " + error.message);
+                });
+            } else {
+                // Mot de passe incorrect
+                alert("Mot de passe incorrect. La suppression a été annulée.");
+            }
+        })
+        .catch(error => {
+            console.error("Erreur lors de la vérification du mot de passe :", error);
+            alert("Une erreur s'est produite lors de la vérification du mot de passe.");
+        });
     }
 });
+
 
 
 

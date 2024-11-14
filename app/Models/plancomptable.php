@@ -1,13 +1,13 @@
 <?php
 
 namespace App\Models;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PlanComptable extends Model // Notez le "P" majuscule
 {
     
-
+    use HasFactory;
     protected $connection = 'supcompta'; // Assurez-vous que la connexion est bien configurée
 
     // Spécifiez le nom de la table

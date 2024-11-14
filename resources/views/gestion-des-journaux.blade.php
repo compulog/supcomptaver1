@@ -127,6 +127,8 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="ajouterJournalModalLabel">Créer</h5>
                 @csrf
+                <!-- Champ caché pour l'ID de la société -->
+        <input type="hidden" name="societe_id" value="{{ session('societeId') }}">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -359,41 +361,61 @@ var table = new Tabulator("#journal-table", {
     ajaxURL: "/journaux/data", // URL pour récupérer les données
     height: "600px", // Hauteur du tableau
     layout: "fitColumns",
+    rowSelection: true,
     selectable: true, // Permet la sélection des lignes
     columns: [
-        { title: "Code Journal", field: "code_journal", editor: "input", headerFilter: "input" },
-        { title: "Type Journal", field: "type_journal", editor: "input", headerFilter: "input" },
-        { title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input" },
-        { title: "Contre Partie", field: "contre_partie", editor: "input", headerFilter: "input" },
         {
             title: `
-                <div class="text-center">
-                    <span>Actions</span>
-                    <div class="d-flex align-items-center justify-content-center mt-1">
-                        <input type="checkbox" id="selectAllCheckbox" title="Sélectionner tout" />
-                        <i class="fas fa-trash-alt text-danger ml-2" id="deleteSelectedIcon" title="Supprimer les lignes sélectionnées" style="cursor: pointer;"></i>
-                    </div>
-                </div>
+                <i class="fas fa-check-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;"></i> 
+                <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;"></i>
             `,
+            field: "select",
+            formatter: "rowSelection", // Active la sélection de ligne
+            headerSort: false,
+            hozAlign: "center",
+            width: 60, // Fixe la largeur de la colonne de sélection
+            cellClick: function(e, cell) {
+                cell.getRow().toggleSelect();  // Basculer la sélection de ligne
+            }
+        },
+        { 
+            title: "Code Journal", 
+            field: "code_journal", 
+            editor: "input", 
+            headerFilter: "input" 
+        },
+        { 
+            title: "Type Journal", 
+            field: "type_journal", 
+            editor: "input", 
+            headerFilter: "input" 
+        },
+        { 
+            title: "Intitulé", 
+            field: "intitule", 
+            editor: "input", 
+            headerFilter: "input" 
+        },
+        { 
+            title: "Contre Partie", 
+            field: "contre_partie", 
+            editor: "input", 
+            headerFilter: "input" 
+        },
+        {
+            title: "Actions",
             field: "action-icons",
-            formatter: function(cell, formatterParams, onRendered) {
-                onRendered(function() {
-                    var checkbox = cell.getElement().querySelector(".row-select-checkbox");
-                    var row = cell.getRow();
-                    checkbox.checked = row.isSelected(); // Synchronise la case avec l'état de la sélection
-                });
-
+            formatter: function() {
                 return `
-                    <input type="checkbox" class="row-select-checkbox" title="Sélectionner" />
-                    <i class='fas fa-edit text-primary edit-icon' style='cursor: pointer;'></i>
-                    <i class='fas fa-trash-alt text-danger delete-icon' style='cursor: pointer;'></i>
+                    <i class='fas fa-edit text-primary edit-icon' style='font-size: 0.9em; cursor: pointer;'></i>
+                    <i class='fas fa-trash-alt text-danger delete-icon' style='font-size: 0.9em; cursor: pointer;'></i>
                 `;
             },
             cellClick: function(e, cell) {
                 var row = cell.getRow();
                 
                 if (e.target.classList.contains('row-select-checkbox')) {
-                    // Syncronise la sélection de la ligne avec l'état de la case
+                    // Synchronise la sélection de la ligne avec l'état de la checkbox
                     if (e.target.checked) {
                         row.select();
                     } else {
@@ -401,10 +423,10 @@ var table = new Tabulator("#journal-table", {
                     }
                 } else if (e.target.classList.contains('edit-icon')) {
                     var rowData = cell.getRow().getData();
-                    editJournal(rowData); // Appelle la fonction d'édition
+                    editFournisseur(rowData);
                 } else if (e.target.classList.contains('delete-icon')) {
                     var rowData = cell.getRow().getData();
-                    deleteJournal(rowData.id); // Appelle la fonction de suppression
+                    deleteFournisseur(rowData.id);
                 }
             },
             hozAlign: "center",
@@ -413,33 +435,52 @@ var table = new Tabulator("#journal-table", {
     ],
     rowSelected: function(row) {
         row.getElement().classList.add("bg-light"); // Ajoute un fond à la ligne sélectionnée
-        row.getCell("action-icons").getElement().querySelector(".row-select-checkbox").checked = true; // Coche la case
     },
     rowDeselected: function(row) {
         row.getElement().classList.remove("bg-light"); // Supprime le fond de la ligne désélectionnée
-        row.getCell("action-icons").getElement().querySelector(".row-select-checkbox").checked = false; // Décoche la case
     }
 });
 
-// Fonction pour supprimer les lignes sélectionnées
+// Fonction pour supprimer les lignes sélectionnées côté serveur
 function deleteSelectedRows() {
     var selectedRows = table.getSelectedRows(); // Récupère les lignes sélectionnées
-    selectedRows.forEach(function(row) {
-        row.delete(); // Supprime chaque ligne sélectionnée
+    var idsToDelete = selectedRows.map(function(row) {
+        return row.getData().id; // Récupère les IDs des lignes sélectionnées
     });
+
+    // Envoie les IDs au serveur pour suppression
+    if (idsToDelete.length > 0) {
+        fetch("/journaux/delete-selected", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ ids: idsToDelete })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message); // Affiche un message de succès
+            table.deleteRow(selectedRows); // Supprime les lignes du tableau côté client
+        })
+        .catch(error => {
+            console.error('Erreur de suppression:', error);
+            alert('Erreur lors de la suppression des lignes.');
+        });
+    }
 }
 
 // Gestionnaire d'événements pour sélectionner/désélectionner toutes les lignes et supprimer les lignes sélectionnées
 document.getElementById("journal-table").addEventListener("click", function(e) {
-    if (e.target.id === "selectAllCheckbox") {
-        if (e.target.checked) {
-            table.selectRow(); // Sélectionne toutes les lignes
+    if (e.target.id === "selectAllIcon") {
+        if (table.getSelectedRows().length === table.getRows().length) {
+            table.deselectRow(); // Désélectionner toutes les lignes
         } else {
-            table.deselectRow(); // Désélectionne toutes les lignes
+            table.selectRow(); // Sélectionner toutes les lignes
         }
     }
-    if (e.target.id === "deleteSelectedIcon") {
-        deleteSelectedRows(); // Supprime les lignes sélectionnées
+    if (e.target.id === "deleteAllIcon") {
+        deleteSelectedRows(); // Appelle la fonction de suppression pour les lignes sélectionnées
     }
 });
 
@@ -554,6 +595,35 @@ $(document).ready(function () {
         if (e.which === 13) {
             e.preventDefault(); // Empêche le comportement par défaut
             $(this).submit(); // Soumettre le formulaire
+        }
+    });
+});
+
+
+$(document).ready(function() {
+    // Écoute le clic sur les boutons de suppression
+    $('.delete-icon').on('click', function() {
+        // Récupère l'ID du journal à partir de l'attribut data-id
+        var journalId = $(this).data('id');
+
+        // Confirmer l'action de suppression
+        if (confirm('Êtes-vous sûr de vouloir supprimer ce journal ?')) {
+            // Envoie une requête AJAX pour supprimer le journal
+            $.ajax({
+                url: '/journaux/' + journalId,  // URL vers la route de suppression
+                type: 'DELETE',  // Méthode HTTP DELETE
+                data: {
+                    _token: '{{ csrf_token() }}'  // CSRF token pour la sécurité
+                },
+                success: function(response) {
+                    // Retirer la ligne du tableau si la suppression réussie
+                    $('tr[data-id="' + journalId + '"]').remove();
+                    alert(response.message);  // Afficher un message de succès
+                },
+                error: function(xhr) {
+                    alert('Erreur lors de la suppression du journal.');
+                }
+            });
         }
     });
 });

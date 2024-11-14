@@ -10,9 +10,29 @@ use App\Imports\PlanComptableImport;
 use App\Exports\PlanComptableExport;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class PlanComptableController extends Controller
 {
+
+    public function checkPassword(Request $request)
+    {
+        // Valider que le mot de passe est bien présent
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        // Récupérer l'utilisateur actuellement connecté
+        $user = Auth::user();
+
+        // Vérifier si le mot de passe correspond à celui de l'utilisateur
+        if (Hash::check($request->password, $user->password)) {
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['success' => false], 401); // Mot de passe incorrect
+        }
+    }
    
     // Méthode pour afficher tous les plans comptables d'une société
     public function index()
@@ -34,8 +54,18 @@ class PlanComptableController extends Controller
     // Méthode pour récupérer les données du plan comptable
     public function getData()
     {
-        $plansComptables = PlanComptable::all();
-        return response()->json($plansComptables);
+       // Récupérer l'ID de la société dans la session
+       $societeId = session('societeId');
+        
+       // Vérifier si l'ID de la société existe
+       if (!$societeId) {
+           return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+       }
+
+       // Récupérer tous les plans comptables pour la société spécifiée
+       $plansComptables = PlanComptable::where('societe_id', $societeId)->get();
+
+       return response()->json($plansComptables);
     }
 
     // Méthode pour ajouter un nouveau plan comptable
@@ -209,14 +239,19 @@ public function exportExcel()
 // PlanComptableController.php
 public function deleteSelected(Request $request)
 {
-    $ids = $request->input('ids'); // Récupérer les IDs envoyés depuis le frontend
-    
-    // Suppression des lignes dans la base de données
+     // Valider que le tableau 'ids' est bien fourni
+     $request->validate([
+        'ids' => 'required|array',
+        'ids.*' => 'integer',  // Chaque ID doit être un entier
+    ]);
+
     try {
-        PlanComptable::whereIn('id', $ids)->delete(); // Suppression des enregistrements correspondants
+        // Supprimer les lignes avec les IDs reçus
+        PlanComptable::whereIn('id', $request->ids)->delete();
+
         return response()->json(['status' => 'success']);
     } catch (\Exception $e) {
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        return response()->json(['status' => 'error', 'message' => 'Erreur lors de la suppression.']);
     }
 }
 

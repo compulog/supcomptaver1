@@ -46,6 +46,21 @@ use App\Http\Controllers\FileUploadController;
 
 
 
+// Route pour vérifier le mot de passe de l'utilisateur avant suppression du client
+Route::post('/check-client-password', [App\Http\Controllers\ClientController::class, 'checkPassword']);
+
+
+
+// Route pour vérifier le mot de passe de l'utilisateur
+Route::post('/check-password', [App\Http\Controllers\SocieteController::class, 'checkPassword']);
+
+// Route pour vérifier le mot de passe de l'utilisateur avant la suppression
+Route::post('/societes/check-password', [SocieteController::class, 'checkPassword'])->name('societes.check-password');
+
+
+Route::get('file/{fileId}/download', [AchatController::class, 'download'])->name('file.download');
+
+
 Route::post('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
 
 Route::post('/export-clients', [ClientController::class, 'export'])->name('export.clients');
@@ -53,18 +68,13 @@ Route::post('/export-clients', [ClientController::class, 'export'])->name('expor
 
 Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
 
-Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
-Route::get('/vente', [VenteController::class, 'index'])->name('vente.view');
-Route::get('/banque', [BanqueController::class, 'index'])->name('banque.view');
-Route::get('/caisse', [CaisseController::class, 'index'])->name('caisse.view');
-Route::get('/impot', [ImpotController::class, 'index'])->name('impot.view');
-Route::get('/paie', [PaieController::class, 'index'])->name('paie.view');
+
 
 // Route pour le téléchargement de fichiers
 Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
 
 
-    Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
+  
 
 Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
 
@@ -83,6 +93,7 @@ Route::get('/paie', [PaieController::class, 'index'])->name('paie.view');
 
 
 
+Route::post('/check-password', [FournisseurController::class, 'checkPassword'])->name('checkPassword');
     
 // Route pour l'exportation PDF
 Route::get('/societes/export', [SocietesPDFExportController::class, 'exportPDF'])->name('societes.export');
@@ -127,11 +138,7 @@ Route::get('/exercice/{id}', function ($id) {
     return view('exercice.show', ['id' => $id]);
 })->name('exercice.show');
 
-// Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
-   
-// Route::get('/societes/import', [SocieteController::class, 'showImportForm'])->name('societes.import.form');
 
-// Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
 
     Route::post('/import-excel', [ImportExcelController::class, 'import'])->name('import.excel');
 
@@ -200,7 +207,7 @@ Route::get('/journaux/{id}', [JournalController::class, 'show'])->name('journaux
 
 // Route pour mettre à jour un journal
 Route::put('/journaux/{id}', [JournalController::class, 'update'])->name('journaux.update');
-
+Route::post('/journaux/delete-selected', [JournalController::class, 'deleteSelected'])->name('journaux.deleteSelected');
 // Route pour supprimer un journal
 Route::delete('/journaux/{id}', [JournalController::class, 'destroy'])->name('journaux.destroy');
     Route::get('profile', function () {
@@ -212,6 +219,8 @@ Route::delete('/journaux/{id}', [JournalController::class, 'destroy'])->name('jo
     });
     
     Route::get('/export-fournisseurs-pdf', [ExportController::class, 'exportPDF']) ;
+// routes/web.php
+Route::post('/fournisseurs/delete-selected', [FournisseurController::class, 'deleteSelected'])->name('fournisseurs.deleteSelected');
 
 Route::get('/fournisseurs/data', [FournisseurController::class, 'getData']) ;
 // Routes pour l'API des fournisseurs
@@ -221,7 +230,7 @@ Route::put('/fournisseurs/{id}', [FournisseurController::class, 'update']) ;
 Route::delete('/fournisseurs/{id}', [FournisseurController::class, 'destroy']);
 Route::get('/fournisseurs/{id}', [FournisseurController::class, 'show']);
 // Route pour afficher le formulaire d'édition
-Route::get('/fournisseurs/{id}/edit', [FournisseurController::class, 'edit']) ;
+Route::get('/fournisseurs/{id}/edit', [FournisseurController::class, 'edit'])->name('fournisseurs.edit'); ;
 
 Route::get('/get-next-compte', [FournisseurController::class, 'getNextCompte']);
 
@@ -247,7 +256,6 @@ Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->n
 
 
 
-    Route::post('/plancomptable/vider', [PlanComptableController::class, 'viderPlanComptable'])->name('plancomptable.vider');
     Route::put('/plancomptable/{id}', [PlanComptableController::class, 'edit']);
     //Route::get('/plancomptable/{id}', [FournisseurController::class, 'show']);
     Route::get('/plancomptable/data', [PlanComptableController::class, 'getData']);
@@ -308,6 +316,7 @@ Route::get('export-plan-comptable', [ExportController::class, 'export'])->name('
         return view('static-sign-in');
     })->name('sign-in');
 
+   
     Route::get('static-sign-up', function () {
         return view('static-sign-up');
     })->name('sign-up');

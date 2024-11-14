@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <title>Gestion des Fournisseurs</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.2.4/dist/css/tabulator.min.css" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.0.7/dist/js/tabulator.min.js"></script>
+    <link href="https://unpkg.com/tabulator-tables@5.0.7/dist/css/tabulator.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Chargement de jQuery -->
@@ -34,7 +37,7 @@
 
 
     #tabulator-table .tabulator-header {
-    height: 30px; /* Ajustez la hauteur du header */
+    height: 15px; /* Ajustez la hauteur du header */
     font-size: 0.9em; /* Réduisez la taille de la police */
     padding: 2px 5px; /* Ajustez le padding pour réduire l'espacement */
     background-color: #f8f9fa; /* Couleur de l'en-tête */
@@ -115,10 +118,6 @@
 
 @section('content')
 
-@if(isset($societe))
-    <p>Societe ID: {{ $societe->id }}</p>
-    <p>Nom de la société: {{ $societe->raison_sociale }}</p>
-@endif
 
 <div class="container mt-5">
     <h3>Liste des Fournisseurs</h3>
@@ -148,6 +147,9 @@
             <div class="modal-body">
     <form id="importForm" action="{{ route('fournisseurs.import') }}" method="POST" enctype="multipart/form-data">
         @csrf
+        @csrf
+        <!-- Champ caché pour le societe_id -->
+        <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}"><!-- Exemple pour la société 3 -->
         <div class="form-group">
             <label for="file">Fichier Excel</label>
             <input type="file" class="form-control" name="file" id="file" required>
@@ -466,46 +468,43 @@ $("#identifiant_fiscal").on("input", function() {
   }
 });
 
-
 var table = new Tabulator("#fournisseur-table", {
     ajaxURL: "/fournisseurs/data", // URL pour récupérer les données
     layout: "fitColumns",
     height: "800px", // Hauteur du tableau
     selectable: true, // Permet de sélectionner les lignes
-    selectableRollingSelection: false, // Limite la sélection de lignes à une seule (désactiver si vous voulez plusieurs sélections)
-    responsiveLayout: "collapse", // Rend le tableau responsive en petits écrans
+    rowSelection: true,
     initialSort: [ // Tri initial par colonne 'Compte'
         { column: "compte", dir: "asc" }
     ],
     columns: [
-        {title: "Compte", field: "compte", editor: "input", headerFilter: "input", minWidth: 80},
-        {title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input", minWidth: 120},
-        {title: "Identifiant Fiscal", field: "identifiant_fiscal", editor: "input", headerFilter: "input", minWidth: 50},
-        {title: "ICE", field: "ICE", editor: "input", headerFilter: "input", minWidth: 80},
-        {title: "Nature de l'opération", field: "nature_operation", editor: "input", headerFilter: "input", minWidth: 50},
-        {title: "Rubrique TVA", field: "rubrique_tva", editor: "input", headerFilter: "input", minWidth: 50},
-        {title: "Désignation", field: "designation", editor: "input", headerFilter: "input", minWidth: 80},
-        {title: "Contre Partie", field: "contre_partie", editor: "input", headerFilter: "input", minWidth: 80},
         {
-            title: `
-                <div class="text-center">
-                    <span>Actions</span>
-                    <div class="d-flex align-items-center justify-content-center mt-1">
-                        <input type="checkbox" id="selectAllCheckbox" title="Sélectionner tout" />
-                        <i class="fas fa-trash-alt text-danger ml-2" id="deleteSelectedIcon" title="Supprimer les lignes sélectionnées" style="cursor: pointer;"></i>
-                    </div>
-                </div>
+            title: ` 
+                <i class="fas fa-check-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;"></i> 
+                <i class="fas fa-trash-alt " id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;"></i>
             `,
+            field: "select",
+            formatter: "rowSelection", // Active la sélection de ligne
+            headerSort: false,
+            hozAlign: "center",
+            width: 60, // Fixe la largeur de la colonne de sélection
+            cellClick: function(e, cell) {
+                cell.getRow().toggleSelect();  // Basculer la sélection de ligne
+            }
+        },
+        {title: "Compte", field: "compte", editor: "input", headerFilter: "input"},
+        {title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input"},
+        {title: "Identifiant Fiscal", field: "identifiant_fiscal", editor: "input", headerFilter: "input"},
+        {title: "ICE", field: "ICE", editor: "input", headerFilter: "input"},
+        {title: "Nature de l'opération", field: "nature_operation", editor: "input", headerFilter: "input"},
+        {title: "Rubrique TVA", field: "rubrique_tva", editor: "input", headerFilter: "input"},
+        {title: "Désignation", field: "designation", editor: "input", headerFilter: "input"},
+        {title: "Contre Partie", field: "contre_partie", editor: "input", headerFilter: "input"},
+        {
+            title: "Actions",
             field: "action-icons",
-            formatter: function(cell, formatterParams, onRendered) {
-                onRendered(function() {
-                    var checkbox = cell.getElement().querySelector(".row-select-checkbox");
-                    var row = cell.getRow();
-                    checkbox.checked = row.isSelected(); // Syncronise l'état de la checkbox avec la sélection de la ligne
-                });
-
+            formatter: function() {
                 return `
-                    <input type="checkbox" class="row-select-checkbox" title="Sélectionner" />
                     <i class='fas fa-edit text-primary edit-icon' style='font-size: 0.9em; cursor: pointer;'></i>
                     <i class='fas fa-trash-alt text-danger delete-icon' style='font-size: 0.9em; cursor: pointer;'></i>
                 `;
@@ -513,6 +512,7 @@ var table = new Tabulator("#fournisseur-table", {
             cellClick: function(e, cell) {
                 var row = cell.getRow();
                 
+                // Vérifier quel élément a été cliqué
                 if (e.target.classList.contains('row-select-checkbox')) {
                     // Synchronise la sélection de la ligne avec l'état de la checkbox
                     if (e.target.checked) {
@@ -522,48 +522,89 @@ var table = new Tabulator("#fournisseur-table", {
                     }
                 } else if (e.target.classList.contains('edit-icon')) {
                     var rowData = cell.getRow().getData();
-                    editFournisseur(rowData);
+                    
+                    // Vérification du mot de passe avant d'ouvrir le modal
+                    var password = prompt("Veuillez entrer votre mot de passe pour confirmer la modification.");
+                    
+                    if (password) {
+                        // Envoi de la requête pour vérifier le mot de passe
+                        $.ajax({
+                            url: "/check-password",  // URL pour la vérification du mot de passe
+                            type: "POST",
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                password: password  // Envoi du mot de passe pour la vérification
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    // Si le mot de passe est correct, ouvrir le modal de modification
+                                    editFournisseur(rowData); // Appel à votre fonction de modification
+                                } else {
+                                    alert("Mot de passe incorrect. Vous ne pouvez pas modifier ce fournisseur.");
+                                }
+                            },
+                            error: function(xhr) {
+                                alert("Erreur lors de la vérification du mot de passe !");
+                            }
+                        });
+                    } else {
+                        alert("Mot de passe requis pour modifier le fournisseur.");
+                    }
                 } else if (e.target.classList.contains('delete-icon')) {
                     var rowData = cell.getRow().getData();
                     deleteFournisseur(rowData.id);
                 }
             },
             hozAlign: "center",
-            headerSort: false,
-            minWidth: 100,
+            headerSort: false
         }
     ],
-    rowSelected: function(row) {
-        row.getElement().classList.add("bg-light"); // Ajoute une couleur de fond à la ligne sélectionnée
-        row.getCell("action-icons").getElement().querySelector(".row-select-checkbox").checked = true; // Coche la case quand la ligne est sélectionnée
-    },
-    rowDeselected: function(row) {
-        row.getElement().classList.remove("bg-light"); // Supprime la couleur de fond si la ligne est désélectionnée
-        row.getCell("action-icons").getElement().querySelector(".row-select-checkbox").checked = false; // Décoche la case quand la ligne est désélectionnée
-    }
+   
 });
 
-// Fonction pour supprimer les lignes sélectionnées
+// Fonction pour supprimer les lignes sélectionnées côté serveur
 function deleteSelectedRows() {
     var selectedRows = table.getSelectedRows(); // Récupère les lignes sélectionnées
-    selectedRows.forEach(function(row) {
-        row.delete(); // Supprime chaque ligne sélectionnée
+    var idsToDelete = selectedRows.map(function(row) {
+        return row.getData().id; // Récupère les IDs des lignes sélectionnées
     });
+
+    // Envoie les IDs au serveur pour suppression
+    if (idsToDelete.length > 0) {
+        fetch("/fournisseurs/delete-selected", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ ids: idsToDelete })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message); // Affiche un message de succès
+            table.deleteRow(selectedRows); // Supprime les lignes du tableau côté client
+        })
+        .catch(error => {
+            console.error('Erreur de suppression:', error);
+            alert('Erreur lors de la suppression des lignes.');
+        });
+    }
 }
 
 // Gestionnaire d'événements pour sélectionner/désélectionner toutes les lignes et supprimer les lignes sélectionnées
 document.getElementById("fournisseur-table").addEventListener("click", function(e) {
-    if (e.target.id === "selectAllCheckbox") {
-        if (e.target.checked) {
-            table.selectRow(); // Sélectionne toutes les lignes
+    if (e.target.id === "selectAllIcon") {
+        if (table.getSelectedRows().length === table.getRows().length) {
+            table.deselectRow(); // Désélectionner toutes les lignes
         } else {
-            table.deselectRow(); // Désélectionne toutes les lignes
+            table.selectRow(); // Sélectionner toutes les lignes
         }
     }
-    if (e.target.id === "deleteSelectedIcon") {
+    if (e.target.id === "deleteAllIcon") {
         deleteSelectedRows(); // Appelle la fonction de suppression pour les lignes sélectionnées
     }
 });
+
 
 
 var designationValue = ''; // Variable globale pour stocker l'intitulé
@@ -809,8 +850,7 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
         });
     }
 
-
-$("#fournisseurFormEdit").on("submit", function(e) {
+    $("#fournisseurFormEdit").on("submit", function(e) {
     e.preventDefault(); // Empêche la soumission par défaut du formulaire
 
     var fournisseurId = $("#editFournisseurId").val();
@@ -853,6 +893,8 @@ $("#fournisseurFormEdit").on("submit", function(e) {
     });
 });
 
+
+
 // Fonction pour remplir le formulaire pour la modification
 function editFournisseur(data) {
     $("#editFournisseurId").val(data.id);
@@ -877,55 +919,108 @@ function editFournisseur(data) {
 
 // excel
 
-  document.getElementById('file').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
+    document.getElementById('file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
 
-      reader.onload = function(event) {
-          const data = new Uint8Array(event.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
+        reader.onload = function(event) {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
 
-          const sheetName = workbook.SheetNames[0]; // Prendre la première feuille
-          const worksheet = workbook.Sheets[sheetName];
-          const headers = XLSX.utils.sheet_to_json(worksheet, { header: 1 })[0]; // Obtenir les en-têtes de colonnes
+            const sheetName = workbook.SheetNames[0]; // Prendre la première feuille
+            const worksheet = workbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // Lire toutes les lignes
 
-          // Remplir les sélecteurs de colonnes
-          const compteSelect = document.querySelector('select[name="colonne_compte"]');
-          const intituleSelect = document.querySelector('select[name="colonne_intitule"]');
-          
-          compteSelect.innerHTML = '';
-          intituleSelect.innerHTML = '';
-          
-          headers.forEach((header, index) => {
-              const optionCompte = new Option(header, index);
-              const optionIntitule = new Option(header, index);
-              compteSelect.add(optionCompte);
-              intituleSelect.add(optionIntitule);
-          });
-      };
+            if (rows.length > 1) {
+                // Remplir les options avec les en-têtes de colonnes
+                const headers = rows[0]; // Utiliser la première ligne comme en-têtes
+                const compteSelect = document.querySelector('select[name="colonne_compte"]');
+                const intituleSelect = document.querySelector('select[name="colonne_intitule"]');
+                const identifiantFiscalSelect = document.querySelector('select[name="colonne_identifiant_fiscal"]');
+                const ICESelect = document.querySelector('select[name="colonne_ICE"]');
+                const natureOperationSelect = document.querySelector('select[name="colonne_nature_operation"]');
+                const rubriqueTvaSelect = document.querySelector('select[name="colonne_rubrique_tva"]');
+                const designationSelect = document.querySelector('select[name="colonne_designation"]');
+                const contrePartieSelect = document.querySelector('select[name="colonne_contre_partie"]');
 
-      reader.readAsArrayBuffer(file);
-  });
+                // Réinitialiser les listes de sélection
+                compteSelect.innerHTML = '';
+                intituleSelect.innerHTML = '';
+                identifiantFiscalSelect.innerHTML = '';
+                ICESelect.innerHTML = '';
+                natureOperationSelect.innerHTML = '';
+                rubriqueTvaSelect.innerHTML = '';
+                designationSelect.innerHTML = '';
+                contrePartieSelect.innerHTML = '';
+
+                // Afficher les colonnes disponibles dans les champs de sélection
+                for (let i = 0; i < headers.length; i++) {
+                    const option = new Option(headers[i], i + 1); // Les indices de colonnes sont à partir de 1
+                    compteSelect.add(option.cloneNode(true));
+                    intituleSelect.add(option.cloneNode(true));
+                    identifiantFiscalSelect.add(option.cloneNode(true));
+                    ICESelect.add(option.cloneNode(true));
+                    natureOperationSelect.add(option.cloneNode(true));
+                    rubriqueTvaSelect.add(option.cloneNode(true));
+                    designationSelect.add(option.cloneNode(true));
+                    contrePartieSelect.add(option.cloneNode(true));
+                }
+            }
+        };
+
+        reader.readAsArrayBuffer(file);
+    });
+
 
 
   // Fonction pour supprimer un fournisseur
   function deleteFournisseur(id) {
-      if (confirm("Êtes-vous sûr de vouloir supprimer ce fournisseur ?")) {
-          $.ajax({
-              url: "/fournisseurs/" + id,
-              type: "DELETE",
-              data: {
-                  _token: '{{ csrf_token() }}'
-              },
-              success: function(response) {
-                  table.setData("/fournisseurs/data"); // Recharger les données
-              },
-              error: function(xhr) {
-                  alert("Erreur lors de la suppression des données !");
-              }
-          });
-      }
-  }
+    // Demande de confirmation
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce fournisseur ?")) {
+        
+        // Demande du mot de passe
+        var password = prompt("Veuillez entrer votre mot de passe pour confirmer la suppression.");
+        
+        // Vérifier si le mot de passe a été fourni
+        if (password) {
+            // Appel à la route de vérification du mot de passe
+            $.ajax({
+                url: "/check-password",  // La route pour vérifier le mot de passe
+                type: "POST",
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    password: password  // On envoie le mot de passe avec la requête
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Si le mot de passe est correct, on procède à la suppression du fournisseur
+                        $.ajax({
+                            url: "/fournisseurs/" + id,
+                            type: "DELETE",
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(response) {
+                                table.setData("/fournisseurs/data"); // Recharger les données
+                            },
+                            error: function(xhr) {
+                                alert("Erreur lors de la suppression des données !");
+                            }
+                        });
+                    } else {
+                        alert("Mot de passe incorrect !");
+                    }
+                },
+                error: function(xhr) {
+                    alert("Erreur lors de la vérification du mot de passe !");
+                }
+            });
+        } else {
+            alert("Mot de passe requis pour supprimer le fournisseur.");
+        }
+    }
+}
+
 // Fonction pour sauvegarder les valeurs dans localStorage
 function saveInputValues() {
       const inputs = [

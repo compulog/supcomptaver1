@@ -8,11 +8,42 @@ use Illuminate\Http\Request;
 
 use App\Imports\SocietesImport;
 use App\Models\Racine; // Assurez-vous que le modèle Racine est importé
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 class SocieteController extends Controller
 {
   
+  // Vérification du mot de passe de l'utilisateur
+  public function checkPassword(Request $request)
+  {
+      // Valider que le mot de passe est bien envoyé
+      $request->validate([
+          'password' => 'required|string',
+      ]);
 
- 
+      // Vérifier si le mot de passe correspond à celui de l'utilisateur actuellement connecté
+      $user = Auth::user();
+
+      if (Hash::check($request->password, $user->password)) {
+          // Si le mot de passe est correct, retourner une réponse JSON avec succès
+          return response()->json(['success' => true]);
+      }
+
+      // Si le mot de passe est incorrect, retourner une erreur
+      return response()->json(['success' => false, 'message' => 'Mot de passe incorrect.'], 403);
+  }
+   // Assurez-vous d'importer votre modèle Racine
+// Dans votre contrôleur (par exemple SocieteController)
+
+// public function dashboard()
+// {
+//     // Récupérer toutes les entrées de la table racines
+//     $racines = Racine::all();
+
+
+//     // Passer la variable à la vue
+//     return view('dashboard', ['racines' => $racines]); 
+// }
 
  
    public function getRubriquesTVA()

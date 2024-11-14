@@ -1,6 +1,4 @@
 <?php
-
-
 namespace App\Http\Controllers;
 
 use App\Models\File;
@@ -30,29 +28,37 @@ class FileUploadController extends Controller
         $request->validate([
             'file' => 'required|file|mimes:jpg,png,pdf,docx,xlsx', // Types de fichiers acceptés
             'type' => 'required|string', // Le type (Achat, Vente, etc.)
-            'societe_id' => 'required|integer', // Ajouter la validation pour societe_id
-
+            'societe_id' => 'required|integer', // Validation pour societe_id
         ]);
-
-        // Obtenez le fichier téléchargé
-        $file = $request->file('file');
-
-        // Créer un nom unique pour le fichier
-        $filename = time() . '-' . $file->getClientOriginalName();
-
-        // Sauvegarder le fichier dans le dossier 'uploads' de stockage local
-        $filePath = $file->storeAs('uploads', $filename);
-
-        // Sauvegarder les informations du fichier dans la base de données
-        $fileRecord = new File();
-        $fileRecord->name = $filename;
-        $fileRecord->path = $filePath;
-        $fileRecord->type = $request->input('type');  // Assigner la valeur du type
-            $fileRecord->societe_id = $request->input('societe_id'); // Ajouter la valeur pour societe_id
-
-        $fileRecord->save();  // Sauvegarder dans la base de données
-
-        // Retourner un message de succès à l'utilisateur
-        return back()->with('success', 'Fichier téléchargé avec succès!');
+    
+        // Vérifier si un fichier a été téléchargé
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+    
+            // Créer un nom unique pour le fichier
+            $filename = time() . '-' . $file->getClientOriginalName();
+    
+            // Lire les données binaires du fichier
+            $fileData = file_get_contents($file->getRealPath());
+    
+            // Sauvegarder le fichier dans le stockage public
+            $path = $file->storeAs('uploads', $filename, 'public'); // Enregistre le fichier sur disque
+    
+            // Sauvegarder les informations du fichier dans la base de données
+            $fileRecord = new File();
+            $fileRecord->name = $filename;  // Nom du fichier
+            $fileRecord->file_data = $fileData;  // Sauvegarde des données binaires
+            $fileRecord->path = $path;  // Sauvegarde du chemin d'accès (optionnel, si tu veux conserver le chemin)
+            $fileRecord->type = $request->input('type');  // Type du fichier (Achat, Vente, etc.)
+            $fileRecord->societe_id = $request->input('societe_id');  // ID de la société
+    
+            $fileRecord->save();  // Sauvegarde dans la base de données
+    
+            return back()->with('success', 'Fichier téléchargé avec succès!');
+        } else {
+            return back()->withErrors(['file' => 'Aucun fichier téléchargé.']);
+        }
     }
+    
+    
 }

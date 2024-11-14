@@ -9,29 +9,47 @@ use App\Models\PlanComptable;
 use App\Models\societe;
 use Illuminate\Support\Facades\DB; 
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
 
 
 class FournisseurController extends Controller
-{
-    public function index()
+{  
+    public function checkPassword(Request $request)
     {
-        // Vous pouvez directement utiliser l'objet $societe dans vos méthodes de contrôleur
-        $societe = session('societe');
-        
-        if (!$societe) {
-            // Gérer le cas où la société n'est pas trouvée
-            return redirect()->route('societe.select')->with('error', 'Veuillez sélectionner une société.');
+        // Valider que le mot de passe est bien présent
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        // Récupérer l'utilisateur actuellement connecté
+        $user = Auth::user();
+
+        // Vérifier si le mot de passe correspond à celui de l'utilisateur
+        if (Hash::check($request->password, $user->password)) {
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['success' => false], 401); // Mot de passe incorrect
         }
-    
-        // Récupérer tous les fournisseurs associés à la société spécifiée
-        $fournisseurs = Fournisseur::where('societe_id', $societe->id)->get();
-    
-        // Retourner la vue avec les fournisseurs et la société
-        return view('fournisseurs.index', compact('fournisseurs', 'societe'));
+    }
+   
+
+    public function index()
+    {// Récupérer l'ID de la société dans la session
+        $societeId = session('societeId');
+        
+        // Vérifier si l'ID de la société existe
+        if (!$societeId) {
+            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+        }
+
+        // Récupérer tous les plans comptables pour la société spécifiée
+        $fournisseurs = Fournisseur::where('societe_id', $societeId)->get();
+
+        return response()->json($fournisseurs);
     }
     
     
@@ -44,7 +62,17 @@ class FournisseurController extends Controller
 
     public function getData()
     {
-        $fournisseurs = Fournisseur::all();
+        // Récupérer l'ID de la société dans la session
+        $societeId = session('societeId');
+        
+        // Vérifier si l'ID de la société existe
+        if (!$societeId) {
+            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+        }
+
+        // Récupérer tous les plans comptables pour la société spécifiée
+        $fournisseurs = Fournisseur::where('societe_id', $societeId)->get();
+
         return response()->json($fournisseurs);
     }
 
@@ -233,17 +261,20 @@ public function getComptes()
     }
 
 
+    // Affiche le formulaire d'importation
     public function showImportForm()
     {
-        return view('import'); // Assurez-vous que le nom de votre vue est correct
+        return view('import'); // La vue avec le formulaire d'importation
     }
 
+    /**
+     * Méthode pour gérer l'importation des fournisseurs
+     */
     public function import(Request $request)
     {
-        // Valider le fichier et les colonnes ici
-        
-        $validatedData= $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv',
+        // Validation des données
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
             'colonne_compte' => 'required|integer',
             'colonne_intitule' => 'required|integer',
             'colonne_identifiant_fiscal' => 'required|integer',
@@ -253,9 +284,19 @@ public function getComptes()
             'colonne_designation' => 'required|integer',
             'colonne_contre_partie' => 'required|integer',
         ]);
-    
+
+        // Récupérer l'ID de la société à partir de la session
+        $societeId = session('societeId');
+
+        // Si un ID de société est envoyé dans la requête, le mettre à jour
+        if ($request->has('societe_id')) {
+            $societeId = $request->societe_id;
+        }
+
         try {
-            Excel::import(new FournisseurImport(
+            // Parse les données du fichier Excel
+            $importedData = $this->parseExcelFile(
+                $request->file('file'),
                 $request->colonne_compte,
                 $request->colonne_intitule,
                 $request->colonne_identifiant_fiscal,
@@ -264,15 +305,89 @@ public function getComptes()
                 $request->colonne_rubrique_tva,
                 $request->colonne_designation,
                 $request->colonne_contre_partie
-            ), $request->file('file'));
-    
-            return redirect()->route('fournisseurs.index')->with('success', 'Fournisseurs importés avec succès !');
-    
+            );
+
+            // Insérer les données si le compte n'existe pas déjà pour la société
+            foreach ($importedData as $data) {
+                // Vérifier si le fournisseur existe déjà pour cette société
+                $existingFournisseur = Fournisseur::where('compte', $data['compte'])
+                                                  ->where('societe_id', $societeId)
+                                                  ->first();
+
+                // Si le fournisseur n'existe pas, insérer le nouveau fournisseur
+                if (!$existingFournisseur) {
+                    Fournisseur::create([
+                        'compte' => $data['compte'],
+                        'intitule' => $data['intitule'],
+                        'identifiant_fiscal' => $data['identifiant_fiscal'],
+                        'ICE' => $data['ICE'],
+                        'nature_operation' => $data['nature_operation'],
+                        'rubrique_tva' => $data['rubrique_tva'],
+                        'designation' => $data['designation'],
+                        'contre_partie' => $data['contre_partie'],
+                        'societe_id' => $societeId, // Associer l'ID de la société actuel
+                    ]);
+                }
+            }
+
+            // Retourner à la page précédente avec un message de succès
+            return redirect()->back()->with('success', 'Importation des fournisseurs réussie.');
         } catch (\Exception $e) {
-            // Gérer l'exception en retournant un message d'erreur
+            // En cas d'erreur
             return redirect()->back()->with('error', 'Erreur lors de l\'importation : ' . $e->getMessage());
         }
     }
-    
 
+    /**
+     * Parse le fichier Excel (en ignorant la première ligne).
+     */
+    protected function parseExcelFile($file, $compteColumn, $intituleColumn, $identifiantFiscalColumn, $ICEColumn, $natureOperationColumn, $rubriqueTvaColumn, $designationColumn, $contrePartieColumn)
+    {
+        // Utilisation de Laravel Excel pour lire le fichier
+        $data = Excel::toArray([], $file);  // Lire toutes les feuilles du fichier Excel
+
+        // Extraire les données en ignorant la première ligne (index 0)
+        $importedData = [];
+        foreach (array_slice($data[0], 1) as $row) {  // On commence à partir de la deuxième ligne (index 1)
+            $importedData[] = [
+                'compte' => $row[$compteColumn - 1],  // Compte basé sur l'index de la colonne
+                'intitule' => $row[$intituleColumn - 1],  // Intitulé basé sur l'index de la colonne
+                'identifiant_fiscal' => $row[$identifiantFiscalColumn - 1],  // Identifiant Fiscal
+                'ICE' => $row[$ICEColumn - 1],  // ICE
+                'nature_operation' => $row[$natureOperationColumn - 1],  // Nature de l'opération
+                'rubrique_tva' => $row[$rubriqueTvaColumn - 1],  // Rubrique TVA
+                'designation' => $row[$designationColumn - 1],  // Désignation
+                'contre_partie' => $row[$contrePartieColumn - 1],  // Contre partie
+            ];
+        }
+
+        return $importedData;
+    }
+
+
+    public function deleteSelected(Request $request)
+    {
+        // Valider que le tableau 'ids' est bien fourni
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer',  // Chaque ID doit être un entier
+        ]);
+    
+        try {
+            // Supprimer les lignes avec les IDs reçus
+            $deletedCount = Fournisseur::whereIn('id', $request->ids)->delete();
+    
+            return response()->json([
+                'status' => 'success',
+                'message' => "{$deletedCount} lignes supprimées"
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erreur lors de la suppression.',
+                'error' => $e->getMessage()  // Retour de l'erreur spécifique
+            ]);
+        }
+    }
+    
 }

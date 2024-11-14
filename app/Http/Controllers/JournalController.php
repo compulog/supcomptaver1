@@ -4,19 +4,63 @@ namespace App\Http\Controllers;
 use App\Models\PlanComptable;
 use App\Models\Journal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class JournalController extends Controller
 {
+    public function checkPassword(Request $request)
+    {
+        // Valider que le mot de passe est bien présent
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        // Récupérer l'utilisateur actuellement connecté
+        $user = Auth::user();
+
+        // Vérifier si le mot de passe correspond à celui de l'utilisateur
+        if (Hash::check($request->password, $user->password)) {
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['success' => false], 401); // Mot de passe incorrect
+        }
+    }
+
         // Afficher tous les journaux
         public function index()
         {
-            return Journal::all(); 
+           // Récupérer l'ID de la société dans la session
+    $societeId = session('societeId');
+    
+    // Vérifier si l'ID de la société existe dans la session
+    if (!$societeId) {
+        return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+    }
+
+    // Récupérer tous les journaux qui appartiennent à la société spécifiée
+    $journaux = Journal::where('societe_id', $societeId)->get();
+
+    // Retourner les journaux associés à la société en format JSON
+    return response()->json($journaux);
         }
 
         public function getData()
         {
-            $journaux = Journal::all();
-            return response()->json($journaux);
+            
+    // Récupérer l'ID de la société dans la session
+    $societeId = session('societeId');
+    
+    // Vérifier si l'ID de la société existe dans la session
+    if (!$societeId) {
+        return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+    }
+
+    // Récupérer tous les journaux qui appartiennent à la société spécifiée
+    $journaux = Journal::where('societe_id', $societeId)->get();
+
+    // Retourner les journaux associés à la société en format JSON
+    return response()->json($journaux);
         }
     
     
@@ -67,14 +111,29 @@ class JournalController extends Controller
         // Stocker un nouveau journal
         public function store(Request $request)
         {
-            $request->validate([
+            // Récupérer l'ID de la société depuis la session
+            $societeId = session('societeId');
+            
+            // Vérifier si l'ID de la société existe dans la session
+            if (!$societeId) {
+                return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+            }
+    
+            // Validation des données
+            $validatedData = $request->validate([
                 'code_journal' => 'required|string|max:255',
-                'type_journal' => 'nullable|string|max:255',
-                'intitule' => 'nullable|string|max:255',
+                'type_journal' => 'required|string|max:255',
+                'intitule' => 'required|string|max:255',
                 'contre_partie' => 'nullable|string|max:255',
             ]);
     
-            Journal::create($request->all());
+            // Ajouter l'ID de la société au journal
+            $validatedData['societe_id'] = $societeId;
+    
+            // Créer un nouveau journal
+            Journal::create($validatedData);
+    
+            // Retourner une réponse JSON avec un message de succès
             return response()->json(['message' => 'Journal ajouté avec succès.']);
         }
     
@@ -106,4 +165,32 @@ class JournalController extends Controller
             $journaux->delete();
             return response()->json(['message' => 'Journal supprimé avec succès.']);
         }
+
+        public function deleteSelected(Request $request)
+        {
+            // Valider que le tableau 'ids' est bien fourni
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer',  // Chaque ID doit être un entier
+            ]);
+        
+            try {
+                // Supprimer les lignes avec les IDs reçus
+                $deletedCount = journal::whereIn('id', $request->ids)->delete();
+        
+                return response()->json([
+                    'status' => 'success',
+                    'message' => "{$deletedCount} lignes supprimées"
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Erreur lors de la suppression.',
+                    'error' => $e->getMessage()  // Retour de l'erreur spécifique
+                ]);
+            }
+        }
+
+
+
 }

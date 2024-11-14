@@ -16,6 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');  // Nom du fichier
             $table->string('path');  // Chemin du fichier
+            $table->binary('file_data')->nullable();
             $table->string('type');  // Nouveau champ 'type' pour enregistrer le titre
             $table->timestamps();    // Timestamps pour la création et mise à jour
         });

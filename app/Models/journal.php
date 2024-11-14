@@ -16,5 +16,12 @@ class journal extends Model
         'type_journal',
         'intitule',
         'contre_partie',
+        'societe_id',
     ];
+
+    public function societe()
+    {
+        return $this->belongsTo(Societe::class);
+    }
+    
 }
