@@ -63,10 +63,7 @@
                     <button id="export-button" class="btn bg-gradient-primary btn-sm mb-0">Liste Des Dossiers    </button>
 
 
-<script>document.getElementById("export-pdf").addEventListener("click", function() {
-    window.location.href = "{{ route('societes.export') }}";
-});
-</script>
+
 <script>
     document.getElementById('export-button').addEventListener('click', function() {
     window.location.href = '/export-societes';
@@ -710,45 +707,97 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 
 <script>
     
-
-    $(document).ready(function() {
+  $(document).ready(function() {
     remplirRubriquesTva('editRubriqueTVA');
-});
-
- $(document).ready(function() {
-    // Événement lors de l'ouverture du modal de modification
     
+    // Variable pour empêcher l'exécution multiple
+    var modalOpened = false;
+
+    // Fonction pour vérifier le mot de passe avant d'ouvrir le modal
+    function checkPasswordAndOpenModal(societeId) {
+        // Demander le mot de passe avant d'afficher le modal
+        var password = prompt("Veuillez entrer votre mot de passe pour modifier cette société :");
+
+        // Vérifier si un mot de passe a été saisi
+        if (password === null || password === "") {
+            alert("Mot de passe requis pour modifier cette société.");
+            return;  // Arrêter si le mot de passe est vide ou annulé
+        }
+
+        // Requête AJAX pour vérifier le mot de passe
+        $.ajax({
+            url: '/check-societe-password',  // Route pour vérifier le mot de passe
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            data: JSON.stringify({ password: password }),  // Envoie le mot de passe
+            success: function(response) {
+                console.log("Réponse du serveur :", response); // Pour déboguer
+
+                if (response.success) {
+                    // Si le mot de passe est correct, récupérer les données de la société
+                    var url = '/societes/' + societeId; // URL pour récupérer les données de la société
+                    
+                    // Requête AJAX pour obtenir les données de la société
+                    $.get(url, function(data) {
+                        // Remplir le formulaire avec les données de la société
+                        $('#modification_id').val(data.id);
+                        $('#mod_raison_sociale').val(data.raison_sociale);
+                        $('#mod_siège_social').val(data.siege_social);
+                        $('#mod_ice').val(data.ice);
+                        $('#mod_rc').val(data.rc);
+                        $('#mod_identifiant_fiscal').val(data.identifiant_fiscal);
+                        $('#mod_patente').val(data.patente);
+                        $('#mod_centre_rc').val(data.centre_rc);
+                        $('#mod_forme_juridique').val(data.forme_juridique);
+                        $('#mod_exercice_social_debut').val(data.exercice_social_debut);
+                        $('#mod_exercice_social_fin').val(data.exercice_social_fin);
+                        $('#mod_date_creation').val(data.date_creation);
+                        $('#mod_assujettie_partielle_tva').val(data.assujettie_partielle_tva);
+                        $('#mod_prorata_de_deduction').val(data.prorata_de_deduction);
+                        $('#mod_nature_activite').val(data.nature_activite);
+                        $('#mod_activite').val(data.activite);
+                        $('#mod_regime_declaration').val(data.regime_declaration);
+                        $('#mod_fait_generateur').val(data.fait_generateur);
+                        $('#editRubriqueTVA').val(data.rubrique_tva);
+                        $('#mod_designation').val(data.designation);
+                        $('#mod_nombre_chiffre_compte').val(data.nombre_chiffre_compte);
+                        $('#mod_model_comptable').val(data.modele_comptable);
+
+                        // Ouvrir le modal après avoir rempli les données
+                        $('#modifierSocieteModal').modal('show');
+                    });
+                } else {
+                    // Si le mot de passe est incorrect, afficher un message d'erreur
+                    alert("Mot de passe incorrect. Vous ne pouvez pas modifier cette société.");
+
+                    // Annuler l'affichage du modal si le mot de passe est incorrect
+                    modalOpened = false;  // Assurez-vous que le modal ne s'ouvre pas
+                }
+            },
+            error: function(xhr) {
+                alert("Une erreur s'est produite lors de la vérification du mot de passe.");
+            }
+        });
+    }
+
+    // Événement lors de l'ouverture du modal de modification
     $('#modifierSocieteModal').on('show.bs.modal', function(event) {
         var button = $(event.relatedTarget); // bouton qui a déclenché le modal
         var societeId = button.data('id'); // récupère l'ID de la société
-        var url = '/societes/' + societeId; // URL pour récupérer les données de la société
+        
+        // Si le modal a déjà été ouvert ou si le mot de passe est incorrect, on ne continue pas
+        if (modalOpened) {
+            return;  // Si le modal est déjà ouvert ou si le mot de passe était incorrect, on arrête tout
+        }
 
-        // Requête AJAX pour obtenir les données de la société
-        $.get(url, function(data) {
-            // Remplir le formulaire avec les données de la société
-            $('#modification_id').val(data.id);
-            $('#mod_raison_sociale').val(data.raison_sociale);
-            $('#mod_siège_social').val(data.siege_social);
-            $('#mod_ice').val(data.ice);
-            $('#mod_rc').val(data.rc);
-            $('#mod_identifiant_fiscal').val(data.identifiant_fiscal);
-            $('#mod_patente').val(data.patente);
-            $('#mod_centre_rc').val(data.centre_rc);
-            $('#mod_forme_juridique').val(data.forme_juridique);
-            $('#mod_exercice_social_debut').val(data.exercice_social_debut);
-            $('#mod_exercice_social_fin').val(data.exercice_social_fin);
-            $('#mod_date_creation').val(data.date_creation);
-            $('#mod_assujettie_partielle_tva').val(data.assujettie_partielle_tva);
-            $('#mod_prorata_de_deduction').val(data.prorata_de_deduction);
-            $('#mod_nature_activite').val(data.nature_activite);
-            $('#mod_activite').val(data.activite);
-            $('#mod_regime_declaration').val(data.regime_declaration);
-            $('#mod_fait_generateur').val(data.fait_generateur);
-            $('#editRubriqueTVA').val(data.rubrique_tva);
-            $('#mod_designation').val(data.designation);
-            $('#mod_nombre_chiffre_compte').val(data.nombre_chiffre_compte);
-            $('#mod_model_comptable').val(data.modele_comptable);
-        });
+        // Marquer le modal comme ouvert pour éviter les appels multiples
+        modalOpened = true;
+
+        // Appeler la fonction pour vérifier le mot de passe et ouvrir le modal
+        checkPasswordAndOpenModal(societeId);
     });
 
     // Événement lors de la soumission du formulaire
@@ -765,7 +814,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
             success: function(response) {
                 // Fermer le modal
                 $('#modifierSocieteModal').modal('hide');
-                // Recharger la page
+                // Recharger la page après la mise à jour
                 location.reload(); // Recharger la page après la mise à jour
             },
             error: function(xhr) {

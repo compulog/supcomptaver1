@@ -34,7 +34,12 @@ use App\Http\Controllers\BanqueController;
 use App\Http\Controllers\CaisseController;
 use App\Http\Controllers\ImpotController;
 use App\Http\Controllers\PaieController;
+Route::post('/clients/delete-selected', [ClientController::class, 'deleteSelected'])->name('clients.deleteSelected');
 
+// routes/web.php ou routes/api.php si c'est une API
+
+// Route pour vérifier le mot de passe de l'utilisateur avant modification d'une société
+Route::post('/check-societe-password', [App\Http\Controllers\SocieteController::class, 'checkPassword']);
 
 // Route pour vérifier le mot de passe de l'utilisateur avant suppression du client
 Route::post('/check-client-password', [App\Http\Controllers\ClientController::class, 'checkPassword']);
@@ -67,7 +72,6 @@ Route::get('/paie', [PaieController::class, 'index'])->name('paie.view');
 Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
 
 
-    Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
 
 Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
 

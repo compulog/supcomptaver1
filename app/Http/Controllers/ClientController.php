@@ -12,6 +12,35 @@ use Illuminate\Support\Facades\Hash;
 class ClientController extends Controller
 
 {
+
+    public function deleteSelected(Request $request)
+    {
+        // Validation des données
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer',  // Chaque ID doit être un entier
+        ]);
+    
+        try {
+            // Supprimer les lignes avec les IDs reçus
+            $deletedCount = Client::whereIn('id', $request->ids)->delete();
+    
+            return response()->json([
+                'status' => 'success',
+                'message' => "{$deletedCount} lignes supprimées"
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erreur lors de la suppression.',
+                'error' => $e->getMessage()  // Retour de l'erreur spécifique
+            ]);
+        }
+    }
+    
+    
+    
+
     public function checkPassword(Request $request)
     {
         // Valider que le mot de passe est bien présent

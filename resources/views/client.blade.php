@@ -23,6 +23,7 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
+<meta name="csrf-token" content="{{ csrf_token() }}">
     <div class="container mt-5">
         <h3>Liste des Clients</h3>
 
@@ -566,36 +567,197 @@ document.getElementById("export-pdf").addEventListener("click", function() {
     <div id="table-list"></div>
 </div>
 
+<!-- Table Tabulator -->
+<div id="table-list"></div>
+
 <script>
-    
-    //inicialise le tab ulator
-    var table = new Tabulator("#table-list", {
+// Initialisation de Tabulator
+var table = new Tabulator("#table-list", {
     layout: "fitColumns",
     data: @json($clients), // Chargement initial des données
+    selectable: true, // Permet de sélectionner les lignes
+    rowSelection: true,
+    initialSort: [ // Tri initial par colonne 'Compte'
+        { column: "compte", dir: "asc" }
+    ],
     columns: [
-        {title: "Compte", field: "compte", headerFilter: true},
-        {title: "Intitulé", field: "intitule", headerFilter: true},
-        {title: "Identifiant fiscal", field: "identifiant_fiscal", headerFilter: true},
-        {title: "ICE", field: "ICE", headerFilter: true},
-        {title: "Type client", field: "type_client", headerFilter: true},
         {
-    title: "Actions", field: "id", formatter: function(cell, formatterParams, onRendered){
-        var id = cell.getValue();
-        const rowData = cell.getRow().getData(); // Obtenez les données de la ligne
+            title: ` 
+                <i class="fas fa-check-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;"></i> 
+                <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;"></i>
+            `,
+            field: "select",
+            formatter: "rowSelection", // Active la sélection de ligne
+            headerSort: false,
+            hozAlign: "center",
+            width: 60, // Fixe la largeur de la colonne de sélection
+            cellClick: function(e, cell) {
+                cell.getRow().toggleSelect();  // Basculer la sélection de ligne
+            }
+        },
+        { title: "Compte", field: "compte", headerFilter: "input" },
+        { title: "Intitulé", field: "intitule", headerFilter: "input" },
+        { title: "Identifiant fiscal", field: "identifiant_fiscal", headerFilter: "input" },
+        { title: "ICE", field: "ICE", headerFilter: "input" },
+        { title: "Type client", field: "type_client", headerFilter: "input" },
+        {
+            title: "Actions", 
+            field: "id", 
+            formatter: function(cell, formatterParams, onRendered) {
+                var id = cell.getValue();
+                return `
+                   <span class="text-warning edit-client" title="Modifier" style="cursor: pointer;" data-id="${id}">
+                        <i class="fas fa-edit"></i>
+                    </span>
+                    <span class="text-danger" title="Supprimer" style="cursor: pointer;" onclick="askPasswordBeforeDelete(${id})">
+                        <i class="fas fa-trash"></i>
+                    </span>
+                `;
+            }
+        }
+    ],
+   
+});
 
-        return `
-          <span class="text-warning edit-client" title="Modifier" style="cursor: pointer;" data-id="${id}">
-    <i class="fas fa-edit"></i>
-</span>
+// Fonction pour supprimer un client avec demande de mot de passe
+function askPasswordBeforeDelete(clientId) {
+    // Demander le mot de passe via un prompt
+    var password = prompt("Veuillez entrer votre mot de passe pour confirmer la suppression du client :");
 
-            <span class="text-danger" title="Supprimer" style="cursor: pointer;" onclick="deleteclients(${id})">
-                <i class="fas fa-trash"></i>
-            </span>
-        `;
+    // Vérifier si un mot de passe a été saisi
+    if (password === null || password === "") {
+        alert("Mot de passe requis pour confirmer la suppression.");
+        return;  // Arrêter le processus si le mot de passe est vide ou annulé
     }
+
+    // Requête AJAX pour vérifier le mot de passe
+    fetch('/check-client-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ password: password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Si le mot de passe est correct, procéder à la suppression du client
+            if (confirm("Êtes-vous sûr de vouloir supprimer ce client ?")) {
+                fetch(`/clients/${clientId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Supprimer le client du tableau Tabulator
+                        table.deleteRow(clientId);
+                        alert('Client supprimé avec succès.');
+                    } else {
+                        alert('Erreur lors de la suppression du client.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    alert('Une erreur est survenue.');
+                });
+            }
+        } else {
+            // Si le mot de passe est incorrect, afficher un message d'erreur
+            alert("Mot de passe incorrect. Vous ne pouvez pas supprimer ce client.");
+        }
+    })
+    .catch(error => {
+        console.error("Erreur de vérification du mot de passe :", error);
+        alert("Une erreur s'est produite lors de la vérification du mot de passe.");
+    });
 }
 
-    ]
+// Fonction pour supprimer les lignes sélectionnées côté serveur avec vérification du mot de passe
+function deleteSelectedRows() {
+    var selectedRows = table.getSelectedRows(); // Récupère les lignes sélectionnées
+    var idsToDelete = selectedRows.map(function(row) {
+        return row.getData().id; // Récupère les IDs des lignes sélectionnées
+    });
+
+    // Si aucune ligne n'est sélectionnée
+    if (idsToDelete.length === 0) {
+        alert("Aucune ligne sélectionnée pour la suppression.");
+        return;
+    }
+
+    // Demander le mot de passe avant de supprimer
+    var password = prompt("Veuillez entrer votre mot de passe pour confirmer la suppression des clients :");
+
+    if (password === null || password === "") {
+        alert("Mot de passe requis pour confirmer la suppression.");
+        return;  // Arrêter le processus si le mot de passe est vide ou annulé
+    }
+
+    // Vérification du mot de passe avant de supprimer
+    fetch('/check-client-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ password: password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Si le mot de passe est correct, procéder à la suppression
+            if (confirm("Êtes-vous sûr de vouloir supprimer ces clients ?")) {
+                fetch("/clients/delete-selected", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ ids: idsToDelete })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Clients supprimés avec succès.');
+                        // Supprimer les lignes du tableau Tabulator
+                        selectedRows.forEach(function(row) {
+                            table.deleteRow(row);
+                        });
+                    }location.reload();
+                })
+                .catch(error => {
+                    console.error('Erreur de suppression:', error);
+                    alert('Une erreur est survenue lors de la suppression.');
+                });
+            }
+        } else {
+            // Si le mot de passe est incorrect
+            alert("Mot de passe incorrect. Vous ne pouvez pas supprimer ces clients.");
+        }
+    })
+    .catch(error => {
+        console.error('Erreur de vérification du mot de passe :', error);
+        alert("Une erreur est survenue lors de la vérification du mot de passe.");
+    });
+}
+
+// Gestionnaire d'événements pour sélectionner/désélectionner toutes les lignes et supprimer les lignes sélectionnées
+document.getElementById("table-list").addEventListener("click", function(e) {
+    if (e.target.id === "selectAllIcon") {
+        if (table.getSelectedRows().length === table.getRows().length) {
+            table.deselectRow(); // Désélectionner toutes les lignes
+        } else {
+            table.selectRow(); // Sélectionner toutes les lignes
+        }
+    }
+    if (e.target.id === "deleteAllIcon") {
+        deleteSelectedRows(); // Appelle la fonction de suppression pour les lignes sélectionnées
+    }
 });
 
 
