@@ -1,3 +1,6 @@
+
+
+
 @extends('layouts.user_type.auth')
 
 @section('content')
@@ -227,3 +230,8 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 </script>
+
+
+
+
+

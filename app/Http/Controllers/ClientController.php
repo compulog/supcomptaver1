@@ -14,50 +14,33 @@ class ClientController extends Controller
 {
 
     public function deleteSelected(Request $request)
-    {
-        // Validation des données
-        $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'integer',  // Chaque ID doit être un entier
+{
+    // Validation des données
+    $request->validate([
+        'ids' => 'required|array',
+        'ids.*' => 'integer',  // Chaque ID doit être un entier
+    ]);
+
+    try {
+        // Supprimer les lignes avec les IDs reçus
+        $deletedCount = Client::whereIn('id', $request->ids)->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "{$deletedCount} lignes supprimées"
         ]);
-    
-        try {
-            // Supprimer les lignes avec les IDs reçus
-            $deletedCount = Client::whereIn('id', $request->ids)->delete();
-    
-            return response()->json([
-                'status' => 'success',
-                'message' => "{$deletedCount} lignes supprimées"
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Erreur lors de la suppression.',
-                'error' => $e->getMessage()  // Retour de l'erreur spécifique
-            ]);
-        }
-    }
-    
-    
-    
-
-    public function checkPassword(Request $request)
-    {
-        // Valider que le mot de passe est bien présent
-        $request->validate([
-            'password' => 'required|string',
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Erreur lors de la suppression.',
+            'error' => $e->getMessage()  // Retour de l'erreur spécifique
         ]);
-
-        // Récupérer l'utilisateur actuellement connecté
-        $user = Auth::user();
-
-        // Vérifier si le mot de passe correspond à celui de l'utilisateur
-        if (Hash::check($request->password, $user->password)) {
-            return response()->json(['success' => true]);
-        } else {
-            return response()->json(['success' => false], 401); // Mot de passe incorrect
-        }
     }
+}
+
+    
+    
+ 
     public function export(Request $request)
     {
         // Récupère l'ID de la société à partir du champ caché
@@ -154,17 +137,21 @@ public function update(Request $request, $id)
     
     
     
+public function destroy($id)
+{
+    // Trouver le client par son ID
+    $client = Client::find($id);
 
-    
-    public function destroy($id)
-    {
-        $client = Client::find($id);
-        if ($client) {
-            $client->delete();
-            return response()->json(['success' => true]);
-        }
-        return response()->json(['success' => false], 404);
+    // Si le client existe, le supprimer
+    if ($client) {
+        $client->delete();
+        return response()->json(['success' => true]); // Retour de la réponse JSON pour indiquer que la suppression a réussi
     }
+
+    // Si le client n'existe pas, retourner une réponse d'erreur
+    return response()->json(['success' => false, 'message' => 'Client non trouvé.'], 404);
+}
+
     
 
     // public function import(Request $request)
