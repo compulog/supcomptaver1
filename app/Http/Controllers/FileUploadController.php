@@ -38,17 +38,13 @@ class FileUploadController extends Controller
             // Créer un nom unique pour le fichier
             $filename = time() . '-' . $file->getClientOriginalName();
     
-            // Lire les données binaires du fichier
-            $fileData = file_get_contents($file->getRealPath());
-    
             // Sauvegarder le fichier dans le stockage public
             $path = $file->storeAs('uploads', $filename, 'public'); // Enregistre le fichier sur disque
     
             // Sauvegarder les informations du fichier dans la base de données
             $fileRecord = new File();
             $fileRecord->name = $filename;  // Nom du fichier
-            $fileRecord->file_data = $fileData;  // Sauvegarde des données binaires
-            $fileRecord->path = $path;  // Sauvegarde du chemin d'accès (optionnel, si tu veux conserver le chemin)
+            $fileRecord->path = $path;  // Sauvegarde du chemin d'accès (assurez-vous que le chemin est relatif au dossier 'storage/app/public')
             $fileRecord->type = $request->input('type');  // Type du fichier (Achat, Vente, etc.)
             $fileRecord->societe_id = $request->input('societe_id');  // ID de la société
     
@@ -59,6 +55,7 @@ class FileUploadController extends Controller
             return back()->withErrors(['file' => 'Aucun fichier téléchargé.']);
         }
     }
+    
     
     
 }

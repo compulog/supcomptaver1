@@ -46,6 +46,11 @@ use App\Http\Controllers\FileUploadController;
 
 
 
+// routes/web.php ou routes/api.php si c'est une API
+
+// Route pour vérifier le mot de passe de l'utilisateur avant modification d'une société
+Route::post('/check-societe-password', [App\Http\Controllers\SocieteController::class, 'checkPassword']);
+
 // Route pour vérifier le mot de passe de l'utilisateur avant suppression du client
 Route::post('/check-client-password', [App\Http\Controllers\ClientController::class, 'checkPassword']);
 
@@ -79,7 +84,6 @@ Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uplo
 Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
 
 
-Route::group(['middleware' => 'auth'], function () {
 Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
 
 // Route pour le téléchargement de fichiers
@@ -91,9 +95,19 @@ Route::get('/caisse', [CaisseController::class, 'index'])->name('caisse.view');
 Route::get('/impot', [ImpotController::class, 'index'])->name('impot.view');
 Route::get('/paie', [PaieController::class, 'index'])->name('paie.view');
 
+// Route pour le téléchargement de fichiers
+Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
 
 
-Route::post('/check-password', [FournisseurController::class, 'checkPassword'])->name('checkPassword');
+
+Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
+
+
+
+Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
+
+
+Route::group(['middleware' => 'auth'], function () {
     
 // Route pour l'exportation PDF
 Route::get('/societes/export', [SocietesPDFExportController::class, 'exportPDF'])->name('societes.export');
@@ -111,13 +125,14 @@ Route::get('/export-societes', function () {
     return Excel::download(new SocietesExport, 'societes.xlsx');
 })->name('export.societes');
 
+Route::post('/ajouterContrePartie', [PlanComptableController::class, 'ajouterContrePartie'])->name('ajouterContrePartie');
 
 
 
 // routes/web.php
 Route::post('/operation-courante', [OperationCouranteController::class, 'store']);
 
-    
+Route::post('/clients/delete-selected', [ClientController::class, 'deleteSelected'])->name('clients.deleteSelected');
     Route::get('/clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit');
 
     Route::put('/clients/{client}', [ClientController::class, 'update'])->name('clients.update');

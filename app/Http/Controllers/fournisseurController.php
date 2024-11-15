@@ -18,6 +18,9 @@ use Illuminate\Support\Facades\Log;
 
 class FournisseurController extends Controller
 {  
+
+   
+
     public function checkPassword(Request $request)
     {
         // Valider que le mot de passe est bien présent
@@ -231,24 +234,34 @@ public function getNextCompte()
 
 public function getComptes()
 {
-    // Récupérer les comptes qui commencent par 21, 22, 23, 24, 25, ou 26
-    $comptes = PlanComptable::where(function($query) {
-        $query->where('compte', 'LIKE', '21%')
-              ->orWhere('compte', 'LIKE', '22%')
-              ->orWhere('compte', 'LIKE', '23%')
-              ->orWhere('compte', 'LIKE', '24%')
-              ->orWhere('compte', 'LIKE', '25%')
-              ->orWhere('compte', 'LIKE', '613%')
-              ->orWhere('compte', 'LIKE', '611%')
-              ->orWhere('compte', 'LIKE', '614%')
-              ->orWhere('compte', 'LIKE', '618%')
-              ->orWhere('compte', 'LIKE', '631%')
-              ->orWhere('compte', 'LIKE', '612%');
-    })
-    ->get(['compte', 'intitule']); // On ne récupère que les champs nécessaires
+    // Récupérer l'ID de la société depuis la session
+    $societeId = session('societeId');
+
+    // Vérifier si l'ID de la société est défini
+    if (!$societeId) {
+        return response()->json(['error' => 'Aucune société sélectionnée'], 400);
+    }
+
+    // Récupérer les comptes liés à cette société
+    $comptes = PlanComptable::where('societe_id', $societeId) // Filtrer par société
+        ->where(function ($query) {
+            $query->where('compte', 'LIKE', '21%')
+                ->orWhere('compte', 'LIKE', '22%')
+                ->orWhere('compte', 'LIKE', '23%')
+                ->orWhere('compte', 'LIKE', '24%')
+                ->orWhere('compte', 'LIKE', '25%')
+                ->orWhere('compte', 'LIKE', '613%')
+                ->orWhere('compte', 'LIKE', '611%')
+                ->orWhere('compte', 'LIKE', '614%')
+                ->orWhere('compte', 'LIKE', '618%')
+                ->orWhere('compte', 'LIKE', '631%')
+                ->orWhere('compte', 'LIKE', '612%');
+        })
+        ->get(['compte', 'intitule']); // Récupérer uniquement les champs nécessaires
 
     return response()->json($comptes);
 }
+
 
 
 

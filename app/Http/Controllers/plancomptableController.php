@@ -14,7 +14,50 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class PlanComptableController extends Controller
+{ 
+    public function ajouterContrePartie(Request $request)
 {
+    // Validation des données reçues
+    $request->validate([
+        'compte' => 'required|string|max:255',
+        'intitule' => 'required|string|max:255',
+    ]);
+
+    // Récupérer l'ID de la société depuis la session
+    $societeId = session('societeId');
+
+    // Vérifier si l'ID de la société existe
+    if (!$societeId) {
+        return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+    }
+
+    // Vérifier si le compte existe déjà dans la base de données pour cette société
+    $existingAccount = PlanComptable::where('compte', $request->input('compte'))
+        ->where('societe_id', $societeId)
+        ->first();
+
+    if ($existingAccount) {
+        return response()->json(['message' => 'Ce compte existe déjà pour cette société.'], 400);
+    }
+
+    // Créer le nouveau compte dans la table plan_comptable
+    $compte = PlanComptable::create([
+        'compte' => $request->input('compte'),
+        'intitule' => $request->input('intitule'),
+        'societe_id' => $societeId,
+    ]);
+
+    // Retourner la réponse avec le nouveau compte créé
+    return response()->json([
+        'message' => 'Compte ajouté avec succès.',
+        'contre_partie' => $compte,
+    ]);
+}
+
+    
+
+    
+
 
     public function checkPassword(Request $request)
     {
@@ -72,28 +115,44 @@ class PlanComptableController extends Controller
     public function store(Request $request)
     {
         // Validation des données reçues
-        $request->validate([
-            'compte' => 'required|string|max:255',
-            'intitule' => 'required|string|max:255',
-        ]);
+$request->validate([
+    'compte' => 'required|string|max:255',
+    'intitule' => 'required|string|max:255',
+]);
 
-        // Récupérer l'ID de la société depuis la session
-        $societeId = session('societeId');
+// Récupérer l'ID de la société depuis la session
+$societeId = session('societeId');
 
-        // Vérifier si l'ID de la société existe
-        if (!$societeId) {
-            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
-        }
+// Si l'ID de la société est modifié (par exemple, depuis un formulaire ou une sélection), le mettre à jour
+if ($request->has('societe_id')) {
+    $societeId = $request->societe_id;
+}
 
-        // Créer un nouveau plan comptable
-        $planComptable = new PlanComptable();
-        $planComptable->compte = $request->compte;
-        $planComptable->intitule = $request->intitule;
-        $planComptable->societe_id = $societeId;  // Associer l'ID de la société
-        $planComptable->save();
+// Vérifier si l'ID de la société existe
+if (!$societeId) {
+    return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+}
 
-        // Retourner une réponse JSON de succès
-        return response()->json(['success' => 'Plan comptable ajouté avec succès!']);
+// Vérifier si le compte existe déjà pour cette société
+$existingPlanComptable = PlanComptable::where('compte', $request->compte)
+                                      ->where('societe_id', $societeId)
+                                      ->first();
+
+// Si le compte n'existe pas, créer un nouveau plan comptable
+if (!$existingPlanComptable) {
+    $planComptable = new PlanComptable();
+    $planComptable->compte = $request->compte;
+    $planComptable->intitule = $request->intitule;
+    $planComptable->societe_id = $societeId;  // Associer l'ID de la société
+    $planComptable->save();
+
+    // Retourner une réponse JSON de succès
+    return response()->json(['success' => 'Plan comptable ajouté avec succès!']);
+} else {
+    // Si le compte existe déjà, retourner une erreur
+    return response()->json(['error' => 'Le compte existe déjà pour cette société'], 400);
+}
+
     }
 
     public function edit(Request $request, $id)

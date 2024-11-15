@@ -106,6 +106,7 @@
                     </form>
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $impotCount ?? 0 }}</p>
+
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
             </div>

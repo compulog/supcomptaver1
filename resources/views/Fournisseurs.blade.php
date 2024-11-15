@@ -271,14 +271,26 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="contre_partie">Contre Partie</label>
-                                <select class="form-control" id="contre_partie" name="contre_partie">
-                                    
-                                    <option value="">Sélectionnez une contre partie</option>
-                                    <!-- Les options seront ajoutées dynamiquement ici -->
-                                </select>
+                                <label for="contre_partie" class="mr-2">Contre Partie</label>
+                                <div class="position-relative w-100">
+                                    <!-- Select2 avec positionnement relatif -->
+                                    <select class="form-control select2" id="contre_partie" name="contre_partie" required>
+                                        <option value="">Sélectionner une contre partie</option>
+                                        <!-- Options ajoutées dynamiquement -->
+                                    </select>
+                                    <!-- Icône d'ajout positionnée à l'intérieur du select -->
+                                    <button type="button" class="btn btn-link position-absolute" style="top:90%; right: 10px; transform: translateY(-20%);" data-toggle="modal" data-target="#planComptableModalAdd">
+                                      Nouveau compte  <i class="bi bi-plus-circle" style="font-size: 1.3rem;"></i> 
+                                    </button>
+                                </div>
                             </div>
                         </div>
+                        
+                        
+                                
+                                
+                           
+                        
                     </div>
                     
                     <div class="row">
@@ -310,6 +322,33 @@
     </div>
 </div>
 
+<!-- Modal pour ajouter un plan comptable -->
+<div class="modal fade" id="planComptableModalAdd" tabindex="-1" role="dialog" aria-labelledby="planComptableModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="planComptableModalLabel">Ajouter un compte </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulaire d'ajout -->
+                <form id="planComptableFormAdd">
+                    <div class="form-group">
+                        <label for="compte">compte</label>
+                        <input type="text" class="form-control" id="compte_add" name="compte" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="intitule">Intitulé</label>
+                        <input type="text" class="form-control" id="intitule_add" name="intitule" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Modal edit-->
 <div class="modal fade" id="fournisseurModaledit" tabindex="-1" role="dialog" aria-labelledby="fournisseurModalLabel" aria-hidden="true">
@@ -343,13 +382,13 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editIdentifiantFiscal">Identifiant Fiscal</label>
-                                <input type="text" class="form-control" id="editIdentifiantFiscal" maxlength="8" pattern="\d*" required>
+                                <input type="text" class="form-control" id="editIdentifiantFiscal" maxlength="8" pattern="\d*" >
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editICE">ICE</label>
-                                <input type="text" class="form-control" id="editICE" maxlength="15" pattern="\d*" required>
+                                <input type="text" class="form-control" id="editICE" maxlength="15" pattern="\d*" >
                             </div>
                         </div>
                     </div>
@@ -368,7 +407,7 @@
                         <div class="col-md-6">
     <div class="form-group">
         <label for="editContrePartie">Contre Partie</label>
-        <select class="form-control" id="editContrePartie" required>
+        <select class="form-control" id="editContrePartie" >
             <option value="">Sélectionnez une contre partie</option>
         </select>
     </div>
@@ -379,7 +418,7 @@
                             <div class="form-group">
                                 <label for="editRubriqueTVA">Rubrique TVA</label>
                                
-                                <select class="form-control" id="editRubriqueTVA" required>
+                                <select class="form-control" id="editRubriqueTVA" >
                                     <option value="">Sélectionnez une Rubrique</option>
                                     <!-- Les options seront ajoutées par JavaScript -->
                                 </select>
@@ -510,53 +549,29 @@ var table = new Tabulator("#fournisseur-table", {
                 `;
             },
             cellClick: function(e, cell) {
-                var row = cell.getRow();
-                
-                // Vérifier quel élément a été cliqué
-                if (e.target.classList.contains('row-select-checkbox')) {
-                    // Synchronise la sélection de la ligne avec l'état de la checkbox
-                    if (e.target.checked) {
-                        row.select();
-                    } else {
-                        row.deselect();
-                    }
-                } else if (e.target.classList.contains('edit-icon')) {
-                    var rowData = cell.getRow().getData();
-                    
-                    // Vérification du mot de passe avant d'ouvrir le modal
-                    var password = prompt("Veuillez entrer votre mot de passe pour confirmer la modification.");
-                    
-                    if (password) {
-                        // Envoi de la requête pour vérifier le mot de passe
-                        $.ajax({
-                            url: "/check-password",  // URL pour la vérification du mot de passe
-                            type: "POST",
-                            data: {
-                                _token: '{{ csrf_token() }}',
-                                password: password  // Envoi du mot de passe pour la vérification
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    // Si le mot de passe est correct, ouvrir le modal de modification
-                                    editFournisseur(rowData); // Appel à votre fonction de modification
-                                } else {
-                                    alert("Mot de passe incorrect. Vous ne pouvez pas modifier ce fournisseur.");
-                                }
-                            },
-                            error: function(xhr) {
-                                alert("Erreur lors de la vérification du mot de passe !");
-                            }
-                        });
-                    } else {
-                        alert("Mot de passe requis pour modifier le fournisseur.");
-                    }
-                } else if (e.target.classList.contains('delete-icon')) {
-                    var rowData = cell.getRow().getData();
-                    deleteFournisseur(rowData.id);
-                }
-            },
-            hozAlign: "center",
-            headerSort: false
+    var row = cell.getRow();
+    
+    // Vérifier quel élément a été cliqué
+    if (e.target.classList.contains('row-select-checkbox')) {
+        // Synchronise la sélection de la ligne avec l'état de la checkbox
+        if (e.target.checked) {
+            row.select();
+        } else {
+            row.deselect();
+        }
+    } else if (e.target.classList.contains('edit-icon')) {
+        var rowData = cell.getRow().getData();
+
+        // Ouvrir directement le modal de modification
+        editFournisseur(rowData); // Appel à votre fonction de modification
+    } else if (e.target.classList.contains('delete-icon')) {
+        var rowData = cell.getRow().getData();
+        deleteFournisseur(rowData.id);
+    }
+},
+hozAlign: "center",
+headerSort: false
+
         }
     ],
    
@@ -977,99 +992,126 @@ function editFournisseur(data) {
   function deleteFournisseur(id) {
     // Demande de confirmation
     if (confirm("Êtes-vous sûr de vouloir supprimer ce fournisseur ?")) {
-        
-        // Demande du mot de passe
-        var password = prompt("Veuillez entrer votre mot de passe pour confirmer la suppression.");
-        
-        // Vérifier si le mot de passe a été fourni
-        if (password) {
-            // Appel à la route de vérification du mot de passe
-            $.ajax({
-                url: "/check-password",  // La route pour vérifier le mot de passe
-                type: "POST",
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    password: password  // On envoie le mot de passe avec la requête
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Si le mot de passe est correct, on procède à la suppression du fournisseur
-                        $.ajax({
-                            url: "/fournisseurs/" + id,
-                            type: "DELETE",
-                            data: {
-                                _token: '{{ csrf_token() }}'
-                            },
-                            success: function(response) {
-                                table.setData("/fournisseurs/data"); // Recharger les données
-                            },
-                            error: function(xhr) {
-                                alert("Erreur lors de la suppression des données !");
-                            }
-                        });
-                    } else {
-                        alert("Mot de passe incorrect !");
-                    }
-                },
-                error: function(xhr) {
-                    alert("Erreur lors de la vérification du mot de passe !");
-                }
-            });
-        } else {
-            alert("Mot de passe requis pour supprimer le fournisseur.");
-        }
+        // Appel à la route de suppression
+        $.ajax({
+            url: "/fournisseurs/" + id,
+            type: "DELETE",
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                table.setData("/fournisseurs/data"); // Recharger les données
+            },
+            error: function(xhr) {
+                alert("Erreur lors de la suppression des données !");
+            }
+        });
     }
 }
 
-// Fonction pour sauvegarder les valeurs dans localStorage
-function saveInputValues() {
-      const inputs = [
-          'colonne_compte',
-          'colonne_intitule',
-          'colonne_identifiant_fiscal',
-          'colonne_ICE',
-          'colonne_nature_operation',
-          'colonne_rubrique_tva',
-          'colonne_designation',
-          'colonne_contre_partie',
-      ];
 
-      inputs.forEach(inputId => {
-          const input = document.getElementById(inputId);
-          localStorage.setItem(inputId, input.value);
-          input.addEventListener('input', () => {
-              localStorage.setItem(inputId, input.value);
-          });
-      });
-  }
 
-  // Fonction pour restaurer les valeurs de localStorage
-  function restoreInputValues() {
-      const inputs = [
-          'colonne_compte',
-          'colonne_intitule',
-          'colonne_identifiant_fiscal',
-          'colonne_ICE',
-          'colonne_nature_operation',
-          'colonne_rubrique_tva',
-          'colonne_designation',
-          'colonne_contre_partie',
-      ];
+  // Gestion de la soumission du formulaire d'ajout de contrepartie
+$("#planComptableFormAdd").on("submit", function(e) {
+    e.preventDefault(); // Empêche la soumission par défaut du formulaire
 
-      inputs.forEach(inputId => {
-          const input = document.getElementById(inputId);
-          if (localStorage.getItem(inputId)) {
-              input.value = localStorage.getItem(inputId);
-          }
-      });
-  }
+    // Récupérer les valeurs des champs
+    var compte = $("#compte_add").val();
+    var intitule = $("#intitule_add").val();
+    var designation = $("#designation_add").val(); // Champ designation
+    var societeId = $("#societe_id").val();
 
-  // Appeler les fonctions lors de l'ouverture du modal
-  document.addEventListener('DOMContentLoaded', () => {
-      restoreInputValues(); // Restaurer les valeurs lorsque la page est chargée
-      saveInputValues();    // Sauvegarder les valeurs lors de la saisie
-  });
+    // Vérifier si le champ designation est vide
+    if (!designation) {
+        // Extraire l'intitulé de l'option sélectionnée dans le select 'contre_partie'
+        var optionText = $("#contre_partie option:selected").text();
+        var intituleFromOption = optionText.split(' - ')[1]; // Supposant le format "compte - intitulé"
+        designation = intituleFromOption || ''; // Mettre l'intitulé ou une chaîne vide
+        $("#designation_add").val(designation); // Remplir le champ designation
+    }
 
+    // Validation simple avant l'envoi
+    if (!compte || !intitule) {
+        alert("Veuillez remplir tous les champs requis avant de soumettre !");
+        return;
+    }
+
+    // Requête AJAX pour ajouter une contrepartie
+    $.ajax({
+        url: "{{ route('ajouterContrePartie') }}", // Route Laravel pour ajouter une contrepartie
+        type: "POST",
+        data: {
+            compte: compte,
+            intitule: intitule,
+            designation: designation, // Envoyer le champ designation (mis à jour si vide)
+            societe_id: societeId, // ID de la société
+            _token: '{{ csrf_token() }}' // CSRF token pour sécuriser la requête
+        },
+        success: function(response) {
+            if (response.contre_partie) {
+                // Ajouter la contrepartie nouvellement créée dans le sélecteur 'contre_partie'
+                var newOption = new Option(
+                    `${response.contre_partie.compte} - ${response.contre_partie.intitule}`, 
+                    response.contre_partie.compte, 
+                    true, 
+                    true
+                );
+                $('#contre_partie').append(newOption).trigger('change'); // Met à jour le select avec Select2
+
+                // Fermer le modal
+                $("#planComptableModalAdd").modal("hide");
+
+                // Réinitialiser le formulaire
+                $("#planComptableFormAdd")[0].reset();
+
+                // Afficher une notification de succès
+                alert("Contrepartie ajoutée avec succès !");
+            } else {
+                alert("Erreur : la contrepartie n'a pas pu être ajoutée.");
+            }
+        },
+        error: function(xhr) {
+            console.error("Erreur lors de l'ajout de la contrepartie :", xhr.responseText);
+            alert("Erreur lors de l'ajout de la contrepartie. Veuillez réessayer.");
+        }
+    });
+});
+
+// Réinitialiser le formulaire à la fermeture du modal
+$("#planComptableModalAdd").on("hidden.bs.modal", function() {
+    $("#planComptableFormAdd")[0].reset(); // Réinitialise les champs du formulaire
+    $('#planComptableFormAdd select').val('').trigger('change'); // Réinitialise les sélecteurs Select2
+});
+
+
+$(document).ready(function() {
+    // Initialiser Select2
+    $('#contre_partie').select2({
+        // Personnalisation de l'apparence des options dans le dropdown
+        templateResult: function(data) {
+            // Ajouter une icône à l'option "Ajouter un compte"
+            if (data.id === 'ajouter_compte') {
+                return $('<span><i class="bi bi-plus-circle"></i> Ajouter un compte</span>');
+            }
+            return data.text;  // Retourner le texte de l'option par défaut
+        }
+    });
+
+    // Ajouter l'option "Ajouter un compte" au select2
+    var addOption = new Option('<i class="bi bi-plus-circle"></i> Ajouter un compte', 'ajouter_compte', false, false);
+    $('#contre_partie').append(addOption).trigger('change');
+
+    // Écouter l'événement de sélection dans le select2
+    $('#contre_partie').on('select2:select', function(e) {
+        var selectedValue = $(this).val();
+
+        // Si l'utilisateur sélectionne "Ajouter un compte"
+        if (selectedValue === 'ajouter_compte') {
+            // Ouvrir le modal pour ajouter un compte
+            $('#planComptableModalAdd').modal('show');
+        }
+    });
+});
 
 
 
