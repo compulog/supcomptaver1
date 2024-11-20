@@ -1,49 +1,66 @@
 <?php
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;  // Ajouter cette ligne pour importer DB
+use App\Models\Folder;
+use App\Models\societe;
 class FolderController extends Controller
 {
+    // Afficher tous les dossiers
+    public function index()
+    {
+        $societe = optional(auth()->user()->societe);
+        
+        // Vérifier si la société existe avant de récupérer son id
+        if (!$societe) {
+            // Gérer le cas où la société est absente
+            return redirect()->back()->with('error', 'Aucune société associée à cet utilisateur.');
+        }
+    
+        $folders = Folder::where('societe_id', $societe->id)->get();
+        $societes = Societe::all(); // Pour afficher les sociétés dans le formulaire
+    
+        return view('achat', compact('folders', 'societes'));
+    }
+    
+
+    // Créer un dossier
+ 
+    
+    // Dans votre méthode create()
     public function create(Request $request)
     {
-        // Valider la demande pour le nom du dossier
-        $request->validate([
+        // Validation personnalisée
+        $validator = Validator::make($request->all(), [
             'folder_name' => 'required|string|max:255',
+            'societe_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    // Utilisation de DB::connection pour exécuter la requête sur la base de données 'supcompta'
+                    $exists = DB::connection('supcompta')->table('societe')->where('id', $value)->exists();
+
+                    if (!$exists) {
+                        $fail('La société avec cet ID n\'existe pas dans la base supcompta.');
+                    }
+                },
+            ],
         ]);
 
-        // Le nom du dossier à créer
-        $folderName = $request->input('folder_name');
-
-        // Spécifiez le chemin où les dossiers doivent être créés (par exemple, dans le dossier 'public' ou un autre répertoire)
-        $path = public_path('files/achats/' . $folderName);
-
-        // Vérifiez si le dossier existe déjà
-        if (File::exists($path)) {
-            return back()->with('error', 'Le dossier existe déjà.');
+        // Si la validation échoue, rediriger avec les erreurs
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Créez le dossier
-        File::makeDirectory($path, 0777, true);
+        // Si la validation réussit, créer le dossier
+        Folder::create([
+            'name' => $request->folder_name,
+            'societe_id' => $request->societe_id,
+        ]);
 
-        // Retour à la page avec un message de succès
-        return back()->with('success', 'Le dossier a été créé avec succès.');
+        // Rediriger avec un message de succès
+        return redirect()->route('folder.index')->with('success', 'Dossier créé avec succès');
     }
-    // Exemple de méthode pour lister les fichiers d'un dossier
-public function listFiles($folderName)
-{
-    $path = public_path('files/achats/' . $folderName);
-    
-    // Vérifie si le dossier existe
-    if (File::exists($path)) {
-        // Récupère tous les fichiers dans le dossier
-        $files = File::files($path);
-        
-        return view('files.index', compact('files'));
-    }
-
-    return back()->with('error', 'Le dossier n\'existe pas.');
-}
-
 }

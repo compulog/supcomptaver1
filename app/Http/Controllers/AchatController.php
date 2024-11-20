@@ -7,24 +7,27 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Models\Folder;
+
 
 class AchatController extends Controller
 {
-    public function index()
-    {
-        $societeId = session('societeId'); // Récupère l'ID de la société depuis la session
-
-        if ($societeId) {
-            // Filtrer les fichiers de type 'achat' pour la société donnée
-            $files = File::where('societe_id', $societeId)
-                         ->where('type', 'achat') // Filtrer par type 'achat'
+   public function index()
+{
+    $societeId = session('societeId'); // Récupère l'ID de la société depuis la session
+    
+    if ($societeId) {
+        // Filtrer les dossiers pour la société donnée
+        $folders = Folder::where('societe_id', $societeId) // Assurez-vous que "Folder" est le bon modèle
                          ->get();
-
-            return view('achat', compact('files')); // Passez les fichiers à la vue
-        } else {
-            return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
-        }
+    
+        return view('achat', compact('folders')); // Passez les dossiers à la vue
+    } else {
+        return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
     }
+}
+
+    
 
     public function download($fileId)
 {
