@@ -30,39 +30,27 @@ use App\Http\Controllers\SectionController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FileController;
 
-Route::get('/folders', [FolderController::class, 'index'])->name('folder.index');
-
-
-Route::get('/folders', [FolderController::class, 'index'])->name('folder.index');
-Route::post('/folder/create', [FolderController::class, 'create'])->name('folder.create');
 Route::get('/folder/{id}', [FolderController::class, 'show'])->name('folder.show');
-
-
-// Cette route appelle la méthode store, pas create
-
-
-Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
-
-Route::get('/folder/{id}', [FolderController::class, 'show'])->name('folder.show');
-
-
-
-// Route pour créer un dossier
-// Route::post('/folder/create', [FolderController::class, 'create'])->name('folder.create');
-
-Route::get('/file/view/{id}', [FileController::class, 'view'])->name('file.view');
-
-Route::get('/file/view/{id}', [FileController::class, 'view'])->name('file.view');
-
-// Route pour afficher un fichier (consulter)
-Route::get('/file/view/{id}', [FileController::class, 'view'])->name('file.view');
-
-// Route pour créer un dossier
-// Route::post('/folder/create', [FolderController::class, 'create'])->name('folder.create');
 
 
 
 Route::group(['middleware' => 'auth'], function () {
+        // Suppression du dossier
+        Route::delete('/folder/{id}', [FolderController::class, 'destroy'])->name('folder.delete');
+        // Suppression du fichier achat
+        Route::delete('/file/{id}', [FileController::class, 'destroy'])->name('file.delete');
+        Route::get('/folders', [FolderController::class, 'index'])->name('folder.index');
+        Route::post('/folder/create', [FolderController::class, 'create'])->name('folder.create');
+        // Cette route appelle la méthode store, pas create
+        Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
+        // Route pour créer un dossier
+        // Route::post('/folder/create', [FolderController::class, 'create'])->name('folder.create');
+        Route::get('/file/view/{id}', [FileController::class, 'view'])->name('file.view');
+        Route::get('/file/view/{id}', [FileController::class, 'view'])->name('file.view');
+        // Route pour afficher un fichier (consulter)
+        Route::get('/file/view/{id}', [FileController::class, 'view'])->name('file.view');
+        // Route pour créer un dossier
+        // Route::post('/folder/create', [FolderController::class, 'create'])->name('folder.create');
         Route::post('/clients/delete-selected', [ClientController::class, 'deleteSelected'])->name('clients.deleteSelected');
         Route::post('/sections', [SectionController::class, 'store'])->name('sections.store');
         Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');

@@ -17,4 +17,11 @@ class Folder extends Model
     {
         return $this->belongsTo(Societe::class);
     }
+    
+    public function files()
+    {
+        // Assurez-vous que la clé étrangère correspond à celle utilisée dans votre table 'files'
+        return $this->hasMany(File::class, 'folder_id');
+    }
+    
 }

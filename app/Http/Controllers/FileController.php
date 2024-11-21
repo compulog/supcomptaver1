@@ -5,6 +5,7 @@ use App\Models\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File as FacadeFile;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage;
 
 class FileController extends Controller
 {
@@ -40,4 +41,13 @@ class FileController extends Controller
         }
     }
     
+    // FileController.php
+public function destroy($id)
+{
+    $file = File::findOrFail($id);
+    Storage::delete($file->path); // Si vous stockez les fichiers sur le système de fichiers
+    $file->delete();
+
+    return redirect()->back()->with('success', 'Fichier supprimé avec succès.');
+}
 }
