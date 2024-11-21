@@ -121,9 +121,11 @@
                             <input type="text" class="form-control" name="patente" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="rc" class="form-label">RC</label>
-                            <input type="text" class="form-control" name="rc" required>
-                        </div>
+    <label for="rc" class="form-label">RC</label>
+    <input type="text" class="form-control" name="rc" id="rc" required 
+           oninput="this.value=this.value.replace(/[^0-9]/g, '')">
+</div>
+
                         <div class="col-md-6 mb-3">
                             <label for="centre_rc" class="form-label">Centre RC</label>
                            
@@ -706,80 +708,44 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 
 
 <script>
-    
   $(document).ready(function() {
     remplirRubriquesTva('editRubriqueTVA');
     
     // Variable pour empêcher l'exécution multiple
     var modalOpened = false;
 
-    // Fonction pour vérifier le mot de passe avant d'ouvrir le modal
-    function checkPasswordAndOpenModal(societeId) {
-        // Demander le mot de passe avant d'afficher le modal
-        var password = prompt("Veuillez entrer votre mot de passe pour modifier cette société :");
+    // Fonction pour ouvrir le modal directement sans demander de mot de passe
+    function openModal(societeId) {
+        // Requête AJAX pour obtenir les données de la société
+        var url = '/societes/' + societeId; // URL pour récupérer les données de la société
+        
+        $.get(url, function(data) {
+            // Remplir le formulaire avec les données de la société
+            $('#modification_id').val(data.id);
+            $('#mod_raison_sociale').val(data.raison_sociale);
+            $('#mod_siège_social').val(data.siege_social);
+            $('#mod_ice').val(data.ice);
+            $('#mod_rc').val(data.rc);
+            $('#mod_identifiant_fiscal').val(data.identifiant_fiscal);
+            $('#mod_patente').val(data.patente);
+            $('#mod_centre_rc').val(data.centre_rc);
+            $('#mod_forme_juridique').val(data.forme_juridique);
+            $('#mod_exercice_social_debut').val(data.exercice_social_debut);
+            $('#mod_exercice_social_fin').val(data.exercice_social_fin);
+            $('#mod_date_creation').val(data.date_creation);
+            $('#mod_assujettie_partielle_tva').val(data.assujettie_partielle_tva);
+            $('#mod_prorata_de_deduction').val(data.prorata_de_deduction);
+            $('#mod_nature_activite').val(data.nature_activite);
+            $('#mod_activite').val(data.activite);
+            $('#mod_regime_declaration').val(data.regime_declaration);
+            $('#mod_fait_generateur').val(data.fait_generateur);
+            $('#editRubriqueTVA').val(data.rubrique_tva);
+            $('#mod_designation').val(data.designation);
+            $('#mod_nombre_chiffre_compte').val(data.nombre_chiffre_compte);
+            $('#mod_model_comptable').val(data.modele_comptable);
 
-        // Vérifier si un mot de passe a été saisi
-        if (password === null || password === "") {
-            alert("Mot de passe requis pour modifier cette société.");
-            return;  // Arrêter si le mot de passe est vide ou annulé
-        }
-
-        // Requête AJAX pour vérifier le mot de passe
-        $.ajax({
-            url: '/check-societe-password',  // Route pour vérifier le mot de passe
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            data: JSON.stringify({ password: password }),  // Envoie le mot de passe
-            success: function(response) {
-                console.log("Réponse du serveur :", response); // Pour déboguer
-
-                if (response.success) {
-                    // Si le mot de passe est correct, récupérer les données de la société
-                    var url = '/societes/' + societeId; // URL pour récupérer les données de la société
-                    
-                    // Requête AJAX pour obtenir les données de la société
-                    $.get(url, function(data) {
-                        // Remplir le formulaire avec les données de la société
-                        $('#modification_id').val(data.id);
-                        $('#mod_raison_sociale').val(data.raison_sociale);
-                        $('#mod_siège_social').val(data.siege_social);
-                        $('#mod_ice').val(data.ice);
-                        $('#mod_rc').val(data.rc);
-                        $('#mod_identifiant_fiscal').val(data.identifiant_fiscal);
-                        $('#mod_patente').val(data.patente);
-                        $('#mod_centre_rc').val(data.centre_rc);
-                        $('#mod_forme_juridique').val(data.forme_juridique);
-                        $('#mod_exercice_social_debut').val(data.exercice_social_debut);
-                        $('#mod_exercice_social_fin').val(data.exercice_social_fin);
-                        $('#mod_date_creation').val(data.date_creation);
-                        $('#mod_assujettie_partielle_tva').val(data.assujettie_partielle_tva);
-                        $('#mod_prorata_de_deduction').val(data.prorata_de_deduction);
-                        $('#mod_nature_activite').val(data.nature_activite);
-                        $('#mod_activite').val(data.activite);
-                        $('#mod_regime_declaration').val(data.regime_declaration);
-                        $('#mod_fait_generateur').val(data.fait_generateur);
-                        $('#editRubriqueTVA').val(data.rubrique_tva);
-                        $('#mod_designation').val(data.designation);
-                        $('#mod_nombre_chiffre_compte').val(data.nombre_chiffre_compte);
-                        $('#mod_model_comptable').val(data.modele_comptable);
-
-                        // Ouvrir le modal après avoir rempli les données
-                        $('#modifierSocieteModal').modal('show');
-                    });
-                } else {
-                    // Si le mot de passe est incorrect, afficher un message d'erreur
-                    alert("Mot de passe incorrect. Vous ne pouvez pas modifier cette société.");
-
-                    // Annuler l'affichage du modal si le mot de passe est incorrect
-                    modalOpened = false;  // Assurez-vous que le modal ne s'ouvre pas
-                }
-            },
-            error: function(xhr) {
-                alert("Une erreur s'est produite lors de la vérification du mot de passe.");
-            }
+            // Ouvrir le modal après avoir rempli les données
+            $('#modifierSocieteModal').modal('show');
         });
     }
 
@@ -788,16 +754,16 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         var button = $(event.relatedTarget); // bouton qui a déclenché le modal
         var societeId = button.data('id'); // récupère l'ID de la société
         
-        // Si le modal a déjà été ouvert ou si le mot de passe est incorrect, on ne continue pas
+        // Si le modal a déjà été ouvert, on ne continue pas
         if (modalOpened) {
-            return;  // Si le modal est déjà ouvert ou si le mot de passe était incorrect, on arrête tout
+            return;  // Si le modal est déjà ouvert, on arrête tout
         }
 
         // Marquer le modal comme ouvert pour éviter les appels multiples
         modalOpened = true;
 
-        // Appeler la fonction pour vérifier le mot de passe et ouvrir le modal
-        checkPasswordAndOpenModal(societeId);
+        // Appeler la fonction pour ouvrir le modal directement sans mot de passe
+        openModal(societeId);
     });
 
     // Événement lors de la soumission du formulaire
@@ -932,62 +898,36 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
     if (e.target.closest('.delete-icon')) {
         const id = e.target.closest('.delete-icon').getAttribute('data-id');
         
-        // Afficher une fenêtre de saisie du mot de passe pour confirmer la suppression
-        const password = prompt("Pour confirmer la suppression, veuillez entrer votre mot de passe");
-
-        if (password === null) {
-            // Si l'utilisateur annule la saisie
-            return;
+        // Confirmer la suppression sans demander de mot de passe
+        if (confirm("Êtes-vous sûr de vouloir supprimer cette société ?")) {
+            // Envoyer la requête de suppression sans vérifier le mot de passe
+            fetch("{{ url('societes') }}/" + id, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erreur réseau lors de la suppression');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Suppression de la ligne dans Tabulator
+                    table.deleteRow(id); // Utilisez deleteRow avec l'ID pour supprimer la ligne visuellement
+                    alert("Société supprimée avec succès.");
+                } else {
+                    alert("Erreur lors de la suppression : " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Erreur :", error);
+                alert("Une erreur s'est produite : " + error.message);
+            });
         }
-
-        // Envoyer une requête pour vérifier le mot de passe
-        fetch("{{ route('societes.check-password') }}", {
-            method: "POST",
-            headers: {
-                "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ password: password })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Mot de passe correct, procéder à la suppression de la société
-                fetch("{{ url('societes') }}/" + id, {
-                    method: "DELETE",
-                    headers: {
-                        "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
-                        "Content-Type": "application/json"
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Erreur réseau lors de la suppression');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        // Suppression de la ligne dans Tabulator
-                        table.deleteRow(id); // Utilisez deleteRow avec l'ID pour supprimer la ligne visuellement
-                        alert("Société supprimée avec succès.");
-                    } else {
-                        alert("Erreur lors de la suppression : " + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error("Erreur :", error);
-                    alert("Une erreur s'est produite : " + error.message);
-                });
-            } else {
-                // Mot de passe incorrect
-                alert("Mot de passe incorrect. La suppression a été annulée.");
-            }
-        })
-        .catch(error => {
-            console.error("Erreur lors de la vérification du mot de passe :", error);
-            alert("Une erreur s'est produite lors de la vérification du mot de passe.");
-        });
     }
 });
 

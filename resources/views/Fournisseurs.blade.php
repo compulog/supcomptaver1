@@ -23,6 +23,13 @@
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+</head>
+
     <style>
 /* Style pour le conteneur du tableau */
 #tabulator-table {
@@ -57,7 +64,7 @@
     background-image: linear-gradient(to right, #344767, #31477a) !important; /* Dégradé de gauche à droite */
     color: white !important; /* Couleur du texte en blanc */
     border: none; /* Pas de bordure */
-    transition: background-color!important 0.1s ease; /* Transition douce pour le survol */
+    /* transition: background-color!important 0.1s ease; Transition douce pour le survol */
 }
 
 
@@ -83,10 +90,11 @@
     color: #495057 !important; /* Couleur de texte sombre */
 }
 
-
+/*
 .btn-custom-gradient:hover {
-    background-image: linear-gradient(to right, #536fb2, #344767)!important; /* Inverser le dégradé au survol */
-}
+    background-image: linear-gradient(to right, #536fb2, #344767)!important;  Inverser le dégradé au survol 
+  
+}  */
 
 #fournisseur-table {
     overflow: auto; /* Permet le défilement */
@@ -118,15 +126,40 @@
 
 @section('content')
 
-
+<!-- Conteneur principal -->
+<!-- Section principale -->
 <div class="container mt-5">
-    <h3>Liste des Fournisseurs</h3>
-    <button class="btn btn-custom-gradient" id="addFournisseurBtn" data-toggle="modal" data-target="#fournisseurModaladd">Ajouter</button>
-    <button class="btn btn-custom-gradient" id="addFournisseurBtn" data-toggle="modal" data-target="#importModal">Importer</button>
+    <h3 class="mb-4">Liste des Fournisseurs</h3>
 
-    <a href="{{ url('/export-fournisseurs-excel') }}" class="btn btn-custom-gradient">Exporter en Excel</a>
+    <!-- Boutons d'actions -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <!-- Bouton Créer -->
+        <button class="btn btn-primary d-flex align-items-center gap-2" id="addFournisseurBtn" data-bs-toggle="modal" data-bs-target="#fournisseurModaladd">
+            <i class="bi bi-plus-circle"></i> Créer
+        </button>
 
-<a href="{{ url('/export-fournisseurs-pdf') }}" class="btn btn-custom-gradient">Exporter en PDF</a>
+        <!-- Bouton Importer -->
+        <button class="btn btn-secondary d-flex align-items-center gap-2" id="importFournisseurBtn" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="bi bi-file-earmark-arrow-up"></i> Importer
+        </button>
+
+        <!-- Bouton Exporter en Excel -->
+        <a href="{{ url('/export-fournisseurs-excel') }}" class="btn btn- d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-excel"></i> Exporter en Excel
+        </a>
+
+        <!-- Bouton Exporter en PDF -->
+        <a href="{{ url('/export-fournisseurs-pdf') }}" class="btn btn d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-pdf"></i> Exporter en PDF
+        </a>
+    </div>
+
+
+<!-- Bootstrap Icons -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.js"></script>
+
+
+
 
     <div id="fournisseur-table"></div>
 
@@ -134,9 +167,8 @@
 
 
 <!-- Formulaire d'importation Excel -->
-
 <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-lg" role="document"> <!-- Ajout de la classe modal-lg ici -->
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="importModalLabel">Importation des Fournisseurs</h5>
@@ -145,55 +177,59 @@
                 </button>
             </div>
             <div class="modal-body">
-    <form id="importForm" action="{{ route('fournisseurs.import') }}" method="POST" enctype="multipart/form-data">
-        @csrf
-        @csrf
-        <!-- Champ caché pour le societe_id -->
-        <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}"><!-- Exemple pour la société 3 -->
-        <div class="form-group">
-            <label for="file">Fichier Excel</label>
-            <input type="file" class="form-control" name="file" id="file" required>
-        </div>
-        <div class="form-row">
-            <div class="col-md-6 form-group">
-                <label for="colonne_compte">Colonne Compte</label>
-                <input type="number" class="form-control" name="colonne_compte" id="colonne_compte" required>
-            </div>
-            <div class="col-md-6 form-group">
-                <label for="colonne_intitule">Colonne Intitulé</label>
-                <input type="number" class="form-control" name="colonne_intitule" id="colonne_intitule" required>
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="col-md-6 form-group">
-                <label for="colonne_identifiant_fiscal">Colonne Identifiant Fiscal</label>
-                <input type="number" class="form-control" name="colonne_identifiant_fiscal" id="colonne_identifiant_fiscal" required>
-            </div>
-            <div class="col-md-6 form-group">
-                <label for="colonne_ICE">Colonne ICE</label>
-                <input type="number" class="form-control" name="colonne_ICE" id="colonne_ICE" required>
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="col-md-6 form-group">
-                <label for="colonne_nature_operation">Colonne Nature d'Opération</label>
-                <input type="number" class="form-control" name="colonne_nature_operation" id="colonne_nature_operation" required>
-            </div>
-            <div class="col-md-6 form-group">
-                <label for="colonne_rubrique_tva">Colonne Rubrique TVA</label>
-                <input type="number" class="form-control" name="colonne_rubrique_tva" id="colonne_rubrique_tva" required>
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="col-md-6 form-group">
-                <label for="colonne_designation">Colonne Désignation</label>
-                <input type="number" class="form-control" name="colonne_designation" id="colonne_designation" required>
-            </div>
-            <div class="col-md-6 form-group">
-                <label for="colonne_contre_partie">Colonne Contre Partie</label>
-                <input type="number" class="form-control" name="colonne_contre_partie" id="colonne_contre_partie" required>
-            </div>
-        </div>
+                <form id="importForm" action="{{ route('fournisseurs.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
+                    
+                    <div class="form-group">
+                        <label for="file">Fichier Excel</label>
+                        <input type="file" class="form-control form-control-lg shadow-sm" name="file" id="file" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="col-md-6 form-group">
+                            <label for="colonne_compte">Colonne Compte</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_compte" id="colonne_compte" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="colonne_intitule">Colonne Intitulé</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_intitule" id="colonne_intitule" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="col-md-6 form-group">
+                            <label for="colonne_identifiant_fiscal">Colonne Identifiant Fiscal</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_identifiant_fiscal" id="colonne_identifiant_fiscal" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="colonne_ICE">Colonne ICE</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_ICE" id="colonne_ICE" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="col-md-6 form-group">
+                            <label for="colonne_nature_operation">Colonne Nature d'Opération</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_nature_operation" id="colonne_nature_operation" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="colonne_rubrique_tva">Colonne Rubrique TVA</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_rubrique_tva" id="colonne_rubrique_tva" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="col-md-6 form-group">
+                            <label for="colonne_designation">Colonne Désignation</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_designation" id="colonne_designation" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="colonne_contre_partie">Colonne Contre Partie</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_contre_partie" id="colonne_contre_partie" required>
+                        </div>
+                    </div>
+
                     <button type="submit" class="btn btn-primary">Importer</button>
                 </form>
             </div>
@@ -202,15 +238,12 @@
 </div>
 
 
-
-
-
 <!-- Modal add-->
 <div class="modal fade" id="fournisseurModaladd" tabindex="-1" role="dialog" aria-labelledby="fournisseurModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="fournisseurModalLabel">Ajouter</h5>
+                <h5 class="modal-title" id="fournisseurModalLabel">Créer</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -218,16 +251,13 @@
             <div class="modal-body">
                 <form id="fournisseurFormAdd">
                     @csrf 
-                   
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="compte">Compte</label>
                                 <input type="hidden" id="societe_id" name="societe_id" value="{{ session('societeId') }}"> <!-- Societe ID ici -->
-                               
-                                <!-- Options pour choisir entre saisie et auto-incrémentation -->
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="compte" name="compte" placeholder="4411XXXX" required>
+                                    <input type="text" class="form-control form-control-lg shadow-sm" id="compte" name="compte" placeholder="4411XXXX" required>
                                     <div class="input-group-append">
                                         <button type="button" class="btn btn-secondary" id="autoIncrementBtn">Auto</button>
                                     </div>
@@ -237,31 +267,31 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="intitule">Intitulé</label>
-                                <input type="text" class="form-control" id="intitule" name="intitule" >
+                                <input type="text" class="form-control form-control-lg shadow-sm" id="intitule" name="intitule">
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="identifiant_fiscal">Identifiant Fiscal</label>
-                                <input type="text" class="form-control" id="identifiant_fiscal" name="identifiant_fiscal" maxlength="8" pattern="\d*" >
+                                <input type="text" class="form-control form-control-lg shadow-sm" id="identifiant_fiscal" name="identifiant_fiscal" maxlength="8" pattern="\d*">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="ICE">ICE</label>
-                                <input type="text" class="form-control" id="ICE" name="ICE" maxlength="15" pattern="\d*" >
+                                <input type="text" class="form-control form-control-lg shadow-sm" id="ICE" name="ICE" maxlength="15" pattern="\d*">
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="nature_operation">Nature de l'opération</label>
-                                <select class="form-control" id="nature_operation" name="nature_operation">
+                                <select class="form-select form-select-lg shadow-sm" id="nature_operation" name="nature_operation">
                                     <option value="">Sélectionner une option</option>
                                     <option value="1-Achat de biens d'équipement">1-Achat de biens d'équipement</option>
                                     <option value="2-Achat de travaux">2-Achat de travaux</option>
@@ -273,77 +303,38 @@
                             <div class="form-group">
                                 <label for="contre_partie" class="mr-2">Contre Partie</label>
                                 <div class="position-relative w-100">
-                                    <!-- Select2 avec positionnement relatif -->
-                                    <select class="form-control select2" id="contre_partie" name="contre_partie" required>
+                                    <select class="form-control form-control-lg shadow-sm select2" id="contre_partie" name="contre_partie" required>
                                         <option value="">Sélectionner une contre partie</option>
-                                        <!-- Options ajoutées dynamiquement -->
                                     </select>
-                                    <!-- Icône d'ajout positionnée à l'intérieur du select -->
                                     <button type="button" class="btn btn-link position-absolute" style="top:90%; right: 10px; transform: translateY(-20%);" data-toggle="modal" data-target="#planComptableModalAdd">
-                                      Nouveau compte  <i class="bi bi-plus-circle" style="font-size: 1.3rem;"></i> 
+                                        Nouveau compte  <i class="bi bi-plus-circle" style="font-size: 1.3rem;"></i> 
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
-                        
-                                
-                                
-                           
-                        
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="rubrique_tva">Rubrique TVA</label>
-                                <select class="form-control" id="rubrique_tva" name="rubrique_tva">
+                                <select class="form-select form-select-lg shadow-sm" id="rubrique_tva" name="rubrique_tva">
                                     <option value="" selected>Sélectionnez une Rubrique</option>
-                                    <!-- Les options seront ajoutées par JavaScript -->
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="designation">Désignation</label>
-                                <input type="text" class="form-control" id="designation" name="designation" placeholder="Designation" >
+                                <input type="text" class="form-control form-control-lg shadow-sm" id="designation" name="designation" placeholder="Designation">
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between">
                         <button type="button" class="btn btn-secondary mr-2" id="resetModal"> <i class="bi bi-arrow-clockwise fs-6"></i> <!-- Icône de réinitialisation --></button>
-                        <button type="submit" class="btn btn-primary ml-2">Valider<i class="bi bi-check-lg  bi-2x"></i>
-                        </button>
+                        <button type="submit" class="btn btn-primary ml-2">Valider<i class="bi bi-check-lg  bi-2x"></i></button>
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal pour ajouter un plan comptable -->
-<div class="modal fade" id="planComptableModalAdd" tabindex="-1" role="dialog" aria-labelledby="planComptableModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="planComptableModalLabel">Ajouter un compte </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <!-- Formulaire d'ajout -->
-                <form id="planComptableFormAdd">
-                    <div class="form-group">
-                        <label for="compte">compte</label>
-                        <input type="text" class="form-control" id="compte_add" name="compte" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="intitule">Intitulé</label>
-                        <input type="text" class="form-control" id="intitule_add" name="intitule" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Ajouter</button>
                 </form>
             </div>
         </div>
@@ -352,7 +343,7 @@
 
 <!-- Modal edit-->
 <div class="modal fade" id="fournisseurModaledit" tabindex="-1" role="dialog" aria-labelledby="fournisseurModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="fournisseurModalLabel">Modifier</h5>
@@ -365,38 +356,39 @@
                     <input type="hidden" id="editFournisseurId" value="">
                     <div class="row">
                         <div class="col-md-6">
-                           
                             <div class="form-group">
                                 <label for="editCompte">Compte</label>
-                                <input type="text" class="form-control" id="editCompte" required>
+                                <input type="text" class="form-control form-control-lg shadow-sm" id="editCompte" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editIntitule">Intitulé</label>
-                                <input type="text" class="form-control" id="editIntitule" required>
+                                <input type="text" class="form-control form-control-lg shadow-sm" id="editIntitule" required>
                             </div>
                         </div>
                     </div>
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editIdentifiantFiscal">Identifiant Fiscal</label>
-                                <input type="text" class="form-control" id="editIdentifiantFiscal" maxlength="8" pattern="\d*" >
+                                <input type="text" class="form-control form-control-lg shadow-sm" id="editIdentifiantFiscal" maxlength="8" pattern="\d*">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editICE">ICE</label>
-                                <input type="text" class="form-control" id="editICE" maxlength="15" pattern="\d*" >
+                                <input type="text" class="form-control form-control-lg shadow-sm" id="editICE" maxlength="15" pattern="\d*">
                             </div>
                         </div>
                     </div>
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editNatureOperation">Nature de l'opération</label>
-                                <select class="form-control" id="editNatureOperation">
+                                <select class="form-select form-select-lg shadow-sm" id="editNatureOperation">
                                     <option value="">Sélectionner une option</option>
                                     <option value="1-Achat de biens d'équipement">1-Achat de biens d'équipement</option>
                                     <option value="2-Achat de travaux">2-Achat de travaux</option>
@@ -405,57 +397,87 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-    <div class="form-group">
-        <label for="editContrePartie">Contre Partie</label>
-        <select class="form-control" id="editContrePartie" >
-            <option value="">Sélectionnez une contre partie</option>
-        </select>
-    </div>
-</div>
+                            <div class="form-group">
+                                <label for="editContrePartie">Contre Partie</label>
+                                <select class="form-select form-select-lg shadow-sm" id="editContrePartie">
+                                    <option value="">Sélectionnez une contre partie</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editRubriqueTVA">Rubrique TVA</label>
-                               
-                                <select class="form-control" id="editRubriqueTVA" >
+                                <select class="form-select form-select-lg shadow-sm" id="editRubriqueTVA">
                                     <option value="">Sélectionnez une Rubrique</option>
-                                    <!-- Les options seront ajoutées par JavaScript -->
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editDesignation">Désignation</label>
-                                <input type="text" class="form-control" id="editDesignation"placeholder="Designation" >
+                                <input type="text" class="form-control form-control-lg shadow-sm" id="editDesignation" placeholder="Designation">
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class=" btn btn-secondary ladda-button">Sauvegarder  <i class="bi bi-save"></i> </button>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary mr-2" id="resetModal"> <i class="bi bi-arrow-clockwise fs-6"></i> <!-- Icône de réinitialisation --></button>
+                        <button type="submit" class="btn btn-primary ml-2">Valider<i class="bi bi-check-lg  bi-2x"></i></button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Modal pour ajouter un plan comptable-->
+<div class="modal fade" id="planComptableModalAdd" tabindex="-1" role="dialog" aria-labelledby="planComptableModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="planComptableModalLabel">Ajouter un compte </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="planComptableFormAdd">
+                    <div class="form-group">
+                        <label for="compte">compte</label>
+                        <input type="text" class="form-control form-control-lg shadow-sm" id="compte_add" name="compte" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="intitule">Intitulé</label>
+                        <input type="text" class="form-control form-control-lg shadow-sm" id="intitule_add" name="intitule" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
  <script >
 
+// Générer automatiquement un numéro de compte
+document.getElementById("autoIncrementBtn").addEventListener("click", function () {
+    const societeId = document.getElementById("societe_id").value;
 
-// Écouter le clic sur le bouton auto-incrément
-document.getElementById("autoIncrementBtn").addEventListener("click", function() {
-    fetchNextCompte();
-});
-
-function fetchNextCompte() {
-    fetch('/get-next-compte')
+    fetch(`/get-next-compte/${societeId}`)
         .then(response => response.json())
         .then(data => {
-            const nextCompte = data.next_compte;
-            document.getElementById("compte").value = nextCompte;
+            if (data.next_compte) {
+                document.getElementById("compte").value = data.next_compte;
+            } else {
+                alert("Erreur lors de la génération du compte : " + (data.error || "inconnue"));
+            }
         })
-        .catch(error => console.error('Erreur lors de la récupération du numéro de compte:', error));
-}
+        .catch(error => console.error("Erreur :", error));
+});
+
 
 document.getElementById("compte").addEventListener("input", function() {
     const compteField = document.getElementById("compte");
@@ -719,67 +741,63 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 }
 
 // Gestion de la soumission du formulaire d'ajout
-$("#fournisseurFormAdd").on("submit", function(e) {
-    e.preventDefault(); // Empêche la soumission par défaut du formulaire
+$("#fournisseurFormAdd").on("submit", function (e) {
+        e.preventDefault(); // Empêche la soumission par défaut du formulaire
 
-    // Mettre à jour le champ designation avec la valeur sélectionnée
-    $("#designation").val(designationValue);
- // Debug : vérifier la valeur du champ caché 'societe_id'
- console.log("Valeur de societe_id :", $("#societe_id").val());
-    // Appeler la fonction d'envoi des données
-    envoyerDonnees(); // Ne pas passer de paramètres car designation est déjà mise à jour
-});
-
-// Fonction pour envoyer les données via AJAX
-function envoyerDonnees() {
-    var url = "/fournisseurs"; // URL pour l'ajout
-
- 
-
-    $.ajax({
-        url: url,
-        type: "POST",
-        data: {
-            compte: $("#compte").val(),
-            intitule: $("#intitule").val(),
-            identifiant_fiscal: $("#identifiant_fiscal").val(),
-            ICE: $("#ICE").val(),
-            nature_operation: $("#nature_operation").val(),
-            rubrique_tva: $("#rubrique_tva").val(),
-            designation: $("#designation").val(), // Utiliser la designation remplie
-            contre_partie: $("#contre_partie").val(),
-            societe_id: $("#societe_id").val(), // Ajout de l'ID de la société ici
-            _token: '{{ csrf_token() }}' // Assurez-vous d'inclure votre CSRF token
-        },
-        success: function(response) {
-            table.setData("/fournisseurs/data"); // Recharger les données
-            $("#fournisseurModaladd").modal("hide"); // Fermer le modal
-            $("#fournisseurFormAdd")[0].reset(); // Réinitialiser le formulaire d'ajout
-        },
-        error: function(xhr) {
-            console.error("Erreur lors de l'enregistrement des données :", xhr.responseText);
-            alert("Erreur lors de l'enregistrement des données !");
-        }
+        // Appeler la fonction pour envoyer les données
+        envoyerDonnees();
     });
-}
 
+    // Fonction pour envoyer les données via AJAX
+    function envoyerDonnees() {
+        var url = "/fournisseurs"; // URL pour l'ajout
+
+        $.ajax({
+            url: url,
+            type: "POST",
+            data: {
+                compte: $("#compte").val(),
+                intitule: $("#intitule").val(),
+                identifiant_fiscal: $("#identifiant_fiscal").val(),
+                ICE: $("#ICE").val(),
+                nature_operation: $("#nature_operation").val(),
+                rubrique_tva: $("#rubrique_tva").val(),
+                designation: $("#designation").val(),
+                contre_partie: $("#contre_partie").val(),
+                societe_id: $("#societe_id").val(),
+                _token: '{{ csrf_token() }}' // Assurez-vous d'inclure votre CSRF token
+            },
+            success: function (response) {
+                if (response.success) {
+                    table.setData("/fournisseurs/data"); // Recharger les données
+                    $("#fournisseurModaladd").modal("hide"); // Fermer le modal
+                    $("#fournisseurFormAdd")[0].reset(); // Réinitialiser le formulaire d'ajout
+                } else if (response.error) {
+                    alert(response.error); // Afficher le message d'erreur du serveur
+                }
+            },
+            error: function (xhr) {
+                console.error("Erreur lors de l'enregistrement des données :", xhr.responseText);
+                alert("Erreur lors de l'enregistrement des données !");
+            }
+        });
+    }
 // Réinitialiser le formulaire à la fermeture
 $('#resetModal').on('click', function () {
     $('#fournisseurFormAdd')[0].reset(); // Réinitialiser le formulaire
 
     // Réinitialiser les champs select2
-    $('#fournisseurFormAdd select').each(function() {
+    $('#fournisseurFormAdd select').each(function () {
         $(this).val('').trigger('change'); // Réinitialise les champs select2
     });
 });
 
 // Appel pour remplir les options de contrepartie lors du chargement
-$(document).ready(function() {
+$(document).ready(function () {
     remplirContrePartie('contre_partie');
     $('.select2').select2(); // Initialisation de select2
-    // Remplir les rubriques TVA lors de l'ouverture du modal
     $('#fournisseurModaladd').on('shown.bs.modal', function () {
-        remplirRubriquesTva('rubrique_tva'); // Remplir les rubriques TVA
+        remplirRubriquesTva('rubrique_tva');
         $('#compte').focus();
         $('#rubrique_tva').val('').trigger('change');
     });
@@ -918,7 +936,7 @@ function editFournisseur(data) {
     $("#editIdentifiantFiscal").val(data.identifiant_fiscal);
     $("#editICE").val(data.ICE);
     $("#editNatureOperation").val(data.nature_operation);
-    //$("#societe_id").val(data.societe_id); // Remplir l'ID de la société si nécessaire
+    
     remplirRubriquesTva('rubrique_tva'); 
     remplirContrePartie('contre_partie');
     

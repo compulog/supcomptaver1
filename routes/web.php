@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\SocieteController;
 use App\Http\Controllers\ClientController;
-
+use App\Http\Controllers\FolderController;
 
 use App\Http\Controllers\ImportExcelController;
 use App\Exports\SocietesExport;
@@ -108,6 +108,16 @@ Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
 
 
 Route::group(['middleware' => 'auth'], function () {
+
+    
+
+
+// Route pour créer un dossier
+Route::post('/folder/create', [FolderController::class, 'create'])->name('folder.create');
+
+
+
+
     
 // Route pour l'exportation PDF
 Route::get('/societes/export', [SocietesPDFExportController::class, 'exportPDF'])->name('societes.export');
@@ -205,9 +215,10 @@ Route::get('/societes', [SocieteController::class, 'index'])->name('societes.ind
 
 
 
-    Route::get('/get-comptes-achats', [JournalController::class, 'getComptesAchats']);
-Route::get('/get-comptes-ventes', [JournalController::class, 'getComptesVentes']);
-Route::get('/get-comptes-tresoreries', [JournalController::class, 'getComptesTresoreries']);
+    Route::get('/comptes-achats', [JournalController::class, 'getComptesAchats']);
+    Route::get('/comptes-ventes', [JournalController::class, 'getComptesVentes']);
+    Route::get('/comptes-tresorerie', [JournalController::class, 'getComptesTresoreries']);
+    
  // Route pour afficher tous les journaux
 Route::get('/journaux', [JournalController::class, 'index'])->name('journaux.index');
 
@@ -221,10 +232,24 @@ Route::post('/journaux', [JournalController::class, 'store'])->name('journaux.st
 Route::get('/journaux/{id}', [JournalController::class, 'show'])->name('journaux.show');
 
 // Route pour mettre à jour un journal
-Route::put('/journaux/{id}', [JournalController::class, 'update'])->name('journaux.update');
+
+// Route pour afficher le formulaire d'édition
+Route::get('/journals/{id}/edit', [JournalController::class, 'edit'])->name('journals.edit');
+
+// Route pour récupérer un journal (GET)
+Route::get('/journaux/{id}', [JournalController::class, 'show']);
+
+// Route pour mettre à jour un journal (PUT)
+Route::put('/journaux/{id}', [JournalController::class, 'update']);
+
 Route::post('/journaux/delete-selected', [JournalController::class, 'deleteSelected'])->name('journaux.deleteSelected');
 // Route pour supprimer un journal
 Route::delete('/journaux/{id}', [JournalController::class, 'destroy'])->name('journaux.destroy');
+
+// Ajouter une route pour récupérer les comptes en fonction du type de journal
+Route::get('/journaux/contre-partie/{typeJournal}', [JournalController::class, 'getComptesContrePartie']);
+
+
     Route::get('profile', function () {
         return view('profile');
     })->name('profile');
@@ -233,6 +258,9 @@ Route::delete('/journaux/{id}', [JournalController::class, 'destroy'])->name('jo
         return Excel::download(new FournisseursExport, 'fournisseurs.xlsx');
     });
     
+
+    Route::post('/fournisseurs/check', [FournisseurController::class, 'check'])->name('fournisseurs.check');
+
     Route::get('/export-fournisseurs-pdf', [ExportController::class, 'exportPDF']) ;
 // routes/web.php
 Route::post('/fournisseurs/delete-selected', [FournisseurController::class, 'deleteSelected'])->name('fournisseurs.deleteSelected');
@@ -247,7 +275,8 @@ Route::get('/fournisseurs/{id}', [FournisseurController::class, 'show']);
 // Route pour afficher le formulaire d'édition
 Route::get('/fournisseurs/{id}/edit', [FournisseurController::class, 'edit'])->name('fournisseurs.edit'); ;
 
-Route::get('/get-next-compte', [FournisseurController::class, 'getNextCompte']);
+// Route::get('/get-next-compte', [FournisseurController::class, 'getNextCompte']);
+Route::get('/get-next-compte/{societeId}', [FournisseurController::class, 'getNextCompte']);  // Route pour récupérer le prochain compte
 
 
 Route::get('/rubriques-tva', [FournisseurController::class, 'getRubriquesTva']);

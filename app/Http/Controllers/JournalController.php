@@ -4,28 +4,13 @@ namespace App\Http\Controllers;
 use App\Models\PlanComptable;
 use App\Models\Journal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class JournalController extends Controller
 {
-    public function checkPassword(Request $request)
-    {
-        // Valider que le mot de passe est bien présent
-        $request->validate([
-            'password' => 'required|string',
-        ]);
-
-        // Récupérer l'utilisateur actuellement connecté
-        $user = Auth::user();
-
-        // Vérifier si le mot de passe correspond à celui de l'utilisateur
-        if (Hash::check($request->password, $user->password)) {
-            return response()->json(['success' => true]);
-        } else {
-            return response()->json(['success' => false], 401); // Mot de passe incorrect
-        }
-    }
+   
 
         // Afficher tous les journaux
         public function index()
@@ -45,25 +30,25 @@ class JournalController extends Controller
     return response()->json($journaux);
         }
 
+      
         public function getData()
         {
+            // Récupérer l'ID de la société dans la session
+            $societeId = session('societeId');
             
-    // Récupérer l'ID de la société dans la session
-    $societeId = session('societeId');
+            // Vérifier si l'ID de la société existe
+            if (!$societeId) {
+                return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+            }
     
-    // Vérifier si l'ID de la société existe dans la session
-    if (!$societeId) {
-        return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
-    }
-
-    // Récupérer tous les journaux qui appartiennent à la société spécifiée
-    $journaux = Journal::where('societe_id', $societeId)->get();
-
-    // Retourner les journaux associés à la société en format JSON
-    return response()->json($journaux);
+            // Récupérer tous les plans comptables pour la société spécifiée
+            $journaux = Journal::where('societe_id', $societeId)->get();
+    
+            return response()->json($journaux);
         }
-    
-    
+
+
+        
         public function getComptesAchats()
         {
             $comptes = PlanComptable::where(function($query) {
@@ -137,27 +122,60 @@ class JournalController extends Controller
             return response()->json(['message' => 'Journal ajouté avec succès.']);
         }
     
-        // Afficher un journal spécifique
-        public function show($id)
-        {
-            return Journal::findOrFail($id);
-        }
-    
-        // Mettre à jour un journal
-        public function update(Request $request, $id)
-        {
-            $request->validate([
-                'code_journal' => 'required|string|max:255',
-                'type_journal' => 'nullable|string|max:255',
-                'intitule' => 'nullable|string|max:255',
-                'contre_partie' => 'nullable|string|max:255',
-            ]);
-    
-            $journaux = Journal::findOrFail($id);
-            $journaux->update($request->all());
-            return response()->json(['message' => 'Journal mis à jour avec succès.']);
-        }
-    
+      
+    // Méthode pour afficher les détails d'un journal spécifique
+    public function edit($id)
+    {
+        $journal = Journal::findOrFail($id);
+        return response()->json($journal);
+    }
+// JournalController.php
+
+// Méthode pour récupérer un journal
+public function show($id)
+{
+    $journal = Journal::find($id);
+
+    if ($journal) {
+        return response()->json([
+            'success' => true,
+            'data' => $journal
+        ]);
+    } else {
+        return response()->json(['success' => false], 404);
+    }
+}
+
+// Méthode pour mettre à jour un journal
+public function update(Request $request, $id)
+{
+    $journal = Journal::find($id);
+
+    if (!$journal) {
+        return response()->json(['success' => false], 404);
+    }
+
+    // Validation des données
+    $validated = $request->validate([
+        'code_journal' => 'required|string',
+        'type_journal' => 'nullable|string',
+        'intitule' => 'nullable|string',
+        'contre_partie' => 'nullable|string',
+    ]);
+
+    // Mise à jour du journal
+    $journal->update($validated);
+
+    return response()->json(['success' => true]);
+}
+
+
+
+
+
+        
+
+        
         // Supprimer un journal
         public function destroy($id)
         {

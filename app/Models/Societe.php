@@ -70,5 +70,9 @@ public function journaux()
 {
     return $this->hasMany(Journal::class);
 }
+public function section()
+{
+    return $this->hasMany(Section::class);
+}
 
 }

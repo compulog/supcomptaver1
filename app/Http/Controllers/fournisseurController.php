@@ -21,25 +21,6 @@ class FournisseurController extends Controller
 
    
 
-    public function checkPassword(Request $request)
-    {
-        // Valider que le mot de passe est bien présent
-        $request->validate([
-            'password' => 'required|string',
-        ]);
-
-        // Récupérer l'utilisateur actuellement connecté
-        $user = Auth::user();
-
-        // Vérifier si le mot de passe correspond à celui de l'utilisateur
-        if (Hash::check($request->password, $user->password)) {
-            return response()->json(['success' => true]);
-        } else {
-            return response()->json(['success' => false], 401); // Mot de passe incorrect
-        }
-    }
-   
-
     public function index()
     {// Récupérer l'ID de la société dans la session
         $societeId = session('societeId');
@@ -78,17 +59,17 @@ class FournisseurController extends Controller
 
         return response()->json($fournisseurs);
     }
-
+    
     public function store(Request $request)
     {
         // Vérifier si 'societeId' existe dans la session
         $societeId = session('societeId');
         Log::debug('societeId dans la session : ' . $societeId);
-
+    
         if (!$societeId) {
             return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
         }
-
+    
         // Validation des données
         $validatedData = $request->validate([
             'compte' => 'nullable|string|max:255', // Le compte peut être généré automatiquement si vide
@@ -100,20 +81,37 @@ class FournisseurController extends Controller
             'designation' => 'nullable|string|max:255',
             'contre_partie' => 'nullable|string|max:255',
         ]);
-
+    
         // Si le compte n'est pas spécifié, générer un compte unique
         if (empty($validatedData['compte'])) {
-            $nextCompte = $this->generateNextCompte();
-            $validatedData['compte'] = $nextCompte; // Attribuer le nouveau compte
+            $validatedData['compte'] = $this->getNextCompte($societeId); // Appel à la méthode pour générer le compte
         }
-
+    
         // Ajouter l'ID de la société au tableau de données validées
         $validatedData['societe_id'] = $societeId;
-
+    
         try {
+            // Vérifier si un fournisseur avec ce compte existe déjà dans cette société
+            $existingFournisseur = Fournisseur::where('societe_id', $societeId)
+                ->where('compte', $validatedData['compte'])
+                ->first();
+    
+            if ($existingFournisseur) {
+                return response()->json([
+                    'error' => 'Le fournisseur avec ce compte existe déjà pour la société sélectionnée.'
+                ], 422);
+            }
+    
             // Créer un nouveau fournisseur avec les données validées
             $fournisseur = Fournisseur::create($validatedData);
-
+    
+            // Ajouter également ce fournisseur dans la table plan_comptable
+            PlanComptable::create([
+                'societe_id' => $societeId,
+                'compte' => $validatedData['compte'],
+                'intitule' => $validatedData['intitule'],
+            ]);
+    
             return response()->json([
                 'success' => true,
                 'fournisseur' => $fournisseur,
@@ -123,7 +121,9 @@ class FournisseurController extends Controller
         }
     }
     
- // Modifier un fournisseur
+    
+    
+ 
  // Méthode pour afficher le formulaire d'édition
  public function edit($id)
  {
@@ -193,42 +193,42 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
 
 
 }
-
-public function getNextCompte()
+public function getNextCompte($societeId)
 {
-    // Récupérer tous les comptes qui commencent par "4411" et les trier par ordre croissant
-    $comptes = Fournisseur::where('compte', 'like', '4411%')
-        ->orderBy('compte', 'asc')
-        ->pluck('compte')
-        ->toArray();
+    // Récupérer la configuration de la société
+    $societe = Societe::find($societeId);
 
-    $prefix = '4411'; // Le préfixe du compte
-    $nextCompte = $prefix . '0001'; // Compte de départ
-
-    if (count($comptes) > 0) {
-        // Vérifier s'il y a des comptes manquants
-        $lastSequence = (int)substr($comptes[count($comptes) - 1], 4); // Extraire le dernier numéro de compte existant
-        $nextCompte = $prefix . str_pad($lastSequence + 1, 4, '0', STR_PAD_LEFT); // Générer le prochain compte
-
-        // Vérifier s'il y a des numéros manquants entre les comptes
-        for ($i = 0; $i < count($comptes) - 1; $i++) {
-            $currentSequence = (int)substr($comptes[$i], 4); // Extraire la séquence du compte actuel
-            $nextSequence = (int)substr($comptes[$i + 1], 4); // Extraire la séquence du compte suivant
-
-            // Si la séquence suivante est plus grande de 1, cela signifie qu'il y a un compte manquant
-            if ($nextSequence - $currentSequence > 1) {
-                // Générer le premier numéro manquant
-                $nextCompte = $prefix . str_pad($currentSequence + 1, 4, '0', STR_PAD_LEFT);
-                break; // Une fois le premier compte manquant trouvé, on sort de la boucle
-            }
-        }
+    if (!$societe || !in_array($societe->nombre_chiffre_compte, [8, 10])) {
+        return response()->json(['error' => 'Configuration de la société invalide ou non prise en charge'], 400);
     }
+
+    $nombreChiffres = $societe->nombre_chiffre_compte;
+    $prefix = '4411'; // Préfixe de base pour tous les comptes
+
+    // Récupérer le dernier compte pour cette société
+    $lastCompte = Fournisseur::where('societe_id', $societeId)
+        ->where('compte', 'like', $prefix . '%')
+        ->orderBy('compte', 'desc')
+        ->value('compte');
+
+    // Générer le prochain numéro
+    if ($lastCompte) {
+        // Extraire la séquence numérique après le préfixe
+        $lastSequence = (int)substr($lastCompte, strlen($prefix));
+        $nextSequence = $lastSequence + 1;
+    } else {
+        // Premier compte pour cette société
+        $nextSequence = 1;
+    }
+
+    // Calculer le nombre de chiffres restant après le préfixe
+    $chiffresRestants = $nombreChiffres - strlen($prefix);
+
+    // Générer le compte en respectant le format choisi (8 ou 10 chiffres)
+    $nextCompte = $prefix . str_pad($nextSequence, $chiffresRestants, '0', STR_PAD_LEFT);
 
     return response()->json(['next_compte' => $nextCompte]);
 }
-
-
-
 
 
 
