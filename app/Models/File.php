@@ -21,7 +21,7 @@ class File extends Model
     }
     public function folder()
     {
-        return $this->belongsTo(Folder::class); // Un fichier appartient à un dossier
-    }
+        return $this->belongsTo(Folder::class, 'folders'); // 
+            }
     
 }

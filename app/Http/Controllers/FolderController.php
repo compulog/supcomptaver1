@@ -16,19 +16,23 @@ class FolderController extends Controller
     {
         // Récupérer le dossier en question
         $folder = Folder::find($id);
-        
+
         // Vérifier si le dossier existe
         if ($folder) {
             // Définir l'ID du dossier dans la session
             session(['foldersId' => $folder->id]);
-    
-            // Retourner la vue avec les données du dossier
-            return view('folders', compact('folder'));
+
+            // Récupérer les fichiers associés au dossier
+            $files = $folder->files; // Utilisation de la relation 'files'
+
+            // Retourner la vue avec les données du dossier et des fichiers
+            return view('folders', compact('folder', 'files'));
         } else {
             return redirect()->route('folder.index')->withErrors('Dossier non trouvé.');
         }
     }
-    
+
+
 
 
 

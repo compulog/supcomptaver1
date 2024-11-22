@@ -26,6 +26,7 @@
 <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
     <div class="container mt-5">
@@ -63,7 +64,8 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalSaisieManuelLabel">Nouveau Client</h5>
-                <button type="button" class="btn-clo    se" data-bs-dismiss="modal" aria-label="Close"></button>
+                <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+
             </div> 
             <div class="modal-body">
                 <form action="{{ route('client.store') }}" method="POST" id="form-saisie-manuel">
@@ -286,8 +288,8 @@ $(document).ready(function () {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalImportExcelLabel">Importer des Clients</h5>
-<button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
+                        <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+                        </div>
                     <div class="modal-body">
                         <form action="{{ route('import.clients') }}" method="POST" enctype="multipart/form-data">
                             @csrf
@@ -297,7 +299,7 @@ $(document).ready(function () {
                                 <label for="file" class="form-label">Fichier Excel :</label>
                                 <input type="file" name="file" class="form-control" required>
                             </div>
-                            <h4>Mapping des champs :</h4>
+                            <h4>Choisir le numéro des colonnes Excel :</h4>
                             <div class="mb-3">
                                 <label for="compte">Colonne Compte :</label>
                                 <input type="number" name="mapping[compte]" class="form-control">
@@ -318,7 +320,11 @@ $(document).ready(function () {
                                 <label for="type_client">Colonne Type Client :</label>
                                 <input type="number" name="mapping[type_client]" class="form-control">
                             </div>
-                            <button type="submit" class="btn btn-primary">Importer Clients</button>
+                               <!-- Bouton Réinitialiser avec marge très grande à droite -->
+                        <button type="reset" class="btn btn-secondary me-8">
+                            <i class="fas fa-undo"></i> 
+                        </button>
+                            <button type="submit" class="btn btn-primary">Importer</button>
                         </form>
                     </div>
                 </div>
@@ -404,7 +410,7 @@ $(document).ready(function () {
                 @method('PUT')
                 <div class="modal-header">
                     <h5 class="modal-title" id="editClientModalLabel">Modifier le Client</h5>
-                    <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close" style="color: black; opacity: 1;"></button>
+                    <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
 
                     </button>
                 </div>

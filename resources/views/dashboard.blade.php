@@ -24,6 +24,7 @@
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <link href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
 <script src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 
 
@@ -87,8 +88,8 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="nouvelleSocieteModalLabel">Nouvelle Société</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
+                <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+                </div>
             <div class="modal-body">
             <form id="societe-form" action="{{ route('societes.store') }}" method="POST">
             @csrf
@@ -453,8 +454,8 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="importModalLabel">Importer Sociétés</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
+                <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+                </div>
             <div class="modal-body">
                 <!-- Formulaire d'Importation -->
                 <form id="import-societe-form" action="{{ route('societes.import') }}" method="POST" enctype="multipart/form-data">
@@ -598,8 +599,8 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modifierSocieteModalLabel">Modifier Société</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
+                <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+                </div>
             <div class="modal-body">
             <form id="societe-modification-form">
                     @csrf
