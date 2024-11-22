@@ -29,6 +29,7 @@ class FileUploadController extends Controller
             'file' => 'required|file|mimes:jpg,png,pdf,docx,xlsx', // Types de fichiers acceptés
             'type' => 'required|string', // Le type (Achat, Vente, etc.)
             'societe_id' => 'required|integer', // Validation pour societe_id
+            
         ]);
     
         // Vérifier si un fichier a été téléchargé

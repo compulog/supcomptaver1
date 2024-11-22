@@ -1,49 +1,109 @@
 <?php
 namespace App\Http\Controllers;
 
+
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;  // Ajouter cette ligne pour importer DB
+use App\Models\Folder;
+use App\Models\societe;
 
 class FolderController extends Controller
 {
-    public function create(Request $request)
+
+
+    public function show($id)
     {
-        // Valider la demande pour le nom du dossier
-        $request->validate([
-            'folder_name' => 'required|string|max:255',
-        ]);
+        // Récupérer le dossier en question
+        $folder = Folder::find($id);
 
-        // Le nom du dossier à créer
-        $folderName = $request->input('folder_name');
+        // Vérifier si le dossier existe
+        if ($folder) {
+            // Définir l'ID du dossier dans la session
+            session(['foldersId' => $folder->id]);
 
-        // Spécifiez le chemin où les dossiers doivent être créés (par exemple, dans le dossier 'public' ou un autre répertoire)
-        $path = public_path('files/achats/' . $folderName);
+            // Retourner la vue avec les données du dossier
+            return view('folders', compact('folder'));
+        } else {
+            return redirect()->route('folder.index')->withErrors('Dossier non trouvé.');
+        }
+    }
 
-        // Vérifiez si le dossier existe déjà
-        if (File::exists($path)) {
-            return back()->with('error', 'Le dossier existe déjà.');
+
+
+
+    // Afficher tous les dossiers
+    public function index()
+    {
+        $societe = optional(auth()->user()->societe);
+
+        // Vérifier si la société existe avant de récupérer son id
+        if (!$societe) {
+            // Gérer le cas où la société est absente
+            return redirect()->back()->with('error', 'Aucune société associée à cet utilisateur.');
         }
 
-        // Créez le dossier
-        File::makeDirectory($path, 0777, true);
+        $folders = Folder::where('societe_id', $societe->id)->get();
+        $societes = Societe::all(); // Pour afficher les sociétés dans le formulaire
 
-        // Retour à la page avec un message de succès
-        return back()->with('success', 'Le dossier a été créé avec succès.');
-    }
-    // Exemple de méthode pour lister les fichiers d'un dossier
-public function listFiles($folderName)
-{
-    $path = public_path('files/achats/' . $folderName);
-    
-    // Vérifie si le dossier existe
-    if (File::exists($path)) {
-        // Récupère tous les fichiers dans le dossier
-        $files = File::files($path);
-        
-        return view('files.index', compact('files'));
+        return view('achat', compact('folders', 'societes'));
     }
 
-    return back()->with('error', 'Le dossier n\'existe pas.');
-}
+
+    // Créer un dossier
+
+
+    // Dans votre méthode create()
+    public function create(Request $request)
+    {
+        // Validation personnalisée
+        $validator = Validator::make($request->all(), [
+            'folder_name' => 'required|string|max:255',
+            'societe_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    // Utilisation de DB::connection pour exécuter la requête sur la base de données 'supcompta'
+                    $exists = DB::connection('supcompta')->table('societe')->where('id', $value)->exists();
+
+                    if (!$exists) {
+                        $fail('La société avec cet ID n\'existe pas dans la base supcompta.');
+                    }
+                },
+            ],
+        ]);
+
+        // Si la validation échoue, rediriger avec les erreurs
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Si la validation réussit, créer le dossier
+        Folder::create([
+            'name' => $request->folder_name,
+            'societe_id' => $request->societe_id,
+        ]);
+
+        // Rediriger avec un message de succès
+        return redirect()->route('achat.view')->with('success', 'Dossier créé avec succès');
+    }
+
+   // app/Http/Controllers/FolderController.php
+
+   public function destroy($id)
+   {
+       // Trouver le dossier
+       $folder = Folder::findOrFail($id);
+
+       // Supprimer tous les fichiers associés au dossier (en utilisant une requête SQL brute sur la base de données 'supcompta')
+       \DB::connection('supcompta')->table('files')->where('id', $folder->id)->delete();
+
+       // Supprimer le dossier
+       $folder->delete();
+
+       // Retourner une réponse de succès
+       return redirect()->back()->with('success', 'Dossier et fichiers supprimés avec succès.');
+   }
+
+
 
 }

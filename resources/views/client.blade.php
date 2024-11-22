@@ -16,6 +16,10 @@
 #compte{
     height:40px
 }
+
+ 
+
+
 </style>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -59,7 +63,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalSaisieManuelLabel">Nouveau Client</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-clo    se" data-bs-dismiss="modal" aria-label="Close"></button>
             </div> 
             <div class="modal-body">
                 <form action="{{ route('client.store') }}" method="POST" id="form-saisie-manuel">
@@ -282,7 +286,7 @@ $(document).ready(function () {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalImportExcelLabel">Importer des Clients</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <form action="{{ route('import.clients') }}" method="POST" enctype="multipart/form-data">
@@ -400,6 +404,8 @@ $(document).ready(function () {
                 @method('PUT')
                 <div class="modal-header">
                     <h5 class="modal-title" id="editClientModalLabel">Modifier le Client</h5>
+                    <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close" style="color: black; opacity: 1;"></button>
+
                     </button>
                 </div>
                 <div class="modal-body">
@@ -431,7 +437,11 @@ $(document).ready(function () {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Sauvegarder les modifications</button>
+                     <!-- Bouton Réinitialiser avec marge très grande à droite -->
+                     <button type="reset" class="btn btn-secondary me-8">
+                            <i class="fas fa-undo"></i> 
+                        </button>
+                    <button type="submit" class="btn btn-primary">Modifier</button>
                 </div>
             </form>
         </div>
@@ -553,7 +563,7 @@ var table = new Tabulator("#table-list", {
     columns: [
         {
             title: ` 
-                <i class="fas fa-check-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;"></i> 
+<i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="toggleSelectAll()"></i>
                 <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;"></i>
             `,
             field: "select",
@@ -587,6 +597,25 @@ var table = new Tabulator("#table-list", {
         }
     ],
 });
+
+    // Fonction pour basculer entre les icônes
+    function toggleSelectAll() {
+        var icon = document.getElementById('selectAllIcon');
+
+        // Si l'icône est fa-square (non sélectionnée), la changer en fa-check-square (sélectionnée)
+        if (icon.classList.contains('fa-square')) {
+            icon.classList.remove('fa-square');
+            icon.classList.add('fa-check-square');
+        } else {
+            // Si l'icône est fa-check-square (sélectionnée), la changer en fa-square (non sélectionnée)
+            icon.classList.remove('fa-check-square');
+            icon.classList.add('fa-square');
+        }
+
+        // Ici, vous pouvez ajouter d'autres actions pour gérer la sélection/désélection des éléments associés
+        // Par exemple, vous pouvez cocher ou décocher des cases à cocher en fonction de l'état de l'icône.
+    }
+
 // Fonction pour supprimer un client sans demande de mot de passe
 function deleteClient(clientId) {
     // Demander confirmation avant de supprimer le client

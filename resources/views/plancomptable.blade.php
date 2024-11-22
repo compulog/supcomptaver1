@@ -8,119 +8,60 @@
     <title>Gestion des comptes</title>
 
     <!-- Liens CSS et JS externes -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://unpkg.com/tabulator-tables@5.0.7/dist/css/tabulator.min.css" rel="stylesheet">
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/tabulator-tables@5.0.7/dist/js/tabulator.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <!-- Styles personnalisés -->
     <style>
-        #tabulator-table {
-    overflow-y: auto; /* Activer le défilement vertical */
-    border: 1px solid #ddd; /* Ajouter une bordure si nécessaire */
-}
 
-/* Optionnel : Style pour le tableau */
-.tabulator {
-    border-collapse: collapse; /* Pour un meilleur rendu visuel */
-}
-
-
-    #tabulator-table .tabulator-header {
-    height: 15px; /* Ajustez la hauteur du header */
-    font-size: 0.9em; /* Réduisez la taille de la police */
-    padding: 2px 5px; /* Ajustez le padding pour réduire l'espacement */
-    background-color: #f8f9fa; /* Couleur de l'en-tête */
-}
-
-
-#tabulator-table .tabulator-header .tabulator-col-title {
-    font-size: 0.85em; /* Taille de police des titres des colonnes */
-}
-
-/* Ajuste le champ de recherche dans le header */
-.tabulator .tabulator-header input[type="search"] {
-    height: 20px; /* Diminue la hauteur */
-    padding: 1px 3px; /* Ajuste le padding interne */
-    font-size: 0.8em; /* Diminue légèrement la police */}
-    .btn-custom-gradient {
-    background-image: linear-gradient(to right, #344767, #31477a) !important; /* Dégradé de gauche à droite */
-    color: white !important; /* Couleur du texte en blanc */
-    border: none; /* Pas de bordure */
-    transition: background-color!important 0.1s ease; /* Transition douce pour le survol */
-}
-       
-#plan-comptable-table .tabulator-row {
-    transition: all 0.1s ease-in-out; /* Animation pour un effet dynamique */
-}
-
-    /* background-color: #e9ecef !important; Fond gris clair au survol */
-    .tabulator .tabulator-row:hover {
-    background-color: #31477a !important;  /* Couleur de survol */
-    color: white;  /* Texte en blanc lors du survol pour plus de contraste */
-}
-
-
-.bg-light {
-    background-color: #d1ecf1 !important; /* Fond bleu clair pour la sélection de ligne */
-}
-
-.tabulator .tabulator-col, .tabulator .tabulator-header {
-    font-weight: bold;
-    color: #495057 !important; /* Couleur de texte sombre */
-} 
-        
-        .btn-custom-gradient {
-            background-image: linear-gradient(to right, #344767, #31477a);
-            color: white !important;
-            border: none;
-            transition: background-color 0.3s ease;
-        }
-        .btn-custom-gradient:hover {
-            background-image: linear-gradient(to right, #536fb2, #344767);
-        }
     </style>
 </head>
 <body>
 @extends('layouts.user_type.auth')
 
 @section('content')
-   
 
-    <div class="container mt-5">
-        <h3>Liste des Plans Comptables</h3>
-        
-        <button class="btn btn-custom-gradient" id="addPlanComptableBtn" data-toggle="modal" data-target="#planComptableModalAdd">
-            <i class="fas fa-plus"></i> Ajouter
-        </button>
-        
-        <button class="btn btn-custom-gradient" id="importPlanComptableBtn" data-toggle="modal" data-target="#importModal">
-            <i class="fas fa-file-import"></i> Importer
-        </button>
-        
-        <a href="{{ route('plan.comptable.excel') }}" class="btn btn-custom-gradient">
-            <i class="fas fa-file-export"></i> Exporter en Excel
-        </a>
-        
-        <!-- Formulaire pour exporter en PDF -->
-        <form action="{{ route('export.plan_comptable') }}" method="GET" style="display: inline;">
-            <input type="hidden" name="societe_id" value="{{ session('societe_id') }}">
-            <button type="submit" class="btn btn-custom-gradient">
-                <i class="fas fa-file-pdf"></i> Exporter en PDF
+
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-primary">Liste des Plans Comptables</h3>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" id="addPlanComptableBtn" data-bs-toggle="modal" data-bs-target="#planComptableModalAdd">
+                <i class="fas fa-plus me-2"></i> Ajouter
             </button>
-        </form>
-        
-        <span id="select-stats"></span>
-        
-       
-        <div id="plan-comptable-table" class="mt-3"></div>
+            <button class="btn btn-outline-secondary" id="importPlanComptableBtn" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="fas fa-file-import me-2"></i> Importer
+            </button>
+            <a href="{{ route('plan.comptable.excel') }}" class="btn btn-outline-success">
+                <i class="fas fa-file-export me-2"></i> Exporter en Excel
+            </a>
+            <form action="{{ route('export.plan_comptable') }}" method="GET" style="display: inline;">
+                <input type="hidden" name="societe_id" value="{{ session('societe_id') }}">
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="fas fa-file-pdf me-2"></i> Exporter en PDF
+                </button>
+            </form>
+        </div>
     </div>
+
+    <!-- Statistiques -->
+    <span id="select-stats" class="text-muted"></span>
+
+    <!-- Tableau des plans comptables -->
+    <div id="plan-comptable-table" class="border rounded shadow-sm bg-white p-3"></div>
+</div>
+
 
 
 @if (session('success'))
@@ -134,120 +75,112 @@
         {{ session('error') }}
     </div>
 @endif
-
+<!-- Modal d'importation du plan comptable -->
 <!-- Modal d'importation du plan comptable -->
 <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog shadow-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header d-flex justify-content-between align-items-center">
                 <h5 class="modal-title" id="importModalLabel">Importation du Plan Comptable</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="importForm" action="{{ route('plancomptable.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <!-- Champ caché pour le societe_id -->
-                    <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}"><!-- Exemple pour la société 3 -->
+                    <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
 
-                    <div class="form-group">
-                        <label for="file">Fichier Excel</label>
-                        <input type="file" class="form-control" name="file" id="file" required>
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Fichier Excel</label>
+                        <input type="file" class="form-control shadow-sm" name="file" id="file" required>
                     </div>
-                    <div class="form-row">
-                        <div class="col-md-6 form-group">
-                            <label for="colonne_compte">Colonne Compte</label>
-                            <input type="number" class="form-control" name="colonne_compte" id="colonne_compte" required>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="colonne_compte" class="form-label">Colonne Compte</label>
+                            <input type="number" class="form-control shadow-sm" name="colonne_compte" id="colonne_compte" required>
                         </div>
-                        <div class="col-md-6 form-group">
-                            <label for="colonne_intitule">Colonne Intitulé</label>
-                            <input type="number" class="form-control" name="colonne_intitule" id="colonne_intitule" required>
+                        <div class="col-md-6">
+                            <label for="colonne_intitule" class="form-label">Colonne Intitulé</label>
+                            <input type="number" class="form-control shadow-sm" name="colonne_intitule" id="colonne_intitule" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Importer</button>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="reset" class="btn btn-secondary d-flex align-items-center">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
+                        </button>
+                        <button type="submit" class="btn btn-primary ms-2">Importer</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
-
-
-
-<!-- Modal add-->
+<!-- Modal Ajouter -->
 <div class="modal fade" id="planComptableModalAdd" tabindex="-1" role="dialog" aria-labelledby="planComptableModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog shadow-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header d-flex justify-content-between align-items-center">
                 <h5 class="modal-title" id="planComptableModalLabel">Ajouter Plan Comptable</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="planComptableFormAdd">
-                    @csrf <!-- CSRF token pour la sécurité -->
-                    <div class="row">
+                    @csrf
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="compte">Compte</label>
-                                <input type="text" class="form-control" id="compte" name="compte" required>
-                            </div>
+                            <label for="compte" class="form-label">Compte</label>
+                            <input type="text" class="form-control shadow-sm" id="compte" name="compte" required>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="intitule">Intitulé</label>
-                                <input type="text" class="form-control" id="intitule" name="intitule" required>
-                            </div>
+                            <label for="intitule" class="form-label">Intitulé</label>
+                            <input type="text" class="form-control shadow-sm" id="intitule" name="intitule" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="reset" class="btn btn-secondary d-flex align-items-center">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
+                        </button>
+                        <button type="submit" class="btn btn-primary ms-2">Ajouter</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
-
-
-
-
-<!-- Modal edit-->
+<!-- Modal Modifier -->
 <div class="modal fade" id="planComptableModalEdit" tabindex="-1" role="dialog" aria-labelledby="planComptableModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog shadow-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header d-flex justify-content-between align-items-center">
                 <h5 class="modal-title" id="planComptableModalLabel">Modifier Plan Comptable</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="planComptableFormEdit">
                     @csrf
                     <input type="hidden" id="editPlanComptableId" name="id">
-                    <div class="row">
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="editCompte">Compte</label>
-                                <input type="text" class="form-control" id="editCompte" name="compte" required>
-                            </div>
+                            <label for="editCompte" class="form-label">Compte</label>
+                            <input type="text" class="form-control shadow-sm" id="editCompte" name="compte" required>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="editIntitule">Intitulé</label>
-                                <input type="text" class="form-control" id="editIntitule" name="intitule" required>
-                            </div>
+                            <label for="editIntitule" class="form-label">Intitulé</label>
+                            <input type="text" class="form-control shadow-sm" id="editIntitule" name="intitule" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Modifier</button>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="reset" class="btn btn-secondary d-flex align-items-center">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
+                        </button>
+                        <button type="submit" class="btn btn-primary ms-2">Modifier</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
 
 
 <script>
@@ -364,7 +297,7 @@ function editPlanComptable(data) {
             },
             success: function(response) {
                 // Recharger les données pour refléter la suppression
-                table.setData("/plancomptable/data"); 
+                table.setData("/plancomptable/data");
                 alert("Plan comptable supprimé avec succès !");
             },
             error: function(xhr) {
@@ -376,7 +309,7 @@ function editPlanComptable(data) {
 
 // Initialiser le tableau avec Tabulator
 
-    
+
 var table = new Tabulator("#plan-comptable-table", {
     ajaxURL: "/plancomptable/data", // Votre route pour récupérer les données
     height: "800px",
@@ -386,8 +319,8 @@ var table = new Tabulator("#plan-comptable-table", {
 
     columns: [
         {
-            title: ` 
-                <input type='checkbox' id='select-all' /> 
+            title: `
+                <input type='checkbox' id='select-all' />
                 <i class="fas fa-trash-alt" id="delete-all-icon" style="cursor: pointer;" title="Supprimer les lignes sélectionnées"></i>
             `,
             field: "select",
@@ -474,7 +407,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     // Supprimer les lignes du tableau après la suppression côté serveur
                     selectedRows.forEach(row => row.delete()); // Supprimer les lignes du tableau
                     alert("Les lignes sélectionnées ont été supprimées.");
-                    
+
                     // Recharger les données pour mettre à jour l'affichage
                     table.replaceData("/plancomptable/data");  // Charger les données mises à jour
                 } else {
@@ -516,7 +449,7 @@ table.on("rowSelectionChanged", function(data, rows) {
 
                 compteSelect.value = ''; // Réinitialiser
                 intituleSelect.value = ''; // Réinitialiser
-                
+
                 // Afficher les colonnes disponibles dans les champs de sélection
                 // Mettre les indices de colonnes en options
                 for (let i = 0; i < headers.length; i++) {

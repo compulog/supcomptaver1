@@ -13,10 +13,15 @@ class File extends Model
     protected $table = 'files';
 
     // Ajout de 'file_data' aux champs remplissables
-    protected $fillable = ['name', 'path', 'type', 'societe_id', 'file_data'];  
+    protected $fillable = ['name', 'path', 'type', 'societe_id', 'file_data','folders'];  
 
     public function societe()
     {
         return $this->belongsTo(Societe::class);
     }
+    public function folder()
+    {
+        return $this->belongsTo(Folder::class); // Un fichier appartient à un dossier
+    }
+    
 }

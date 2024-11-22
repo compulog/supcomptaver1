@@ -1,0 +1,13 @@
+[1mdiff --git a/app/Models/Racine.php b/app/Models/Racine.php[m
+[1mindex fb5dc3e..9b4fa03 100644[m
+[1m--- a/app/Models/Racine.php[m
+[1m+++ b/app/Models/Racine.php[m
+[36m@@ -9,7 +9,7 @@[m [muse Illuminate\Database\Eloquent\SoftDeletes; // Pour utiliser le soft delete[m
+ class Racine extends Model[m
+ {[m
+     use HasFactory, SoftDeletes; // Ajoutez SoftDeletes pour gérer le champ deleted_at[m
+[31m-[m
+[32m+[m[32m    protected $connection = 'supcompta';[m
+     protected $table = 'racines'; // Nom de la table[m
+ [m
+     protected $fillable = [[m

@@ -75,4 +75,8 @@ public function section()
     return $this->hasMany(Section::class);
 }
 
+public function folders()
+{
+    return $this->hasMany(Folder::class);
+}
 }

@@ -20,97 +20,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <!-- Chargement de Bootstrap JS -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
+  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
 </head>
 
     <style>
-/* Style pour le conteneur du tableau */
-#tabulator-table {
-    overflow-y: auto; /* Activer le défilement vertical */
-    border: 1px solid #ddd; /* Ajouter une bordure si nécessaire */
-}
-
-/* Optionnel : Style pour le tableau */
-.tabulator {
-    border-collapse: collapse; /* Pour un meilleur rendu visuel */
-}
-
-
-    #tabulator-table .tabulator-header {
-    height: 15px; /* Ajustez la hauteur du header */
-    font-size: 0.9em; /* Réduisez la taille de la police */
-    padding: 2px 5px; /* Ajustez le padding pour réduire l'espacement */
-    background-color: #f8f9fa; /* Couleur de l'en-tête */
-}
-
-
-#tabulator-table .tabulator-header .tabulator-col-title {
-    font-size: 0.85em; /* Taille de police des titres des colonnes */
-}
-
-/* Ajuste le champ de recherche dans le header */
-.tabulator .tabulator-header input[type="search"] {
-    height: 20px; /* Diminue la hauteur */
-    padding: 1px 3px; /* Ajuste le padding interne */
-    font-size: 0.8em; /* Diminue légèrement la police */}
-    .btn-custom-gradient {
-    background-image: linear-gradient(to right, #344767, #31477a) !important; /* Dégradé de gauche à droite */
-    color: white !important; /* Couleur du texte en blanc */
-    border: none; /* Pas de bordure */
-    /* transition: background-color!important 0.1s ease; Transition douce pour le survol */
-}
-
-
-   
-
-#fournisseur-table .tabulator-row {
-    transition: all 0.1s ease-in-out; /* Animation pour un effet dynamique */
-}
-
-    /* background-color: #e9ecef !important; Fond gris clair au survol */
-    .tabulator .tabulator-row:hover {
-    background-color: #31477a !important;  /* Couleur de survol */
-    color: white;  /* Texte en blanc lors du survol pour plus de contraste */
-}
-
-
-.bg-light {
-    background-color: #d1ecf1 !important; /* Fond bleu clair pour la sélection de ligne */
-}
-
-.tabulator .tabulator-col, .tabulator .tabulator-header {
-    font-weight: bold;
-    color: #495057 !important; /* Couleur de texte sombre */
-}
-
-/*
-.btn-custom-gradient:hover {
-    background-image: linear-gradient(to right, #536fb2, #344767)!important;  Inverser le dégradé au survol 
-  
-}  */
-
-#fournisseur-table {
-    overflow: auto; /* Permet le défilement */
-    max-height: 800px; /* Hauteur maximale du conteneur */
-}
-/* Applique un style ajusté tout en gardant le style du bouton btn-secondary */
-.input-group .btn-secondary {
-    padding: 0.375rem 0.75rem; /* Ajuste le padding horizontal et vertical */
-    font-size: 1rem; /* Taille du texte cohérente avec celle de l'input */
-    font-weight: 400; /* Poids de police standard */
-    color: #6c757d; /* Couleur par défaut du bouton secondaire (qui est la couleur d'origine de btn-secondary) */
-    background-color: #e2e6ea; /* Couleur d'arrière-plan du bouton secondaire */
-    border-color: #adb5bd; /* Bordure du bouton secondaire */
-    border-radius: 0.25rem; /* Coins arrondis pour un look plus moderne */
-   
-}
 
 
 
@@ -128,42 +49,41 @@
 
 <!-- Conteneur principal -->
 <!-- Section principale -->
-<div class="container mt-5">
-    <h3 class="mb-4">Liste des Fournisseurs</h3>
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-primary">Liste des Fournisseurs</h3>
+    </div>
 
     <!-- Boutons d'actions -->
-    <div class="d-flex flex-wrap gap-2 mb-3">
+    <div class="d-flex flex-wrap gap-2 mb-4">
         <!-- Bouton Créer -->
-        <button class="btn btn-primary d-flex align-items-center gap-2" id="addFournisseurBtn" data-bs-toggle="modal" data-bs-target="#fournisseurModaladd">
+        <button class="btn btn-outline-primary d-flex align-items-center gap-2" id="addFournisseurBtn" data-bs-toggle="modal" data-bs-target="#fournisseurModaladd">
             <i class="bi bi-plus-circle"></i> Créer
         </button>
 
         <!-- Bouton Importer -->
-        <button class="btn btn-secondary d-flex align-items-center gap-2" id="importFournisseurBtn" data-bs-toggle="modal" data-bs-target="#importModal">
+        <button class="btn btn-outline-secondary d-flex align-items-center gap-2" id="importFournisseurBtn" data-bs-toggle="modal" data-bs-target="#importModal">
             <i class="bi bi-file-earmark-arrow-up"></i> Importer
         </button>
 
         <!-- Bouton Exporter en Excel -->
-        <a href="{{ url('/export-fournisseurs-excel') }}" class="btn btn- d-flex align-items-center gap-2">
+        <a href="{{ url('/export-fournisseurs-excel') }}" class="btn btn-outline-success d-flex align-items-center gap-2">
             <i class="bi bi-file-earmark-excel"></i> Exporter en Excel
         </a>
 
         <!-- Bouton Exporter en PDF -->
-        <a href="{{ url('/export-fournisseurs-pdf') }}" class="btn btn d-flex align-items-center gap-2">
+        <a href="{{ url('/export-fournisseurs-pdf') }}" class="btn btn-outline-danger d-flex align-items-center gap-2">
             <i class="bi bi-file-earmark-pdf"></i> Exporter en PDF
         </a>
     </div>
 
-
-<!-- Bootstrap Icons -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.js"></script>
-
-
-
-
-    <div id="fournisseur-table"></div>
-
+    <!-- Tableau des Fournisseurs -->
+    <div id="fournisseur-table" class="border rounded shadow-sm bg-white p-3"></div>
 </div>
+
+<!-- Lien vers les Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
 
 
 <!-- Formulaire d'importation Excel -->
@@ -180,7 +100,7 @@
                 <form id="importForm" action="{{ route('fournisseurs.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
-                    
+
                     <div class="form-group">
                         <label for="file">Fichier Excel</label>
                         <input type="file" class="form-control form-control-lg shadow-sm" name="file" id="file" required>
@@ -250,7 +170,7 @@
             </div>
             <div class="modal-body">
                 <form id="fournisseurFormAdd">
-                    @csrf 
+                    @csrf
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -307,7 +227,7 @@
                                         <option value="">Sélectionner une contre partie</option>
                                     </select>
                                     <button type="button" class="btn btn-link position-absolute" style="top:90%; right: 10px; transform: translateY(-20%);" data-toggle="modal" data-target="#planComptableModalAdd">
-                                        Nouveau compte  <i class="bi bi-plus-circle" style="font-size: 1.3rem;"></i> 
+                                        Nouveau compte  <i class="bi bi-plus-circle" style="font-size: 1.3rem;"></i>
                                     </button>
                                 </div>
                             </div>
@@ -492,13 +412,13 @@ document.getElementById("compte").addEventListener("input", function() {
 document.getElementById("fournisseurFormAdd").addEventListener("keydown", function(event) {
     if (event.key === "Enter") {
         event.preventDefault(); // Empêche le formulaire de se soumettre à la pression de la touche "Entrée"
-        
+
         // Récupère tous les champs du formulaire
         const inputs = Array.from(this.querySelectorAll("input, select,select2"));
-        
+
         // Trouve l'index de l'élément actuellement focus
         const currentIndex = inputs.indexOf(document.activeElement);
-        
+
         // Si un élément suivant existe, place le focus dessus
         if (currentIndex > -1 && currentIndex < inputs.length - 1) {
             inputs[currentIndex + 1].focus();
@@ -540,8 +460,8 @@ var table = new Tabulator("#fournisseur-table", {
     ],
     columns: [
         {
-            title: ` 
-                <i class="fas fa-check-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;"></i> 
+            title: `
+                <i class="fas fa-check-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;"></i>
                 <i class="fas fa-trash-alt " id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;"></i>
             `,
             field: "select",
@@ -572,7 +492,7 @@ var table = new Tabulator("#fournisseur-table", {
             },
             cellClick: function(e, cell) {
     var row = cell.getRow();
-    
+
     // Vérifier quel élément a été cliqué
     if (e.target.classList.contains('row-select-checkbox')) {
         // Synchronise la sélection de la ligne avec l'état de la checkbox
@@ -596,7 +516,7 @@ headerSort: false
 
         }
     ],
-   
+
 });
 
 // Fonction pour supprimer les lignes sélectionnées côté serveur
@@ -653,12 +573,12 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         type: 'GET',
         success: function(data) {
             var select = $("#" + selectId);
-            
+
             // Détruire Select2 s'il est déjà initialisé
             if (select.hasClass("select2-hidden-accessible")) {
                 select.select2("destroy");
             }
-            
+
             select.empty();
               // Ajouter l'option vide
               select.append(new Option("Sélectionnez une Rubrique", ""));
@@ -817,7 +737,7 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
             }
 
             // Vider le sélecteur et ajouter les nouvelles options
-            select.empty(); 
+            select.empty();
 
               // Ajouter l'option vide
               select.append(new Option("Sélectionnez une contre partie", ""));
@@ -889,7 +809,7 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
     var fournisseurId = $("#editFournisseurId").val();
     var url = "/fournisseurs/" + fournisseurId; // URL pour la modification
 
-  
+
     // Vérifier si le champ editDesignation est vide
     if ($("#editDesignation").val().trim() === '') {
         // Remplir editDesignation avec le designationValue
@@ -917,7 +837,7 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
             $("#fournisseurFormEdit")[0].reset(); // Réinitialiser le formulaire de modification
             $("#editFournisseurId").val(""); // Réinitialiser l'ID
             // Remplir de nouveau les rubriques TVA pour le prochain affichage
-            remplirRubriquesTva('rubrique_tva'); 
+            remplirRubriquesTva('rubrique_tva');
             remplirContrePartie('contre_partie');
         },
         error: function(xhr) {
@@ -936,17 +856,17 @@ function editFournisseur(data) {
     $("#editIdentifiantFiscal").val(data.identifiant_fiscal);
     $("#editICE").val(data.ICE);
     $("#editNatureOperation").val(data.nature_operation);
-    
-    remplirRubriquesTva('rubrique_tva'); 
+
+    remplirRubriquesTva('rubrique_tva');
     remplirContrePartie('contre_partie');
-    
+
     // Remplir la liste déroulante de rubrique TVA avec la valeur actuelle
     remplirRubriquesTva("editRubriqueTVA", data.rubrique_tva);
 
     $("#editDesignation").val(data.designation);
     $("#editContrePartie").val(data.contre_partie);
     remplirContrePartie("editContrePartie", data.contre_partie);
-    
+
     $("#fournisseurModaledit").modal("show");
 }
 
@@ -1069,9 +989,9 @@ $("#planComptableFormAdd").on("submit", function(e) {
             if (response.contre_partie) {
                 // Ajouter la contrepartie nouvellement créée dans le sélecteur 'contre_partie'
                 var newOption = new Option(
-                    `${response.contre_partie.compte} - ${response.contre_partie.intitule}`, 
-                    response.contre_partie.compte, 
-                    true, 
+                    `${response.contre_partie.compte} - ${response.contre_partie.intitule}`,
+                    response.contre_partie.compte,
+                    true,
                     true
                 );
                 $('#contre_partie').append(newOption).trigger('change'); // Met à jour le select avec Select2

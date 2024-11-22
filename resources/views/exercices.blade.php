@@ -1,14 +1,11 @@
-
-
-
 @extends('layouts.user_type.auth')
 
 @section('content')
 
 <div class="container mt-4">
     <div class="row">
-         <!-- Achat -->
-         <div class="col-md-4 mb-3" id="achat-div">
+        <!-- Achat -->
+        <div class="col-md-3 mb-3" id="achat-div">
             <div class="p-2 text-white" style="background-color: #007bff; border-radius: 15px; font-size: 0.75rem; height: 155px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;">Achat</h5>
@@ -29,7 +26,7 @@
         </div>
 
         <!-- Vente -->
-        <div class="col-md-4 mb-3" id="vente-div">
+        <div class="col-md-3 mb-3" id="vente-div">
             <div class="p-2 text-white" style="background-color: #28a745; border-radius: 15px; font-size: 0.75rem; height: 155px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;">Vente</h5>
@@ -49,7 +46,7 @@
         </div>
 
         <!-- Banque -->
-        <div class="col-md-4 mb-3" id="banque-div">
+        <div class="col-md-3 mb-3" id="banque-div">
             <div class="p-2 text-white" style="background-color: #ffc107; border-radius: 15px; font-size: 0.75rem; height: 155px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;">Banque</h5>
@@ -69,7 +66,7 @@
         </div>
 
         <!-- Caisse -->
-        <div class="col-md-4 mb-3" id="caisse-div">
+        <div class="col-md-3 mb-3" id="caisse-div">
             <div class="p-2 text-white" style="background-color: #dc3545; border-radius: 15px; font-size: 0.75rem; height: 155px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;">Caisse</h5>
@@ -86,16 +83,13 @@
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
             </div>
-                <!-- Graphique Caisse -->
-                <canvas id="caisseChart" style="height: 300px;"></canvas> <!-- Augmentation de la hauteur du graphique -->
-       
-       <!-- Graphique Banque -->
-<canvas id="banqueChart" style="height: 300px;"></canvas> <!-- Augmentation de la hauteur du graphique -->
-   
         </div>
+    </div>
 
+    <!-- Deuxième ligne avec 2 divs -->
+    <div class="row">
         <!-- Impôt -->
-        <div class="col-md-4 mb-3" id="impot-div">
+        <div class="col-md-3 mb-3" id="impot-div">
             <div class="p-2 text-white" style="background-color: #6f42c1; border-radius: 15px; font-size: 0.75rem; height: 155px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;">Impôt</h5>
@@ -109,20 +103,13 @@
                     </form>
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $impotCount ?? 0 }}</p>
-
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
             </div>
-            <!-- Graphique Impôt -->
-            <canvas id="impotChart" style="height: 300px;"></canvas> <!-- Augmentation de la hauteur du graphique -->
-     
-      <!-- Graphique Vente -->
-    <canvas id="venteChart" style="height: 300px;"></canvas> <!-- Augmentation de la hauteur du graphique -->
-    
         </div>
 
         <!-- Paie -->
-        <div class="col-md-4 mb-3" id="paie-div">
+        <div class="col-md-3 mb-3" id="paie-div">
             <div class="p-2 text-white" style="background-color: #17a2b8; border-radius: 15px; font-size: 0.75rem; height: 155px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;">Paie</h5>
@@ -136,20 +123,17 @@
                     </form>
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $paieCount ?? 0 }}</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
             </div>
-            <!-- Graphique Paie -->
-            <canvas id="paieChart" style="height: 300px;"></canvas> <!-- Augmentation de la hauteur du graphique -->
-       
-          <!-- Graphique Achat -->
-    <canvas id="achatChart" style="height: 300px;"></canvas> <!-- Augmentation de la hauteur du graphique -->
- </div>
-     
+        </div>
     </div>
-  
+
 </div>
+
+
 @endsection
+
 
 
 <script>
@@ -194,40 +178,6 @@
 
 
 
-// Fonction de gestion des graphiques
-function renderChart(chartId, labels, data) {
-    const ctx = document.getElementById(chartId).getContext('2d');
-    new Chart(ctx, {
-        type: 'line', // Type de graphique
-        data: {
-            labels: labels, // Les mois ou dates
-            datasets: [{
-                label: 'Nombre de fichiers',
-                data: data, // Nombre de fichiers téléchargés chaque mois
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1,
-                fill: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: { beginAtZero: true },
-                y: { beginAtZero: true }
-            }
-        }
-    });
-}
-
-// Initialisation des graphiques
-document.addEventListener('DOMContentLoaded', function () {
-    renderChart('achatChart', ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], [5, 3, 9, 7, 8, 6, 5, 4, 8, 6, 7, 5]);
-    renderChart('venteChart', ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], [4, 6, 7, 5, 3, 8, 9, 5, 4, 6, 7, 6]);
-    renderChart('banqueChart', ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], [3, 4, 2, 6, 7, 8, 5, 9, 3, 6, 5, 7]);
-    renderChart('caisseChart', ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], [2, 4, 3, 5, 6, 7, 8, 9, 6, 5, 4, 8]);
-    renderChart('impotChart', ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], [7, 6, 5, 3, 2, 6, 5, 4, 3, 7, 8, 6]);
-    renderChart('paieChart', ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], [5, 6, 8, 4, 7, 3, 5, 8, 6, 4, 7, 5]);
-});
 
 </script>
 

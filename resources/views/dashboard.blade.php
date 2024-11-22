@@ -699,6 +699,10 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                         </div>
                        
                     </div>
+                     <!-- Bouton Réinitialiser avec marge très grande à droite -->
+                     <button type="reset" class="btn btn-secondary me-8">
+                            <i class="fas fa-undo"></i> 
+                        </button>
                     <button type="submit" class="btn btn-primary">Modifier</button>
                 </form>
             </div>
