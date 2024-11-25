@@ -26,6 +26,7 @@
 <script src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 
 
@@ -129,10 +130,7 @@
 
                         <div class="col-md-6 mb-3">
                             <label for="centre_rc" class="form-label">Centre RC</label>
-                           
-                      
-
-
+                         
                         <select id="ctl00_ctl36_g_69b20002_9278_429e_be53_84b78f0af32b_ctl00_DropDownList_Ville" class="form-control" name="centre_rc" required>
                         <option value="Null">choisir un option</option>
 						<option value="AGADIR">AGADIR</option>
@@ -319,25 +317,39 @@
     </div>
 </div>
 <script>
-    $(document).ready(function() {
-        // Réinitialiser le formulaire lors de l'ouverture du modal
-        $('#nouvelleSocieteModal').on('show.bs.modal', function (event) {
-            $('#societe-form')[0].reset();
-        });
-
-        // Lorsqu'on clique sur le bouton "Ajouter"
-        $('#ajouter-societe').on('click', function(event) {
-            // Sélectionner les éléments Rubrique TVA et Désignation
-            const rubriqueTvaSelect = $('#rubrique_tva');
-            const designationInput = $('input[name="designation"]');
-
-            // Vérifier si Désignation est vide et si Rubrique TVA a une option sélectionnée
-            if (designationInput.val().trim() === '' && rubriqueTvaSelect.val()) {
-                // Mettre à jour la valeur de Désignation avec l'option Rubrique TVA sélectionnée
-                designationInput.val(rubriqueTvaSelect.find('option:selected').text());
-            }
-        });
+$(document).ready(function() {
+    // Réinitialiser le formulaire lors de l'ouverture du modal
+    $('#nouvelleSocieteModal').on('show.bs.modal', function (event) {
+        $('#societe-form')[0].reset();
     });
+
+    // Lorsqu'on clique sur le bouton "Ajouter"
+    $('#ajouter-societe').on('click', function(event) {
+        // Sélectionner les éléments Rubrique TVA et Désignation
+        const rubriqueTvaSelect = $('#rubrique_tva');
+        const designationInput = $('input[name="designation"]');
+
+        // Vérifier si Désignation est vide et si Rubrique TVA a une option sélectionnée
+        if (designationInput.val().trim() === '' && rubriqueTvaSelect.val()) {
+            // Extraire le texte de l'option sélectionnée dans Rubrique TVA
+            const rubriqueTvaText = rubriqueTvaSelect.find('option:selected').text().trim();
+
+            // Séparer le texte en mots
+            const words = rubriqueTvaText.split(' ');
+
+            // Exclure le premier et le dernier mot
+            const middleWords = words.slice(1, words.length - 1);
+
+            // Reconstituer la chaîne de texte sans le premier et dernier mot
+            const racineNom = middleWords.join(' ');
+
+            // Mettre à jour la valeur de Désignation avec le texte modifié
+            designationInput.val(racineNom);
+        }
+    });
+});
+
+
 </script>
 
   <script>
@@ -353,39 +365,53 @@
 
 
 
-
-
-    // Fonction pour remplir les options de rubrique TVA dans le select
 function remplirRubriquesTva(selectId, selectedValue = null) {
   $.ajax({
       url: '/rubriques-tva?type=Achat',
       type: 'GET',
       success: function(data) {
           var select = $("#" + selectId);
-          
-        //   // Détruire Select2 s'il est déjà initialisé
-        //   if (select.hasClass("select2-hidden-accessible")) {
-        //       select.select2("destroy");
-        //   }
-          
+
           select.empty();
 
           let categoriesArray = [];
+          let caNonImposable = null;
+
+          // Séparer CA non imposable des autres catégories
           $.each(data.rubriques, function(categorie, rubriques) {
               let categories = categorie.split('/').map(cat => cat.trim());
               let mainCategory = categories[0];
               let subCategory = categories[1] ? categories[1].trim() : '';
-              categoriesArray.push({
-                  mainCategory: mainCategory,
-                  subCategory: subCategory,
-                  rubriques: rubriques.rubriques
-              });
+
+              if (mainCategory === 'CA non imposable') {
+                  // Stocker la catégorie "CA non imposable" séparément
+                  caNonImposable = {
+                      mainCategory: mainCategory,
+                      subCategory: subCategory,
+                      rubriques: rubriques.rubriques
+                  };
+              } else {
+                  // Ajouter les autres catégories
+                  categoriesArray.push({
+                      mainCategory: mainCategory,
+                      subCategory: subCategory,
+                      rubriques: rubriques.rubriques
+                  });
+              }
           });
 
+          // Trier les autres catégories par ordre alphabétique
           categoriesArray.sort((a, b) => a.mainCategory.localeCompare(b.mainCategory));
+
+          // Ajouter "CA non imposable" au début si elle existe
+          if (caNonImposable) {
+              categoriesArray.unshift(caNonImposable);
+          }
+
           let categoryCounter = 1;
           const excludedNumRacines = [147, 151, 152, 148, 144];
 
+          // Ajouter les catégories triées et leurs rubriques au select
           $.each(categoriesArray, function(index, categoryObj) {
               let mainCategoryOption = new Option(`${categoryCounter}. ${categoryObj.mainCategory}`, '', true, true);
               mainCategoryOption.className = 'category';
@@ -400,6 +426,12 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                   select.append(subCategoryOption);
               }
 
+              // Si la catégorie est "CA imposable", trier par taux descendant (desc)
+              if (categoryObj.mainCategory === 'CA imposable') {
+                  categoryObj.rubriques.sort((a, b) => b.Taux - a.Taux);  // Tri par taux descendant
+              }
+
+              // Ajouter les rubriques triées
               categoryObj.rubriques.forEach(function(rubrique) {
                   if (!excludedNumRacines.includes(rubrique.Num_racines)) {
                       let searchText = `${rubrique.Num_racines} ${rubrique.Nom_racines} ${categoryObj.mainCategory}`;
@@ -448,7 +480,9 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 }
 
   </script>
-<!-- Modal pour importer des sociétés -->
+
+    
+  <!-- Modal pour importer des sociétés -->
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -612,33 +646,42 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             <input type="text" class="form-control" id="mod_raison_sociale" name="raison_sociale" required>
                         </div>
                         <div class="col-md-6 mb-3">
+                            <label for="mod_forme_juridique" class="form-label">Forme Juridique</label>
+                            <input type="text" class="form-control" id="mod_forme_juridique" name="forme_juridique">
+                        </div>
+                        <div class="col-md-6 mb-3">
                             <label for="mod_siège_social" class="form-label">Siège Social</label>
                             <input type="text" class="form-control" id="mod_siège_social" name="siege_social">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="mod_ice" class="form-label">ICE</label>
-                            <input type="text" class="form-control" id="mod_ice" name="ice" required maxlength="15" title="Veuillez entrer uniquement des chiffres (max 15 chiffres)">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="mod_rc" class="form-label">RC</label>
-                            <input type="text" class="form-control" id="mod_rc" name="rc" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="mod_identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
-                            <input type="text" class="form-control" id="mod_identifiant_fiscal" name="identifiant_fiscal" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_patente" class="form-label">Patente</label>
                             <input type="text" class="form-control" id="mod_patente" name="patente">
                         </div>
                         <div class="col-md-6 mb-3">
+                            <label for="mod_rc" class="form-label">RC</label>
+                            <input type="text" class="form-control" id="mod_rc" name="rc" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
                             <label for="mod_centre_rc" class="form-label">Centre RC</label>
                             <input type="text" class="form-control" id="mod_centre_rc" name="centre_rc">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="mod_forme_juridique" class="form-label">Forme Juridique</label>
-                            <input type="text" class="form-control" id="mod_forme_juridique" name="forme_juridique">
+                            <label for="mod_identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
+                            <input type="text" class="form-control" id="mod_identifiant_fiscal" name="identifiant_fiscal" required>
                         </div>
+                     
+
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_ice" class="form-label">ICE</label>
+                            <input type="text" class="form-control" id="mod_ice" name="ice" required maxlength="15" title="Veuillez entrer uniquement des chiffres (max 15 chiffres)">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_date_creation" class="form-label">Date de Création</label>
+                            <input type="date" class="form-control" id="mod_date_creation" name="date_creation">
+                        </div>
+                   
+                    
+                     
                         <div class="col-md-6 mb-3 d-flex">
                             <div class="me-2" style="flex: 1;">
                                 <label for="mod_exercice_social_debut" class="form-label">Exercice Social Début</label>
@@ -658,10 +701,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             <label for="mod_nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
                             <input type="text" class="form-control" id="mod_nombre_chiffre_compte" name="nombre_chiffre_compte">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="mod_date_creation" class="form-label">Date de Création</label>
-                            <input type="date" class="form-control" id="mod_date_creation" name="date_creation">
-                        </div>
+                   
                         <div class="col-md-6 mb-3">
                             <label for="mod_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
                             <input type="text" class="form-control" id="mod_assujettie_partielle_tva" name="assujettie_partielle_tva">
@@ -813,6 +853,20 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
             data: societes, // Charger les données passées depuis le contrôleur
             layout: "fitColumns", // Ajuster les colonnes à la largeur du tableau
             columns: [
+                {
+            title: ` 
+<i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="toggleSelectAll()"></i>
+                <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;"></i>
+            `,
+            field: "select",
+            formatter: "rowSelection", // Active la sélection de ligne
+            headerSort: false,
+            hozAlign: "center",
+            width: 60, // Fixe la largeur de la colonne de sélection
+            cellClick: function(e, cell) {
+                cell.getRow().toggleSelect();  // Basculer la sélection de ligne
+            }
+        },
                 {title: "Raison Sociale", field: "raison_sociale", formatter: function(cell) {
                     var nomEntreprise = cell.getData()["raison_sociale"];
                     var formeJuridique = cell.getData().forme_juridique;
@@ -827,41 +881,9 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
             headerFilter: true,
             formatter: function(cell) {
                 const rowData = cell.getRow().getData(); // Obtenir les données de la ligne
-                return `Du ${rowData.exercice_social_debut} au ${rowData.exercice_social_fin}`; // Formater les dates
+                return `Du <input type="date" value="${rowData.exercice_social_debut}"> au <input type="date" value="${rowData.exercice_social_fin}">`; // Formater les dates
             },
-            editor: "input", // Utiliser un éditeur de type input pour permettre la modification
-            editorParams: {
-                maxLength: 10, // Limiter la longueur de l'entrée, ajustez selon vos besoins
-                placeholder: "Ex: 2023-2024", // Ajouter un placeholder pour guider l'utilisateur
-            },
-            validator: function(value) {
-                // Valider que la valeur saisie est correcte, ajustez selon votre format de date
-                return /^(\d{4})-(\d{4})$/.test(value); // Ex: 2023-2024
-            },
-            cellEdited: function(cell) {
-                var newValue = cell.getValue();
-                var rowData = cell.getRow().getData();
-                // Ici vous pouvez envoyer les nouvelles données au serveur avec une requête AJAX
-                console.log("Nouvelle valeur pour l'exercice social:", newValue);
-                // Exemple : envoyer la mise à jour à votre serveur via AJAX
-                fetch('/update-exercice-social', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        id: rowData.id,
-                        exercice_social: newValue
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Données mises à jour:", data);
-                })
-                .catch(error => {
-                    console.error("Erreur lors de la mise à jour:", error);
-                });
-            }
+          
         },
                 {
                     title: "Actions",
@@ -887,6 +909,42 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                 }
             ],
         });
+           // Fonction pour basculer entre les icônes
+    function toggleSelectAll() {
+        var icon = document.getElementById('selectAllIcon');
+
+        // Si l'icône est fa-square (non sélectionnée), la changer en fa-check-square (sélectionnée)
+        if (icon.classList.contains('fa-square')) {
+            icon.classList.remove('fa-square');
+            icon.classList.add('fa-check-square');
+        } else {
+            // Si l'icône est fa-check-square (sélectionnée), la changer en fa-square (non sélectionnée)
+            icon.classList.remove('fa-check-square');
+            icon.classList.add('fa-square');
+        }
+
+        // Ici, vous pouvez ajouter d'autres actions pour gérer la sélection/désélection des éléments associés
+        // Par exemple, vous pouvez cocher ou décocher des cases à cocher en fonction de l'état de l'icône.
+    }
+
+
+
+    // Gestionnaire d'événements pour sélectionner/désélectionner toutes les lignes et supprimer les lignes sélectionnées
+document.getElementById("table-list").addEventListener("click", function(e) {
+    if (e.target.id === "selectAllIcon") {
+        if (table.getSelectedRows().length === table.getRows().length) {
+            table.deselectRow(); // Désélectionner toutes les lignes
+        } else {
+            table.selectRow(); // Sélectionner toutes les lignes
+        }
+    }
+    if (e.target.id === "deleteAllIcon") {
+        deleteSelectedRows(); // Appelle la fonction de suppression pour les lignes sélectionnées
+        // Recharger la page
+location.reload();
+      
+    }
+});
         
   // Ajouter un gestionnaire d'événements pour le double clic sur une ligne
 // table.on("rowDblClick", function(row) {
@@ -951,25 +1009,27 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 
 
 
-
-
 // Gestion du changement de la valeur "Assujettie partielle à la TVA"
 document.getElementById('assujettie_partielle_tva').addEventListener('change', function() {
     var prorataField = document.getElementById('prorata_de_deduction');
-    
-    if (this.value === "0") {
-        prorataField.value = "100"; // Mettre la valeur à 10
+
+    if (this.value === "Null") {
+        // Si "choisir un option" est sélectionné, désactiver 'Prorata de Déduction' et le réinitialiser
+        prorataField.value = "0";  // Réinitialiser la valeur
+        prorataField.setAttribute("readonly", true); // Rendre le champ non modifiable
+    } else if (this.value === "0") {
+        // Si l'option "Non" est sélectionnée, mettre la valeur à "100" et rendre le champ non modifiable
+        prorataField.value = "100"; // Mettre la valeur à 100
         prorataField.setAttribute("readonly", true); // Rendre le champ non modifiable
     } else {
+        // Si une autre option est sélectionnée, rendre le champ modifiable
         prorataField.removeAttribute("readonly"); // Rendre le champ modifiable
         prorataField.value = ""; // Réinitialiser le champ si nécessaire
     }
 });
+
  
-</script>
 
-
-<script>
     document.getElementById("identifiant_fiscal").addEventListener("input", function() {
     // Remplace tous les caractères non numériques par une chaîne vide
     this.value = this.value.replace(/\D/g, '');
@@ -980,9 +1040,7 @@ document.getElementById('assujettie_partielle_tva').addEventListener('change', f
     }
 });
 
-</script>
 
-<script>
     document.getElementById("ice").addEventListener("input", function() {
     // Remplace tous les caractères non numériques par une chaîne vide
     this.value = this.value.replace(/\D/g, '');
@@ -993,9 +1051,7 @@ document.getElementById('assujettie_partielle_tva').addEventListener('change', f
     }
 });
 
-</script>
 
-<script>
 $(function() {
   $('#exercice_social').daterangepicker({
     opens: 'left',
@@ -1013,8 +1069,11 @@ $(function() {
     $('#exercice_social').val(start.format('YYYY-MM-DD') + ' au ' + end.format('YYYY-MM-DD'));
   });
 });
-</script>
-<script>
+
+
+
+
+
     document.getElementById('import-societes').addEventListener('click', function() {
     // Logique d'importation, par exemple, ouvrir un modal
     openImportModal();

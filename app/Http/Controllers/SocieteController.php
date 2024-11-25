@@ -56,14 +56,14 @@ class SocieteController extends Controller
        // Vérifiez ce que retourne la requête
        // dd($rubriques); // Décommentez pour déboguer
    
-// Organiser les rubriques par catégorie
-$rubriquesParCategorie = [];
-foreach ($rubriques as $rubrique) {
-$rubriquesParCategorie[$rubrique->categorie]['rubriques'][] = [
-    'Nom_racines' => $rubrique->Nom_racines,
-    'Num_racines' => $rubrique->Num_racines,
-    'Taux' => $rubrique->Taux,
-];
+        // Organiser les rubriques par catégorie
+        $rubriquesParCategorie = [];
+        foreach ($rubriques as $rubrique) {
+        $rubriquesParCategorie[$rubrique->categorie]['rubriques'][] = [
+            'Nom_racines' => $rubrique->Nom_racines,
+            'Num_racines' => $rubrique->Num_racines,
+            'Taux' => $rubrique->Taux,
+        ];
 }
 
 // Passer les rubriques organisées à votre vue ou à votre réponse AJAX
@@ -104,8 +104,8 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
             'exercice_social_fin' => 'required|date',
             'nature_activite' => 'required|string',
             'activite' => 'required|string|max:255',
-            'assujettie_partielle_tva' => 'required|boolean',
-            'prorata_de_deduction' => 'required|string|max:255',
+            'assujettie_partielle_tva' => 'nullable|boolean',
+            'prorata_de_deduction' => 'nullable|string|max:255',
             'regime_declaration' => 'required|string|max:255',
             'fait_generateur' => 'required|string',
             'rubrique_tva' => 'required|string',

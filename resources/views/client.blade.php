@@ -27,6 +27,7 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
     <div class="container mt-5">
@@ -324,7 +325,8 @@ $(document).ready(function () {
                         <button type="reset" class="btn btn-secondary me-8">
                             <i class="fas fa-undo"></i> 
                         </button>
-                            <button type="submit" class="btn btn-primary">Importer</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-arrow-down"></i>
+                            Importer</button>
                         </form>
                     </div>
                 </div>
