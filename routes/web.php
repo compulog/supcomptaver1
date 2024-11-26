@@ -30,8 +30,13 @@ use App\Http\Controllers\SectionController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FileController;
 
+Route::post('/importer-societe', [SocieteController::class, 'import'])->name('societe.import');
+
 Route::get('/folder/{id}', [FolderController::class, 'show'])->name('folder.show');
 
+// Route pour supprimer plusieurs sociétés
+// Assurez-vous que la route pour supprimer les sociétés est correcte et utilise DELETE
+Route::delete('/societes/delete-selected', [SocieteController::class, 'deleteSelected'])->name('societes.deleteSelected');
 
 
 Route::group(['middleware' => 'auth'], function () {

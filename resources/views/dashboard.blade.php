@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 
 
 
@@ -43,6 +44,14 @@
             background-color: #f9f9f9; 
             color: #333;
         }
+        /* Cibler les inputs de filtre dans Tabulator */
+.tabulator .tabulator-header .tabulator-header-filter input {
+    width: 100px; /* Ajuster la largeur selon vos besoins */
+    height: 20px;
+    font-size: 12px; /* Réduire la taille de la police */
+    padding: 5px; /* Ajuster les marges internes */
+}
+
     </style>
 </head>
 <body>
@@ -625,7 +634,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         });
     });
 </script>
-
+    
 
 <!-- Modal Modifier Société -->
 <div class="modal fade" id="modifierSocieteModal" tabindex="-1" aria-labelledby="modifierSocieteModalLabel" aria-hidden="true">
@@ -841,96 +850,146 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 
 </script>
 <!-- Table Tabulator -->
-
 <div id="societes-table"></div>
+
 <!-- Tabulator JS -->
 <script>
-        // Assigner les données des sociétés à une variable JS depuis PHP
-        var societes = {!! $societes !!};
+    // Assigner les données des sociétés à une variable JS depuis PHP
+    var societes = {!! json_encode($societes) !!};  // Utilisez json_encode pour convertir les données en format JSON valide
 
-        // Initialiser Tabulator avec les données
-        var table = new Tabulator("#societes-table", {
-            data: societes, // Charger les données passées depuis le contrôleur
-            layout: "fitColumns", // Ajuster les colonnes à la largeur du tableau
-            columns: [
-                {
-            title: ` 
-<i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="toggleSelectAll()"></i>
-                <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;"></i>
-            `,
-            field: "select",
-            formatter: "rowSelection", // Active la sélection de ligne
-            headerSort: false,
-            hozAlign: "center",
-            width: 60, // Fixe la largeur de la colonne de sélection
-            cellClick: function(e, cell) {
-                cell.getRow().toggleSelect();  // Basculer la sélection de ligne
-            }
-        },
-                {title: "Raison Sociale", field: "raison_sociale", formatter: function(cell) {
-                    var nomEntreprise = cell.getData()["raison_sociale"];
-                    var formeJuridique = cell.getData().forme_juridique;
-                    return nomEntreprise + " " + formeJuridique;
-                }, headerFilter: true},
-                {title: "ICE", field: "ice", headerFilter: true},
-                {title: "RC", field: "rc", headerFilter: true},
-                {title: "Identifiant Fiscal", field: "identifiant_fiscal", headerFilter: true},
-                {
-            title: "Exercice en cours",
-            field: "exercice_social", // Nom du champ dans vos données
-            headerFilter: true,
-            formatter: function(cell) {
-                const rowData = cell.getRow().getData(); // Obtenir les données de la ligne
-                return `Du <input type="date" value="${rowData.exercice_social_debut}"> au <input type="date" value="${rowData.exercice_social_fin}">`; // Formater les dates
-            },
-          
-        },
-                {
-                    title: "Actions",
-                    formatter: function(cell) {
-                        var rowData = cell.getRow().getData();
-                        return "<div class='action-icons'>" +
-                        "<a href='/exercices/" + rowData.id + "' class='text-info mx-1'>" +
-                        "<i class='fas fa-door-open' onclick='window.location=\"/exercices/" + rowData.id + "\"'></i></a>" +
-                            "<a href='#' class='text-primary mx-1' data-bs-toggle='modal' data-bs-target='#modifierSocieteModal' " +
-                            "data-id='" + rowData.id + "' " +
-                            "data-nom-entreprise='" + rowData.raison_sociale + "' " +
-                            "data-ice='" + rowData.ice + "' " +
-                            "data-rc='" + rowData.rc + "' " +
-                            "data-identifiant-fiscal='" + rowData.identifiant_fiscal + "'>" +
-                            "<i class='fas fa-edit'></i></a>" +
-                            "<a href='#' class='text-danger mx-1 delete-icon' data-id='" + rowData.id + "'>" +
-                            "<i class='fas fa-trash'></i></a>" +
-                           
-                            "</div>";
-                    },
-                    width: 150,
-                    hozAlign: "center"
+    // Initialiser Tabulator avec les données
+    var table = new Tabulator("#societes-table", {
+        data: societes, // Charger les données passées depuis le contrôleur
+        layout: "fitColumns", // Ajuster les colonnes à la largeur du tableau
+        columns: [
+            {
+                title: ` 
+                    <i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="toggleSelectAll()"></i>
+                    <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;" onclick="deleteSelectedRows()"></i>
+                `,
+                field: "select",
+                formatter: "rowSelection", // Active la sélection de ligne
+                headerSort: false,
+                hozAlign: "center",
+                width: 60, // Fixe la largeur de la colonne de sélection
+                cellClick: function(e, cell) {
+                    cell.getRow().toggleSelect();  // Basculer la sélection de ligne
                 }
-            ],
-        });
-           // Fonction pour basculer entre les icônes
+            },
+            {title: "Raison Sociale", field: "raison_sociale", formatter: function(cell) {
+                var nomEntreprise = cell.getData()["raison_sociale"];
+                var formeJuridique = cell.getData().forme_juridique;
+                return nomEntreprise + " " + formeJuridique;
+            }, headerFilter: true},
+            {title: "ICE", field: "ice", headerFilter: true},
+            {title: "RC", field: "rc", headerFilter: true},
+            {title: "Identifiant Fiscal", field: "identifiant_fiscal", headerFilter: true},
+            {
+                title: "Exercice en cours",
+                field: "exercice_social", // Nom du champ dans vos données
+              
+                formatter: function(cell) {
+                    const rowData = cell.getRow().getData(); // Obtenir les données de la ligne
+                    return `Du <input type="date" value="${rowData.exercice_social_debut}"> au <input type="date" value="${rowData.exercice_social_fin}">`; // Formater les dates
+                },
+            },
+            {
+                title: "Actions",
+                formatter: function(cell) {
+                    var rowData = cell.getRow().getData();
+                    return "<div class='action-icons'>" +
+                    "<a href='/exercices/" + rowData.id + "' class='text-info mx-1'>" +
+                    "<i class='fas fa-door-open'></i></a>" +
+                    "<a href='#' class='text-primary mx-1' data-bs-toggle='modal' data-bs-target='#modifierSocieteModal' " +
+                    "data-id='" + rowData.id + "' " +
+                    "data-nom-entreprise='" + rowData.raison_sociale + "' " +
+                    "data-ice='" + rowData.ice + "' " +
+                    "data-rc='" + rowData.rc + "' " +
+                    "data-identifiant-fiscal='" + rowData.identifiant_fiscal + "'>" +
+                    "<i class='fas fa-edit'></i></a>" +
+                    "<a href='#' class='text-danger mx-1 delete-icon' data-id='" + rowData.id + "'>" +
+                    "<i class='fas fa-trash'></i></a>" +
+                    "</div>";
+                },
+                width: 150,
+                hozAlign: "center"
+            }
+        ],
+    });
+
+    
     function toggleSelectAll() {
-        var icon = document.getElementById('selectAllIcon');
+    var icon = document.getElementById('selectAllIcon');
 
-        // Si l'icône est fa-square (non sélectionnée), la changer en fa-check-square (sélectionnée)
-        if (icon.classList.contains('fa-square')) {
-            icon.classList.remove('fa-square');
-            icon.classList.add('fa-check-square');
-        } else {
-            // Si l'icône est fa-check-square (sélectionnée), la changer en fa-square (non sélectionnée)
-            icon.classList.remove('fa-check-square');
-            icon.classList.add('fa-square');
-        }
+    // Vérifier l'état actuel (sélectionné ou non)
+    var isAllSelected = table.getSelectedRows().length === table.getRows().length;
 
-        // Ici, vous pouvez ajouter d'autres actions pour gérer la sélection/désélection des éléments associés
-        // Par exemple, vous pouvez cocher ou décocher des cases à cocher en fonction de l'état de l'icône.
+    console.log("isAllSelected: " + isAllSelected); // Debug
+
+    if (isAllSelected) {
+        // Si toutes les lignes sont sélectionnées, désélectionner toutes les lignes
+        icon.classList.remove('fa-check-square');
+        icon.classList.add('fa-square');
+        table.deselectRows();  // Désélectionner toutes les lignes
+    } else {
+        // Si toutes les lignes ne sont pas sélectionnées, les sélectionner
+        icon.classList.remove('fa-square');
+        icon.classList.add('fa-check-square');
+        table.selectRows();  // Sélectionner toutes les lignes
     }
+}
+
+
+    function deleteSelectedRows() {
+    var selectedRows = table.getSelectedRows(); // Obtenez les lignes sélectionnées
+    var selectedIds = selectedRows.map(function(row) {
+        return row.getData().id;  // Récupérer les ID des lignes sélectionnées
+    });
+
+    // Si aucune ligne n'est sélectionnée
+    if (selectedIds.length === 0) {
+        alert("Aucune société sélectionnée.");
+        return;
+    }
+    fetch("{{ route('societes.deleteSelected') }}", {
+    method: "DELETE",
+    headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    body: JSON.stringify({ ids: selectedIds })
+})
+.then(response => {
+    // Affichez le texte de la réponse brute dans la console
+    return response.text();  // Récupère la réponse en texte brut
+})
+.then(data => {
+    console.log("Réponse brute du serveur:", data);  // Afficher la réponse brute pour vérifier ce qui est renvoyé
+    
+    try {
+        const jsonData = JSON.parse(data);  // Essayer de parser la réponse en JSON
+        if (jsonData.message) {
+            alert(jsonData.message);  // Afficher le message de succès
+            location.reload();  // Recharger la page ou mettre à jour le tableau
+        } else {
+            alert("Une erreur s'est produite lors de la suppression: " + jsonData.error);
+        }
+    } catch (error) {
+        alert("Erreur de parsing JSON: " + error.message);  // Afficher l'erreur de parsing JSON
+    }
+})
+.catch(error => {
+    console.error("Erreur:", error);
+    alert("Une erreur s'est produite lors de la suppression: " + error.message);  // Afficher l'erreur
+});
 
 
 
-    // Gestionnaire d'événements pour sélectionner/désélectionner toutes les lignes et supprimer les lignes sélectionnées
-document.getElementById("table-list").addEventListener("click", function(e) {
+
+}
+// Gestionnaire d'événements pour sélectionner/désélectionner toutes les lignes et supprimer les lignes sélectionnées
+// Gestionnaire d'événements pour sélectionner/désélectionner toutes les lignes et supprimer les lignes sélectionnées
+document.getElementById("societes-table").addEventListener("click", function(e) {
     if (e.target.id === "selectAllIcon") {
         if (table.getSelectedRows().length === table.getRows().length) {
             table.deselectRow(); // Désélectionner toutes les lignes
@@ -945,6 +1004,7 @@ location.reload();
       
     }
 });
+
         
   // Ajouter un gestionnaire d'événements pour le double clic sur une ligne
 // table.on("rowDblClick", function(row) {

@@ -10,9 +10,32 @@ use App\Imports\SocietesImport;
 use App\Models\Racine; // Assurez-vous que le modèle Racine est importé
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;  // Pour loguer les erreurs
 class SocieteController extends Controller
 {
-  
+ 
+  public function deleteSelected(Request $request)
+{
+    try {
+        $ids = $request->input('ids'); // Récupère les IDs des sociétés à supprimer
+        
+        // Vérifier si des IDs ont été envoyés
+        if (empty($ids)) {
+            return response()->json(['error' => 'Aucun ID fourni pour la suppression.'], 400);
+        }
+
+        // Suppression des sociétés par leurs IDs
+        Societe::whereIn('id', $ids)->delete();
+
+        return response()->json(['message' => 'Sociétés supprimées avec succès.']);
+    } catch (\Exception $e) {
+        // Retourne l'erreur avec le message d'exception
+        return response()->json(['error' => 'Une erreur est survenue lors de la suppression: ' . $e->getMessage()], 500);
+    }
+}
+
+    
+    
   // Vérification du mot de passe de l'utilisateur
   public function checkPassword(Request $request)
   {
@@ -175,10 +198,9 @@ public function destroy($id)
 }
 
 
-   
-   
 public function import(Request $request)
 {
+    // Validation des fichiers Excel et des colonnes
     $request->validate([
         'file' => 'required|file|mimes:xlsx,xls,csv',
         'raison_sociale' => 'required|integer',
@@ -204,7 +226,7 @@ public function import(Request $request)
         'modele_comptable' => 'required|integer',
     ]);
 
-    // Mapping des colonnes de l'Excel à partir des valeurs du formulaire
+    // Mapping des colonnes de l'Excel
     $mapping = [
         'raison_sociale' => $request->input('raison_sociale'),
         'siege_social' => $request->input('siege_social'),
@@ -229,14 +251,18 @@ public function import(Request $request)
         'modele_comptable' => $request->input('modele_comptable'),
     ];
 
-     // Importation des données
-     try {
+    try {
+        // Importation du fichier Excel et enregistrement dans la base
         Excel::import(new SocietesImport($mapping), $request->file('file'));
         return redirect()->back()->with('success', 'Les sociétés ont été importées avec succès.');
     } catch (\Exception $e) {
+        // Loguer l'erreur pour faciliter le débogage
+        Log::error('Erreur d\'importation : ' . $e->getMessage());
         return redirect()->back()->with('error', 'Une erreur est survenue lors de l\'importation : ' . $e->getMessage());
     }
 }
+
+// Autres méthodes du contrôleur (à conserver
 
     public function show($id)
     {
