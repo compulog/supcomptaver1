@@ -4,7 +4,7 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-<div class="container mt-4">
+<div class="container mt-4" >
     <div class="row">
 <!-- Filtrage des dossiers par Nom ou Date -->
 <form method="GET" action="" class="mb-3">
@@ -18,7 +18,7 @@
 </form>
 
 <!-- Achat -->
-<div class="col-md-4 mb-3" id="achat-div">
+<div class="col-md-4 mb-3" id="achat-div" style="margin-top:-70px;margin-left:320px">
     <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto; width: auto;">
         <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
             @csrf
@@ -34,7 +34,7 @@
             <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>
         </form>
     </div>
-</div>
+</div>      
 <div class="container mt-4">
     <h3>Fichiers Dossiers de la société</h3>
 

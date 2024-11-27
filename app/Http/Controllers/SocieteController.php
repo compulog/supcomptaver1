@@ -197,70 +197,58 @@ public function destroy($id)
     return response()->json(['success' => true, 'message' => 'Société supprimée avec succès.']);
 }
 
+  // Fonction pour afficher le formulaire
+  public function showImportForm()
+  {
+      return view('import'); // La vue contenant le formulaire d'importation
+  }
 
-public function import(Request $request)
-{
-    // Validation des fichiers Excel et des colonnes
-    $request->validate([
-        'file' => 'required|file|mimes:xlsx,xls,csv',
-        'raison_sociale' => 'required|integer',
-        'siege_social' => 'nullable|integer',
-        'ice' => 'required|integer|max:15',
-        'rc' => 'required|integer',
-        'identifiant_fiscal' => 'required|integer',
-        'patente' => 'nullable|integer',
-        'centre_rc' => 'nullable|integer',
-        'forme_juridique' => 'nullable|integer',
-        'exercice_social_debut' => 'nullable|integer',
-        'exercice_social_fin' => 'nullable|integer',
-        'date_creation' => 'nullable|integer',
-        'assujettie_partielle_tva' => 'nullable|integer',
-        'prorata_de_deduction' => 'nullable|integer',
-        'nature_activite' => 'nullable|integer',
-        'activite' => 'nullable|integer',
-        'regime_declaration' => 'nullable|integer',
-        'fait_generateur' => 'nullable|integer',
-        'rubrique_tva' => 'nullable|integer',
-        'designation' => 'nullable|integer',
-        'nombre_chiffre_compte' => 'nullable|integer',
-        'modele_comptable' => 'required|integer',
-    ]);
+  // Fonction pour gérer l'importation du fichier
+ 
+  public function import(Request $request)
+    {
+        // Valider le fichier importé
+        $validated = $request->validate([
+            'file' => 'required|file|mimes:xlsx,csv',
+        ]);
 
-    // Mapping des colonnes de l'Excel
-    $mapping = [
-        'raison_sociale' => $request->input('raison_sociale'),
-        'siege_social' => $request->input('siege_social'),
-        'ice' => $request->input('ice'),
-        'rc' => $request->input('rc'),
-        'identifiant_fiscal' => $request->input('identifiant_fiscal'),
-        'patente' => $request->input('patente'),
-        'centre_rc' => $request->input('centre_rc'),
-        'forme_juridique' => $request->input('forme_juridique'),
-        'exercice_social_debut' => $request->input('exercice_social_debut'),
-        'exercice_social_fin' => $request->input('exercice_social_fin'),
-        'date_creation' => $request->input('date_creation'),
-        'assujettie_partielle_tva' => $request->input('assujettie_partielle_tva'),
-        'prorata_de_deduction' => $request->input('prorata_de_deduction'),
-        'nature_activite' => $request->input('nature_activite'),
-        'activite' => $request->input('activite'),
-        'regime_declaration' => $request->input('regime_declaration'),
-        'fait_generateur' => $request->input('fait_generateur'),
-        'rubrique_tva' => $request->input('rubrique_tva'),
-        'designation' => $request->input('designation'),
-        'nombre_chiffre_compte' => $request->input('nombre_chiffre_compte'),
-        'modele_comptable' => $request->input('modele_comptable'),
-    ];
-
-    try {
-        // Importation du fichier Excel et enregistrement dans la base
-        Excel::import(new SocietesImport($mapping), $request->file('file'));
-        return redirect()->back()->with('success', 'Les sociétés ont été importées avec succès.');
-    } catch (\Exception $e) {
-        // Loguer l'erreur pour faciliter le débogage
-        Log::error('Erreur d\'importation : ' . $e->getMessage());
-        return redirect()->back()->with('error', 'Une erreur est survenue lors de l\'importation : ' . $e->getMessage());
+        $file = $request->file('file');
+        
+        // Création d'un tableau de correspondances basé sur l'entrée de l'utilisateur
+        $mappings = [
+            'raison_sociale' => $request->input('raison_sociale'),
+            'forme_juridique' => $request->input('forme_juridique'),
+            'siege_social' => $request->input('siege_social'),
+            'patente' => $request->input('patente'),
+            'rc' => $request->input('rc'),
+            'centre_rc' => $request->input('centre_rc'),
+            'identifiant_fiscal' => $request->input('identifiant_fiscal'),
+            'ice' => $request->input('ice'),
+            'date_creation' => $request->input('date_creation'),
+            'exercice_social_debut' => $request->input('exercice_social_debut'),
+            'exercice_social_fin' => $request->input('exercice_social_fin'),
+            'modele_comptable' => $request->input('modele_comptable'),
+            'nombre_chiffre_compte' => $request->input('nombre_chiffre_compte'),
+            'nature_activite' => $request->input('nature_activite'),
+            'activite' => $request->input('activite'),
+            'assujettie_partielle_tva' => $request->input('assujettie_partielle_tva'),
+            'prorata_de_deduction' => $request->input('prorata_de_deduction'),
+            'regime_declaration' => $request->input('regime_declaration'),
+            'fait_generateur' => $request->input('fait_generateur'),
+            'rubrique_tva' => $request->input('rubrique_tva'),
+            'designation' => $request->input('designation'),
+        ];
+        
+        // Traitement avec une classe d'importation personnalisée
+        $import = new SocietesImport($mappings);
+        
+        // Importer les données
+        Excel::import($import, $file);
+        
+        return redirect()->back()->with('success', 'Sociétés importées avec succès');
     }
-}
+
+
 
 // Autres méthodes du contrôleur (à conserver
 

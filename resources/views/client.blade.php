@@ -123,11 +123,11 @@
                             <label for="type_client" class="form-label">Type client</label>
                             <select class="form-control" name="type_client" required>
                                 <option value="Null">Choisir une option</option>
-                                <option value="5.Entreprise de droit privé">Entreprise de droit privé</option>
-                                <option value="1.État">État</option>
-                                <option value="2.Collectivités territoriales">Collectivités territoriales</option>
-                                <option value="3.Entreprise publique">Entreprise publique</option>
-                                <option value="4.Autre organisme public">Autre organisme public</option>
+                                <option value="Entreprise de droit privé">Entreprise de droit privé</option>
+                                <option value="État">État</option>
+                                <option value="Collectivités territoriales">Collectivités territoriales</option>
+                                <option value="Entreprise publique">Entreprise publique</option>
+                                <option value="Autre organisme public">Autre organisme public</option>
                             </select>
                         </div>
                     </div>

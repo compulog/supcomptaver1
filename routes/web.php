@@ -30,7 +30,9 @@ use App\Http\Controllers\SectionController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FileController;
 
-Route::post('/importer-societe', [SocieteController::class, 'import'])->name('societe.import');
+
+Route::get('import', [SocieteController::class, 'showImportForm'])->name('import.form');
+Route::post('import', [SocieteController::class, 'import'])->name('societes.import');
 
 Route::get('/folder/{id}', [FolderController::class, 'show'])->name('folder.show');
 

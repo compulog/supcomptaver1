@@ -490,130 +490,147 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 
   </script>
 
-    
-  <!-- Modal pour importer des sociétés -->
+<!-- Modal pour importer des sociétés -->
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="importModalLabel">Importer Sociétés</h5>
                 <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
-                </div>
+            </div>
             <div class="modal-body">
                 <!-- Formulaire d'Importation -->
                 <form id="import-societe-form" action="{{ route('societes.import') }}" method="POST" enctype="multipart/form-data">
-                @csrf
+                    @csrf
                     <div class="mb-3">
                         <label for="import_file" class="form-label">Choisir le fichier d'importation</label>
                         <input type="file" class="form-control" id="import_file" name="file" required>
                     </div>
-                    
+
                     <div class="row">
+                        <!-- Emplacement pour Raison Sociale -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_raison_sociale" class="form-label">Raison Sociale</label>
+                            <label for="import_raison_sociale" class="form-label">Emplacement Raison Sociale</label>
                             <input type="number" class="form-control" id="import_raison_sociale" name="raison_sociale" required>
                         </div>
+                        <!-- Emplacement pour Forme Juridique -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_forme_juridique" class="form-label">Forme Juridique</label>
+                            <label for="import_forme_juridique" class="form-label">Emplacement Forme Juridique</label>
                             <input type="number" class="form-control" id="import_forme_juridique" name="forme_juridique">
                         </div>
+                        <!-- Emplacement pour Siège Social -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_siège_social" class="form-label">Siège Social</label>
+                            <label for="import_siège_social" class="form-label">Emplacement Siège Social</label>
                             <input type="number" class="form-control" id="import_siège_social" name="siege_social">
                         </div>
+                        <!-- Emplacement pour Patente -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_patente" class="form-label">Patente</label>
+                            <label for="import_patente" class="form-label">Emplacement Patente</label>
                             <input type="number" class="form-control" id="import_patente" name="patente">
                         </div>
-                       
+
+                        <!-- Emplacement pour RC -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_rc" class="form-label">RC</label>
+                            <label for="import_rc" class="form-label">Emplacement RC</label>
                             <input type="number" class="form-control" id="import_rc" name="rc" required>
                         </div>
+                        <!-- Emplacement pour Centre RC -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_centre_rc" class="form-label">Centre RC</label>
+                            <label for="import_centre_rc" class="form-label">Emplacement Centre RC</label>
                             <input type="number" class="form-control" id="import_centre_rc" name="centre_rc">
                         </div>
-                       
+
+                        <!-- Emplacement pour Identifiant Fiscal -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
+                            <label for="import_identifiant_fiscal" class="form-label">Emplacement Identifiant Fiscal</label>
                             <input type="number" class="form-control" id="import_identifiant_fiscal" name="identifiant_fiscal" required>
                         </div>
+                        <!-- Emplacement pour ICE -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_ice" class="form-label">ICE</label>
-                            <input type="number" class="form-control" id="import_ice" name="ice" required maxlength="15" title="Veuillez entrer uniquement des chiffres (max 15 chiffres)">
+                            <label for="import_ice" class="form-label">Emplacement ICE</label>
+                            <input type="number" class="form-control" id="import_ice" name="ice" required maxlength="15">
                         </div>
-                      
-                   
-                     
-                      
+
+                        <!-- Emplacement pour Date de Création -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_date_creation" class="form-label">Date de Création</label>
+                            <label for="import_date_creation" class="form-label">Emplacement Date de Création</label>
                             <input type="number" class="form-control" id="import_date_creation" name="date_creation">
                         </div>
+
+                        <!-- Emplacement pour Exercice Social Début -->
                         <div class="col-md-6 mb-3 d-flex">
                             <div class="me-2" style="flex: 1;">
-                                <label for="import_exercice_social_debut" class="form-label">Exercice Social Début</label>
+                                <label for="import_exercice_social_debut" class="form-label">Emplacement Exercice Social Début</label>
                                 <input type="number" class="form-control" id="import_exercice_social_debut" name="exercice_social_debut">
                             </div>
+                            <!-- Emplacement pour Exercice Social Fin -->
                             <div style="flex: 1;">
-                                <label for="import_exercice_social_fin" class="form-label">Exercice Social Fin</label>
+                                <label for="import_exercice_social_fin" class="form-label">Emplacement Exercice Social Fin</label>
                                 <input type="number" class="form-control" id="import_exercice_social_fin" name="exercice_social_fin">
                             </div>
                         </div>
+
+                        <!-- Emplacement pour Modèle Comptable -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_model_comptable" class="form-label">Modèle Comptable</label>
+                            <label for="import_model_comptable" class="form-label">Emplacement Modèle Comptable</label>
                             <input type="number" class="form-control" id="import_model_comptable" name="modele_comptable" required>
                         </div>
+                        <!-- Emplacement pour Nombre caractères Compte -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
+                            <label for="import_nombre_chiffre_compte" class="form-label">Emplacement Nombre caractères Compte</label>
                             <input type="number" class="form-control" id="import_nombre_chiffre_compte" name="nombre_chiffre_compte">
                         </div>
+                        <!-- Emplacement pour Nature d'Activité -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_nature_activite" class="form-label">Nature d'Activité</label>
+                            <label for="import_nature_activite" class="form-label">Emplacement Nature d'Activité</label>
                             <input type="number" class="form-control" id="import_nature_activite" name="nature_activite">
                         </div>
+                        <!-- Emplacement pour Activité -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_activite" class="form-label">Activité</label>
+                            <label for="import_activite" class="form-label">Emplacement Activité</label>
                             <input type="number" class="form-control" id="import_activite" name="activite">
                         </div>
 
-
+                        <!-- Emplacement pour Assujettie Partielle TVA -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
+                            <label for="import_assujettie_partielle_tva" class="form-label">Emplacement Assujettie Partielle TVA</label>
                             <input type="number" class="form-control" id="import_assujettie_partielle_tva" name="assujettie_partielle_tva">
                         </div>
+                        <!-- Emplacement pour Prorata de Déduction -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_prorata_de_deduction" class="form-label">Prorata de Déduction</label>
+                            <label for="import_prorata_de_deduction" class="form-label">Emplacement Prorata de Déduction</label>
                             <input type="number" class="form-control" id="import_prorata_de_deduction" name="prorata_de_deduction">
                         </div>
-                       
-                    
+
+                        <!-- Emplacement pour Régime de Déclaration de TVA -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_regime_declaration" class="form-label">Régime de Déclaration de TVA</label>
+                            <label for="import_regime_declaration" class="form-label">Emplacement Régime de Déclaration de TVA</label>
                             <input type="number" class="form-control" id="import_regime_declaration" name="regime_declaration">
                         </div>
+                        <!-- Emplacement pour Fait Générateur -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_fait_generateur" class="form-label">Fait Générateur</label>
+                            <label for="import_fait_generateur" class="form-label">Emplacement Fait Générateur</label>
                             <input type="number" class="form-control" id="import_fait_generateur" name="fait_generateur">
                         </div>
+                        <!-- Emplacement pour Rubrique TVA -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_rubrique_tva" class="form-label">Rubrique TVA</label>
+                            <label for="import_rubrique_tva" class="form-label">Emplacement Rubrique TVA</label>
                             <input type="number" class="form-control" id="import_rubrique_tva" name="rubrique_tva">
                         </div>
+                        <!-- Emplacement pour Désignation -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_designation" class="form-label">Désignation</label>
+                            <label for="import_designation" class="form-label">Emplacement Désignation</label>
                             <input type="number" class="form-control" id="import_designation" name="designation">
                         </div>
-                      
-                      
                     </div>
+
                     <button type="submit" class="btn btn-primary">Importer</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const inputs = document.querySelectorAll('#import-societe-form input:not([type="file"]):not([type="submit"])');

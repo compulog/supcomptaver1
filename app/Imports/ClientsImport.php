@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Client;
+use App\Models\TypeClient; // Importer le modèle TypeClient
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
@@ -28,41 +29,66 @@ class ClientsImport implements ToModel, WithHeadings, WithChunkReading
             return null; // Ne rien retourner pour la première ligne
         }
 
-        // Vérifiez si les colonnes nécessaires existent
-        if (isset($row[$this->mapping['compte'] - 1]) &&
-            isset($row[$this->mapping['intitule'] - 1]) &&
-            isset($row[$this->mapping['identifiant_fiscal'] - 1]) &&
-            isset($row[$this->mapping['ICE'] - 1]) &&
-            isset($row[$this->mapping['type_client'] - 1])) {
+        // Vérifiez si les colonnes nécessaires existent (en vérifiant que les mappings ne sont pas zéro)
+        $compte = $this->getValue($row, 'compte');
+        $intitule = $this->getValue($row, 'intitule');
+        $identifiantFiscal = $this->getValue($row, 'identifiant_fiscal');
+        $ICE = $this->getValue($row, 'ICE');
+        $typeClient = $this->getValue($row, 'type_client');
 
-            $compte = $row[$this->mapping['compte'] - 1];
-
-            // Chercher le client existant par le compte et societe_id
-            $client = Client::where('compte', $compte)
-                            ->where('societe_id', $this->societe_id) // Filtrer par societe_id
-                            ->first();
-
-            if ($client) {
-                // Mettre à jour le client existant
-                $client->intitule = $row[$this->mapping['intitule'] - 1];
-                $client->identifiant_fiscal = $row[$this->mapping['identifiant_fiscal'] - 1];
-                $client->ICE = $row[$this->mapping['ICE'] - 1];
-                $client->type_client = $row[$this->mapping['type_client'] - 1];
-                $client->save(); // Enregistrer les modifications
+        // Traitement de la valeur de type_client
+        if ($typeClient) {
+            if (is_numeric($typeClient)) {
+                $typeClientNumero = (int) $typeClient;
+                $typeClientDescription = $typeClientNumero >= 1 && $typeClientNumero <= 5
+                    ? TypeClient::where('numero', $typeClientNumero)->first()->description ?? null
+                    : null;
             } else {
-                // Créer un nouveau client si celui-ci n'existe pas
-                return new Client([
-                    'compte' => $compte,
-                    'intitule' => $row[$this->mapping['intitule'] - 1],
-                    'identifiant_fiscal' => $row[$this->mapping['identifiant_fiscal'] - 1],
-                    'ICE' => $row[$this->mapping['ICE'] - 1],
-                    'type_client' => $row[$this->mapping['type_client'] - 1],
-                    'societe_id' => $this->societe_id, // Ajouter societe_id ici
-                ]);
+                $typeClientDescription = $typeClient;
             }
+        } else {
+            $typeClientDescription = null;
+        }
+
+        // Chercher le client existant par le compte et societe_id
+        $client = Client::where('compte', $compte)
+                        ->where('societe_id', $this->societe_id)
+                        ->first();
+
+        // Appliquer la logique d'ajout ou de mise à jour
+        if ($client) {
+            // Mettre à jour le client existant avec les nouvelles valeurs
+            $client->intitule = $intitule;
+            $client->identifiant_fiscal = $identifiantFiscal;
+            $client->ICE = $ICE;
+            $client->type_client = $typeClientDescription;
+            $client->save(); // Enregistrer les modifications
+        } else {
+            // Créer un nouveau client si celui-ci n'existe pas
+            return new Client([
+                'compte' => $compte,
+                'intitule' => $intitule,
+                'identifiant_fiscal' => $identifiantFiscal,
+                'ICE' => $ICE,
+                'type_client' => $typeClientDescription,
+                'societe_id' => $this->societe_id, // Ajouter societe_id ici
+            ]);
         }
 
         return null; // Ne pas enregistrer si une colonne requise est manquante
+    }
+
+    // Fonction pour obtenir la valeur d'un champ, ou 0 si le champ n'existe pas dans le mapping
+    private function getValue(array $row, $field)
+    {
+        $columnIndex = $this->mapping[$field] - 1; // Conversion de l'indice pour correspondre à l'index du tableau (commence à 0)
+        
+        // Si le champ est configuré avec 0, on retourne 0
+        if ($this->mapping[$field] == 0 || !isset($row[$columnIndex])) {
+            return 0;
+        }
+
+        return $row[$columnIndex] ?? 0; // Retourne la valeur ou 0 si la valeur est vide
     }
 
     public function headings(): array
@@ -81,4 +107,3 @@ class ClientsImport implements ToModel, WithHeadings, WithChunkReading
         return 100; // Par exemple, traitez 100 lignes à la fois
     }
 }
-
