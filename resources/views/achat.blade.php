@@ -3,38 +3,42 @@
 @section('content')
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-<div class="container mt-4" >
+<div class="container mt-4">
     <div class="row">
-<!-- Filtrage des dossiers par Nom ou Date -->
-<form method="GET" action="" class="mb-3">
-    <div class="input-group">
-        <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
-            <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Filtrer par Nom</option>
-            <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Filtrer par Date</option>
-        </select>
-        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px;">Filtrer</button>
+        <!-- Conteneur flexible pour aligner les éléments sur la même ligne -->
+        <div class="d-flex align-items-center mb-3">
+            <!-- Formulaire de filtrage -->
+            <form method="GET" action="" class="d-flex me-3">
+                <div class="input-group">
+                    <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+                        <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Filtrer par Nom</option>
+                        <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Filtrer par Date</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" type="submit" style="height: 38px;">Filtrer</button>
+                </div>
+            </form>
+
+            <!-- Formulaire de téléchargement (Charger) -->
+            <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
+                <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="type" value="Achat">
+                    <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
+                    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+                    <input type="hidden" name="folders_id" value="0">
+
+                    <!-- Charger Button -->
+                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-achat').click()">Charger</button>
+
+                    <!-- Submit Button (hidden initially) -->
+                    <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>
+                </form>
+            </div>
+        </div>
     </div>
-</form>
+</div>
 
-<!-- Achat -->
-<div class="col-md-4 mb-3" id="achat-div" style="margin-top:-70px;margin-left:320px">
-    <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto; width: auto;">
-        <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            <input type="hidden" name="type" value="Achat">
-            <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
-            <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-            <input type="hidden" name="folders_id" value="{{ session()->get('foldersId') }}">
 
-            <!-- Charger Button -->
-            <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-achat').click()">Charger</button>
-
-            <!-- Submit Button (hidden initially) -->
-            <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>
-        </form>
-    </div>
-</div>      
 <div class="container mt-4">
     <h3>Fichiers Dossiers de la société</h3>
 
@@ -107,7 +111,7 @@
     </div>
 </div>
 
-<!-- Affichage des fichiers -->
+
 <div class="container mt-4">
     <h3>Fichiers Achat</h3>
 
@@ -119,8 +123,9 @@
                 <div class="col">
                     <div class="card shadow-sm" style="width: 10rem; height: 130px;">
                         <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">
-                            <!-- Icône de fichier -->
-                            <i class="fas fa-file-alt fa-2x mb-1" style="color: #28a745;"></i>
+                            <!-- Affichage de l'aperçu -->
+                            <img src="{{ $file->preview }}" alt="{{ $file->name }}" class="img-fluid mb-2" style="max-height: 80px; object-fit: contain;">
+
                             <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;">
                                 {{ $file->name }}
                             </h5>
@@ -145,6 +150,7 @@
         </div>
     @endif
 </div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

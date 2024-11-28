@@ -29,6 +29,11 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
+
+
+
+
+
 <meta name="csrf-token" content="{{ csrf_token() }}">
     <div class="container mt-5">
         <h3>Liste des Clients</h3>
@@ -36,28 +41,32 @@
         <!-- Affichage du message de succès ou d'erreur -->
         <div id="message" class="alert d-none" role="alert"></div>
 
-<!-- Boutons pour ouvrir les modals -->
-<div class="mb-3">
-    <button type="button" id="create-button" class="btn bg-gradient-primary btn-sm mb-0 d-inline" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel">
+        <div class="mb-3 d-flex align-items-center gap-2 flex-wrap-nowrap">
+    <!-- Bouton Créer -->
+    <button type="button" id="create-button" class="btn btn-outline-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel">
         Créer
     </button>
 
-    <button type="button" id="import-button" class="btn bg-gradient-primary btn-sm mb-0 d-inline" data-bs-toggle="modal" data-bs-target="#modal-import-excel">
+    <!-- Bouton Importer -->
+    <button type="button" id="import-button" class="btn btn-outline-secondary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modal-import-excel">
         Importer
     </button>
 
+    <!-- Formulaire pour exporter les clients -->
     <form action="{{ route('export.clients') }}" method="POST" class="d-inline">
         @csrf
         <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
-        <button type="submit" class="btn bg-gradient-primary btn-sm mb-0">Exporter les clients</button>
+        <button type="submit" class="btn btn-outline-success d-flex align-items-center gap-2">Exporter les clients</button>
     </form>
 
+    <!-- Formulaire pour exporter en PDF -->
     <form action="{{ route('export.clients.pdf') }}" method="POST" class="d-inline">
         @csrf
         <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
-        <button type="submit" class="btn bg-gradient-primary btn-sm mb-0">Exporter en PDF</button>
+        <button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-2">Exporter en PDF</button>
     </form>
 </div>
+
 
 <!-- Modal pour le formulaire d'ajout manuel -->
 <div class="modal fade" id="modal-saisie-manuel" tabindex="-1" aria-labelledby="modalSaisieManuelLabel" aria-hidden="true">
@@ -123,11 +132,11 @@
                             <label for="type_client" class="form-label">Type client</label>
                             <select class="form-control" name="type_client" required>
                                 <option value="Null">Choisir une option</option>
-                                <option value="Entreprise de droit privé">Entreprise de droit privé</option>
-                                <option value="État">État</option>
-                                <option value="Collectivités territoriales">Collectivités territoriales</option>
-                                <option value="Entreprise publique">Entreprise publique</option>
-                                <option value="Autre organisme public">Autre organisme public</option>
+                                <option value="5.Entreprise de droit privé">5.Entreprise de droit privé</option>
+                                <option value="1.État">1.État</option>
+                                <option value="2.Collectivités territoriales">2.Collectivités territoriales</option>
+                                <option value="3.Entreprise publique">3.Entreprise publique</option>
+                                <option value="4.Autre organisme public">4.Autre organisme public</option>
                             </select>
                         </div>
                     </div>
@@ -300,7 +309,7 @@ $(document).ready(function () {
                                 <label for="file" class="form-label">Fichier Excel :</label>
                                 <input type="file" name="file" class="form-control" required>
                             </div>
-                            <h4>Choisir le numéro des colonnes Excel :</h4>
+                        
                             <div class="mb-3">
                                 <label for="compte">Colonne Compte :</label>
                                 <input type="number" name="mapping[compte]" class="form-control">

@@ -14,7 +14,7 @@
                         <input type="hidden" name="type" value="Achat">
                         <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
                         <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-
+                        <input type="hidden" name="folders_id" value="0">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #007bff; border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-achat').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>
                     </form>

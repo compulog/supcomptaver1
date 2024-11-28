@@ -15,31 +15,56 @@ class AchatController extends Controller
     public function index()
     {
         $societeId = session('societeId'); // Récupère l'ID de la société depuis la session
-        
+    
         if ($societeId) {
-            // Récupère les fichiers de type 'achat'
+            // Récupère les fichiers de type 'achat' où le champ 'folders' est égal à 0
             $achatFiles = File::where('societe_id', $societeId)
                               ->where('type', 'achat') // Filtrer par type 'achat'
+                              ->where('folders', 0) // Filtrer où le champ 'folders' est égal à 0
                               ->get();
-    
+            
             // Récupère les dossiers pour la société donnée
             $folders = Folder::where('societe_id', $societeId) // Assurez-vous que "Folder" est le bon modèle
                              ->get();
-            
-            // Vérifie si la collection de dossiers est vide
-            if ($folders->isEmpty()) {
-                // Retourne les fichiers d'achats si les dossiers sont vides
-                return view('achat', compact('achatFiles'))->with('message', 'Aucun dossier trouvé. Voici les fichiers d\'achat.');
+    
+            // Ajouter un champ 'preview' pour chaque fichier afin de passer l'aperçu au front-end
+            foreach ($achatFiles as $file) {
+                // Détecte l'extension du fichier
+                $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
+    
+                // Déterminer l'aperçu en fonction du type de fichier
+                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                    // Si c'est une image, l'aperçu sera l'image elle-même
+                    $file->preview = asset('storage/' . $file->path);
+                } elseif (in_array($extension, ['pdf'])) {
+                    // Si c'est un PDF, afficher une image d'aperçu générique
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF';
+                } elseif (in_array($extension, ['doc', 'docx'])) {
+                    // Si c'est un fichier Word, afficher une image d'aperçu générique
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Word';
+                } elseif (in_array($extension, ['xls', 'xlsx'])) {
+                    // Si c'est un fichier Excel, afficher une image d'aperçu générique
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel';
+                } else {
+                    // Pour tous les autres fichiers, une image d'aperçu générique
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier';
+                }
             }
     
-            // Si des dossiers sont trouvés, passe les dossiers à la vue
+            // Vérifie si la collection de fichiers est vide après le filtre
+            if ($achatFiles->isEmpty()) {
+                // Retourne les fichiers d'achats si aucun fichier n'est trouvé avec 'folders' = 0
+                return view('achat', compact('achatFiles'))->with('message', 'Aucun fichier trouvé avec folders = 0. Voici les fichiers d\'achat.');
+            }
+    
+            // Si des fichiers sont trouvés, passe les fichiers et les dossiers à la vue
             return view('achat', compact('achatFiles', 'folders'));
-            
         } else {
             // Si l'ID de la société n'est pas trouvé dans la session, redirige vers la page d'accueil
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
     }
+    
     
 
     

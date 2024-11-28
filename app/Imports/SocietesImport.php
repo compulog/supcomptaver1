@@ -5,6 +5,9 @@ namespace App\Imports;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use App\Models\Societe;
+use App\Models\RegimeDeclarationTva;
+use App\Models\FaitGenerateurTva; // Importer le modèle FaitGenerateurTva
+use App\Models\NatureActivite; // Importer le modèle NatureActivite
 
 class SocietesImport implements ToModel, WithStartRow
 {
@@ -15,10 +18,6 @@ class SocietesImport implements ToModel, WithStartRow
         $this->mappings = $mappings;
     }
 
-    /**
-     * Définir la ligne à partir de laquelle commencer l'importation
-     * Ici, on commence à partir de la ligne 2 (pour ignorer la première ligne)
-     */
     public function startRow(): int
     {
         return 2; // Commencer à la ligne 2 pour ignorer la ligne 1 (les en-têtes)
@@ -32,8 +31,50 @@ class SocietesImport implements ToModel, WithStartRow
         // Vérifier si la société existe déjà
         $societe = Societe::where('raison_sociale', $raisonSociale)->first();
 
+        // Récupérer la valeur de 'regime_declaration'
+        $regimeDeclaration = $this->getValue($row, 'regime_declaration');
+
+        // Si le champ 'regime_declaration' est un numéro
+        if (is_numeric($regimeDeclaration)) {
+            // Chercher dans la table 'regimes_declaration_tva' si un numéro existe
+            $regime = RegimeDeclarationTva::where('numero', $regimeDeclaration)->first();
+            
+            // Si un régime est trouvé, on enregistre sa description
+            if ($regime) {
+                $regimeDeclaration = $regime->description;
+            }
+        }
+
+        // Récupérer la valeur de 'nature_activite'
+        $natureActivite = $this->getValue($row, 'nature_activite');
+
+        // Si le champ 'nature_activite' est un numéro
+        if (is_numeric($natureActivite)) {
+            // Chercher dans la table 'nature_activites' si un numéro existe
+            $nature = NatureActivite::where('numero', $natureActivite)->first();
+
+            // Si une nature d'activité est trouvée, on enregistre sa description
+            if ($nature) {
+                $natureActivite = $nature->description;
+            }
+        }
+
+        // Récupérer la valeur de 'fait_generateur'
+        $faitGenerateur = $this->getValue($row, 'fait_generateur');
+
+        // Si le champ 'fait_generateur' est un numéro
+        if (is_numeric($faitGenerateur)) {
+            // Chercher dans la table 'fait_generateur_tva' si un numéro existe
+            $fait = FaitGenerateurTva::where('numero', $faitGenerateur)->first();
+
+            // Si un fait générateur est trouvé, on enregistre sa description
+            if ($fait) {
+                $faitGenerateur = $fait->description;
+            }
+        }
+
+        // Si la société existe déjà, on met à jour ses informations
         if ($societe) {
-            // Si la société existe, on la met à jour
             $societe->forme_juridique = $this->getValue($row, 'forme_juridique');
             $societe->siege_social = $this->getValue($row, 'siege_social');
             $societe->patente = $this->getValue($row, 'patente');
@@ -46,18 +87,18 @@ class SocietesImport implements ToModel, WithStartRow
             $societe->exercice_social_fin = $this->getValue($row, 'exercice_social_fin');
             $societe->modele_comptable = $this->getValue($row, 'modele_comptable');
             $societe->nombre_chiffre_compte = $this->getValue($row, 'nombre_chiffre_compte');
-            $societe->nature_activite = $this->getValue($row, 'nature_activite');
+            $societe->nature_activite = $natureActivite; // Mise à jour avec la description de la nature d'activité
             $societe->activite = $this->getValue($row, 'activite');
             $societe->assujettie_partielle_tva = $this->getValue($row, 'assujettie_partielle_tva');
             $societe->prorata_de_deduction = $this->getValue($row, 'prorata_de_deduction');
-            $societe->regime_declaration = $this->getValue($row, 'regime_declaration');
-            $societe->fait_generateur = $this->getValue($row, 'fait_generateur');
+            $societe->regime_declaration = $regimeDeclaration; // Mise à jour avec la description du régime
+            $societe->fait_generateur = $faitGenerateur; // Mise à jour avec la description du fait générateur
             $societe->rubrique_tva = $this->getValue($row, 'rubrique_tva');
             $societe->designation = $this->getValue($row, 'designation');
             $societe->save(); // Enregistrer les modifications
         } else {
             // Si la société n'existe pas, on la crée
-            $societe = new Societe([
+            $societe = new Societe([ 
                 'raison_sociale' => $raisonSociale,
                 'forme_juridique' => $this->getValue($row, 'forme_juridique'),
                 'siege_social' => $this->getValue($row, 'siege_social'),
@@ -71,12 +112,12 @@ class SocietesImport implements ToModel, WithStartRow
                 'exercice_social_fin' => $this->getValue($row, 'exercice_social_fin'),
                 'modele_comptable' => $this->getValue($row, 'modele_comptable'),
                 'nombre_chiffre_compte' => $this->getValue($row, 'nombre_chiffre_compte'),
-                'nature_activite' => $this->getValue($row, 'nature_activite'),
+                'nature_activite' => $natureActivite, // Ajout de la nature d'activité
                 'activite' => $this->getValue($row, 'activite'),
                 'assujettie_partielle_tva' => $this->getValue($row, 'assujettie_partielle_tva'),
                 'prorata_de_deduction' => $this->getValue($row, 'prorata_de_deduction'),
-                'regime_declaration' => $this->getValue($row, 'regime_declaration'),
-                'fait_generateur' => $this->getValue($row, 'fait_generateur'),
+                'regime_declaration' => $regimeDeclaration,
+                'fait_generateur' => $faitGenerateur, // Ajout de la description du fait générateur
                 'rubrique_tva' => $this->getValue($row, 'rubrique_tva'),
                 'designation' => $this->getValue($row, 'designation'),
             ]);
@@ -86,22 +127,14 @@ class SocietesImport implements ToModel, WithStartRow
         return $societe; // Retourne l'objet Societe (ou mis à jour ou créé)
     }
 
-    /**
-     * Fonction pour obtenir la valeur d'un champ, ou 0 si le champ n'existe pas dans le mapping.
-     *
-     * @param array $row
-     * @param string $field
-     * @return mixed
-     */
     private function getValue(array $row, $field)
     {
-        $columnIndex = $this->mappings[$field] - 1; // Conversion de l'indice pour correspondre à l'index du tableau (commence à 0)
+        $columnIndex = $this->mappings[$field] - 1;
 
-        // Si le champ est configuré avec 0 ou s'il n'existe pas dans la ligne, on retourne 0
         if ($this->mappings[$field] == 0 || !isset($row[$columnIndex])) {
             return 0;
         }
 
-        return $row[$columnIndex] ?? 0; // Retourne la valeur ou 0 si la valeur est vide
+        return $row[$columnIndex] ?? 0;
     }
 }

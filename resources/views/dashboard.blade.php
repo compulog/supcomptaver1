@@ -67,11 +67,11 @@
             <div class="card-header pb-0">
                 <div class="d-flex flex-row justify-content-between">
                  
-                    <button type="button" class="btn bg-gradient-primary btn-sm mb-0" id="open-modal-btn">+&nbsp; Nouvelle société</button>
+                    <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-2" id="open-modal-btn">+&nbsp; Nouvelle société</button>
 
-                    <button id="import-societes" class="btn bg-gradient-primary btn-sm mb-0">Importer Sociétés</button>
+                    <button id="import-societes" class="btn btn-outline-secondary d-flex align-items-center gap-2">Importer Sociétés</button>
 
-                    <button id="export-button" class="btn bg-gradient-primary btn-sm mb-0">Liste Des Dossiers    </button>
+                    <button id="export-button" class="btn btn-outline-success d-flex align-items-center gap-2">Liste Des Dossiers    </button>
 
 
 
