@@ -9,18 +9,10 @@
             <h6 class="font-weight-bolder mb-0 text-capitalize text-white">{{ str_replace('-', ' ', Request::path()) }}</h6>
         </nav>
         <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar"> 
-            <div class="nav-item d-flex align-self-end">
-            <a href="{{ route('dashboard') }}" target="_blank" class="btn btn-primary active mb-0 text-white" role="button" aria-pressed="true">
-   ACCEUIL
-</a>
-
+            <div class="nav-item d-flex align-self-end" style="color:white;">
+            Du <input type="date" value="${rowData.exercice_social_debut}"> au <input type="date" value="${rowData.exercice_social_fin}"/> 
             </div>
-            <div class="ms-md-3 pe-md-3 d-flex align-items-center">
-                <div class="input-group">
-                    <span class="input-group-text text-body bg-dark border-light"><i class="fas fa-search" aria-hidden="true"></i></span>
-                    <input type="text" class="form-control bg-dark text-white border-light" placeholder="Type here...">
-                </div>
-            </div>
+            
             <ul class="navbar-nav justify-content-end">
                 <!-- Dropdown Notifications -->
                 <li class="nav-item dropdown pe-2 d-flex align-items-center">

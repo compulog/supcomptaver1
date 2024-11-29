@@ -465,8 +465,6 @@ $(document).ready(function () {
     </div>
 </div>
 
-
-
 <script>
 $(document).ready(function() {
     // Événement pour le clic sur le bouton d'édition
@@ -540,7 +538,6 @@ $(document).ready(function() {
 </script>
 
 
-
 <!-- CSS de Tabulator -->
 <link href="https://unpkg.com/tabulator-tables@5.4.3/dist/css/tabulator.min.css" rel="stylesheet">
 
@@ -604,15 +601,33 @@ var table = new Tabulator("#table-list", {
                 var id = cell.getValue();
                 return `
                    <span class="text-warning edit-client" title="Modifier" style="cursor: pointer;" data-id="${id}">
-                        <i class="fas fa-edit"></i>
+                        <i class="fas fa-edit" style="color:#82d616;"></i>
                     </span>
                     <span class="text-danger" title="Supprimer" style="cursor: pointer;" onclick="deleteClient(${id})">
-                        <i class="fas fa-trash"></i>
+                        <i class="fas fa-trash" style="color:#82d616;"></i>
                     </span>
                 `;
             }
         }
     ],
+    rowFormatter: function(row) {
+        // Récupérer les valeurs du compte et de l'intitulé de la ligne
+        var compte = row.getData().compte;
+        var intitule = row.getData().intitule;
+
+        // Récupérer le nombre de chiffres du compte défini dans la variable PHP
+        var nombreChiffresCompte = {{ $societe->nombre_chiffre_compte }};
+
+        // Vérifier si la valeur de 'compte' ou 'intitule' est égale à 0 ou null
+        if (compte == 0 || compte == null || intitule == 0 || intitule == null) {
+            row.getElement().style.backgroundColor = " rgba(233, 233, 13, 0.838)"; // Appliquer la couleur rouge à la ligne
+        }
+        // Vérifier si le nombre de chiffres du compte ne correspond pas à nombreChiffresCompte
+        else if (compte.toString().length !== nombreChiffresCompte) {
+            row.getElement().style.backgroundColor = "rgba(228, 20, 20, 0.453)"; // Appliquer la couleur jaune à la ligne
+            row.getElement().style.color = "white";
+        }
+    }
 });
 
     // Fonction pour basculer entre les icônes
@@ -923,4 +938,15 @@ function deleteclients(id) {
 
 
 </script>
+
+<p style="margin-left:30px;">compte erroné </p>
+<div style="background-color:rgba(228, 20, 20, 0.453);width:15px;height:15px;margin-top:-35px;border:1px solid #333;">
+
+</div>
+
+<p style="margin-left:30px;">information obligatoire manquante </p>
+<div style="background-color: rgba(233, 233, 13, 0.838);width:15px;height:15px;margin-top:-35px;border:1px solid #333;">
+
+</div>
+
 @endsection

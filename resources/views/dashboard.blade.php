@@ -932,6 +932,15 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                 hozAlign: "center"
             }
         ],
+        rowFormatter: function(row) {
+        // Récupérer les valeurs du compte et de l'intitulé de la ligne
+        var ice = row.getData().ice;
+        
+        // Vérifier si la valeur de 'compte' ou 'intitule' est égale à 0 ou null
+        if (ice == 0 || ice == null) {
+            row.getElement().style.backgroundColor = " rgba(233, 233, 13, 0.838)"; // Appliquer la couleur rouge à la ligne
+        }
+    }
     });
 
     
@@ -1166,6 +1175,12 @@ function openImportModal() {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
+
+
+<p style="margin-left:30px;">information obligatoire manquante </p>
+<div style="background-color: rgba(233, 233, 13, 0.838);width:15px;height:15px;margin-top:-35px;border:1px solid #333;">
+
+</div>
 @endsection
 
 </body>
