@@ -1,56 +1,92 @@
-<?php 
-
+<?php
 
 namespace App\Imports;
 
 use App\Models\Fournisseur;
-use Maatwebsite\Excel\Concerns\ToModel;
-use Maatwebsite\Excel\Concerns\WithStartRow;
+use App\Models\Societe;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Concerns\WithProgressBar;
 
-class FournisseurImport implements ToModel, WithStartRow
+class FournisseurImport implements ToCollection, WithHeadingRow
 {
-    protected $societeId;
-    protected $colonneCompte;
-    protected $colonneIntitule;
-    protected $colonneIdentifiantFiscal;
-    protected $colonneICE;
-    protected $colonneNatureOperation;
-    protected $colonneRubriqueTva;
-    protected $colonneDesignation;
-    protected $colonneContrePartie;
-
-    public function __construct($societeId, $colonneCompte, $colonneIntitule, $colonneIdentifiantFiscal, $colonneICE, $colonneNatureOperation, $colonneRubriqueTva, $colonneDesignation, $colonneContrePartie)
+    /**
+     * Traitement des lignes importées
+     * @param Collection $rows
+     * @return void
+     */
+    public function collection(Collection $rows)
     {
-        $this->societeId = $societeId;
-        $this->colonneCompte = $colonneCompte;
-        $this->colonneIntitule = $colonneIntitule;
-        $this->colonneIdentifiantFiscal = $colonneIdentifiantFiscal;
-        $this->colonneICE = $colonneICE;
-        $this->colonneNatureOperation = $colonneNatureOperation;
-        $this->colonneRubriqueTva = $colonneRubriqueTva;
-        $this->colonneDesignation = $colonneDesignation;
-        $this->colonneContrePartie = $colonneContrePartie;
-    }
+        // Récupérer l'id de la société à partir de la session
+        $societe_id = session('societeId');
+        $societe = Societe::find($societe_id);
 
-    // Spécifie que l'importation commence à la ligne 2
-    public function startRow(): int
-    {
-        return 2;
-    }
+        // Récupérer le nombre de chiffres du compte
+        $nombre_chiffre_compte = $societe->nombre_chiffre_compte;
 
-    public function model(array $row)
-    {
-        return new Fournisseur([
-            'societe_id' => $this->societeId,
-            'compte' => $row[$this->colonneCompte - 1],
-            'intitule' => $row[$this->colonneIntitule - 1],
-            'identifiant_fiscal' => $row[$this->colonneIdentifiantFiscal - 1],
-            'ICE' => $row[$this->colonneICE - 1],
-            'nature_operation' => $row[$this->colonneNatureOperation - 1],
-            'rubrique_tva' => $row[$this->colonneRubriqueTva - 1],
-            'designation' => $row[$this->colonneDesignation - 1],
-            'contre_partie' => $row[$this->colonneContrePartie - 1],
-        ]);
+        // Tableau pour suivre les comptes déjà traités
+        $processedAccounts = [];
+
+        // Parcourir chaque ligne du fichier Excel
+        foreach ($rows as $row) {
+            // Log pour examiner la ligne importée
+            Log::info('Ligne importée:', ['row' => $row]);
+
+            // Vérifier et logguer les valeurs de 'ICE' et 'Nature de l\'Opération'
+            if (isset($row['ICE']) && !empty($row['ICE'])) {
+                Log::info("ICE: " . $row['ICE']);
+            } else {
+                Log::info("Clé 'ICE' manquante ou vide", ['row' => $row]);
+            }
+
+            if (isset($row['Nature de l\'Opération']) && !empty($row['Nature de l\'Opération'])) {
+                Log::info("Nature de l'opération: " . $row['Nature de l\'Opération']);
+            } else {
+                Log::info("Clé 'Nature de l'Opération' manquante ou vide", ['row' => $row]);
+            }
+
+            // Vérifier si le compte existe et s'il n'est pas déjà traité
+            if (isset($row['compte']) && !empty($row['compte'])) {
+                $compte = trim($row['compte']);
+
+                // Sauter les comptes déjà traités
+                if (in_array($compte, $processedAccounts)) {
+                    continue;
+                }
+                $processedAccounts[] = $compte;
+
+                // Vérifier la longueur du compte et marquer comme invalide si nécessaire
+                $compteLength = strlen($compte);
+                $isInvalid = $compteLength !== (int) $nombre_chiffre_compte;
+
+                // Tentative d'importation du fournisseur
+                try {
+                    Fournisseur::updateOrCreate(
+                        [
+                            'compte' => $compte,
+                            'societe_id' => $societe_id,
+                        ],
+                        [
+                            'intitule' => $row['intitule'] ?? null,
+                            'identifiant_fiscal' => $row['identifiant_fiscal'] ?? null,
+                            'ICE' => $row['ICE'] ?? null,
+                            'nature_operation' => $row['Nature de l\'Opération'] ?? null, // Utiliser le nom correct de la colonne
+                            'rubrique_tva' => $row['rubrique_tva'] ?? null,
+                            'designation' => $row['designation'] ?? null,
+                            'contre_partie' => $row['contre_partie'] ?? null,
+                            'invalid' => $isInvalid ? 1 : 0,
+                        ]
+                    );
+                } catch (\Exception $e) {
+                    // Log d'erreur si l'importation échoue
+                    Log::error("Erreur lors de l'importation du fournisseur pour le compte : $compte", [
+                        'message' => $e->getMessage(),
+                        'row' => $row,
+                    ]);
+                }
+            }
+        }
     }
 }
-

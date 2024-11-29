@@ -9,11 +9,11 @@ class Fournisseur extends Model
     use HasFactory;
     protected $connection = 'supcompta';
     protected $table = 'fournisseurs';
-    
+
     protected $fillable = [
-        'id', 'compte', 'intitule', 'identifiant_fiscal', 
-        'ICE', 'nature_operation', 'rubrique_tva', 
-        'designation', 'contre_partie','societe_id',
+        'id', 'compte', 'intitule', 'identifiant_fiscal',
+        'ICE', 'nature_operation', 'rubrique_tva',
+        'designation', 'contre_partie','societe_id', 'invalid',
     ];
 
     public function societe()

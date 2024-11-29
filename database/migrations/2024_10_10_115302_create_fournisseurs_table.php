@@ -14,23 +14,26 @@ class CreateFournisseursTable extends Migration
     public function up()
     {
         Schema::create('fournisseurs', function (Blueprint $table) {
-            $table->id(); // Crée une colonne id auto-incrémentée
-            $table->unsignedBigInteger('societe_id')->nullable(); // ID de la société
-            $table->string('compte', 191)->unique(); // Compte unique
-            $table->string('intitule')->nullable(); // Intitulé
-            $table->string('identifiant_fiscal')->nullable(); // Identifiant fiscal
-            $table->string('ICE')->nullable(); // ICE
-            $table->string('nature_operation')->nullable(); // Nature de l'opération
-            $table->string('rubrique_tva')->nullable(); // Rubrique TVA
-            $table->string('designation')->nullable(); // Désignation
-            $table->string('contre_partie')->nullable(); // Contre partie
-            $table->timestamps(); // Crée les colonnes created_at et updated_at
-            
-            // Ajout d'une clé étrangère
+            $table->id();
+            $table->unsignedBigInteger('societe_id'); // FK vers la table des sociétés
+            $table->string('compte', 191); // Limite la longueur pour rester dans les limites MySQL
+            $table->string('intitule')->nullable();
+            $table->string('identifiant_fiscal')->nullable();
+            $table->string('ICE')->nullable();
+            $table->string('nature_operation')->nullable();
+            $table->string('rubrique_tva')->nullable();
+            $table->string('designation')->nullable();
+            $table->string('contre_partie')->nullable();
+            $table->timestamps();
+
+            // Clé étrangère
             $table->foreign('societe_id')->references('id')->on('societes')->onDelete('cascade');
+
+            // Unicité du compte pour une société spécifique avec taille limitée
+            $table->unique(['societe_id', 'compte'], 'unique_compte_societe');
         });
     }
-   
+
     /**
      * Reverse the migrations.
      *

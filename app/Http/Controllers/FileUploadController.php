@@ -28,6 +28,7 @@ class FileUploadController extends Controller
         $request->validate([
             'file' => 'required|file|mimes:jpg,png,pdf,docx,xlsx', // Types de fichiers acceptés
             'type' => 'required|string', // Le type (Achat, Vente, etc.)
+            'folders' => 'nullable|string', // Le type (Achat, Vente, etc.)
             'societe_id' => 'required|integer', // Validation pour societe_id
             
         ]);
@@ -48,7 +49,7 @@ class FileUploadController extends Controller
             $fileRecord->path = $path;  // Sauvegarde du chemin d'accès (assurez-vous que le chemin est relatif au dossier 'storage/app/public')
             $fileRecord->type = $request->input('type');  // Type du fichier (Achat, Vente, etc.)
             $fileRecord->societe_id = $request->input('societe_id');  // ID de la société
-    
+            $fileRecord->folders = $request->input('folders_id');  // ID de la société
             $fileRecord->save();  // Sauvegarde dans la base de données
     
             return back()->with('success', 'Fichier téléchargé avec succès!');

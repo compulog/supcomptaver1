@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class PlanComptableController extends Controller
-{ 
+{
     public function ajouterContrePartie(Request $request)
 {
     // Validation des données reçues
@@ -54,9 +54,9 @@ class PlanComptableController extends Controller
     ]);
 }
 
-    
 
-    
+
+
 
 
     public function checkPassword(Request $request)
@@ -76,13 +76,13 @@ class PlanComptableController extends Controller
             return response()->json(['success' => false], 401); // Mot de passe incorrect
         }
     }
-   
+
     // Méthode pour afficher tous les plans comptables d'une société
     public function index()
     {
         // Récupérer l'ID de la société dans la session
         $societeId = session('societeId');
-        
+
         // Vérifier si l'ID de la société existe
         if (!$societeId) {
             return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
@@ -99,7 +99,7 @@ class PlanComptableController extends Controller
     {
        // Récupérer l'ID de la société dans la session
        $societeId = session('societeId');
-        
+
        // Vérifier si l'ID de la société existe
        if (!$societeId) {
            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
@@ -194,7 +194,7 @@ if (!$existingPlanComptable) {
     {
         // Récupérer le plan comptable par ID
         $planComptable = PlanComptable::findOrFail($id);
-        
+
         // Supprimer le plan comptable
         $planComptable->delete();
 
@@ -202,7 +202,7 @@ if (!$existingPlanComptable) {
         return response()->json(['success' => true]);
     }
 
-      
+
 
 
     // Afficher le formulaire d'importation
@@ -210,57 +210,72 @@ if (!$existingPlanComptable) {
     {
         return view('plancomptable.import'); // La vue avec le formulaire d'import
     }
-    
-    
-    
-        /**
-         * Méthode pour gérer l'importation du plan comptable
-         */
-        public function import(Request $request)
-        {
-              // Validation des données
-    $request->validate([
-        'file' => 'required|file|mimes:xlsx,xls,csv',
-        'colonne_compte' => 'required|integer',
-        'colonne_intitule' => 'required|integer',
-    ]);
 
-    // Récupérer l'ID de la société à partir de la session
-    $societeId = session('societeId');
+    public function import(Request $request)
+    {
+        // Validation des données
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+            'colonne_compte' => 'required|integer',
+            'colonne_intitule' => 'required|integer',
+        ]);
 
-    // Si l'ID de la société est modifié (par exemple, depuis un formulaire ou une sélection), le mettre à jour
-    if ($request->has('societe_id')) {
-        $societeId = $request->societe_id;
-    }
+        // Récupérer l'ID de la société à partir de la session
+        $societeId = session('societeId');
 
-    try {
-        // Récupérer les données du fichier Excel
-        $importedData = $this->parseExcelFile($request->file('file'), $request->colonne_compte, $request->colonne_intitule);
+        // Si l'ID de la société est modifié (par exemple, depuis un formulaire ou une sélection), le mettre à jour
+        if ($request->has('societe_id')) {
+            $societeId = $request->societe_id;
+        }
 
-        // Insérer les données si le compte n'existe pas déjà pour la société
-        foreach ($importedData as $data) {
-            // Vérifier si le compte existe déjà pour la société
-            $existingPlanComptable = PlanComptable::where('compte', $data['compte'])
-                                                  ->where('societe_id', $societeId)
-                                                  ->first();
+        try {
+            // Récupérer les données du fichier Excel
+            $importedData = $this->parseExcelFile($request->file('file'), $request->colonne_compte, $request->colonne_intitule);
 
-            // Si le compte n'existe pas, insérer le nouveau plan comptable
-            if (!$existingPlanComptable) {
-                PlanComptable::create([
-                    'compte' => $data['compte'],
-                    'intitule' => $data['intitule'],
-                    'societe_id' => $societeId,  // Utiliser l'ID de la société actuel
-                ]);
+            // Récupérer la société pour obtenir le nombre de chiffres autorisé dans le compte
+            $societe = Societe::find($societeId);
+            $compteLength = 8;  // Valeur par défaut de 8 chiffres
+
+            // Vérifier si la société existe et récupérer le nombre de chiffres du compte
+            if ($societe && isset($societe->nombre_chiffre_compte)) {
+                $compteLength = $societe->nombre_chiffre_compte;
             }
-        }
 
-        // Retourner à la page précédente avec un message de succès
-        return redirect()->back()->with('success', 'Importation réussie.');
-    } catch (\Exception $e) {
-        // En cas d'erreur
-        return redirect()->back()->with('error', 'Erreur lors de l\'importation : ' . $e->getMessage());
-    }
+            // Filtrer les données pour ne garder que les lignes où le compte respecte la longueur autorisée
+            $validData = array_filter($importedData, function ($data) use ($compteLength) {
+                return strlen($data['compte']) === $compteLength;
+            });
+
+            // Si aucune donnée valide n'est trouvée
+            if (empty($validData)) {
+                return redirect()->back()->with('error', "Aucune ligne ne respecte la longueur autorisée de {$compteLength} chiffres.");
+            }
+
+            // Insérer les données valides si le compte n'existe pas déjà pour la société
+            foreach ($validData as $data) {
+                // Vérifier si le compte existe déjà pour la société
+                $existingPlanComptable = PlanComptable::where('compte', $data['compte'])
+                                                      ->where('societe_id', $societeId)
+                                                      ->first();
+
+                // Si le compte n'existe pas, insérer le nouveau plan comptable
+                if (!$existingPlanComptable) {
+                    PlanComptable::create([
+                        'compte' => $data['compte'],
+                        'intitule' => $data['intitule'],
+                        'societe_id' => $societeId,  // Utiliser l'ID de la société actuel
+                    ]);
+                }
+            }
+
+            // Retourner à la page précédente avec un message de succès
+            return redirect()->back()->with('success', 'Importation réussie.');
+        } catch (\Exception $e) {
+            // En cas d'erreur
+            return redirect()->back()->with('error', 'Erreur lors de l\'importation : ' . $e->getMessage());
         }
+    }
+
     /**
      * Parser le fichier Excel (en ignorant la première ligne)
      */
@@ -280,16 +295,14 @@ if (!$existingPlanComptable) {
 
         return $importedData;
     }
-        
-    
-    
+
 
 // Méthode pour exporter en Excel
 public function exportExcel()
 {
-    
+
     $societeId = session('societeId'); // Récupérer l'ID de la société depuis la session
-    
+
     // Créer l'export avec l'ID de la société
     return Excel::download(new PlanComptableExport($societeId), 'plan_comptable_societe_' . $societeId . '.xlsx');
 }

@@ -300,6 +300,8 @@ Route::delete('/fournisseurs/{id}', [FournisseurController::class, 'destroy']);
 Route::get('/fournisseurs/{id}', [FournisseurController::class, 'show']);
 // Route pour afficher le formulaire d'édition
 Route::get('/fournisseurs/{id}/edit', [FournisseurController::class, 'edit'])->name('fournisseurs.edit'); ;
+Route::post('/fournisseurs/verifier-compte', [FournisseurController::class, 'verifierCompte']);
+
 
 // Route::get('/get-next-compte', [FournisseurController::class, 'getNextCompte']);
 Route::get('/get-next-compte/{societeId}', [FournisseurController::class, 'getNextCompte']);  // Route pour récupérer le prochain compte
@@ -308,6 +310,8 @@ Route::get('/get-next-compte/{societeId}', [FournisseurController::class, 'getNe
 Route::get('/rubriques-tva', [FournisseurController::class, 'getRubriquesTva']);
 Route::get('/comptes', [FournisseurController::class, 'getComptes']);
 Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->name('fournisseurs.import');
+Route::post('/import-fournisseur', [FournisseurController::class, 'importFournisseur']);
+
 
     Route::get('/saisie', [SaisieMouvementController::class, 'index'])->name('saisie.index');
     Route::post('/saisie', [SaisieMouvementController::class, 'store'])->name('saisie.store');
@@ -320,6 +324,27 @@ Route::post('/fournisseurs/import', [FournisseurController::class, 'import'])->n
         return view('Fournisseurs');
     })->name('Fournisseurs');
 
+Route::resource('operation_courante', OperationCouranteController::class);
+
+
+
+    // Affichage de la liste des opérations courantes
+Route::get('/operations-courantes', [OperationCouranteController::class, 'index'])->name('operation_courante.index');
+
+// Affichage du formulaire pour créer une nouvelle opération
+Route::get('/operations-courantes/create', [OperationCouranteController::class, 'create'])->name('operation_courante.create');
+
+// Enregistrer une nouvelle opération (via Ajax)
+Route::post('/operations-courantes', [OperationCouranteController::class, 'store'])->name('operation_courante.store');
+
+// Affichage du formulaire d'édition pour une opération existante
+Route::get('/operations-courantes/{id}/edit', [OperationCouranteController::class, 'edit'])->name('operation_courante.edit');
+
+// Mise à jour d'une opération existante
+Route::put('/operations-courantes/{id}', [OperationCouranteController::class, 'update'])->name('operation_courante.update');
+
+// Suppression d'une opération
+Route::delete('/operations-courantes/{id}', [OperationCouranteController::class, 'destroy'])->name('operation_courante.destroy');
 // Route pour supprimer plusieurs lignes sélectionnées
 // Route pour supprimer plusieurs plans comptables
 

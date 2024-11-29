@@ -17,7 +17,7 @@
     height:40px
 }
 
- 
+
 
 
 </style>
@@ -26,6 +26,7 @@
 <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
     <div class="container mt-5">
@@ -63,8 +64,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalSaisieManuelLabel">Nouveau Client</h5>
-                <button type="button" class="btn-clo    se" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div> 
+                <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+
+            </div>
             <div class="modal-body">
                 <form action="{{ route('client.store') }}" method="POST" id="form-saisie-manuel">
                     @csrf
@@ -98,8 +100,8 @@
                     <div class="row mb-3">
                         <div class="col-12">
                             <label for="identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
-                            <input type="text" id="identifiant_fiscal" name="identifiant_fiscal" class="form-control" 
-                                   pattern="^\d{7,8}$" maxlength="8" title="L'identifiant fiscal doit comporter 7 ou 8 chiffres" 
+                            <input type="text" id="identifiant_fiscal" name="identifiant_fiscal" class="form-control"
+                                   pattern="^\d{7,8}$" maxlength="8" title="L'identifiant fiscal doit comporter 7 ou 8 chiffres"
                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                         </div>
                     </div>
@@ -108,8 +110,8 @@
                     <div class="row mb-3">
                         <div class="col-12">
                             <label for="ICE" class="form-label">ICE</label>
-                            <input type="text" id="ICE" name="ICE" class="form-control" 
-                                   pattern="^\d{15}$" maxlength="15" title="L'ICE doit comporter exactement 15 chiffres" 
+                            <input type="text" id="ICE" name="ICE" class="form-control"
+                                   pattern="^\d{15}$" maxlength="15" title="L'ICE doit comporter exactement 15 chiffres"
                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                         </div>
                     </div>
@@ -133,7 +135,7 @@
                     <div class="d-flex justify-content-end">
                         <!-- Bouton Réinitialiser avec marge très grande à droite -->
                         <button type="reset" class="btn btn-secondary me-8">
-                            <i class="fas fa-undo"></i> 
+                            <i class="fas fa-undo"></i>
                         </button>
                         <!-- Bouton Valider avec marge très grande à gauche -->
                         <button type="submit" class="btn btn-primary ms-8">
@@ -203,7 +205,7 @@ $(document).ready(function () {
         // Positionner le curseur juste après le "3421" (index 4)
         var input = $('#compte')[0];
         input.setSelectionRange(4, 4); // Positionner le curseur après le "3421"
-        
+
         // Focus sur le champ "compte" lorsque le modal s'ouvre
         $('#compte').focus();
     });
@@ -286,8 +288,8 @@ $(document).ready(function () {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalImportExcelLabel">Importer des Clients</h5>
-<button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
+                        <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+                        </div>
                     <div class="modal-body">
                         <form action="{{ route('import.clients') }}" method="POST" enctype="multipart/form-data">
                             @csrf
@@ -297,7 +299,7 @@ $(document).ready(function () {
                                 <label for="file" class="form-label">Fichier Excel :</label>
                                 <input type="file" name="file" class="form-control" required>
                             </div>
-                            <h4>Mapping des champs :</h4>
+                            <h4>Choisir le numéro des colonnes Excel :</h4>
                             <div class="mb-3">
                                 <label for="compte">Colonne Compte :</label>
                                 <input type="number" name="mapping[compte]" class="form-control">
@@ -318,7 +320,11 @@ $(document).ready(function () {
                                 <label for="type_client">Colonne Type Client :</label>
                                 <input type="number" name="mapping[type_client]" class="form-control">
                             </div>
-                            <button type="submit" class="btn btn-primary">Importer Clients</button>
+                               <!-- Bouton Réinitialiser avec marge très grande à droite -->
+                        <button type="reset" class="btn btn-secondary me-8">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                            <button type="submit" class="btn btn-primary">Importer</button>
                         </form>
                     </div>
                 </div>
@@ -346,7 +352,7 @@ $(document).ready(function () {
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const inputs = document.querySelectorAll('form input:not([type="file"]), form textarea');
-        
+
         inputs.forEach((input, index) => {
             input.addEventListener('keydown', function(event) {
                 if (event.key === 'Enter') {
@@ -371,7 +377,7 @@ $(document).ready(function () {
 
 
 
-    
+
     protected function validateRow(array $row)
 {
     $requiredFields = ['compte', 'intitule', 'identifiant_fiscal', 'ice', 'type_client'];
@@ -393,7 +399,7 @@ $(document).ready(function () {
 </script>
 
 <!-- @foreach($clients as $client)
-   
+
 @endforeach -->
 <!-- Modal pour la modification d'un client -->
 <div class="modal fade" id="editClientModal" tabindex="-1" role="dialog" aria-labelledby="editClientModalLabel" aria-hidden="true">
@@ -404,7 +410,7 @@ $(document).ready(function () {
                 @method('PUT')
                 <div class="modal-header">
                     <h5 class="modal-title" id="editClientModalLabel">Modifier le Client</h5>
-                    <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close" style="color: black; opacity: 1;"></button>
+                    <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
 
                     </button>
                 </div>
@@ -439,7 +445,7 @@ $(document).ready(function () {
                 <div class="modal-footer">
                      <!-- Bouton Réinitialiser avec marge très grande à droite -->
                      <button type="reset" class="btn btn-secondary me-8">
-                            <i class="fas fa-undo"></i> 
+                            <i class="fas fa-undo"></i>
                         </button>
                     <button type="submit" class="btn btn-primary">Modifier</button>
                 </div>
@@ -547,8 +553,8 @@ document.getElementById("export-pdf").addEventListener("click", function() {
     <div id="table-list"></div>
 </div>
 
-<!-- Table Tabulator -->
-<div id="table-list"></div>
+{{-- <!-- Table Tabulator -->
+<div id="table-list"></div> --}}
 
 <script>
 // Initialisation de Tabulator
@@ -562,7 +568,7 @@ var table = new Tabulator("#table-list", {
     ],
     columns: [
         {
-            title: ` 
+            title: `
 <i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="toggleSelectAll()"></i>
                 <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;"></i>
             `,
@@ -581,8 +587,8 @@ var table = new Tabulator("#table-list", {
         { title: "ICE", field: "ICE", headerFilter: "input" },
         { title: "Type client", field: "type_client", headerFilter: "input" },
         {
-            title: "Actions", 
-            field: "id", 
+            title: "Actions",
+            field: "id",
             formatter: function(cell, formatterParams, onRendered) {
                 var id = cell.getValue();
                 return `
@@ -671,7 +677,7 @@ function deleteSelectedRows() {
         .then(data => {
             if (data.success) {
                 alert('Clients supprimés avec succès.');
-                
+
                 // Supprimer les lignes du tableau Tabulator sans rafraîchir la page
                 selectedRows.forEach(function(row) {
                     table.deleteRow(row);  // Supprime les lignes sélectionnées visuellement
@@ -698,7 +704,7 @@ document.getElementById("table-list").addEventListener("click", function(e) {
         deleteSelectedRows(); // Appelle la fonction de suppression pour les lignes sélectionnées
         // Recharger la page
 location.reload();
-      
+
     }
 });
 
@@ -713,7 +719,7 @@ location.reload();
     e.preventDefault();
 
     let formData = new FormData(this); // FormData va automatiquement inclure tous les champs du formulaire, y compris 'societe_id' et 'mapping'
-    
+
     fetch("{{ route('import.clients') }}", {
         method: 'POST',
         body: formData,
@@ -793,11 +799,11 @@ document.getElementById('form-saisie-manuel').onsubmit = function(event) {
         const alertDiv = document.createElement('div');
         alertDiv.className = 'alert alert-danger';  // Utilisation de la classe d'alerte Bootstrap
         alertDiv.textContent = 'Le compte ' + compteEntree + ' existe déjà dans le système. Veuillez choisir un autre compte.';
-        
+
         // Ajouter l'alerte dans la page, vous pouvez ajuster l'endroit où l'alerte est affichée
         const formContainer = document.getElementById('form-saisie-manuel');
         formContainer.insertBefore(alertDiv, formContainer.firstChild); // Affiche l'alerte avant le formulaire
-        
+
         // Retourner pour empêcher la soumission du formulaire
         return;
     }
@@ -833,7 +839,7 @@ document.getElementById('form-saisie-manuel').onsubmit = function(event) {
 }
 
 
-         
+
 </script>
 
 

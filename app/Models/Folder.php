@@ -21,7 +21,7 @@ class Folder extends Model
     public function files()
     {
         // Assurez-vous que la clé étrangère correspond à celle utilisée dans votre table 'files'
-        return $this->hasMany(File::class, 'folder_id');
+        return $this->hasMany(File::class, 'folders'); // Remplacer 'folders' par le nom de la colonne correcte
     }
     
 }

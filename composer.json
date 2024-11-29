@@ -1,4 +1,6 @@
 {
+
+
     "name": "laravel/laravel",
     "type": "project",
     "description": "The Laravel Framework.",
@@ -12,10 +14,14 @@
         "barryvdh/laravel-dompdf": "^3.0",
         "dompdf/dompdf": "^3.0",
         "guzzlehttp/guzzle": "^7.4",
+        "intervention/image": "^3.9",
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.6",
-        "maatwebsite/excel": "^3.1"
+        "maatwebsite/excel": "^3.1",
+        "phpoffice/phpspreadsheet": "^1.29",
+        "spatie/laravel-permission": "^6.10",
+        "yajra/laravel-datatables": "^11.0"
     },
     "require-dev": {
         "spatie/laravel-ignition": "^2.0",
@@ -64,4 +70,9 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true
+
+
+
+
+
 }

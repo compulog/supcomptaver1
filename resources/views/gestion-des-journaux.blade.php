@@ -77,7 +77,7 @@
         <div class="modal-content">
             <div class="modal-header bg-light">
                 <h5 class="modal-title fw-bold text-primary" id="ajouterJournalModalLabel">Créer un Journal</h5>
-                <i class="fas fa-times btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+                <button type="button" class="btn-close text-white bg-dark shadow" data-bs-dismiss="modal" aria-label="Close"></button>
                 @csrf
                 <input type="hidden" name="societe_id" value="{{ session('societeId') }}">
             </div>
@@ -119,7 +119,7 @@
                         <!-- Contre Partie -->
                         <div class="col-md-6 position-relative">
                             <label for="contre_partie" class="form-label fw-semibold">Contre Partie</label>
-                            <select class="form-select form-select-lg shadow-sm" id="contre_partie" name="contre_partie">
+                            <select class="form-select2" id="contre_partie" name="contre_partie" required>
                                 <option value="" selected>Sélectionner une contre partie</option>
                                 <!-- Ajoutez d'autres options ici -->
                             </select>
@@ -150,7 +150,7 @@
         <div class="modal-content">
             <div class="modal-header bg-light">
                 <h5 class="modal-title fw-bold text-primary" id="journalModalLabel">Modifier le Journal</h5>
-                <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+                <button type="button" class="btn-close text-white bg-dark shadow" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="journalFormEdit">
@@ -185,18 +185,19 @@
                                 <option value="Opérations Diverses">Opérations Diverses</option>
                             </select>
                             <!-- Flèche FontAwesome -->
-                            <i class="fas fa-chevron-down position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);"></i>
+                            {{-- <i class="fas fa-chevron-down position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);"></i> --}}
                         </div>
 
                         <!-- Contre Partie -->
                         <div class="col-md-6 position-relative" id="contrePartieContainer">
-                            <label for="editContrePartie" class="form-label fw-semibold">Contre Partie</label>
-                            <select class="form-select form-select-lg shadow-sm" id="editContrePartie" name="contre_partie">
+                            <label for="editContrePartie" class="form-label">Contre Partie</label>
+                            <select class="form-select form-select-lg shadow-sm"id="editContrePartie" name="contre_partie">
                                 <option value="" selected>Sélectionner une contre partie</option>
                                 <!-- Ajoutez d'autres options ici -->
+
                             </select>
                             <!-- Flèche FontAwesome -->
-                            <i class="fas fa-chevron-down position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);"></i>
+                            {{-- <i class="fas fa-chevron-down position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);"></i> --}}
                         </div>
                     </div>
                 </form>
@@ -223,14 +224,31 @@
 
 <script>
 
-$(document).ready(function () {
-    // Initialisation de Select2
-    $('#editTypeJournal, #editContrePartie, #type_journal, #contre_partie').select2({
+    $(document).ready(function () {
+    // Initialisation de Select2 pour les champs de type de journal et contrepartie
+    $('#type_journal, #contre_partie').select2({
         allowClear: true,
         width: '100%',
         theme: 'bootstrap-5',
-        // placeholder: 'Sélectionnez une option', // Ajoute un placeholder
+        placeholder: 'Sélectionnez une option',
+        dropdownAutoWidth: true, // Assurez-vous que le dropdown s'ajuste correctement
+        dropdownParent: $('#ajouterJournalModal') // Définir le parent du dropdown pour éviter les conflits dans le modal
     });
+
+ // Initialisation du focus sur le champ de recherche du select2
+ document.addEventListener("DOMContentLoaded", () => {
+        // Lors de l'ouverture du modal d'ajout
+        const ajouterJournalModal = document.getElementById('ajouterJournalModal');
+        ajouterJournalModal.addEventListener('shown.bs.modal', () => {
+            // Ouvrir le select2 du type de journal et placer le curseur sur le champ de recherche
+            $('#type_journal').select2('open');
+        });
+
+    });
+
+    });
+
+
 
     document.addEventListener("DOMContentLoaded", () => {
     // Curseur sur le premier champ lors de l'ouverture de la modal d'ajout
@@ -250,7 +268,7 @@ $(document).ready(function () {
             firstInput.focus();
         }
     });
-});
+
 
    // Réinitialisation du formulaire de création
 document.getElementById('resetFormBtn').addEventListener('click', function () {

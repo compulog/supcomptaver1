@@ -9,6 +9,7 @@
 
     <!-- Liens CSS et JS externes -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://unpkg.com/tabulator-tables@5.0.7/dist/css/tabulator.min.css" rel="stylesheet">
@@ -76,38 +77,65 @@
     </div>
 @endif
 <!-- Modal d'importation du plan comptable -->
-<!-- Modal d'importation du plan comptable -->
 <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog shadow-lg" role="document">
         <div class="modal-content">
             <div class="modal-header d-flex justify-content-between align-items-center">
                 <h5 class="modal-title" id="importModalLabel">Importation du Plan Comptable</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close text-white bg-dark shadow" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="importForm" action="{{ route('plancomptable.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
 
+                    <!-- Chargement du fichier -->
                     <div class="mb-3">
                         <label for="file" class="form-label">Fichier Excel</label>
-                        <input type="file" class="form-control shadow-sm" name="file" id="file" required>
+                        <input type="file" class="form-control shadow-sm" name="file" id="file" accept=".xls,.xlsx" required>
                     </div>
+
+                    <!-- Sélection des colonnes -->
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="colonne_compte" class="form-label">Colonne Compte</label>
-                            <input type="number" class="form-control shadow-sm" name="colonne_compte" id="colonne_compte" required>
+                            <select class="form-control shadow-sm" name="colonne_compte" id="colonne_compte" required>
+                                <option value="">-- Sélectionnez une colonne --</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label for="colonne_intitule" class="form-label">Colonne Intitulé</label>
-                            <input type="number" class="form-control shadow-sm" name="colonne_intitule" id="colonne_intitule" required>
+                            <select class="form-control shadow-sm" name="colonne_intitule" id="colonne_intitule" required>
+                                <option value="">-- Sélectionnez une colonne --</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="reset" class="btn btn-secondary d-flex align-items-center">
+
+                    <!-- Tableau de prévisualisation -->
+                    <div class="mt-3">
+                        <h6>Prévisualisation des données</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered" id="previewTable">
+                                <thead class="table-dark">
+                                    <tr id="previewHeader">
+                                        <!-- Les en-têtes seront insérés ici -->
+                                    </tr>
+                                </thead>
+                                <tbody id="previewBody">
+                                    <!-- Les lignes seront insérées ici -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Boutons d'action -->
+                    <div class="d-flex justify-content-between mt-3">
+                        <button type="reset" class="btn btn-light d-flex align-items-center">
                             <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
                         </button>
-                        <button type="submit" class="btn btn-primary ms-2">Importer</button>
+                        <button type="submit" class="btn btn-primary d-flex align-items-center ms-2">
+                            <i class="bi bi-upload me-1"></i> Importer
+                        </button>
                     </div>
                 </form>
             </div>
@@ -115,13 +143,76 @@
     </div>
 </div>
 
+<script>
+document.getElementById('file').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function (event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        const sheetName = workbook.SheetNames[0]; // Prendre la première feuille
+        const worksheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // Lire toutes les lignes
+
+        const previewHeader = document.getElementById('previewHeader');
+        const previewBody = document.getElementById('previewBody');
+        const compteSelect = document.getElementById('colonne_compte');
+        const intituleSelect = document.getElementById('colonne_intitule');
+
+        // Réinitialiser les options et la prévisualisation
+        compteSelect.innerHTML = '<option value="">-- Sélectionnez une colonne --</option>';
+        intituleSelect.innerHTML = '<option value="">-- Sélectionnez une colonne --</option>';
+        previewHeader.innerHTML = '';
+        previewBody.innerHTML = '';
+
+        if (rows.length > 0) {
+            const headers = rows[0]; // Première ligne pour les en-têtes
+
+            // Ajouter les en-têtes au tableau
+            headers.forEach((header, index) => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                previewHeader.appendChild(th);
+
+                // Ajouter des options pour les colonnes
+                const option = new Option(header, index + 1);
+                compteSelect.add(option);
+                intituleSelect.add(option.cloneNode(true));
+            });
+
+            // Ajouter les données (5 premières lignes) au tableau
+            const previewLimit = Math.min(5, rows.length - 1); // Limiter à 5 lignes
+            for (let i = 1; i <= previewLimit; i++) {
+                const row = rows[i];
+                if (row) {
+                    const tr = document.createElement('tr');
+                    row.forEach((cell) => {
+                        const td = document.createElement('td');
+                        td.textContent = cell !== undefined ? cell : '';
+                        tr.appendChild(td);
+                    });
+                    previewBody.appendChild(tr);
+                }
+            }
+        } else {
+            alert('Le fichier est vide ou ne contient pas de données.');
+        }
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+
+</script>
+
 <!-- Modal Ajouter -->
 <div class="modal fade" id="planComptableModalAdd" tabindex="-1" role="dialog" aria-labelledby="planComptableModalLabel" aria-hidden="true">
     <div class="modal-dialog shadow-lg" role="document">
         <div class="modal-content">
             <div class="modal-header d-flex justify-content-between align-items-center">
                 <h5 class="modal-title" id="planComptableModalLabel">Ajouter Plan Comptable</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close text-white bg-dark shadow" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="planComptableFormAdd">
@@ -136,11 +227,13 @@
                             <input type="text" class="form-control shadow-sm" id="intitule" name="intitule" required>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="reset" class="btn btn-secondary d-flex align-items-center">
+                    <div class="d-flex justify-content-between mt-3">
+                        <button type="reset" class="btn btn-light d-flex align-items-center">
                             <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
                         </button>
-                        <button type="submit" class="btn btn-primary ms-2">Ajouter</button>
+                        <button type="submit" class="btn btn-primary d-flex align-items-center ms-2">
+                            <i class="bi bi-plus-circle me-1"></i> Ajouter
+                        </button>
                     </div>
                 </form>
             </div>
@@ -154,7 +247,7 @@
         <div class="modal-content">
             <div class="modal-header d-flex justify-content-between align-items-center">
                 <h5 class="modal-title" id="planComptableModalLabel">Modifier Plan Comptable</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close text-white bg-dark shadow" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="planComptableFormEdit">
@@ -170,11 +263,13 @@
                             <input type="text" class="form-control shadow-sm" id="editIntitule" name="intitule" required>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="reset" class="btn btn-secondary d-flex align-items-center">
+                    <div class="d-flex justify-content-between mt-3">
+                        <button type="reset" class="btn btn-light d-flex align-items-center">
                             <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
                         </button>
-                        <button type="submit" class="btn btn-primary ms-2">Modifier</button>
+                        <button type="submit" class="btn btn-primary d-flex align-items-center ms-2">
+                            <i class="bi bi-check-circle me-1"></i> Modifier
+                        </button>
                     </div>
                 </form>
             </div>
@@ -184,40 +279,100 @@
 
 
 <script>
- $("#planComptableFormAdd").on("submit", function(e) {
-    e.preventDefault(); // Empêche le rechargement de la page
 
-    // Récupérer les valeurs des champs
-    const compte = $("#compte").val();
-    const intitule = $("#intitule").val();
+$(document).ready(function () {
+    var nombreChiffresCompte = {{ $societe->nombre_chiffre_compte }}; // Longueur exacte du compte
+    var societeId = $('#societe_id').val(); // ID de la société
 
-    // Affichage de la validation des données dans la console pour déboguer
-    console.log("Compte:", compte);
-    console.log("Intitulé:", intitule);
+    // Limiter la longueur du champ "compte" pour qu'il respecte le nombre de chiffres
+    $('#compte').attr('maxlength', nombreChiffresCompte);
 
-    $.ajax({
-        url: "/plancomptable",
-        type: "POST",
-        data: {
-            compte: compte,
-            intitule: intitule,
-            _token: '{{ csrf_token() }}' // Ajout du token CSRF pour sécurité
-        },
-        success: function(response) {
-            console.log("Réponse:", response);  // Log de la réponse serveur pour voir ce qui arrive
-            if (response.success) {
-                alert(response.success); // Affiche un message de succès
-                table.setData("/plancomptable/data"); // Actualise le tableau
-                $("#planComptableModalAdd").modal("hide"); // Ferme le modal
-                $("#planComptableFormAdd")[0].reset(); // Réinitialise le formulaire
-            } else {
-                alert("Échec de l'ajout du plan comptable.");
-            }
-        },
-        error: function(xhr, status, error) {
-            console.log("Erreur:", xhr.responseText);  // Affiche la réponse du serveur
-            alert("Erreur lors de l'enregistrement des données !");
+    // Variable pour éviter la répétition d'alertes bloquantes
+    let validationEnCours = false;
+
+    // Mettre le focus sur le champ "compte" à l'ouverture du modal
+    $('#planComptableModalAdd').on('shown.bs.modal', function () {
+        $('#compte').focus();
+    });
+
+    // Validation du champ "compte" uniquement lors de la soumission du formulaire
+    $("#planComptableFormAdd").on("submit", function (e) {
+        e.preventDefault();
+
+        var compte = $("#compte").val().trim();
+        var intitule = $("#intitule").val().trim();
+
+        // Vérification du compte : doit avoir la bonne longueur
+        if (compte.length !== nombreChiffresCompte) {
+            alert(`Le compte doit comporter exactement ${nombreChiffresCompte} chiffres.`);
+            $("#compte").focus(); // Retourner le focus sur le champ "compte"
+            return; // Empêcher l'envoi du formulaire tant que le compte n'est pas correct
         }
+
+        // Vérifier si le compte existe déjà
+        var comptesExistants = table.getData().map(row => row.compte);
+        if (comptesExistants.includes(compte)) {
+            alert("Ce compte existe déjà !");
+            $("#compte").focus();
+            return; // Empêcher l'envoi du formulaire si le compte existe déjà
+        }
+
+        // Vérifier que le champ "intitule" est rempli
+        if (!intitule) {
+            alert("Le champ Intitulé est obligatoire.");
+            $("#intitule").focus();
+            return; // Empêcher l'envoi si l'intitulé est vide
+        }
+
+        // Soumettre les données au serveur via AJAX
+        $.ajax({
+            url: "/plancomptable",
+            type: "POST",
+            data: {
+                compte: compte,
+                intitule: intitule,
+                societe_id: societeId,
+                _token: '{{ csrf_token() }}'
+            },
+            beforeSend: function () {
+                $("#planComptableFormAdd button").text("En cours...").prop("disabled", true);
+            },
+            success: function (response) {
+                if (response.success) {
+                    alert("Plan comptable ajouté avec succès !");
+                    table.setData("/plancomptable/data"); // Rafraîchir le tableau
+                    $("#planComptableFormAdd")[0].reset(); // Réinitialiser le formulaire
+                    $("#planComptableModalAdd").modal("hide"); // Fermer le modal
+                } else {
+                    alert(response.error || "Une erreur s'est produite.");
+                }
+            },
+            error: function (xhr) {
+                console.error("Erreur:", xhr.responseText);
+                alert("Erreur lors de l'ajout du plan comptable.");
+            },
+            complete: function () {
+                $("#planComptableFormAdd button").text("Ajouter").prop("disabled", false);
+            }
+        });
+    });
+
+    // Vérification lorsque l'utilisateur quitte le champ "compte"
+    $('#compte').on('blur', function () {
+        var compteValue = $(this).val().trim();
+
+        // Si la longueur est incorrecte, on l'informe seulement une fois
+        if (compteValue.length > 0 && compteValue.length !== nombreChiffresCompte) {
+            alert(`Le compte doit comporter exactement ${nombreChiffresCompte} chiffres.`);
+            $(this).val(''); // Réinitialiser le champ si incorrect
+            $(this).focus(); // Mettre le focus de nouveau sur le champ
+        }
+    });
+
+    // Nettoyer les classes résiduelles après fermeture du modal
+    $("#planComptableModalAdd").on("hidden.bs.modal", function () {
+        $(".modal-backdrop").remove();
+        $("body").removeClass("modal-open").css("padding-right", "");
     });
 });
 
@@ -312,10 +467,10 @@ function editPlanComptable(data) {
 
 var table = new Tabulator("#plan-comptable-table", {
     ajaxURL: "/plancomptable/data", // Votre route pour récupérer les données
-    height: "800px",
+    height: "600px",
     layout: "fitColumns",
     selectable: true,
-    rowSelection: true, // Activer la sélection des lignes
+    // rowSelection: true, // Activer la sélection des lignes
 
     columns: [
         {

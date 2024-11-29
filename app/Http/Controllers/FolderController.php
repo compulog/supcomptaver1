@@ -24,10 +24,17 @@ class FolderController extends Controller
 
             // Retourner la vue avec les données du dossier
             return view('folders', compact('folder'));
+
+            // Récupérer les fichiers associés au dossier
+            $files = $folder->files; // Utilisation de la relation 'files'
+
+            // Retourner la vue avec les données du dossier et des fichiers
+            return view('folders', compact('folder', 'files'));
         } else {
             return redirect()->route('folder.index')->withErrors('Dossier non trouvé.');
         }
     }
+
 
 
 

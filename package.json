@@ -10,16 +10,25 @@
         "production": "mix --production"
     },
     "devDependencies": {
-        "axios": "^0.21",
+        "axios": "^1.7.8",
         "laravel-mix": "^6.0.6",
         "lodash": "^4.17.19",
         "postcss": "^8.1.14",
-        "resolve-url-loader": "^4.0.0",
+        "resolve-url-loader": "^5.0.0",
         "sass": "^1.43.4",
         "sass-loader": "^12.3.0"
     },
     "dependencies": {
+        "bootstrap": "^5.3.3",
+        "csv-parser": "^3.0.0",
+        "datatables.net": "^2.1.8",
+        "datatables.net-dt": "^2.1.8",
+        "express": "^4.21.1",
+        "jquery": "^3.7.1",
+        "mongoose": "^8.8.3",
+        "multer": "^1.4.5-lts.1",
         "select2": "^4.1.0-rc.0",
-        "tabulator-tables": "^6.3.0"
+        "tabulator-tables": "^6.3.0",
+        "validator": "^13.12.0"
     }
 }

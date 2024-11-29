@@ -11,7 +11,7 @@ class Societe extends Model
 
     protected $connection = 'supcompta'; // Assurez-vous que la connexion est correcte
     protected $table = 'societe';
-    
+
     protected $fillable = [
         'raison_sociale',
         'forme_juridique',
@@ -79,4 +79,9 @@ public function folders()
 {
     return $this->hasMany(Folder::class);
 }
+public function operations()
+    {
+        return $this->hasMany(OperationCourante::class);  // Relation inverse, une société a plusieurs opérations
+    }
+
 }

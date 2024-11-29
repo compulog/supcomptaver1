@@ -4,39 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+  <!-- Liens CSS et JS externes -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
-    <title>Gestion des Fournisseurs</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.2.4/dist/css/tabulator.min.css" rel="stylesheet">
-    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.0.7/dist/js/tabulator.min.js"></script>
-    <link href="https://unpkg.com/tabulator-tables@5.0.7/dist/css/tabulator.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Chargement de jQuery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<!-- Chargement de Select2 CSS -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-<!-- Chargement de Select2 JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-<!-- Chargement de Bootstrap JS -->
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://unpkg.com/tabulator-tables@5.0.7/dist/css/tabulator.min.css" rel="stylesheet">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/tabulator-tables@5.0.7/dist/js/tabulator.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <!-- Styles personnalisés -->
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
 
 </head>
 
     <style>
-
+.invalid-row {
+            background-color: rgba(228, 20, 20, 0.453)!important; /* Rouge clair */
+            color: black!important; /* Texte rouge foncé */
+        }
 
 
 
 </style>
+
 
 </head>
 
@@ -46,6 +50,20 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
+
+
+@if(session('success'))
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
+
 
 <!-- Conteneur principal -->
 <!-- Section principale -->
@@ -81,137 +99,195 @@
     <div id="fournisseur-table" class="border rounded shadow-sm bg-white p-3"></div>
 </div>
 
-<!-- Lien vers les Bootstrap Icons -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+<p style="font-size: 14px; color: black; margin-top: 10px;">
+    <span style="background-color: rgba(233, 233, 13, 0.838); /* Jaune clair/orangé */
+                 color: black;
+                 padding: 2px 4px;
+                 border-radius: 4px;
+                 text-align:center;
+                 border: 1px solid black;
+                 display: inline-block;
+                 width: 20px;
+                 height: 20px;">
+    </span>
+    Champ Manquant Obligatoire
+</p>
+
+<p style="font-size: 14px; color: black; margin-top: 10px;">
+    <span style="background-color: rgba(228, 20, 20, 0.453);
+                 color: black;
+                 padding: 2px 4px;
+                 border-radius: 4px;
+                 border: 1px solid black;
+                 display: inline-block;
+                 width: 20px;
+                 height: 20px;">
+    </span>
+    Compte Erroné
+</p>
 
 
 
 <!-- Formulaire d'importation Excel -->
-<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document"> <!-- Ajout de la classe modal-lg ici -->
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="importModalLabel">Importation des Fournisseurs</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+<!-- Exemple d'un modal avec des améliorations visuelles et des commentaires -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true" data-bs-animation="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="importModalLabel"><i class="fas fa-upload"></i> Importation des Fournisseurs</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body bg-light">
                 <form id="importForm" action="{{ route('fournisseurs.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
+                    <input type="hidden" name="nombre_chiffre_compte" value="{{ $societe->nombre_chiffre_compte }}">
 
-                    <div class="form-group">
-                        <label for="file">Fichier Excel</label>
-                        <input type="file" class="form-control form-control-lg shadow-sm" name="file" id="file" required>
+                    <div class="form-group mb-3">
+                        <label for="file" class="form-label"><strong>Fichier Excel</strong></label>
+     <input type="file" class="form-control form-control-lg shadow-sm" name="file" id="file" accept=".xlsx, .xls, .csv" required>
                     </div>
+                    {{-- <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre_chiffre_compte_display" class="form-label">Nombre de Chiffres du Compte</label>
+                            <input type="text" class="form-control form-control-lg shadow-sm" id="nombre_chiffre_compte_display" value="{{ $societe->nombre_chiffre_compte }}" readonly>
+                        </div>
+                    </div> --}}
 
-                    <div class="form-row">
-                        <div class="col-md-6 form-group">
-                            <label for="colonne_compte">Colonne Compte</label>
-                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_compte" id="colonne_compte" required>
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label for="colonne_intitule">Colonne Intitulé</label>
-                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_intitule" id="colonne_intitule" required>
-                        </div>
-                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="colonne_compte" class="form-label">Colonne Compte</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_compte" id="colonne_compte"   required>
 
-                    <div class="form-row">
-                        <div class="col-md-6 form-group">
-                            <label for="colonne_identifiant_fiscal">Colonne Identifiant Fiscal</label>
-                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_identifiant_fiscal" id="colonne_identifiant_fiscal" required>
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label for="colonne_ICE">Colonne ICE</label>
-                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_ICE" id="colonne_ICE" required>
-                        </div>
-                    </div>
 
-                    <div class="form-row">
-                        <div class="col-md-6 form-group">
-                            <label for="colonne_nature_operation">Colonne Nature d'Opération</label>
-                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_nature_operation" id="colonne_nature_operation" required>
                         </div>
-                        <div class="col-md-6 form-group">
-                            <label for="colonne_rubrique_tva">Colonne Rubrique TVA</label>
-                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_rubrique_tva" id="colonne_rubrique_tva" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="colonne_intitule" class="form-label">Colonne Intitulé</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_intitule" id="colonne_intitule"   required>
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="col-md-6 form-group">
-                            <label for="colonne_designation">Colonne Désignation</label>
-                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_designation" id="colonne_designation" required>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="colonne_identifiant_fiscal" class="form-label">Colonne Identifiant Fiscal</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_identifiant_fiscal" id="colonne_identifiant_fiscal" >
                         </div>
-                        <div class="col-md-6 form-group">
-                            <label for="colonne_contre_partie">Colonne Contre Partie</label>
-                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_contre_partie" id="colonne_contre_partie" required>
+                        <div class="col-md-6 mb-3">
+                            <label for="colonne_ICE" class="form-label">Colonne ICE</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_ICE" id="colonne_ICE"  >
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">Importer</button>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="colonne_nature_operation" class="form-label">Colonne Nature d'Opération</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_nature_operation" id="colonne_nature_operation"  >
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="colonne_rubrique_tva" class="form-label">Colonne Rubrique TVA</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_rubrique_tva" id="colonne_rubrique_tva" >
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="colonne_designation" class="form-label">Colonne Désignation</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_designation" id="colonne_designation" >
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="colonne_contre_partie" class="form-label">Colonne Contre Partie</label>
+                            <input type="number" class="form-control form-control-lg shadow-sm" name="colonne_contre_partie" id="colonne_contre_partie" >
+                        </div>
+                    </div>
+
+
+                        <div class="d-flex justify-content-between">
+                            <!-- Bouton de réinitialisation -->
+                            <button type="button" class="btn btn-secondary mr-2" id="resetModal">
+                                <i class="bi bi-arrow-clockwise fs-6"></i> Réinitialiser
+                            </button>
+                        <button type="submit" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-check"></i> Importer
+                        </button>
+                        <div id="loadingSpinner" class="d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+<div class="mt-4">
+
+</div>
+
+
+<div id="errorMessages" class="alert alert-danger d-none">
+    <ul id="errorList"></ul>
+</div>
+
 
 
 <!-- Modal add-->
-<div class="modal fade" id="fournisseurModaladd" tabindex="-1" role="dialog" aria-labelledby="fournisseurModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="fournisseurModalLabel">Créer</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+<!-- Modal Ajouter Fournisseur -->
+<div class="modal fade" id="fournisseurModaladd" tabindex="-1" aria-labelledby="fournisseurModalLabel" aria-hidden="true" data-bs-animation="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-light text-white">
+                <h5 class="modal-title" id="fournisseurModalLabel"><i class="fas fa-plus-circle"></i> Créer Fournisseur</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body bg-light">
                 <form id="fournisseurFormAdd">
                     @csrf
+                    <input type="hidden" id="nombre_chiffre_compte" value="{{ $societe->nombre_chiffre_compte }}">
+                    <input type="hidden" id="societe_id" name="societe_id" value="{{ session('societeId') }}">
                     <div class="row">
+                        <!-- Champ Compte -->
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="compte">Compte</label>
-                                <input type="hidden" id="societe_id" name="societe_id" value="{{ session('societeId') }}"> <!-- Societe ID ici -->
-                                <div class="input-group">
-                                    <input type="text" class="form-control form-control-lg shadow-sm" id="compte" name="compte" placeholder="4411XXXX" required>
-                                    <div class="input-group-append">
-                                        <button type="button" class="btn btn-secondary" id="autoIncrementBtn">Auto</button>
-                                    </div>
+                                <div class="d-flex">
+                                    <input type="text" class="form-control form-control-sm shadow-sm " id="compte" name="compte" placeholder="4411XXXX" required>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="autoIncrementBtn" >
+                                        Auto
+                                    </button>
                                 </div>
                             </div>
                         </div>
+                        <!-- Champ Intitulé -->
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="intitule">Intitulé</label>
-                                <input type="text" class="form-control form-control-lg shadow-sm" id="intitule" name="intitule">
+                                <input type="text" class="form-control form-control-sm shadow-sm" id="intitule" name="intitule" required>
                             </div>
                         </div>
                     </div>
-
                     <div class="row">
+                        <!-- Champ Identifiant Fiscal -->
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="identifiant_fiscal">Identifiant Fiscal</label>
-                                <input type="text" class="form-control form-control-lg shadow-sm" id="identifiant_fiscal" name="identifiant_fiscal" maxlength="8" pattern="\d*">
+                                <input type="text" class="form-control form-control-sm shadow-sm" id="identifiant_fiscal" name="identifiant_fiscal" maxlength="8" pattern="\d*">
                             </div>
                         </div>
+                        <!-- Champ ICE -->
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="ICE">ICE</label>
-                                <input type="text" class="form-control form-control-lg shadow-sm" id="ICE" name="ICE" maxlength="15" pattern="\d*">
+                                <input type="text" class="form-control form-control-sm shadow-sm" id="ICE" name="ICE" maxlength="15" pattern="\d*">
                             </div>
                         </div>
                     </div>
-
                     <div class="row">
+                        <!-- Nature de l'opération -->
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="nature_operation">Nature de l'opération</label>
-                                <select class="form-select form-select-lg shadow-sm" id="nature_operation" name="nature_operation">
+                                <select class="form-select form-select-sm shadow-sm" id="nature_operation" name="nature_operation">
                                     <option value="">Sélectionner une option</option>
                                     <option value="1-Achat de biens d'équipement">1-Achat de biens d'équipement</option>
                                     <option value="2-Achat de travaux">2-Achat de travaux</option>
@@ -219,41 +295,40 @@
                                 </select>
                             </div>
                         </div>
+                        <!-- Contre Partie -->
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="contre_partie" class="mr-2">Contre Partie</label>
-                                <div class="position-relative w-100">
-                                    <select class="form-control form-control-lg shadow-sm select2" id="contre_partie" name="contre_partie" required>
-                                        <option value="">Sélectionner une contre partie</option>
-                                    </select>
-                                    <button type="button" class="btn btn-link position-absolute" style="top:90%; right: 10px; transform: translateY(-20%);" data-toggle="modal" data-target="#planComptableModalAdd">
-                                        Nouveau compte  <i class="bi bi-plus-circle" style="font-size: 1.3rem;"></i>
-                                    </button>
-                                </div>
+                                <label for="contre_partie">Contre Partie</label>
+                                <select class="form-select2" id="contre_partie" name="contre_partie" required>
+                                    <option value="">Sélectionner une contre partie</option>
+                                    <option value="ajouter_compte">Ajouter un compte</option>
+                                    <!-- Les autres options peuvent être ajoutées ici -->
+                                </select>
+                                <p class="text-muted mt-1" style="font-size: 0.875rem;">Si vous ne trouvez pas la contrepartie souhaitée, <a href="#" id="ajouterCompteLink">ajoutez une nouvelle contrepartie</a>.</p>
                             </div>
                         </div>
                     </div>
-
                     <div class="row">
+                        <!-- Rubrique TVA -->
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="rubrique_tva">Rubrique TVA</label>
-                                <select class="form-select form-select-lg shadow-sm" id="rubrique_tva" name="rubrique_tva">
-                                    <option value="" selected>Sélectionnez une Rubrique</option>
+                                <select class="form-select2 form-select2-sm shadow-sm" id="rubrique_tva" name="rubrique_tva">
+                                    <option value="" selected>Sélectionner une rubrique</option>
                                 </select>
                             </div>
                         </div>
+                        <!-- Désignation -->
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="designation">Désignation</label>
-                                <input type="text" class="form-control form-control-lg shadow-sm" id="designation" name="designation" placeholder="Designation">
+                                <input type="text" class="form-control form-control-sm shadow-sm" id="designation" name="designation" placeholder="Désignation">
                             </div>
                         </div>
                     </div>
-
                     <div class="d-flex justify-content-between">
-                        <button type="button" class="btn btn-secondary mr-2" id="resetModal"> <i class="bi bi-arrow-clockwise fs-6"></i> <!-- Icône de réinitialisation --></button>
-                        <button type="submit" class="btn btn-primary ml-2">Valider<i class="bi bi-check-lg  bi-2x"></i></button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="resetModal"><i class="bi bi-arrow-clockwise fs-6"></i> Réinitialiser</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Valider <i class="bi bi-check-lg"></i></button>
                     </div>
                 </form>
             </div>
@@ -261,19 +336,20 @@
     </div>
 </div>
 
-<!-- Modal edit-->
+
+<!-- Modal Edit -->
 <div class="modal fade" id="fournisseurModaledit" tabindex="-1" role="dialog" aria-labelledby="fournisseurModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="fournisseurModalLabel">Modifier</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title" id="fournisseurModalLabel">Modifier un compte</h5>
+                <button type="button" class="btn-close text-white bg-dark shadow" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="fournisseurFormEdit">
                     <input type="hidden" id="editFournisseurId" value="">
+
+                    <!-- Formulaire -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -319,7 +395,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editContrePartie">Contre Partie</label>
-                                <select class="form-select form-select-lg shadow-sm" id="editContrePartie">
+                                <select class="form-select form-select-lg shadow-sm select2" id="editContrePartie">
                                     <option value="">Sélectionnez une contre partie</option>
                                 </select>
                             </div>
@@ -344,8 +420,14 @@
                     </div>
 
                     <div class="d-flex justify-content-between">
-                        <button type="button" class="btn btn-secondary mr-2" id="resetModal"> <i class="bi bi-arrow-clockwise fs-6"></i> <!-- Icône de réinitialisation --></button>
-                        <button type="submit" class="btn btn-primary ml-2">Valider<i class="bi bi-check-lg  bi-2x"></i></button>
+                        <!-- Bouton de réinitialisation -->
+                        <button type="button" class="btn btn-secondary mr-2" id="resetModal">
+                            <i class="bi bi-arrow-clockwise fs-6"></i> Réinitialiser
+                        </button>
+                        <!-- Bouton de validation -->
+                        <button type="submit" class="btn btn-primary ml-2">Valider
+                            <i class="bi bi-check-lg bi-2x"></i>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -353,25 +435,27 @@
     </div>
 </div>
 
-<!-- Modal pour ajouter un plan comptable-->
-<div class="modal fade" id="planComptableModalAdd" tabindex="-1" role="dialog" aria-labelledby="planComptableModalLabel" aria-hidden="true">
+<!-- Modal Plan Comptable -->
+<div class="modal fade" id="planComptableModalAdd" tabindex="-1" aria-labelledby="planComptableModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="planComptableModalLabel">Ajouter un compte </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="planComptableModalLabel">Ajouter un compte</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="planComptableFormAdd">
-                    <div class="form-group">
-                        <label for="compte">compte</label>
-                        <input type="text" class="form-control form-control-lg shadow-sm" id="compte_add" name="compte" required>
+                    <!-- Champs du formulaire -->
+                    <div class="form-group ">
+                        <input type="hidden" id="nombre_chiffre_compte" value="{{ $societe->nombre_chiffre_compte }}">
+                        <input type="hidden" id="societe_id" name="societe_id" value="{{ session('societeId') }}">
+                        <label for="compte_add" class="form-label">Compte</label>
+                        <input type="text" class="form-control form-control-lg shadow-sm" id="compte_add" name="compte" placeholder="Entrer le numéro du compte">
+
                     </div>
-                    <div class="form-group">
-                        <label for="intitule">Intitulé</label>
-                        <input type="text" class="form-control form-control-lg shadow-sm" id="intitule_add" name="intitule" required>
+                    <div class="form-group ">
+                        <label for="intitule_add" class="form-label">Intitulé</label>
+                        <input type="text" class="form-control form-control-lg shadow-sm" id="intitule_add" name="intitule" placeholder="Entrer l'intitulé">
                     </div>
                     <button type="submit" class="btn btn-primary">Ajouter</button>
                 </form>
@@ -380,51 +464,88 @@
     </div>
 </div>
 
- <script >
-
-// Générer automatiquement un numéro de compte
-document.getElementById("autoIncrementBtn").addEventListener("click", function () {
-    const societeId = document.getElementById("societe_id").value;
-
-    fetch(`/get-next-compte/${societeId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.next_compte) {
-                document.getElementById("compte").value = data.next_compte;
-            } else {
-                alert("Erreur lors de la génération du compte : " + (data.error || "inconnue"));
-            }
-        })
-        .catch(error => console.error("Erreur :", error));
-});
 
 
-document.getElementById("compte").addEventListener("input", function() {
-    const compteField = document.getElementById("compte");
-    if (!compteField.value.startsWith("4411")) {
-        compteField.setCustomValidity("Le compte doit commencer par 4411");
-    } else {
-        compteField.setCustomValidity("");
-    }
-});
+<script>
+ document.addEventListener('DOMContentLoaded', function() {
 
-// Gérer le déplacement automatique du focus lors de l'appui sur "Entrée"
-document.getElementById("fournisseurFormAdd").addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-        event.preventDefault(); // Empêche le formulaire de se soumettre à la pression de la touche "Entrée"
+$(document).ready(function () {
+    var initialValue = '4411'; // Le préfixe des fournisseurs (ex: '4411')
+    var societeId = $('#societe_id').val(); // ID de la société sélectionnée
+    var nombreChiffresCompte = parseInt($('#nombre_chiffre_compte').val()); // Nombre de chiffres total du compte, à partir de la société sélectionnée
 
-        // Récupère tous les champs du formulaire
-        const inputs = Array.from(this.querySelectorAll("input, select,select2"));
+    // Désactiver la saisie après le nombre de chiffres spécifié
+    $('#compte').on('input', function () {
+        var currentValue = $(this).val();
 
-        // Trouve l'index de l'élément actuellement focus
-        const currentIndex = inputs.indexOf(document.activeElement);
-
-        // Si un élément suivant existe, place le focus dessus
-        if (currentIndex > -1 && currentIndex < inputs.length - 1) {
-            inputs[currentIndex + 1].focus();
+        // Si la longueur du champ dépasse la limite définie par nombre_chiffre_compte, couper l'excédent
+        if (currentValue.length > nombreChiffresCompte) {
+            $(this).val(currentValue.substring(0, nombreChiffresCompte)); // Limite la longueur à nombreChiffresCompte
         }
-    }
-});
+
+        // Si l'utilisateur tente de modifier le préfixe (par exemple '4411'), le restaurer
+        if (currentValue.substring(0, initialValue.length) !== initialValue) {
+            $(this).val(initialValue + currentValue.substring(initialValue.length)); // Remet le préfixe "4411" s'il est modifié
+        }
+    });
+
+    // Lors de l'ouverture du modal de saisie manuelle, se positionner après le préfixe
+    $('#fournisseurModaladd').on('shown.bs.modal', function () {
+        var input = $('#compte')[0];
+        input.setSelectionRange(initialValue.length, initialValue.length); // Positionner le curseur juste après le préfixe "4411"
+        $('#compte').focus(); // Focus sur le champ "compte"
+    });
+
+    // Bouton pour générer le prochain compte automatiquement
+    $('#autoIncrementBtn').on('click', async function () {
+        try {
+            const response = await $.ajax({
+                url: `/get-next-compte/${societeId}`, // Appel API pour récupérer le prochain compte
+                method: 'GET',
+                dataType: 'json',
+            });
+
+            if (response.success) {
+                $('#compte').val(response.nextCompte); // Remplir le champ avec le compte généré
+                console.log('Compte généré:', response.nextCompte);
+            } else {
+                alert(response.message || 'Erreur inconnue lors de la génération du compte.');
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'appel API:', error);
+            alert('Une erreur est survenue lors de la génération du compte.');
+        }
+    });
+
+    // Générer automatiquement un compte lorsque la société est changée
+    $('#societe_id').on('change', async function () {
+        societeId = $(this).val(); // Mettre à jour l'ID de la société sélectionnée
+        nombreChiffresCompte = parseInt($('#nombre_chiffre_compte').val()); // Mettre à jour la configuration
+
+        // Mettre à jour la longueur maximale du champ "compte"
+        $('#compte').attr('maxlength', nombreChiffresCompte);
+
+        try {
+            const response = await $.ajax({
+                url: `/get-next-compte/${societeId}`, // Appel API pour récupérer le prochain compte
+                method: 'GET',
+                dataType: 'json',
+            });
+
+            if (response.success) {
+                $('#compte').val(response.nextCompte); // Remplir le champ avec le compte généré
+                console.log('Compte généré pour la nouvelle société:', response.nextCompte);
+            } else {
+                alert(response.message || 'Erreur lors de la génération du compte pour la nouvelle société.');
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'appel API:', error);
+            alert('Une erreur est survenue lors de la mise à jour du compte.');
+        }
+    });
+
+
+
 
 
 // Validation pour le champ ICE
@@ -449,14 +570,16 @@ $("#identifiant_fiscal").on("input", function() {
   }
 });
 
+
+
 var table = new Tabulator("#fournisseur-table", {
     ajaxURL: "/fournisseurs/data", // URL pour récupérer les données
     layout: "fitColumns",
-    height: "800px", // Hauteur du tableau
+    height: "600px", // Hauteur du tableau
     selectable: true, // Permet de sélectionner les lignes
-    rowSelection: true,
-    initialSort: [ // Tri initial par colonne 'Compte'
-        { column: "compte", dir: "asc" }
+   rowSelection: true,
+    initialSort: [
+        { column: "compte", dir: "asc" } // Tri initial
     ],
     columns: [
         {
@@ -468,102 +591,175 @@ var table = new Tabulator("#fournisseur-table", {
             formatter: "rowSelection", // Active la sélection de ligne
             headerSort: false,
             hozAlign: "center",
-            width: 60, // Fixe la largeur de la colonne de sélection
-            cellClick: function(e, cell) {
-                cell.getRow().toggleSelect();  // Basculer la sélection de ligne
-            }
+            width: 60,
+            cellClick: function (e, cell) {
+                cell.getRow().toggleSelect(); // Basculer la sélection de ligne
+            },
         },
-        {title: "Compte", field: "compte", editor: "input", headerFilter: "input"},
-        {title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input"},
-        {title: "Identifiant Fiscal", field: "identifiant_fiscal", editor: "input", headerFilter: "input"},
-        {title: "ICE", field: "ICE", editor: "input", headerFilter: "input"},
-        {title: "Nature de l'opération", field: "nature_operation", editor: "input", headerFilter: "input"},
-        {title: "Rubrique TVA", field: "rubrique_tva", editor: "input", headerFilter: "input"},
-        {title: "Désignation", field: "designation", editor: "input", headerFilter: "input"},
-        {title: "Contre Partie", field: "contre_partie", editor: "input", headerFilter: "input"},
+        {
+            title: "Compte",
+            field: "compte",
+            editor: "input",
+            headerFilter: "input",
+            formatter: function (cell) {
+                var rowData = cell.getRow().getData();
+                if (rowData.imported) {
+                    if (rowData.valid) {
+                        cell.getElement().style.textDecoration = "underline";
+                        cell.getElement().style.color = "green";
+                    } else {
+                        cell.getElement().style.textDecoration = "underline";
+                        cell.getElement().style.color = "red";
+                    }
+                }
+                return cell.getValue();
+            },
+        },
+        { title: "Intitulé", field: "intitule", headerFilter: "input" },
+        { title: "Identifiant Fiscal", field: "identifiant_fiscal", headerFilter: "input" },
+        { title: "ICE", field: "ICE",  headerFilter: "input" },
+        { title: "Nature de l'opération", field: "nature_operation", headerFilter: "input" },
+        { title: "Rubrique TVA", field: "rubrique_tva", headerFilter: "input" },
+        { title: "Désignation", field: "designation",  headerFilter: "input" },
+        { title: "Contre Partie", field: "contre_partie", headerFilter: "input" },
+        { title: "Invalid", field: "invalid", visible: false }, // Champs caché mais utile pour les validations
         {
             title: "Actions",
             field: "action-icons",
-            formatter: function() {
+            formatter: function () {
                 return `
                     <i class='fas fa-edit text-primary edit-icon' style='font-size: 0.9em; cursor: pointer;'></i>
                     <i class='fas fa-trash-alt text-danger delete-icon' style='font-size: 0.9em; cursor: pointer;'></i>
                 `;
             },
-            cellClick: function(e, cell) {
-    var row = cell.getRow();
+            cellClick: function (e, cell) {
+                var row = cell.getRow();
 
-    // Vérifier quel élément a été cliqué
-    if (e.target.classList.contains('row-select-checkbox')) {
-        // Synchronise la sélection de la ligne avec l'état de la checkbox
-        if (e.target.checked) {
-            row.select();
-        } else {
-            row.deselect();
-        }
-    } else if (e.target.classList.contains('edit-icon')) {
-        var rowData = cell.getRow().getData();
+                // Vérifier quel élément a été cliqué
+                if (e.target.classList.contains("edit-icon")) {
+                    var rowData = cell.getRow().getData();
+                    editFournisseur(rowData); // Fonction de modification
+                } else if (e.target.classList.contains("delete-icon")) {
+                    var rowData = cell.getRow().getData();
+                    deleteFournisseur(rowData.id);
+                }
+            },
+            hozAlign: "center",
+            headerSort: false,
+        },
+    ],
+    rowFormatter: function (row) {
+        let data = row.getData();
+    let rowElement = row.getElement();
 
-        // Ouvrir directement le modal de modification
-        editFournisseur(rowData); // Appel à votre fonction de modification
-    } else if (e.target.classList.contains('delete-icon')) {
-        var rowData = cell.getRow().getData();
-        deleteFournisseur(rowData.id);
+    // Réinitialiser les styles au début
+    rowElement.style.backgroundColor = "";
+    rowElement.classList.remove("invalid-row");
+
+    // Vérification pour compte et intitule vides ou nuls
+    if (
+        (!data.compte && !data.intitule) || // Les deux champs sont vides ou nuls
+        (!data.compte && data.intitule) || // 'compte' est vide ou nul
+        (!data.intitule && data.compte)    // 'intitule' est vide ou nul
+    ) {
+        rowElement.style.backgroundColor = "rgba(233, 233, 13, 0.838)"; // Jaune orangé
+    }
+    // Garder le traitement existant pour les lignes invalides (uniquement si pas jaune orangé)
+    else if (data.invalid === 1) {
+        rowElement.classList.add("invalid-row");
     }
 },
-hozAlign: "center",
-headerSort: false
 
+
+    cellEdited: function (cell) {
+        let rowData = cell.getRow().getData();
+        if (cell.getField() === "compte") {
+            fetch(`/fournisseurs/update/${rowData.id}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
+                },
+                body: JSON.stringify({ compte: rowData.compte }),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        swal("Succès", data.message, "success");
+                        cell.getRow().update({ invalid: 0 }); // Supprimer le surlignement rouge
+                    } else {
+                        swal("Erreur", data.message, "error");
+                    }
+                })
+                .catch((error) => {
+                    swal(
+                        "Erreur",
+                        "Impossible de mettre à jour le fournisseur.",
+                        "error"
+                    );
+                    console.error(error);
+                });
         }
-    ],
-
+    },
 });
 
 // Fonction pour supprimer les lignes sélectionnées côté serveur
 function deleteSelectedRows() {
-    var selectedRows = table.getSelectedRows(); // Récupère les lignes sélectionnées
-    var idsToDelete = selectedRows.map(function(row) {
-        return row.getData().id; // Récupère les IDs des lignes sélectionnées
+    var selectedRows = table.getSelectedRows();
+    var idsToDelete = selectedRows.map(function (row) {
+        return row.getData().id;
     });
 
-    // Envoie les IDs au serveur pour suppression
     if (idsToDelete.length > 0) {
         fetch("/fournisseurs/delete-selected", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                "X-CSRF-TOKEN": document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute("content"),
             },
-            body: JSON.stringify({ ids: idsToDelete })
+            body: JSON.stringify({ ids: idsToDelete }),
         })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message); // Affiche un message de succès
-            table.deleteRow(selectedRows); // Supprime les lignes du tableau côté client
-        })
-        .catch(error => {
-            console.error('Erreur de suppression:', error);
-            alert('Erreur lors de la suppression des lignes.');
-        });
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    swal("Succès", data.message, "success");
+                    selectedRows.forEach((row) => row.delete());
+                } else {
+                    swal("Erreur", data.message, "error");
+                }
+            })
+            .catch((error) => {
+                swal(
+                    "Erreur",
+                    "Impossible de supprimer les fournisseurs sélectionnés.",
+                    "error"
+                );
+                console.error(error);
+            });
     }
 }
 
-// Gestionnaire d'événements pour sélectionner/désélectionner toutes les lignes et supprimer les lignes sélectionnées
-document.getElementById("fournisseur-table").addEventListener("click", function(e) {
+// Gestionnaire pour sélectionner/désélectionner toutes les lignes
+document.getElementById("fournisseur-table").addEventListener("click", function (e) {
     if (e.target.id === "selectAllIcon") {
         if (table.getSelectedRows().length === table.getRows().length) {
-            table.deselectRow(); // Désélectionner toutes les lignes
+            table.deselectRow(); // Désélectionner tout
         } else {
-            table.selectRow(); // Sélectionner toutes les lignes
+            table.selectRow(); // Sélectionner tout
         }
-    }
-    if (e.target.id === "deleteAllIcon") {
-        deleteSelectedRows(); // Appelle la fonction de suppression pour les lignes sélectionnées
+    } else if (e.target.id === "deleteAllIcon") {
+        deleteSelectedRows();
     }
 });
 
 
 
+
+// Initialisation globale
 var designationValue = ''; // Variable globale pour stocker l'intitulé
 
 // Fonction pour remplir les rubriques TVA
@@ -571,20 +767,19 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
     $.ajax({
         url: '/rubriques-tva?type=Achat',
         type: 'GET',
-        success: function(data) {
+        success: function (data) {
             var select = $("#" + selectId);
 
-            // Détruire Select2 s'il est déjà initialisé
+            // Réinitialisation de Select2
             if (select.hasClass("select2-hidden-accessible")) {
                 select.select2("destroy");
             }
-
             select.empty();
-              // Ajouter l'option vide
-              select.append(new Option("Sélectionnez une Rubrique", ""));
+            select.append(new Option("Sélectionnez une Rubrique", ""));
 
+            // Traitement des catégories et rubriques
             let categoriesArray = [];
-            $.each(data.rubriques, function(categorie, rubriques) {
+            $.each(data.rubriques, function (categorie, rubriques) {
                 let categories = categorie.split('/').map(cat => cat.trim());
                 let mainCategory = categories[0];
                 let subCategory = categories[1] ? categories[1].trim() : '';
@@ -595,11 +790,13 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                 });
             });
 
+            // Tri des catégories
             categoriesArray.sort((a, b) => a.mainCategory.localeCompare(b.mainCategory));
             let categoryCounter = 1;
             const excludedNumRacines = [147, 151, 152, 148, 144];
 
-            $.each(categoriesArray, function(index, categoryObj) {
+            // Remplissage des options
+            $.each(categoriesArray, function (index, categoryObj) {
                 let mainCategoryOption = new Option(`${categoryCounter}. ${categoryObj.mainCategory}`, '', true, true);
                 mainCategoryOption.className = 'category';
                 mainCategoryOption.disabled = true;
@@ -613,22 +810,21 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                     select.append(subCategoryOption);
                 }
 
-                categoryObj.rubriques.forEach(function(rubrique) {
+                categoryObj.rubriques.forEach(function (rubrique) {
                     if (!excludedNumRacines.includes(rubrique.Num_racines)) {
-                        let searchText = `${rubrique.Num_racines} ${rubrique.Nom_racines} ${categoryObj.mainCategory}`;
                         let option = new Option(`${rubrique.Num_racines}: ${rubrique.Nom_racines} : ${Math.round(rubrique.Taux)}%`, rubrique.Num_racines);
-                        option.setAttribute('data-search-text', searchText);
-                        option.setAttribute('data-nom-racine', rubrique.Nom_racines);
+                        option.setAttribute('data-search-text', `${rubrique.Num_racines} ${rubrique.Nom_racines} ${categoryObj.mainCategory}`);
                         select.append(option);
                     }
                 });
             });
 
+            // Initialisation de Select2
             select.select2({
                 width: '100%',
                 minimumResultsForSearch: 0,
                 dropdownAutoWidth: true,
-                templateResult: function(data) {
+                templateResult: function (data) {
                     if (!data.id) return data.text;
                     if ($(data.element).hasClass('category')) {
                         return $('<span style="font-weight: bold;">' + data.text + '</span>');
@@ -637,156 +833,156 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                     }
                     return $('<span>' + data.text + '</span>');
                 },
-                matcher: function(params, data) {
+                matcher: function (params, data) {
                     if ($.trim(params.term) === '') return data;
                     var searchText = $(data.element).data('search-text');
                     return searchText && searchText.toLowerCase().includes(params.term.toLowerCase()) ? data : null;
                 }
             });
 
-            select.on("select2:open", function() {
-                setTimeout(function() {
-                    $('.select2-search__field').focus();
-                }, 10);
-            });
-
             if (selectedValue) {
                 select.val(selectedValue).trigger('change');
             }
         },
-        error: function(jqXHR, textStatus, errorThrown) {
+        error: function (jqXHR, textStatus, errorThrown) {
             console.error('Erreur lors de la récupération des rubriques :', textStatus, errorThrown);
         }
     });
 }
 
-// Gestion de la soumission du formulaire d'ajout
-$("#fournisseurFormAdd").on("submit", function (e) {
-        e.preventDefault(); // Empêche la soumission par défaut du formulaire
-
-        // Appeler la fonction pour envoyer les données
-        envoyerDonnees();
-    });
-
-    // Fonction pour envoyer les données via AJAX
-    function envoyerDonnees() {
-        var url = "/fournisseurs"; // URL pour l'ajout
-
-        $.ajax({
-            url: url,
-            type: "POST",
-            data: {
-                compte: $("#compte").val(),
-                intitule: $("#intitule").val(),
-                identifiant_fiscal: $("#identifiant_fiscal").val(),
-                ICE: $("#ICE").val(),
-                nature_operation: $("#nature_operation").val(),
-                rubrique_tva: $("#rubrique_tva").val(),
-                designation: $("#designation").val(),
-                contre_partie: $("#contre_partie").val(),
-                societe_id: $("#societe_id").val(),
-                _token: '{{ csrf_token() }}' // Assurez-vous d'inclure votre CSRF token
-            },
-            success: function (response) {
-                if (response.success) {
-                    table.setData("/fournisseurs/data"); // Recharger les données
-                    $("#fournisseurModaladd").modal("hide"); // Fermer le modal
-                    $("#fournisseurFormAdd")[0].reset(); // Réinitialiser le formulaire d'ajout
-                } else if (response.error) {
-                    alert(response.error); // Afficher le message d'erreur du serveur
-                }
-            },
-            error: function (xhr) {
-                console.error("Erreur lors de l'enregistrement des données :", xhr.responseText);
-                alert("Erreur lors de l'enregistrement des données !");
-            }
-        });
-    }
-// Réinitialiser le formulaire à la fermeture
-$('#resetModal').on('click', function () {
-    $('#fournisseurFormAdd')[0].reset(); // Réinitialiser le formulaire
-
-    // Réinitialiser les champs select2
-    $('#fournisseurFormAdd select').each(function () {
-        $(this).val('').trigger('change'); // Réinitialise les champs select2
-    });
-});
-
-// Appel pour remplir les options de contrepartie lors du chargement
-$(document).ready(function () {
-    remplirContrePartie('contre_partie');
-    $('.select2').select2(); // Initialisation de select2
-    $('#fournisseurModaladd').on('shown.bs.modal', function () {
-        remplirRubriquesTva('rubrique_tva');
-        $('#compte').focus();
-        $('#rubrique_tva').val('').trigger('change');
-    });
-});
-
 // Fonction pour remplir les options de contrepartie
 function remplirContrePartie(selectId, selectedValue = null, callback = null) {
     $.ajax({
-        url: '/comptes', // La route pour récupérer les comptes
+        url: '/comptes',
         type: 'GET',
-        success: function(data) {
+        success: function (data) {
             var select = $("#" + selectId);
 
-            // Détruire Select2 s'il est déjà initialisé
+            // Réinitialisation de Select2
             if (select.hasClass("select2-hidden-accessible")) {
                 select.select2("destroy");
             }
-
-            // Vider le sélecteur et ajouter les nouvelles options
             select.empty();
+            select.append(new Option("Sélectionnez une contre partie", ""));
 
-              // Ajouter l'option vide
-              select.append(new Option("Sélectionnez une contre partie", ""));
-
-
-            // Tri des comptes par numéro
+            // Tri et ajout des comptes
             data.sort((a, b) => a.compte.localeCompare(b.compte));
-
-            // Ajout des comptes au sélecteur
-            data.forEach(function(compte) {
+            data.forEach(function (compte) {
                 let option = new Option(`${compte.compte} - ${compte.intitule}`, compte.compte);
                 select.append(option);
             });
 
-            // Réinitialiser Select2 avec les paramètres de configuration
+            // Initialisation de Select2
             select.select2({
                 width: '100%',
                 minimumResultsForSearch: 0,
                 dropdownAutoWidth: true
             });
 
-            // Mettre le focus sur la recherche lorsqu'on ouvre le sélecteur
-            select.on("select2:open", function() {
-                setTimeout(function() {
-                    $('.select2-search__field').focus();
-                }, 10);
-            });
-
-            // Sélectionner la valeur si fournie
             if (selectedValue) {
                 select.val(selectedValue).trigger('change');
             }
 
-            // Gestionnaire d'événement pour la sélection d'un compte
-            select.on('select2:select', function(e) {
-                var data = e.params.data;
-                designationValue = data.text.split(' - ')[1]; // Mettre à jour la variable globale
-                console.log("Intitulé sélectionné (sans l'afficher dans le champ) :", designationValue);
-            });
-
-            // Appeler le callback si fourni
             if (callback) callback();
         },
-        error: function(jqXHR, textStatus, errorThrown) {
+        error: function (jqXHR, textStatus, errorThrown) {
             console.error('Erreur lors de la récupération des comptes :', textStatus, errorThrown);
         }
     });
 }
 
+// Gestion de la soumission du formulaire
+$("#fournisseurFormAdd").on("submit", function (e) {
+    e.preventDefault();
+    var designationValue = $('#designation').val();
+
+    if (designationValue === '') {
+        var contrePartieIntitule = $('#contre_partie').find('option:selected').text();
+        var intitule = contrePartieIntitule.split('-')[1]?.trim();
+        if (intitule) {
+            $('#designation').val(intitule);
+        }
+    }
+
+    var compteValue = $("#compte").val();
+    var societeId = $("#societe_id").val();
+
+    verifierCompteExistence(compteValue, societeId);
+});
+
+// Vérification de l'existence du compte
+function verifierCompteExistence(compte, societeId) {
+    $.ajax({
+        url: "/fournisseurs/verifier-compte",
+        type: "POST",
+        data: {
+            compte: compte,
+            societe_id: societeId,
+            _token: '{{ csrf_token() }}'
+        },
+        success: function (response) {
+            if (response.exists) {
+                alert('Le compte ' + compte + ' existe déjà pour cette société.');
+            } else {
+                envoyerDonnees();
+            }
+        },
+        error: function (xhr) {
+            console.error("Erreur lors de la vérification du compte :", xhr.responseText);
+        }
+    });
+}
+
+// Envoi des données via AJAX
+function envoyerDonnees() {
+    $.ajax({
+        url: "/fournisseurs",
+        type: "POST",
+        data: {
+            compte: $("#compte").val(),
+            intitule: $("#intitule").val(),
+            identifiant_fiscal: $("#identifiant_fiscal").val(),
+            ICE: $("#ICE").val(),
+            nature_operation: $("#nature_operation").val(),
+            rubrique_tva: $("#rubrique_tva").val(),
+            designation: $("#designation").val(),
+            contre_partie: $("#contre_partie").val(),
+            societe_id: $("#societe_id").val(),
+            _token: '{{ csrf_token() }}'
+        },
+        success: function (response) {
+            if (response.success) {
+                table.setData("/fournisseurs/data");
+                $("#fournisseurModaladd").modal("hide");
+                $("#fournisseurFormAdd")[0].reset();
+                $('#fournisseurFormAdd select').val('').trigger('change');
+            } else {
+                alert("Erreur lors de l'ajout du fournisseur.");
+            }
+        },
+        error: function (xhr) {
+            console.error("Erreur lors de l'envoi des données:", xhr.responseText);
+        }
+    });
+}
+
+// Initialisation à l'ouverture du modal
+$('#fournisseurModaladd').on('shown.bs.modal', function () {
+    // Ajout du backdrop
+    $('body').append('<div class="modal-backdrop fade show"></div>');
+
+    // Initialisation des champs
+    remplirRubriquesTva('rubrique_tva');
+    remplirContrePartie('contre_partie');
+    $('#compte').focus();
+    $('#rubrique_tva').val('').trigger('change');
+    $('#designation').val('');
+});
+
+// Suppression du backdrop à la fermeture du modal
+$('#fournisseurModaladd').on('hidden.bs.modal', function () {
+    $('.modal-backdrop').remove();
+});
 
  // Fonction pour obtenir le prochain compte
  function getNextCompte() {
@@ -809,12 +1005,15 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
     var fournisseurId = $("#editFournisseurId").val();
     var url = "/fournisseurs/" + fournisseurId; // URL pour la modification
 
+    var designationValue = $('#editDesignation').val();
 
-    // Vérifier si le champ editDesignation est vide
-    if ($("#editDesignation").val().trim() === '') {
-        // Remplir editDesignation avec le designationValue
-        $("#editDesignation").val(designationValue.trim());
+if (designationValue === '') {
+    var contrePartieIntitule = $('#editContrePartie').find('option:selected').text();
+    var intitule = contrePartieIntitule.split('-')[1]?.trim();
+    if (intitule) {
+        $('#editDesignation').val(intitule);
     }
+}
 
     $.ajax({
         url: url,
@@ -839,6 +1038,7 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
             // Remplir de nouveau les rubriques TVA pour le prochain affichage
             remplirRubriquesTva('rubrique_tva');
             remplirContrePartie('contre_partie');
+
         },
         error: function(xhr) {
             alert("Erreur lors de l'enregistrement des données !");
@@ -870,59 +1070,169 @@ function editFournisseur(data) {
     $("#fournisseurModaledit").modal("show");
 }
 
-// excel
 
-    document.getElementById('file').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
 
-        reader.onload = function(event) {
-            const data = new Uint8Array(event.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
 
-            const sheetName = workbook.SheetNames[0]; // Prendre la première feuille
-            const worksheet = workbook.Sheets[sheetName];
-            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // Lire toutes les lignes
+$(document).ready(function () {
+    const societeId = $("#societe_id").val();
 
-            if (rows.length > 1) {
-                // Remplir les options avec les en-têtes de colonnes
-                const headers = rows[0]; // Utiliser la première ligne comme en-têtes
-                const compteSelect = document.querySelector('select[name="colonne_compte"]');
-                const intituleSelect = document.querySelector('select[name="colonne_intitule"]');
-                const identifiantFiscalSelect = document.querySelector('select[name="colonne_identifiant_fiscal"]');
-                const ICESelect = document.querySelector('select[name="colonne_ICE"]');
-                const natureOperationSelect = document.querySelector('select[name="colonne_nature_operation"]');
-                const rubriqueTvaSelect = document.querySelector('select[name="colonne_rubrique_tva"]');
-                const designationSelect = document.querySelector('select[name="colonne_designation"]');
-                const contrePartieSelect = document.querySelector('select[name="colonne_contre_partie"]');
-
-                // Réinitialiser les listes de sélection
-                compteSelect.innerHTML = '';
-                intituleSelect.innerHTML = '';
-                identifiantFiscalSelect.innerHTML = '';
-                ICESelect.innerHTML = '';
-                natureOperationSelect.innerHTML = '';
-                rubriqueTvaSelect.innerHTML = '';
-                designationSelect.innerHTML = '';
-                contrePartieSelect.innerHTML = '';
-
-                // Afficher les colonnes disponibles dans les champs de sélection
-                for (let i = 0; i < headers.length; i++) {
-                    const option = new Option(headers[i], i + 1); // Les indices de colonnes sont à partir de 1
-                    compteSelect.add(option.cloneNode(true));
-                    intituleSelect.add(option.cloneNode(true));
-                    identifiantFiscalSelect.add(option.cloneNode(true));
-                    ICESelect.add(option.cloneNode(true));
-                    natureOperationSelect.add(option.cloneNode(true));
-                    rubriqueTvaSelect.add(option.cloneNode(true));
-                    designationSelect.add(option.cloneNode(true));
-                    contrePartieSelect.add(option.cloneNode(true));
-                }
-            }
-        };
-
-        reader.readAsArrayBuffer(file);
+    // Initialiser Select2
+    $("#contre_partie").select2({
+        width: "100%",
+        placeholder: "Sélectionner ou ajouter un compte",
+        allowClear: true,
+        minimumResultsForSearch: 0,  // Toujours afficher la barre de recherche
+        escapeMarkup: function (markup) {
+            return markup;  // Pour gérer les caractères HTML
+        },
+        matcher: function (params, data) {
+            // Permet à la recherche de fonctionner même si l'utilisateur ne tape qu'une partie du texte
+            return data.text.toLowerCase().includes(params.term.toLowerCase()) ? data : null;
+        }
     });
+
+    // Ouvrir le modal lorsque l'utilisateur clique sur le lien "Ajouter un compte"
+    $("#ajouterCompteLink").on("click", function (e) {
+        e.preventDefault(); // Empêche le comportement par défaut du lien
+        // const modal = new bootstrap.Modal(document.getElementById("planComptableModalAdd"));
+        // modal.show();
+        $('#planComptableModalAdd').modal('show'); // Appel direct de la méthode show
+
+
+        // Différer légèrement l'ajout du focus avec setTimeout pour s'assurer que le modal est bien ouvert
+        // setTimeout(function () {
+        //     // Focus sur l'input du compte
+        //     $("#compte_add").focus();
+        // }, 500);
+    });
+
+    // Soumission du formulaire pour ajouter un compte
+    $("#planComptableFormAdd").on("submit", function (e) {
+        e.preventDefault();
+        const compte = $("#compte_add").val();
+        const intitule = $("#intitule_add").val();
+
+
+
+        $.ajax({
+            url: "{{ route('ajouterContrePartie') }}",
+            type: "POST",
+            data: {
+                compte,
+                intitule,
+                societe_id: societeId,
+                _token: "{{ csrf_token() }}",
+            },
+            success: function (response) {
+                if (response.success) {
+                    const newOption = new Option(
+                        `${response.data.compte} - ${response.data.intitule}`,
+                        response.data.compte,
+                        true,
+                        true
+                    );
+                    $("#contre_partie").append(newOption).trigger("change");
+                    const modal = bootstrap.Modal.getInstance(document.getElementById("planComptableModalAdd"));
+                    modal.hide();
+                    $("#planComptableFormAdd")[0].reset();
+                    alert("Compte ajouté avec succès !");
+                } else {
+                    alert(response.message || "Erreur lors de l'ajout du compte.");
+                }
+            },
+            error: function (xhr) {
+                console.error("Erreur AJAX:", xhr.responseText);
+                alert("Une erreur est survenue. Veuillez réessayer.");
+            },
+        });
+    });
+});
+
+
+
+
+
+// excel
+document.getElementById('file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        const sheetName = workbook.SheetNames[0]; // Sélection de la première feuille
+        const worksheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // Lecture ligne par ligne
+
+        if (rows.length > 1) {
+            const headers = rows[0]; // La première ligne comme en-têtes de colonnes
+
+            // Vérifier si le fichier contient des colonnes suffisantes
+            if (headers.length < 2) {
+                alert("Le fichier Excel doit contenir au moins 2 colonnes.");
+                return;
+            }
+
+            // Références vers les sélecteurs pour lier les colonnes avec des champs
+            const selectors = {
+                compte: document.querySelector('input[name="colonne_compte"]'),
+                intitule: document.querySelector('input[name="colonne_intitule"]'),
+                identifiantFiscal: document.querySelector('input[name="colonne_identifiant_fiscal"]'),
+                ICE: document.querySelector('input[name="colonne_ICE"]'),
+                natureOperation: document.querySelector('input[name="colonne_nature_operation"]'),
+                rubriqueTva: document.querySelector('input[name="colonne_rubrique_tva"]'),
+                designation: document.querySelector('input[name="colonne_designation"]'),
+                contrePartie: document.querySelector('input[name="colonne_contre_partie"]'),
+            };
+
+            // Génération des listes de colonnes disponibles
+            const columnOptions = headers.map((header, index) => ({
+                label: header || `Colonne ${index + 1}`, // Nom de la colonne ou défaut
+                value: index + 1 // Numéro de colonne (1-indexé)
+            }));
+
+            // Associer chaque champ de sélection à une liste de colonnes
+            Object.keys(selectors).forEach(key => {
+                const optionsHtml = columnOptions.map(option => `
+                    <option value="${option.value}">${option.label}</option>
+                `).join('');
+                selectors[key].setAttribute("list", `${key}-datalist`);
+                if (!document.getElementById(`${key}-datalist`)) {
+                    const dataList = document.createElement("datalist");
+                    dataList.id = `${key}-datalist`;
+                    dataList.innerHTML = optionsHtml;
+                    document.body.appendChild(dataList);
+                }
+            });
+        } else {
+            alert("Le fichier Excel semble être vide !");
+        }
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+
+
+document.getElementById('resetModal').addEventListener('click', function () {
+    const form = document.getElementById('importForm');
+    form.reset(); // Réinitialise tous les champs du formulaire
+});
+// Navigation avec la touche Entrée
+document.getElementById('importForm').addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // Empêche le comportement par défaut (soumission du formulaire)
+
+        const formElements = Array.from(event.target.form.elements); // Récupère tous les champs du formulaire
+        const index = formElements.indexOf(event.target); // Trouve l'index du champ actuel
+
+        // Déplace le focus au champ suivant si disponible
+        if (index > -1 && index < formElements.length - 1) {
+            formElements[index + 1].focus();
+        }
+    }
+});
+
 
 
 
@@ -949,115 +1259,16 @@ function editFournisseur(data) {
 
 
 
-  // Gestion de la soumission du formulaire d'ajout de contrepartie
-$("#planComptableFormAdd").on("submit", function(e) {
-    e.preventDefault(); // Empêche la soumission par défaut du formulaire
 
-    // Récupérer les valeurs des champs
-    var compte = $("#compte_add").val();
-    var intitule = $("#intitule_add").val();
-    var designation = $("#designation_add").val(); // Champ designation
-    var societeId = $("#societe_id").val();
-
-    // Vérifier si le champ designation est vide
-    if (!designation) {
-        // Extraire l'intitulé de l'option sélectionnée dans le select 'contre_partie'
-        var optionText = $("#contre_partie option:selected").text();
-        var intituleFromOption = optionText.split(' - ')[1]; // Supposant le format "compte - intitulé"
-        designation = intituleFromOption || ''; // Mettre l'intitulé ou une chaîne vide
-        $("#designation_add").val(designation); // Remplir le champ designation
-    }
-
-    // Validation simple avant l'envoi
-    if (!compte || !intitule) {
-        alert("Veuillez remplir tous les champs requis avant de soumettre !");
-        return;
-    }
-
-    // Requête AJAX pour ajouter une contrepartie
-    $.ajax({
-        url: "{{ route('ajouterContrePartie') }}", // Route Laravel pour ajouter une contrepartie
-        type: "POST",
-        data: {
-            compte: compte,
-            intitule: intitule,
-            designation: designation, // Envoyer le champ designation (mis à jour si vide)
-            societe_id: societeId, // ID de la société
-            _token: '{{ csrf_token() }}' // CSRF token pour sécuriser la requête
-        },
-        success: function(response) {
-            if (response.contre_partie) {
-                // Ajouter la contrepartie nouvellement créée dans le sélecteur 'contre_partie'
-                var newOption = new Option(
-                    `${response.contre_partie.compte} - ${response.contre_partie.intitule}`,
-                    response.contre_partie.compte,
-                    true,
-                    true
-                );
-                $('#contre_partie').append(newOption).trigger('change'); // Met à jour le select avec Select2
-
-                // Fermer le modal
-                $("#planComptableModalAdd").modal("hide");
-
-                // Réinitialiser le formulaire
-                $("#planComptableFormAdd")[0].reset();
-
-                // Afficher une notification de succès
-                alert("Contrepartie ajoutée avec succès !");
-            } else {
-                alert("Erreur : la contrepartie n'a pas pu être ajoutée.");
-            }
-        },
-        error: function(xhr) {
-            console.error("Erreur lors de l'ajout de la contrepartie :", xhr.responseText);
-            alert("Erreur lors de l'ajout de la contrepartie. Veuillez réessayer.");
-        }
-    });
 });
-
-// Réinitialiser le formulaire à la fermeture du modal
-$("#planComptableModalAdd").on("hidden.bs.modal", function() {
-    $("#planComptableFormAdd")[0].reset(); // Réinitialise les champs du formulaire
-    $('#planComptableFormAdd select').val('').trigger('change'); // Réinitialise les sélecteurs Select2
 });
-
-
-$(document).ready(function() {
-    // Initialiser Select2
-    $('#contre_partie').select2({
-        // Personnalisation de l'apparence des options dans le dropdown
-        templateResult: function(data) {
-            // Ajouter une icône à l'option "Ajouter un compte"
-            if (data.id === 'ajouter_compte') {
-                return $('<span><i class="bi bi-plus-circle"></i> Ajouter un compte</span>');
-            }
-            return data.text;  // Retourner le texte de l'option par défaut
-        }
-    });
-
-    // Ajouter l'option "Ajouter un compte" au select2
-    var addOption = new Option('<i class="bi bi-plus-circle"></i> Ajouter un compte', 'ajouter_compte', false, false);
-    $('#contre_partie').append(addOption).trigger('change');
-
-    // Écouter l'événement de sélection dans le select2
-    $('#contre_partie').on('select2:select', function(e) {
-        var selectedValue = $(this).val();
-
-        // Si l'utilisateur sélectionne "Ajouter un compte"
-        if (selectedValue === 'ajouter_compte') {
-            // Ouvrir le modal pour ajouter un compte
-            $('#planComptableModalAdd').modal('show');
-        }
-    });
-});
-
-
-
-
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
 
+
+
 </body>
+
 </html>
 
 @endsection

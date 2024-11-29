@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 use App\Imports\FournisseurImport;
-
+use App\Imports\FournisseursImport;
 use App\Models\Fournisseur;
 use App\Models\Racine;
 use App\Models\PlanComptable;
 use App\Models\societe;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -17,14 +17,14 @@ use Illuminate\Support\Facades\Log;
 
 
 class FournisseurController extends Controller
-{  
+{
 
-   
+
 
     public function index()
     {// Récupérer l'ID de la société dans la session
         $societeId = session('societeId');
-        
+
         // Vérifier si l'ID de la société existe
         if (!$societeId) {
             return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
@@ -35,8 +35,8 @@ class FournisseurController extends Controller
 
         return response()->json($fournisseurs);
     }
-    
-    
+
+
 
     public function show($id)
     {
@@ -48,7 +48,7 @@ class FournisseurController extends Controller
     {
         // Récupérer l'ID de la société dans la session
         $societeId = session('societeId');
-        
+
         // Vérifier si l'ID de la société existe
         if (!$societeId) {
             return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
@@ -59,20 +59,20 @@ class FournisseurController extends Controller
 
         return response()->json($fournisseurs);
     }
-    
+
     public function store(Request $request)
     {
         // Vérifier si 'societeId' existe dans la session
         $societeId = session('societeId');
         Log::debug('societeId dans la session : ' . $societeId);
-    
+
         if (!$societeId) {
             return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
         }
-    
+
         // Validation des données
         $validatedData = $request->validate([
-            'compte' => 'nullable|string|max:255', // Le compte peut être généré automatiquement si vide
+            'compte' => 'nullable|string|max:' . ($request->nombre_chiffre_compte ?? 255),
             'intitule' => 'required|string|max:255',
             'identifiant_fiscal' => 'nullable|string|max:255',
             'ICE' => 'nullable|string|max:255',
@@ -81,93 +81,117 @@ class FournisseurController extends Controller
             'designation' => 'nullable|string|max:255',
             'contre_partie' => 'nullable|string|max:255',
         ]);
-    
+
         // Si le compte n'est pas spécifié, générer un compte unique
         if (empty($validatedData['compte'])) {
             $validatedData['compte'] = $this->getNextCompte($societeId); // Appel à la méthode pour générer le compte
         }
-    
+
         // Ajouter l'ID de la société au tableau de données validées
         $validatedData['societe_id'] = $societeId;
-    
+
         try {
-            // Vérifier si un fournisseur avec ce compte existe déjà dans cette société
+            // Vérifier si un fournisseur avec ce compte existe déjà pour cette société
             $existingFournisseur = Fournisseur::where('societe_id', $societeId)
                 ->where('compte', $validatedData['compte'])
                 ->first();
-    
+
             if ($existingFournisseur) {
                 return response()->json([
                     'error' => 'Le fournisseur avec ce compte existe déjà pour la société sélectionnée.'
                 ], 422);
             }
-    
-            // Créer un nouveau fournisseur avec les données validées
+
+            // Créer un nouveau fournisseur
             $fournisseur = Fournisseur::create($validatedData);
-    
-            // Ajouter également ce fournisseur dans la table plan_comptable
+
+            // Ajouter ce fournisseur dans la table plan_comptable
             PlanComptable::create([
                 'societe_id' => $societeId,
                 'compte' => $validatedData['compte'],
                 'intitule' => $validatedData['intitule'],
             ]);
-    
+
             return response()->json([
                 'success' => true,
                 'fournisseur' => $fournisseur,
             ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Une erreur est survenue lors de la création du fournisseur: ' . $e->getMessage()], 500);
+            // Journaliser l'erreur
+            Log::error('Erreur lors de la création du fournisseur : ' . $e->getMessage());
+
+            return response()->json([
+                'error' => 'Une erreur est survenue lors de la création du fournisseur.',
+                'details' => $e->getMessage()
+            ], 500);
         }
     }
-    
-    
-    
- 
+
+    /**
+     * Génère un compte unique pour la société donnée.
+     *
+     * @param int $societeId
+     * @return string
+     */
+
+
+
  // Méthode pour afficher le formulaire d'édition
  public function edit($id)
  {
  $fournisseur = Fournisseur::findOrFail($id);
 return response()->json($fournisseur);
 
-     
+
  }
 
  // Méthode pour mettre à jour le fournisseur
  public function update(Request $request, $id)
- {
-     // Validation des données
-     $validator = Validator::make($request->all(), [
-         'compte' => 'required|string|max:255',
-         'intitule' => 'required|string|max:255',
-         'identifiant_fiscal' => 'nullable|string|max:255',
-         'ICE' => 'nullable|string|max:15',
-         'nature_operation' => 'nullable|string',
-         'rubrique_tva' => 'nullable|string',
-         'designation' => 'nullable|string|max:255',
-         'contre_partie' => 'nullable|string|max:255',
-       
-     ]);
+{
+    // Validation des données
+    $validator = Validator::make($request->all(), [
+        'compte' => 'required|string|max:255',
+        'intitule' => 'required|string|max:255',
+        'identifiant_fiscal' => 'nullable|string|max:255',
+        'ICE' => 'nullable|string|max:15',
+        'nature_operation' => 'nullable|string',
+        'rubrique_tva' => 'nullable|string',
+        'designation' => 'nullable|string|max:255',
+        'contre_partie' => 'nullable|string|max:255',
+        'invalid' => 'nullable|boolean', // Ajout de la validation pour le champ invalid
+    ]);
 
-     if ($validator->fails()) {
-         return response()->json(['message' => 'Erreur de validation', 'errors' => $validator->errors()], 422);
-     }
+    if ($validator->fails()) {
+        return response()->json(['message' => 'Erreur de validation', 'errors' => $validator->errors()], 422);
+    }
 
-     // Mise à jour des données
-     $fournisseur = Fournisseur::findOrFail($id);
-     $fournisseur->compte = $request->input('compte');
-     $fournisseur->intitule = $request->input('intitule');
-     $fournisseur->identifiant_fiscal = $request->input('identifiant_fiscal');
-     $fournisseur->ICE = $request->input('ICE');
-     $fournisseur->nature_operation = $request->input('nature_operation');
-     $fournisseur->rubrique_tva = $request->input('rubrique_tva');
-     $fournisseur->designation = $request->input('designation');
-     $fournisseur->contre_partie = $request->input('contre_partie');
-     
-     $fournisseur->save(); // Enregistrer les modifications
+    // Mise à jour des données
+    $fournisseur = Fournisseur::findOrFail($id);
 
-     return response()->json(['message' => 'Fournisseur mis à jour avec succès', 'fournisseur' => $fournisseur], 200);
- }
+    $fournisseur->compte = $request->input('compte');
+    $fournisseur->intitule = $request->input('intitule');
+    $fournisseur->identifiant_fiscal = $request->input('identifiant_fiscal');
+    $fournisseur->ICE = $request->input('ICE');
+    $fournisseur->nature_operation = $request->input('nature_operation');
+    $fournisseur->rubrique_tva = $request->input('rubrique_tva');
+    $fournisseur->designation = $request->input('designation');
+    $fournisseur->contre_partie = $request->input('contre_partie');
+
+    // Vérification et mise à jour de la validité (invalid)
+    $nombre_chiffre_compte = $fournisseur->societe->nombre_chiffre_compte; // Obtenez la longueur attendue
+    $compte = $request->input('compte');
+    $fournisseur->invalid = (strlen($compte) != $nombre_chiffre_compte) ? 1 : 0; // Calcul automatique basé sur le compte
+
+    $fournisseur->save(); // Enregistrer les modifications
+
+    return response()->json([
+        'message' => 'Fournisseur mis à jour avec succès',
+        'fournisseur' => $fournisseur,
+    ], 200);
+}
+
+
+
 
 public function getRubriquesTva()
 {
@@ -193,41 +217,62 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
 
 
 }
+
 public function getNextCompte($societeId)
 {
-    // Récupérer la configuration de la société
+    // Récupérer la société
     $societe = Societe::find($societeId);
 
-    if (!$societe || !in_array($societe->nombre_chiffre_compte, [8, 10])) {
-        return response()->json(['error' => 'Configuration de la société invalide ou non prise en charge'], 400);
+    if (!$societe) {
+        return response()->json(['success' => false, 'message' => 'Société introuvable'], 404);
     }
 
-    $nombreChiffres = $societe->nombre_chiffre_compte;
-    $prefix = '4411'; // Préfixe de base pour tous les comptes
+    $nombreChiffres = $societe->nombre_chiffre_compte; // Nombre de chiffres pour le compte
+    $prefix = '4411'; // Préfixe des comptes
 
-    // Récupérer le dernier compte pour cette société
-    $lastCompte = Fournisseur::where('societe_id', $societeId)
+    // Valider le nombre de chiffres du compte
+    if ($nombreChiffres < strlen($prefix) + 1) {
+        return response()->json(['success' => false, 'message' => 'Le nombre de chiffres du compte est trop court.'], 400);
+    }
+
+    // Récupérer tous les comptes pour cette société triés par ordre croissant
+    $comptesExistants = Fournisseur::where('societe_id', $societeId)
         ->where('compte', 'like', $prefix . '%')
-        ->orderBy('compte', 'desc')
-        ->value('compte');
+        ->orderBy('compte', 'asc')
+        ->pluck('compte')
+        ->toArray();
 
-    // Générer le prochain numéro
-    if ($lastCompte) {
-        // Extraire la séquence numérique après le préfixe
-        $lastSequence = (int)substr($lastCompte, strlen($prefix));
-        $nextSequence = $lastSequence + 1;
-    } else {
-        // Premier compte pour cette société
-        $nextSequence = 1;
+    // Si aucun compte n'existe, retourner le premier
+    if (empty($comptesExistants)) {
+        $chiffresRestants = $nombreChiffres - strlen($prefix);
+        $firstCompte = $prefix . str_pad('1', $chiffresRestants, '0', STR_PAD_LEFT);
+        return response()->json(['success' => true, 'nextCompte' => $firstCompte]);
     }
 
-    // Calculer le nombre de chiffres restant après le préfixe
+    // Extraire les séquences numériques des comptes existants
     $chiffresRestants = $nombreChiffres - strlen($prefix);
+    $sequences = array_map(function ($compte) use ($prefix) {
+        return (int)substr($compte, strlen($prefix));
+    }, $comptesExistants);
 
-    // Générer le compte en respectant le format choisi (8 ou 10 chiffres)
+    // Rechercher un trou dans la séquence
+    $nextSequence = null;
+    for ($i = 1; $i <= max($sequences); $i++) {
+        if (!in_array($i, $sequences)) {
+            $nextSequence = $i;
+            break;
+        }
+    }
+
+    // Si aucun trou n'est trouvé, prendre le numéro suivant après le plus grand
+    if ($nextSequence === null) {
+        $nextSequence = max($sequences) + 1;
+    }
+
+    // Générer le prochain compte avec le préfixe et le format approprié
     $nextCompte = $prefix . str_pad($nextSequence, $chiffresRestants, '0', STR_PAD_LEFT);
 
-    return response()->json(['next_compte' => $nextCompte]);
+    return response()->json(['success' => true, 'nextCompte' => $nextCompte]);
 }
 
 
@@ -282,99 +327,52 @@ public function getComptes()
 
     /**
      * Méthode pour gérer l'importation des fournisseurs
+
+
+
+     * Gère l'importation du fichier Excel
      */
     public function import(Request $request)
     {
-        // Validation des données
+        // Valider le fichier importé
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv',
-            'colonne_compte' => 'required|integer',
-            'colonne_intitule' => 'required|integer',
-            'colonne_identifiant_fiscal' => 'required|integer',
-            'colonne_ICE' => 'required|integer',
-            'colonne_nature_operation' => 'required|integer',
-            'colonne_rubrique_tva' => 'required|integer',
-            'colonne_designation' => 'required|integer',
-            'colonne_contre_partie' => 'required|integer',
+            'file' => 'required|file|mimes:xlsx,xls,csv',  // Vérifie que le fichier est valide
         ]);
 
-        // Récupérer l'ID de la société à partir de la session
-        $societeId = session('societeId');
-
-        // Si un ID de société est envoyé dans la requête, le mettre à jour
-        if ($request->has('societe_id')) {
-            $societeId = $request->societe_id;
-        }
-
         try {
-            // Parse les données du fichier Excel
-            $importedData = $this->parseExcelFile(
-                $request->file('file'),
-                $request->colonne_compte,
-                $request->colonne_intitule,
-                $request->colonne_identifiant_fiscal,
-                $request->colonne_ICE,
-                $request->colonne_nature_operation,
-                $request->colonne_rubrique_tva,
-                $request->colonne_designation,
-                $request->colonne_contre_partie
-            );
+            // Récupérer l'ID de la société et le nombre de chiffres du compte depuis la session
+            $societe_id = session('societeId');  // Récupérer l'ID de la société stockée dans la session
+            $societe = Societe::find($societe_id);  // Trouver la société par son ID
+            $nombre_chiffre_compte = $societe->nombre_chiffre_compte;  // Récupérer le nombre de chiffres du compte
 
-            // Insérer les données si le compte n'existe pas déjà pour la société
-            foreach ($importedData as $data) {
-                // Vérifier si le fournisseur existe déjà pour cette société
-                $existingFournisseur = Fournisseur::where('compte', $data['compte'])
-                                                  ->where('societe_id', $societeId)
-                                                  ->first();
+            // Charger le fichier Excel et importer les données
+            Excel::import(new FournisseurImport(), $request->file('file'));
 
-                // Si le fournisseur n'existe pas, insérer le nouveau fournisseur
-                if (!$existingFournisseur) {
-                    Fournisseur::create([
-                        'compte' => $data['compte'],
-                        'intitule' => $data['intitule'],
-                        'identifiant_fiscal' => $data['identifiant_fiscal'],
-                        'ICE' => $data['ICE'],
-                        'nature_operation' => $data['nature_operation'],
-                        'rubrique_tva' => $data['rubrique_tva'],
-                        'designation' => $data['designation'],
-                        'contre_partie' => $data['contre_partie'],
-                        'societe_id' => $societeId, // Associer l'ID de la société actuel
-                    ]);
-                }
-            }
-
-            // Retourner à la page précédente avec un message de succès
-            return redirect()->back()->with('success', 'Importation des fournisseurs réussie.');
+            return back()->with('success', 'Importation réussie!');
         } catch (\Exception $e) {
-            // En cas d'erreur
-            return redirect()->back()->with('error', 'Erreur lors de l\'importation : ' . $e->getMessage());
+            return back()->with('error', 'Erreur lors de l\'importation: ' . $e->getMessage());
         }
     }
 
     /**
      * Parse le fichier Excel (en ignorant la première ligne).
      */
-    protected function parseExcelFile($file, $compteColumn, $intituleColumn, $identifiantFiscalColumn, $ICEColumn, $natureOperationColumn, $rubriqueTvaColumn, $designationColumn, $contrePartieColumn)
+   
+
+
+    public function verifierCompte(Request $request)
     {
-        // Utilisation de Laravel Excel pour lire le fichier
-        $data = Excel::toArray([], $file);  // Lire toutes les feuilles du fichier Excel
+        // Récupérer le compte et l'ID de la société
+        $compte = $request->input('compte');
+        $societeId = $request->input('societe_id');
 
-        // Extraire les données en ignorant la première ligne (index 0)
-        $importedData = [];
-        foreach (array_slice($data[0], 1) as $row) {  // On commence à partir de la deuxième ligne (index 1)
-            $importedData[] = [
-                'compte' => $row[$compteColumn - 1],  // Compte basé sur l'index de la colonne
-                'intitule' => $row[$intituleColumn - 1],  // Intitulé basé sur l'index de la colonne
-                'identifiant_fiscal' => $row[$identifiantFiscalColumn - 1],  // Identifiant Fiscal
-                'ICE' => $row[$ICEColumn - 1],  // ICE
-                'nature_operation' => $row[$natureOperationColumn - 1],  // Nature de l'opération
-                'rubrique_tva' => $row[$rubriqueTvaColumn - 1],  // Rubrique TVA
-                'designation' => $row[$designationColumn - 1],  // Désignation
-                'contre_partie' => $row[$contrePartieColumn - 1],  // Contre partie
-            ];
-        }
+        // Vérifier si le compte existe déjà pour cette société
+        $exists = Fournisseur::where('compte', $compte)
+                             ->where('societe_id', $societeId)
+                             ->exists();
 
-        return $importedData;
+        // Retourner une réponse JSON avec le résultat
+        return response()->json(['exists' => $exists]);
     }
 
 
@@ -385,11 +383,11 @@ public function getComptes()
             'ids' => 'required|array',
             'ids.*' => 'integer',  // Chaque ID doit être un entier
         ]);
-    
+
         try {
             // Supprimer les lignes avec les IDs reçus
             $deletedCount = Fournisseur::whereIn('id', $request->ids)->delete();
-    
+
             return response()->json([
                 'status' => 'success',
                 'message' => "{$deletedCount} lignes supprimées"
@@ -402,5 +400,5 @@ public function getComptes()
             ]);
         }
     }
-    
+
 }
