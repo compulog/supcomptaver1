@@ -7,9 +7,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 class VenteController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            // Récupérer le nom de la base de données depuis la session.
+            $dbName = session('database');
+    
+            if ($dbName) {
+                // Définir la connexion à la base de données dynamiquement.
+                config(['database.connections.supcompta.database' => $dbName]);
+                DB::setDefaultConnection('supcompta');  // Configurer la connexion par défaut
+            }
+            return $next($request);
+        });
+    }
     public function index()
     {
         $societeId = session('societeId'); // Récupère l'ID de la société depuis la session

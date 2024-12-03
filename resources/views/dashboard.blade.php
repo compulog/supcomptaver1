@@ -111,7 +111,6 @@
                         <div class="col-md-6 mb-3">
                             <label for="forme_juridique" class="form-label">Forme Juridique</label>
                             <select class="form-control" name="forme_juridique">
-                                <<option value="Null">choisir un option</option>
                                 <option value="SARL">SARL</option>
                                 <option value="SARL-AU">SARL-AU</option>
                                 <option value="SA">SA</option>
@@ -141,7 +140,6 @@
                             <label for="centre_rc" class="form-label">Centre RC</label>
                          
                         <select id="ctl00_ctl36_g_69b20002_9278_429e_be53_84b78f0af32b_ctl00_DropDownList_Ville" class="form-control" name="centre_rc" required>
-                        <option value="Null">choisir un option</option>
 						<option value="AGADIR">AGADIR</option>
 						<option value="AL HOCEIMA">AL HOCEIMA</option>
 						<option value="AZILAL">AZILAL</option>
@@ -238,7 +236,6 @@
                         <div class="col-md-6 mb-3">
                     <label for="modele_comptable" class="form-label">Modèle Comptable</label>
                     <select class="form-control" name="modele_comptable" id="modele_comptable" required>
-                    <option value="Null">choisir un option</option>
                         <option value="Normal">Normal</option>
                         <option value="Simplifié">Simplifié</option>
                     </select>
@@ -253,7 +250,6 @@
                         <div class="col-md-6 mb-3">
                             <label for="nature_activite" class="form-label">Nature de l'Activité</label>
                             <select class="form-control" name="nature_activite">
-                            <option value="Null">choisir un option</option>
                                 
                                 <option value="4.Vente de biens d'équipement">Vente de biens d'équipement</option>
                                 <option value="5.Vente de travaux">Vente de travaux</option>
@@ -280,8 +276,7 @@
                             <label for="regime_declaration" class="form-label">Régime de Déclaration de TVA</label>
                          
                             <select class="form-control" name="regime_declaration" required>
-                            <option value="Null">choisir un option</option>
-                                <option value="Mensuel de droit commun">Mensuel de droit commun</option>
+                                 <option value="Mensuel de droit commun">Mensuel de droit commun</option>
                                 <option value="Trimestriel de droit commun">Trimestriel de droit commun</option>
                                 <option value="Mensuel de la marge">Mensuel de la marge</option>
                                 <option value="Trimestriel de la marge">Trimestriel de la marge</option>
@@ -290,8 +285,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="fait_generateur" class="form-label">Fait Générateur</label>
                             <select class="form-control" name="fait_generateur" required>
-                            <option value="Null">choisir un option</option>
-                                <option value="Encaissement">Encaissement</option>
+                                 <option value="Encaissement">Encaissement</option>
                                 <option value="Débit">Débit</option>
                             </select>
                         </div>
@@ -866,6 +860,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 
 
 </script>
+
 <!-- Table Tabulator -->
 <div id="societes-table"></div>
 

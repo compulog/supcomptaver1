@@ -1,14 +1,27 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 class SessionsController extends Controller
 {
-    public function store()
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            // Récupérer le nom de la base de données depuis la session.
+            $dbName = session('database');
+    
+            if ($dbName) {
+                // Définir la connexion à la base de données dynamiquement.
+                config(['database.connections.supcompta.database' => $dbName]);
+                DB::setDefaultConnection('supcompta');  // Configurer la connexion par défaut
+            }
+            return $next($request);
+        });
+    }
+    public function store(Request $request)
     {
         $attributes = request()->validate([
             'email'=>'required|email',
@@ -16,28 +29,64 @@ class SessionsController extends Controller
         ]);
 
         if(Auth::attempt($attributes))
-        {
+        {  $dbName = $request->input('database');
+
+        
+            $user = Auth::user();
+            if($dbName===null){
+
+                $dbName=$user->BaseName;
+
+            }
+
+            $envPath = base_path('.env');
+            $envContent = file_get_contents($envPath);
+            $updatedEnvContent = preg_replace(
+                '/DB_SECOND_DATABASE=.*$/m',
+                'DB_SECOND_DATABASE=' . $dbName,
+                $envContent
+            );
+            file_put_contents($envPath, $updatedEnvContent);
+        
+            // Reconnect to the database with the new configuration.
+            config(['database.connections.supcompta.database' => $dbName]);
+            // dd($databaseName);
+            DB::reconnect('supcompta');
             session()->regenerate();
-            return redirect('dashboard')->with(['success'=>'You are logged in.']);
+            session(['database' => $dbName]);
+            // dd(session('database'));
+            return redirect('dashboard')->with(['success'=>'You are logged in.'.$dbName]);
         }
         else{
 
             return back()->withErrors(['email'=>'Email or password invalid.']);
         }
     }
+    
 
     public function create()
     {
-        return view('session.login-session');
+       
+            // Si BaseName est 'compulog', récupérer les bases de données qui commencent par 'supcompta'
+            $databases = DB::select("SHOW DATABASES LIKE 'supcompta%'");
+
+            // // Extraire les noms des bases de données
+            // $dbNames = collect($databases)->pluck('Database')->toArray();
+            $dbNames = [];
+            foreach ($databases as $db) {
+                // Vérifier la structure exacte du résultat
+                // if (isset($db->Database)) {
+                    $dbNames[] = $db->{'Database (supcompta%)'};
+                // }
+            }
+          
+        // dd($dbNames);
+        return view('session.login-session',compact('dbNames'));
     }
 
-   
-    
     public function destroy()
     {
-
         Auth::logout();
-
-        return redirect('/login')->with(['success'=>'You\'ve been logged out.']);
+        return redirect('/login')->with(['success' => 'You\'ve been logged out.']);
     }
 }

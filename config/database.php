@@ -95,7 +95,7 @@ return [
         'driver' => 'mysql',
         'host' => env('DB_SECOND_HOST', '127.0.0.1'),
         'port' => env('DB_SECOND_PORT', '3306'),
-        'database' => env('supcompta', 'supcompta'),
+        'database' => env('DB_SECOND_DATABASE', 'supcompta'),
         'username' => env('DB_SECOND_USERNAME', 'root'),
         'password' => env('DB_SECOND_PASSWORD', ''),
         'unix_socket' => env('DB_SOCKET', ''),

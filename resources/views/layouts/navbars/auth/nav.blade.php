@@ -1,3 +1,7 @@
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
     <div class="container-fluid py-1 px-3">
@@ -9,9 +13,22 @@
             <h6 class="font-weight-bolder mb-0 text-capitalize text-white">{{ str_replace('-', ' ', Request::path()) }}</h6>
         </nav>
         <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar"> 
-            <div class="nav-item d-flex align-self-end" style="color:white;">
-            Du <input type="date" value="${rowData.exercice_social_debut}"> au <input type="date" value="${rowData.exercice_social_fin}"/> 
-            </div>
+       
+       
+        <div class="nav-item d-flex align-self-end" style="color:white;">
+        <button type="button" class="btn btn-light" style="border-radius: 50%; margin-left: 10px; padding: 10px;height:25px;width:25px;">
+        <i class="fas fa-arrow-left" style="font-size:8px"></i> <!-- Flèche vers la gauche -->
+    </button>
+    Du <input type="date" value="{{ $societe->exercice_social_debut }}" style="height:20px;"> 
+    au <input type="date" value="{{ $societe->exercice_social_fin }}" style="height:20px;"/> 
+
+    <!-- Ajout des boutons sous forme de flèches -->
+  
+    <button type="button" class="btn btn-light" style="border-radius: 50%; margin-left: 10px; padding: 10px;height:25px;width:25px;">
+        <i class="fas fa-arrow-right"  style="font-size:8px"></i> <!-- Flèche vers la droite -->
+    </button>
+</div>
+
             
             <ul class="navbar-nav justify-content-end">
                 <!-- Dropdown Notifications -->

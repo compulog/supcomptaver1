@@ -29,7 +29,15 @@ use App\Http\Controllers\PaieController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\UserController;
 
+Route::post('/user', [UserController::class, 'store']);
+
+
+Route::get('utilisateurs', function () {
+    return view('utilisateurs');
+})->name('utlisateur');
+Route::post('/select-database', [SessionsController::class, 'selectDatabase'])->name('your_action_here');
 
 Route::get('import', [SocieteController::class, 'showImportForm'])->name('import.form');
 Route::post('import', [SocieteController::class, 'import'])->name('societes.import');
@@ -157,7 +165,8 @@ Route::group(['middleware' => 'guest'], function () {
         Route::post('/reset-password', [ChangePasswordController::class, 'changePassword'])->name('password.update');
 });
 
-// Route pour la page de connexion
-Route::get('/login', function () {
-    return view('session/login-session');
-})->name('login');
+// // Route pour la page de connexion
+// Route::get('/login', function () {
+//     return view('session/login-session');
+// })->name('login');
+Route::get('/login', [SessionsController::class, 'create'])->name('login');
