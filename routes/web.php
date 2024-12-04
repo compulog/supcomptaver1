@@ -89,6 +89,9 @@ Route::post('/societes/import', [SocieteController::class, 'import'])->name('soc
 
 
 
+// Route pour supprimer plusieurs sociétés
+// Assurez-vous que la route pour supprimer les sociétés est correcte et utilise DELETE
+Route::delete('/societes/delete-selected', [SocieteController::class, 'deleteSelected'])->name('societes.deleteSelected');
 
 
 Route::group(['middleware' => 'auth'], function () {
@@ -167,7 +170,7 @@ Route::post('/ajouterContrePartie', [PlanComptableController::class, 'ajouterCon
 
 
 // routes/web.php
-Route::post('/operation-courante', [OperationCouranteController::class, 'store']);
+Route::resource('operation_courante', OperationCouranteController::class);
 
 Route::post('/clients/delete-selected', [ClientController::class, 'deleteSelected'])->name('clients.deleteSelected');
     Route::get('/clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit');
@@ -324,31 +327,42 @@ Route::post('/import-fournisseur', [FournisseurController::class, 'importFournis
         return view('Fournisseurs');
     })->name('Fournisseurs');
 
-Route::resource('operation_courante', OperationCouranteController::class);
 
 
 
     // Affichage de la liste des opérations courantes
+
+/// Afficher la liste des opérations courantes avec filtrage
 Route::get('/operations-courantes', [OperationCouranteController::class, 'index'])->name('operation_courante.index');
 
-// Affichage du formulaire pour créer une nouvelle opération
+// Afficher le formulaire pour créer une nouvelle opération
 Route::get('/operations-courantes/create', [OperationCouranteController::class, 'create'])->name('operation_courante.create');
 
-// Enregistrer une nouvelle opération (via Ajax)
+// Enregistrer une nouvelle opération
 Route::post('/operations-courantes', [OperationCouranteController::class, 'store'])->name('operation_courante.store');
 
-// Affichage du formulaire d'édition pour une opération existante
+// Afficher le formulaire pour modifier une opération existante
 Route::get('/operations-courantes/{id}/edit', [OperationCouranteController::class, 'edit'])->name('operation_courante.edit');
 
-// Mise à jour d'une opération existante
+// Mettre à jour une opération existante
 Route::put('/operations-courantes/{id}', [OperationCouranteController::class, 'update'])->name('operation_courante.update');
 
-// Suppression d'une opération
+// Supprimer une opération
 Route::delete('/operations-courantes/{id}', [OperationCouranteController::class, 'destroy'])->name('operation_courante.destroy');
+// Suppression d'une opération
 // Route pour supprimer plusieurs lignes sélectionnées
 // Route pour supprimer plusieurs plans comptables
 
+Route::resource('operation_courante', OperationCouranteController::class);
 
+// Route pour mettre à jour le compte d'une opération
+Route::post('/operation_courante/update-compte/{id}', [OperationCouranteController::class, 'updateCompte']);
+
+Route::get('/operation_courante', [OperationCouranteController::class, 'index'])->name('operation_courante.index');
+Route::post('/operation_courante/store', [OperationCouranteController::class, 'store'])->name('operation_courante.store');
+Route::get('/operation_courante/getComptes', [OperationCouranteController::class, 'getComptes'])->name('operation_courante.getComptes');
+Route::post('/operation_courante/update/{id}', [OperationCouranteController::class, 'updateField'])->name('operation_courante.updateField');
+Route::delete('/operation_courante/destroy/{id}', [OperationCouranteController::class, 'destroy'])->name('operation_courante.destroy');
 
 
     Route::put('/plancomptable/{id}', [PlanComptableController::class, 'edit']);
@@ -394,9 +408,9 @@ Route::get('export-plan-comptable', [ExportController::class, 'export'])->name('
         return view('Fournisseurs');
     })->name('Fournisseurs');
 
-    Route::get('saisie mouvement(J ACH-VTE)', function () {
-        return view('saisie mouvement(J ACH-VTE)');
-    })->name('saisie mouvement(J ACH-VTE)');
+    Route::get('Operation_Courante', function () {
+        return view('Operation_Courante');
+    })->name('Operation_Courante');
 
 
     Route::get('saisie de mouvement TRESO', function () {

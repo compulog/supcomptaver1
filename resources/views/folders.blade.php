@@ -5,19 +5,20 @@
 
 <div class="container mt-4">
     <div class="row">
-        <!-- Filtrage des dossiers par Nom ou Date -->
-<form method="GET" action="" class="mb-3">
-    <div class="input-group">
-        <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
-            <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Filtrer par Nom</option>
-            <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Filtrer par Date</option>
-        </select>
-        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px;">Filtrer</button>
-    </div>
-</form>
+        <!-- Conteneur flexible pour aligner les éléments sur la même ligne -->
+        <div class="d-flex align-items-center mb-3">
+            <!-- Formulaire de filtrage -->
+            <form method="GET" action="" class="d-flex me-3">
+                <div class="input-group">
+                    <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+                        <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Filtrer par Nom</option>
+                        <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Filtrer par Date</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" type="submit" style="height: 38px;">Filtrer</button>
+                </div>
+            </form>
 
-        <!-- Achat -->
-        <div class="col-md-4 mb-3" id="achat-div">
+            <!-- Formulaire de téléchargement (Charger) -->
             <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
                 <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                     @csrf
@@ -27,7 +28,7 @@
                     <input type="hidden" name="folders_id" value="{{ session()->get('foldersId') }}">
 
                     <!-- Charger Button -->
-                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;"  onclick="document.getElementById('file-achat').click()">Charger</button>
+                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-achat').click()">Charger</button>
 
                     <!-- Submit Button (hidden initially) -->
                     <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>
@@ -36,7 +37,6 @@
         </div>
     </div>
 </div>
-
 
 <div class="container mt-4">
 

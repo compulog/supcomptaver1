@@ -90,6 +90,8 @@ class FournisseurController extends Controller
         // Ajouter l'ID de la société au tableau de données validées
         $validatedData['societe_id'] = $societeId;
 
+        DB::beginTransaction();
+
         try {
             // Vérifier si un fournisseur avec ce compte existe déjà pour cette société
             $existingFournisseur = Fournisseur::where('societe_id', $societeId)
@@ -112,12 +114,14 @@ class FournisseurController extends Controller
                 'intitule' => $validatedData['intitule'],
             ]);
 
+            DB::commit(); // Commit les deux opérations si tout va bien
+
             return response()->json([
                 'success' => true,
                 'fournisseur' => $fournisseur,
             ]);
         } catch (\Exception $e) {
-            // Journaliser l'erreur
+            DB::rollBack(); // Annule si une erreur se produit
             Log::error('Erreur lors de la création du fournisseur : ' . $e->getMessage());
 
             return response()->json([
@@ -127,12 +131,7 @@ class FournisseurController extends Controller
         }
     }
 
-    /**
-     * Génère un compte unique pour la société donnée.
-     *
-     * @param int $societeId
-     * @return string
-     */
+
 
 
 
@@ -218,6 +217,13 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
 
 }
 
+
+  /**
+     * Génère un compte unique pour la société donnée.
+     *
+     * @param int $societeId
+     * @return string
+     */
 public function getNextCompte($societeId)
 {
     // Récupérer la société
@@ -357,7 +363,7 @@ public function getComptes()
     /**
      * Parse le fichier Excel (en ignorant la première ligne).
      */
-   
+
 
 
     public function verifierCompte(Request $request)

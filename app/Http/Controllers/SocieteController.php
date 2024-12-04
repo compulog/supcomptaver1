@@ -10,9 +10,32 @@ use App\Imports\SocietesImport;
 use App\Models\Racine; // Assurez-vous que le modèle Racine est importé
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;  // Pour loguer les erreurs
 class SocieteController extends Controller
 {
-  
+ 
+  public function deleteSelected(Request $request)
+{
+    try {
+        $ids = $request->input('ids'); // Récupère les IDs des sociétés à supprimer
+        
+        // Vérifier si des IDs ont été envoyés
+        if (empty($ids)) {
+            return response()->json(['error' => 'Aucun ID fourni pour la suppression.'], 400);
+        }
+
+        // Suppression des sociétés par leurs IDs
+        Societe::whereIn('id', $ids)->delete();
+
+        return response()->json(['message' => 'Sociétés supprimées avec succès.']);
+    } catch (\Exception $e) {
+        // Retourne l'erreur avec le message d'exception
+        return response()->json(['error' => 'Une erreur est survenue lors de la suppression: ' . $e->getMessage()], 500);
+    }
+}
+
+    
+    
   // Vérification du mot de passe de l'utilisateur
   public function checkPassword(Request $request)
   {
@@ -56,14 +79,14 @@ class SocieteController extends Controller
        // Vérifiez ce que retourne la requête
        // dd($rubriques); // Décommentez pour déboguer
    
-// Organiser les rubriques par catégorie
-$rubriquesParCategorie = [];
-foreach ($rubriques as $rubrique) {
-$rubriquesParCategorie[$rubrique->categorie]['rubriques'][] = [
-    'Nom_racines' => $rubrique->Nom_racines,
-    'Num_racines' => $rubrique->Num_racines,
-    'Taux' => $rubrique->Taux,
-];
+        // Organiser les rubriques par catégorie
+        $rubriquesParCategorie = [];
+        foreach ($rubriques as $rubrique) {
+        $rubriquesParCategorie[$rubrique->categorie]['rubriques'][] = [
+            'Nom_racines' => $rubrique->Nom_racines,
+            'Num_racines' => $rubrique->Num_racines,
+            'Taux' => $rubrique->Taux,
+        ];
 }
 
 // Passer les rubriques organisées à votre vue ou à votre réponse AJAX
@@ -104,8 +127,8 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
             'exercice_social_fin' => 'required|date',
             'nature_activite' => 'required|string',
             'activite' => 'required|string|max:255',
-            'assujettie_partielle_tva' => 'required|boolean',
-            'prorata_de_deduction' => 'required|string|max:255',
+            'assujettie_partielle_tva' => 'nullable|boolean',
+            'prorata_de_deduction' => 'nullable|string|max:255',
             'regime_declaration' => 'required|string|max:255',
             'fait_generateur' => 'required|string',
             'rubrique_tva' => 'required|string',
@@ -174,69 +197,60 @@ public function destroy($id)
     return response()->json(['success' => true, 'message' => 'Société supprimée avec succès.']);
 }
 
+  // Fonction pour afficher le formulaire
+  public function showImportForm()
+  {
+      return view('import'); // La vue contenant le formulaire d'importation
+  }
 
-   
-   
-public function import(Request $request)
-{
-    $request->validate([
-        'file' => 'required|file|mimes:xlsx,xls,csv',
-        'raison_sociale' => 'required|integer',
-        'siege_social' => 'nullable|integer',
-        'ice' => 'required|integer|max:15',
-        'rc' => 'required|integer',
-        'identifiant_fiscal' => 'required|integer',
-        'patente' => 'nullable|integer',
-        'centre_rc' => 'nullable|integer',
-        'forme_juridique' => 'nullable|integer',
-        'exercice_social_debut' => 'nullable|integer',
-        'exercice_social_fin' => 'nullable|integer',
-        'date_creation' => 'nullable|integer',
-        'assujettie_partielle_tva' => 'nullable|integer',
-        'prorata_de_deduction' => 'nullable|integer',
-        'nature_activite' => 'nullable|integer',
-        'activite' => 'nullable|integer',
-        'regime_declaration' => 'nullable|integer',
-        'fait_generateur' => 'nullable|integer',
-        'rubrique_tva' => 'nullable|integer',
-        'designation' => 'nullable|integer',
-        'nombre_chiffre_compte' => 'nullable|integer',
-        'modele_comptable' => 'required|integer',
-    ]);
+  // Fonction pour gérer l'importation du fichier
+ 
+  public function import(Request $request)
+    {
+        // Valider le fichier importé
+        $validated = $request->validate([
+            'file' => 'required|file|mimes:xlsx,csv',
+        ]);
 
-    // Mapping des colonnes de l'Excel à partir des valeurs du formulaire
-    $mapping = [
-        'raison_sociale' => $request->input('raison_sociale'),
-        'siege_social' => $request->input('siege_social'),
-        'ice' => $request->input('ice'),
-        'rc' => $request->input('rc'),
-        'identifiant_fiscal' => $request->input('identifiant_fiscal'),
-        'patente' => $request->input('patente'),
-        'centre_rc' => $request->input('centre_rc'),
-        'forme_juridique' => $request->input('forme_juridique'),
-        'exercice_social_debut' => $request->input('exercice_social_debut'),
-        'exercice_social_fin' => $request->input('exercice_social_fin'),
-        'date_creation' => $request->input('date_creation'),
-        'assujettie_partielle_tva' => $request->input('assujettie_partielle_tva'),
-        'prorata_de_deduction' => $request->input('prorata_de_deduction'),
-        'nature_activite' => $request->input('nature_activite'),
-        'activite' => $request->input('activite'),
-        'regime_declaration' => $request->input('regime_declaration'),
-        'fait_generateur' => $request->input('fait_generateur'),
-        'rubrique_tva' => $request->input('rubrique_tva'),
-        'designation' => $request->input('designation'),
-        'nombre_chiffre_compte' => $request->input('nombre_chiffre_compte'),
-        'modele_comptable' => $request->input('modele_comptable'),
-    ];
-
-     // Importation des données
-     try {
-        Excel::import(new SocietesImport($mapping), $request->file('file'));
-        return redirect()->back()->with('success', 'Les sociétés ont été importées avec succès.');
-    } catch (\Exception $e) {
-        return redirect()->back()->with('error', 'Une erreur est survenue lors de l\'importation : ' . $e->getMessage());
+        $file = $request->file('file');
+        
+        // Création d'un tableau de correspondances basé sur l'entrée de l'utilisateur
+        $mappings = [
+            'raison_sociale' => $request->input('raison_sociale'),
+            'forme_juridique' => $request->input('forme_juridique'),
+            'siege_social' => $request->input('siege_social'),
+            'patente' => $request->input('patente'),
+            'rc' => $request->input('rc'),
+            'centre_rc' => $request->input('centre_rc'),
+            'identifiant_fiscal' => $request->input('identifiant_fiscal'),
+            'ice' => $request->input('ice'),
+            'date_creation' => $request->input('date_creation'),
+            'exercice_social_debut' => $request->input('exercice_social_debut'),
+            'exercice_social_fin' => $request->input('exercice_social_fin'),
+            'modele_comptable' => $request->input('modele_comptable'),
+            'nombre_chiffre_compte' => $request->input('nombre_chiffre_compte'),
+            'nature_activite' => $request->input('nature_activite'),
+            'activite' => $request->input('activite'),
+            'assujettie_partielle_tva' => $request->input('assujettie_partielle_tva'),
+            'prorata_de_deduction' => $request->input('prorata_de_deduction'),
+            'regime_declaration' => $request->input('regime_declaration'),
+            'fait_generateur' => $request->input('fait_generateur'),
+            'rubrique_tva' => $request->input('rubrique_tva'),
+            'designation' => $request->input('designation'),
+        ];
+        
+        // Traitement avec une classe d'importation personnalisée
+        $import = new SocietesImport($mappings);
+        
+        // Importer les données
+        Excel::import($import, $file);
+        
+        return redirect()->back()->with('success', 'Sociétés importées avec succès');
     }
-}
+
+
+
+// Autres méthodes du contrôleur (à conserver
 
     public function show($id)
     {

@@ -27,6 +27,12 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+
+
+
+
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
     <div class="container mt-5">
@@ -35,28 +41,32 @@
         <!-- Affichage du message de succès ou d'erreur -->
         <div id="message" class="alert d-none" role="alert"></div>
 
-<!-- Boutons pour ouvrir les modals -->
-<div class="mb-3">
-    <button type="button" id="create-button" class="btn bg-gradient-primary btn-sm mb-0 d-inline" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel">
+        <div class="mb-3 d-flex align-items-center gap-2 flex-wrap-nowrap">
+    <!-- Bouton Créer -->
+    <button type="button" id="create-button" class="btn btn-outline-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel">
         Créer
     </button>
 
-    <button type="button" id="import-button" class="btn bg-gradient-primary btn-sm mb-0 d-inline" data-bs-toggle="modal" data-bs-target="#modal-import-excel">
+    <!-- Bouton Importer -->
+    <button type="button" id="import-button" class="btn btn-outline-secondary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modal-import-excel">
         Importer
     </button>
 
+    <!-- Formulaire pour exporter les clients -->
     <form action="{{ route('export.clients') }}" method="POST" class="d-inline">
         @csrf
         <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
-        <button type="submit" class="btn bg-gradient-primary btn-sm mb-0">Exporter les clients</button>
+        <button type="submit" class="btn btn-outline-success d-flex align-items-center gap-2">Exporter les clients</button>
     </form>
 
+    <!-- Formulaire pour exporter en PDF -->
     <form action="{{ route('export.clients.pdf') }}" method="POST" class="d-inline">
         @csrf
         <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
-        <button type="submit" class="btn bg-gradient-primary btn-sm mb-0">Exporter en PDF</button>
+        <button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-2">Exporter en PDF</button>
     </form>
 </div>
+
 
 <!-- Modal pour le formulaire d'ajout manuel -->
 <div class="modal fade" id="modal-saisie-manuel" tabindex="-1" aria-labelledby="modalSaisieManuelLabel" aria-hidden="true">
@@ -122,11 +132,11 @@
                             <label for="type_client" class="form-label">Type client</label>
                             <select class="form-control" name="type_client" required>
                                 <option value="Null">Choisir une option</option>
-                                <option value="5.Entreprise de droit privé">Entreprise de droit privé</option>
-                                <option value="1.État">État</option>
-                                <option value="2.Collectivités territoriales">Collectivités territoriales</option>
-                                <option value="3.Entreprise publique">Entreprise publique</option>
-                                <option value="4.Autre organisme public">Autre organisme public</option>
+                                <option value="5.Entreprise de droit privé">5.Entreprise de droit privé</option>
+                                <option value="1.État">1.État</option>
+                                <option value="2.Collectivités territoriales">2.Collectivités territoriales</option>
+                                <option value="3.Entreprise publique">3.Entreprise publique</option>
+                                <option value="4.Autre organisme public">4.Autre organisme public</option>
                             </select>
                         </div>
                     </div>
@@ -299,7 +309,7 @@ $(document).ready(function () {
                                 <label for="file" class="form-label">Fichier Excel :</label>
                                 <input type="file" name="file" class="form-control" required>
                             </div>
-                            <h4>Choisir le numéro des colonnes Excel :</h4>
+                        
                             <div class="mb-3">
                                 <label for="compte">Colonne Compte :</label>
                                 <input type="number" name="mapping[compte]" class="form-control">
@@ -324,7 +334,8 @@ $(document).ready(function () {
                         <button type="reset" class="btn btn-secondary me-8">
                             <i class="fas fa-undo"></i>
                         </button>
-                            <button type="submit" class="btn btn-primary">Importer</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-arrow-down"></i>
+                            Importer</button>
                         </form>
                     </div>
                 </div>
@@ -454,8 +465,6 @@ $(document).ready(function () {
     </div>
 </div>
 
-
-
 <script>
 $(document).ready(function() {
     // Événement pour le clic sur le bouton d'édition
@@ -529,7 +538,6 @@ $(document).ready(function() {
 </script>
 
 
-
 <!-- CSS de Tabulator -->
 <link href="https://unpkg.com/tabulator-tables@5.4.3/dist/css/tabulator.min.css" rel="stylesheet">
 
@@ -593,15 +601,33 @@ var table = new Tabulator("#table-list", {
                 var id = cell.getValue();
                 return `
                    <span class="text-warning edit-client" title="Modifier" style="cursor: pointer;" data-id="${id}">
-                        <i class="fas fa-edit"></i>
+                        <i class="fas fa-edit" style="color:#82d616;"></i>
                     </span>
                     <span class="text-danger" title="Supprimer" style="cursor: pointer;" onclick="deleteClient(${id})">
-                        <i class="fas fa-trash"></i>
+                        <i class="fas fa-trash" style="color:#82d616;"></i>
                     </span>
                 `;
             }
         }
     ],
+    rowFormatter: function(row) {
+        // Récupérer les valeurs du compte et de l'intitulé de la ligne
+        var compte = row.getData().compte;
+        var intitule = row.getData().intitule;
+
+        // Récupérer le nombre de chiffres du compte défini dans la variable PHP
+        var nombreChiffresCompte = {{ $societe->nombre_chiffre_compte }};
+
+        // Vérifier si la valeur de 'compte' ou 'intitule' est égale à 0 ou null
+        if (compte == 0 || compte == null || intitule == 0 || intitule == null) {
+            row.getElement().style.backgroundColor = " rgba(233, 233, 13, 0.838)"; // Appliquer la couleur rouge à la ligne
+        }
+        // Vérifier si le nombre de chiffres du compte ne correspond pas à nombreChiffresCompte
+        else if (compte.toString().length !== nombreChiffresCompte) {
+            row.getElement().style.backgroundColor = "rgba(228, 20, 20, 0.453)"; // Appliquer la couleur jaune à la ligne
+            row.getElement().style.color = "white";
+        }
+    }
 });
 
     // Fonction pour basculer entre les icônes
@@ -912,4 +938,15 @@ function deleteclients(id) {
 
 
 </script>
+
+<p style="margin-left:30px;">compte erroné </p>
+<div style="background-color:rgba(228, 20, 20, 0.453);width:15px;height:15px;margin-top:-35px;border:1px solid #333;">
+
+</div>
+
+<p style="margin-left:30px;">information obligatoire manquante </p>
+<div style="background-color: rgba(233, 233, 13, 0.838);width:15px;height:15px;margin-top:-35px;border:1px solid #333;">
+
+</div>
+
 @endsection

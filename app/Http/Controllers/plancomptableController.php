@@ -111,49 +111,56 @@ class PlanComptableController extends Controller
        return response()->json($plansComptables);
     }
 
-    // Méthode pour ajouter un nouveau plan comptable
-    public function store(Request $request)
-    {
-        // Validation des données reçues
-$request->validate([
-    'compte' => 'required|string|max:255',
-    'intitule' => 'required|string|max:255',
-]);
+// Méthode pour ajouter un nouveau plan comptable
+public function store(Request $request)
+{
+    // Validation des données reçues
+    $request->validate([
+        'compte' => 'required|string|max:255',
+        'intitule' => 'required|string|max:255',
+    ]);
 
-// Récupérer l'ID de la société depuis la session
-$societeId = session('societeId');
+    // Récupérer l'ID de la société depuis la session
+    $societeId = session('societeId');
 
-// Si l'ID de la société est modifié (par exemple, depuis un formulaire ou une sélection), le mettre à jour
-if ($request->has('societe_id')) {
-    $societeId = $request->societe_id;
-}
-
-// Vérifier si l'ID de la société existe
-if (!$societeId) {
-    return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
-}
-
-// Vérifier si le compte existe déjà pour cette société
-$existingPlanComptable = PlanComptable::where('compte', $request->compte)
-                                      ->where('societe_id', $societeId)
-                                      ->first();
-
-// Si le compte n'existe pas, créer un nouveau plan comptable
-if (!$existingPlanComptable) {
-    $planComptable = new PlanComptable();
-    $planComptable->compte = $request->compte;
-    $planComptable->intitule = $request->intitule;
-    $planComptable->societe_id = $societeId;  // Associer l'ID de la société
-    $planComptable->save();
-
-    // Retourner une réponse JSON de succès
-    return response()->json(['success' => 'Plan comptable ajouté avec succès!']);
-} else {
-    // Si le compte existe déjà, retourner une erreur
-    return response()->json(['error' => 'Le compte existe déjà pour cette société'], 400);
-}
-
+    // Si l'ID de la société est modifié (par exemple, depuis un formulaire ou une sélection), le mettre à jour
+    if ($request->has('societe_id')) {
+        $societeId = $request->societe_id;
     }
+
+    // Vérifier si l'ID de la société existe
+    if (!$societeId) {
+        return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+    }
+
+    // Vérifier si le compte existe déjà pour cette société
+    $existingPlanComptable = PlanComptable::where('compte', $request->compte)
+                                          ->where('societe_id', $societeId)
+                                          ->first();
+
+    // Si le compte n'existe pas, créer un nouveau plan comptable
+    if (!$existingPlanComptable) {
+        $planComptable = new PlanComptable();
+        $planComptable->compte = $request->compte;
+        $planComptable->intitule = $request->intitule;
+        $planComptable->societe_id = $societeId;  // Associer l'ID de la société
+        $planComptable->save();
+
+        // Retourner une réponse JSON de succès avec les données du plan comptable ajouté
+        return response()->json([
+            'success' => true,
+            'message' => 'Plan comptable ajouté avec succès!',
+            'data' => [
+                'compte' => $planComptable->compte,
+                'intitule' => $planComptable->intitule,
+            ]
+        ]);
+    } else {
+        // Si le compte existe déjà, retourner une erreur
+        return response()->json(['error' => 'Le compte existe déjà pour cette société'], 400);
+    }
+}
+
 
     public function edit(Request $request, $id)
     {

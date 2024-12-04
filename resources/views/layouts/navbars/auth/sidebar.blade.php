@@ -54,14 +54,14 @@
             <span class="nav-link-text ms-1">User Profile</span>
         </a>
       </li>
-      
+
       <li class="nav-item mt-2">
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">paramétres</h6>
       </li>
       <li class="nav-item">
         <a class="nav-link {{ (Request::is('utilisateurs') ? 'active' : '') }}" href="{{ url('utilisateurs') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            
+
           </div>
           <span class="nav-link-text ms-1">Gestions des utilisateurs </span>
         </a>
@@ -126,19 +126,19 @@
       <a class="nav-link {{ (Request::is('clients') ? 'active' : '') }}" href="{{ url('clients') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
           </div>
-      <span class="nav-link-text ms-1">Clients</span>  
+      <span class="nav-link-text ms-1">Clients</span>
         </a>
       </li>
 
       <li class="nav-item">
-      <a class="nav-link {{ (Request::is('saisie mouvement(J ACH-VTE)') ? 'active' : '') }}" href="{{ url('saisie mouvement(J ACH-VTE)') }}">
+      <a class="nav-link {{ (Request::is('Operation_Courante') ? 'active' : '') }}" href="{{ url('Operation_Courante') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
           </div>
-      <span class="nav-link-text ms-1">opération courante</span>  
+      <span class="nav-link-text ms-1">Opérations Courantes</span>
         </a>
       </li>
 
-<!-- 
+<!--
       <li class="nav-item pb-2">
         <a class="nav-link {{ (Request::is('saisie de mouvement TRESO') ? 'active' : '') }}" href="{{ url('saisie de mouvement TRESO') }}">
             <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -218,13 +218,13 @@
           <span class="nav-link-text ms-1">Sign Up</span>
         </a>
       </li>
-     
+
     </ul>
   </div>
  <div class="sidenav-footer mx-3 ">
     <div class="card card-background shadow-none card-background-mask-secondary" id="sidenavCard">
-      <div class="full-background" style="background-image: url('../assets/img/-images/white-.jpeg')"></div> 
-    <!-- <div class="card-body text-start p-3 w-100"> 
+      <div class="full-background" style="background-image: url('../assets/img/-images/white-.jpeg')"></div>
+    <!-- <div class="card-body text-start p-3 w-100">
        <div class="icon icon-shape icon-sm bg-white shadow text-center mb-3 d-flex align-items-center justify-content-center border-radius-md">
           <i class="ni ni-diamond text-dark text-gradient text-lg top-0" aria-hidden="true" id="sidenavCardIcon"></i>
         </div>
