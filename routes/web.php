@@ -31,12 +31,14 @@ use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
 
-Route::post('/user', [UserController::class, 'store']);
+ Route::get('/utilisateurs', [UserController::class, 'index']);
+
+ 
+
+Route::post('/user', [UserController::class, 'store'])->name('user.store');
 
 
-Route::get('utilisateurs', function () {
-    return view('utilisateurs');
-})->name('utlisateur');
+
 Route::post('/select-database', [SessionsController::class, 'selectDatabase'])->name('your_action_here');
 
 Route::get('import', [SocieteController::class, 'showImportForm'])->name('import.form');
