@@ -10,6 +10,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+    protected $connection = 'mysql';
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
@@ -18,13 +19,8 @@ class User extends Authenticatable
      * @var string[]
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'phone',
-        'location',
-        'about_me',
-        'societe_id', // Ajoutez le champ societe_id ici si vous l'avez dans la base de données
+        'name', 'email', 'password', 'phone', 'location', 'about_me', 'BaseName', 'type'
+
     ];
 
     /**

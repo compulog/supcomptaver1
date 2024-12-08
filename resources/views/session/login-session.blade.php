@@ -1,8 +1,7 @@
 @extends('layouts.user_type.guest')
 
 @section('content')
-
-  <main class="main-content  mt-0">
+  <main class="main-content mt-0">
     <section>
       <div class="page-header min-vh-75">
         <div class="container">
@@ -11,13 +10,9 @@
               <div class="card card-plain mt-8">
                 <div class="card-header pb-0 text-left bg-transparent">
                   <h3 class="font-weight-bolder text-info text-gradient">Welcome back</h3>
-                  <!-- <p class="mb-0">Create a new acount<br></p>
-                  <p class="mb-0">OR Sign in with these credentials:</p>
-                  <p class="mb-0">Email <b>admin@softui.com</b></p>
-                  <p class="mb-0">Password <b>secret</b></p> -->
                 </div>
                 <div class="card-body">
-                  <form role="form" method="POST" action="/session">
+                  <form role="form" method="POST" action="/session" id="loginForm">
                     @csrf
                     <label>Email</label>
                     <div class="mb-3">
@@ -33,8 +28,20 @@
                         <p class="text-danger text-xs mt-2">{{ $message }}</p>
                       @enderror
                     </div>
+
+                    <!-- Initially hidden select -->
+                    <div class="mb-3" id="databaseSelectContainer" style="display: none;">
+                      <select name="database" class="form-control" id="databaseSelect">
+                      <option value="">choisire une option</option>
+                        @foreach ($dbNames as $dbName)
+                       
+                            <option value="{{ $dbName }}">{{ $dbName }}</option>
+                        @endforeach
+                      </select>
+                    </div>
+
                     <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" id="rememberMe" checked="">
+                      <input class="form-check-input" type="checkbox" id="rememberMe" checked=""/>
                       <label class="form-check-label" for="rememberMe">Remember me</label>
                     </div>
                     <div class="text-center">
@@ -43,9 +50,9 @@
                   </form>
                 </div>
                 <div class="card-footer text-center pt-0 px-lg-2 px-1">
-                <small class="text-muted">Forgot you password? Reset you password 
-                  <a href="/login/forgot-password" class="text-info text-gradient font-weight-bold">here</a>
-                </small>
+                  <small class="text-muted">Forgot your password? Reset it 
+                    <a href="/login/forgot-password" class="text-info text-gradient font-weight-bold">here</a>
+                  </small>
                   <p class="mb-4 text-sm mx-auto">
                     Don't have an account?
                     <a href="register" class="text-info text-gradient font-weight-bold">Sign up</a>
@@ -63,5 +70,34 @@
       </div>
     </section>
   </main>
-
 @endsection
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const databaseSelectContainer = document.getElementById('databaseSelectContainer');
+    
+    // Function to check credentials
+    function checkCredentials() {
+      const email = emailInput.value;
+      const password = passwordInput.value;
+      
+      // Check if the email and password match the correct values
+      if (email === 'compulog@gmail.com' && password === 'compulog123') {
+        // Show the select element if credentials are correct
+        databaseSelectContainer.style.display = 'block';
+      } else {
+        // Hide the select element if credentials are incorrect
+        databaseSelectContainer.style.display = 'none';
+      }
+    }
+
+    // Listen to changes in the email and password fields
+    emailInput.addEventListener('input', checkCredentials);
+    passwordInput.addEventListener('input', checkCredentials);
+    
+    // Initial check in case the user has pre-filled the fields
+    checkCredentials();
+  });
+</script>

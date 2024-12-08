@@ -11,7 +11,7 @@ class Client extends Model
 
     // Spécifie la connexion de base de données
     protected $connection = 'supcompta';
-
+    // protected $connection = 'database';
     // Spécifie la table si elle n'est pas le pluriel du modèle
     protected $table = 'clients';
 
@@ -22,7 +22,7 @@ class Client extends Model
         'identifiant_fiscal',
         'ICE',
         'type_client',
-        'societe_id', // Ajouter la colonne 'societe_id' dans $fillable pour la gestion de la masse
+        'societe_id', 
     ];
 
     /**

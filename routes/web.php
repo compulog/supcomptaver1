@@ -329,42 +329,29 @@ Route::post('/import-fournisseur', [FournisseurController::class, 'importFournis
 
 
 
-
-    // Affichage de la liste des opérations courantes
-
-/// Afficher la liste des opérations courantes avec filtrage
-Route::get('/operations-courantes', [OperationCouranteController::class, 'index'])->name('operation_courante.index');
-
-// Afficher le formulaire pour créer une nouvelle opération
-Route::get('/operations-courantes/create', [OperationCouranteController::class, 'create'])->name('operation_courante.create');
-
-// Enregistrer une nouvelle opération
-Route::post('/operations-courantes', [OperationCouranteController::class, 'store'])->name('operation_courante.store');
-
-// Afficher le formulaire pour modifier une opération existante
-Route::get('/operations-courantes/{id}/edit', [OperationCouranteController::class, 'edit'])->name('operation_courante.edit');
-
-// Mettre à jour une opération existante
-Route::put('/operations-courantes/{id}', [OperationCouranteController::class, 'update'])->name('operation_courante.update');
-
-// Supprimer une opération
-Route::delete('/operations-courantes/{id}', [OperationCouranteController::class, 'destroy'])->name('operation_courante.destroy');
-// Suppression d'une opération
-// Route pour supprimer plusieurs lignes sélectionnées
-// Route pour supprimer plusieurs plans comptables
-
 Route::resource('operation_courante', OperationCouranteController::class);
 
 // Route pour mettre à jour le compte d'une opération
 Route::post('/operation_courante/update-compte/{id}', [OperationCouranteController::class, 'updateCompte']);
 
-Route::get('/operation_courante', [OperationCouranteController::class, 'index'])->name('operation_courante.index');
-Route::post('/operation_courante/store', [OperationCouranteController::class, 'store'])->name('operation_courante.store');
-Route::get('/operation_courante/getComptes', [OperationCouranteController::class, 'getComptes'])->name('operation_courante.getComptes');
-Route::post('/operation_courante/update/{id}', [OperationCouranteController::class, 'updateField'])->name('operation_courante.updateField');
-Route::delete('/operation_courante/destroy/{id}', [OperationCouranteController::class, 'destroy'])->name('operation_courante.destroy');
+
+Route::get('/operations', [OperationCouranteController::class, 'index'])->name('operation_courante.index');
+Route::post('/operations', [OperationCouranteController::class, 'store'])->name('operation_courante.store');
+Route::post('/operations/update/{id}', [OperationCouranteController::class, 'updateField'])->name('operation_courante.updateField');
+Route::delete('/operations/{id}', [OperationCouranteController::class, 'destroy'])->name('operation_courante.destroy');
 
 
+// Liste des opérations
+Route::get('/operations-courantes', [OperationCouranteController::class, 'index'])->name('operation_courante.index');
+
+// Ajouter une opération (via AJAX)
+Route::post('/operations-courantes', [OperationCouranteController::class, 'store'])->name('operation_courante.store');
+
+// Mettre à jour un champ spécifique d'une opération (via AJAX)
+Route::post('/operations-courantes/update/{id}', [OperationCouranteController::class, 'updateField'])->name('operation_courante.updateField');
+
+// Supprimer une opération
+Route::delete('/operations-courantes/{id}', [OperationCouranteController::class, 'destroy'])->name('operation_courante.destroy');
     Route::put('/plancomptable/{id}', [PlanComptableController::class, 'edit']);
     //Route::get('/plancomptable/{id}', [FournisseurController::class, 'show']);
     Route::get('/plancomptable/data', [PlanComptableController::class, 'getData']);
@@ -449,7 +436,8 @@ Route::group(['middleware' => 'guest'], function () {
     Route::post('/reset-password', [ChangePasswordController::class, 'changePassword'])->name('password.update');
 });
 
-// Route pour la page de connexion
-Route::get('/login', function () {
-    return view('session/login-session');
-})->name('login');
+// // Route pour la page de connexion
+// Route::get('/login', function () {
+//     return view('session/login-session');
+// })->name('login');
+Route::get('/login', [SessionsController::class, 'create'])->name('login');
