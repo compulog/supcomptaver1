@@ -30,12 +30,45 @@ use App\Http\Controllers\SectionController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\InterlocuteursController;
+ Route::put('/utilisateurs/{id}', [UserController::class, 'update'])->name('utilisateurs.update');
 
- Route::get('/utilisateurs', [UserController::class, 'index']);
+Route::get('/utilisateurs/{id}/edit', [UserController::class, 'edit'])->name('utilisateurs.edit');
+
+ Route::get('/user/{id}', [InterlocuteursController::class, 'edit']);
+
+// Route pour mettre à jour les informations de l'utilisateur
+Route::put('/interlocuteurs/{id}', [InterlocuteursController::class, 'update'])->name('interlocuteurs.update');
+
+
+Route::get('/interlocuteurs', [InterlocuteursController::class, 'index'])->name('interlocuteurs.index');
+
+
+// Route::get('utilisateurs/{id}', [UserController::class, 'show'])->name('utilisateurs.show');
+
+// Route::put('utilisateurs/{id}', [UserController::class, 'update'])->name('utilisateurs.update');
+// Route::get('utilisateurs/{id}', [UserController::class, 'show'])->name('utilisateurs.show');
+
+// Route::put('utilisateurs/{id}', [UserController::class, 'update'])->name('utilisateurs.update');
+
+ Route::get('admin/{id}', [AdminController::class, 'show'])->name('admin.show');
+
+ Route::put('admin/{id}', [AdminController::class, 'update'])->name('admin.update');
+
+
+Route::get('/Admin', [AdminController::class, 'index'])->name('Admin.index');
+
+Route::delete('/Admin/{id}', [AdminController::class, 'destroy'])->name('Admin.destroy');
+
+ 
+Route::delete('/utilisateurs/{id}', [UserController::class, 'destroy'])->name('utilisateurs.destroy');
+
+ Route::get('/utilisateurs', [UserController::class, 'index'])->name('utilisateurs.index');
 
  
 
-Route::post('/user', [UserController::class, 'store'])->name('user.store');
+Route::post('/utilisateurs', [UserController::class, 'store'])->name('utilisateurs.store');
 
 
 

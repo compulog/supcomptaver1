@@ -22,6 +22,7 @@ class CreateClientsTable extends Migration
             $table->string('ICE');                     // ICE du client (string)
             $table->string('type_client');             // Type de client (string)
             $table->timestamps();                      // Champs pour created_at et updated_at
+            $table->softDeletes();
         });
     }
 

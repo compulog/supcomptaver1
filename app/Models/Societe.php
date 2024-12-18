@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model; // Assurez-vous que ce namespace est correct
 use Illuminate\Database\Eloquent\Factories\HasFactory; // Pour utiliser les factories si nécessaire
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Societe extends Model
 {
     use HasFactory; // Utiliser le trait HasFactory si vous envisagez de créer des factories
+    use SoftDeletes; // Active les suppressions douces
 
+    protected $dates = ['deleted_at'];
     protected $connection = 'supcompta'; // Assurez-vous que la connexion est correcte
     protected $table = 'societe';
     
@@ -34,6 +37,7 @@ class Societe extends Model
         'designation',
         'nombre_chiffre_compte',  // Champ pour le nombre de chiffres du compte
         'modele_comptable' ,        // Nouveau champ ajouté
+        'dbName',
     ];
 
     // /**

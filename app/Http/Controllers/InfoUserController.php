@@ -31,6 +31,8 @@ class InfoUserController extends Controller
 
     public function store(Request $request)
     {
+
+
         // Validation des champs
         $attributes = $request->validate([
             'name' => ['required', 'max:50'],
@@ -38,7 +40,7 @@ class InfoUserController extends Controller
             'phone' => ['max:50'],
             'location' => ['max:70'],
             'about_me' => ['max:150'],
-            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'], // Validation de l'image
+            // 'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'], // Validation de l'image
         ]);
         
 
