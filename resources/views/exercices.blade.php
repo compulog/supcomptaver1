@@ -185,7 +185,7 @@
         <input type="text" class="form-control" id="folderName" name="name" required>
     </div>
     <button type="submit" class="btn btn-primary">Créer Dossier</button>
-</form>
+    </form>
 
 
             </div>

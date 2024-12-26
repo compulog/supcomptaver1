@@ -70,11 +70,7 @@ class AchatController extends Controller
                 }
             }
     
-            // Vérifie si la collection de fichiers est vide après le filtre
-            if ($achatFiles->isEmpty()) {
-                // Retourne les fichiers d'achats si aucun fichier n'est trouvé avec 'folders' = 0
-                return view('achat', compact('achatFiles'))->with('message', 'Aucun fichier trouvé avec folders = 0. Voici les fichiers d\'achat.');
-            }
+         
     
             // Si des fichiers sont trouvés, passe les fichiers et les dossiers à la vue
             return view('achat', compact('achatFiles', 'folders'));

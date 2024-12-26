@@ -39,12 +39,11 @@ class FolderController extends Controller
             // 
             $achatFiles = File::where('societe_id', $societeId)
                               ->where('type', 'achat') 
-                           ->where('folders', $id)  
-                            
+                        ->where('folders', $id)  
+                    //    ->where('folders', 0) 
                               ->get();
                       
-          
-            session(['foldersId' => $id]);  
+                session(['foldersId' => $id]);  
     
             $foldersId = session('foldersId'); 
     
@@ -65,9 +64,7 @@ class FolderController extends Controller
                 }
             }
     
-             if ($achatFiles->isEmpty()) {
-                 return view('folders', compact('achatFiles'))->with('message', 'Aucun fichier trouvé avec folders = 0. Voici les fichiers d\'achat.');
-            }
+           
     
              return view('folders', compact('achatFiles', 'folders', 'foldersId')); 
         } else {
