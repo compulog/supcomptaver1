@@ -43,7 +43,8 @@ class AchatController extends Controller
             
             // Récupère les dossiers pour la société donnée
             $folders = Folder::where('societe_id', $societeId) // Assurez-vous que "Folder" est le bon modèle
-                             ->get();
+            ->whereNull('folder_id') // Ajout de la condition où folder_id est null
+            ->get();
     
             // Ajouter un champ 'preview' pour chaque fichier afin de passer l'aperçu au front-end
             foreach ($achatFiles as $file) {

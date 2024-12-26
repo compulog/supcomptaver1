@@ -140,7 +140,7 @@
             </div>
           </div>
 
-            <div class="col-md-6" style="margin-top:-110px;">
+            <div class="col-md-6" style="margin-top:-20px;">
                 <label for="password" class="form-label">Mot de passe</label>
                 <input type="password" class="form-control" id="password" name="password" required>
             </div>
@@ -168,68 +168,89 @@
     </div>
   </div>
 </div>
-
-<!-- Modal de modification d'utilisateur -->
-<div id="modifier-modal" class="modal fade" tabindex="-1" aria-labelledby="modifierModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modifierModalLabel">Modifier l'utilisateur</h5>
-        <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
-      </div>
-      <div class="modal-body">
-      <form id="form-modifier-client" method="POST" action="{{ route('utilisateurs.update', '') }}">
-    @csrf
-    @method('PUT') <!-- Indiquer que c'est une requête PUT -->
-    <input type="hidden" id="user-id" name="id"> <!-- Champ caché pour l'ID de l'utilisateur -->
-
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <label for="name-modifier" class="form-label">Nom</label>
-            <input type="text" class="form-control" id="name-modifier" name="name" required>
-        </div>
-        <div class="col-md-6">
-            <label for="email-modifier" class="form-label">Email</label>
-            <input type="email" class="form-control" id="email-modifier" name="email" required>
-        </div>
-    </div>
-
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <label for="phone-modifier" class="form-label">Téléphone</label>
-            <input type="text" class="form-control" id="phone-modifier" name="phone" required>
-        </div>
-        <div class="col-md-6">
-            <label for="password-modifier" class="form-label">Mot de passe</label>
-            <input type="text" class="form-control" id="password-modifier" name="password">
-        </div>
-    </div>
-
-    <!-- Ajout du champ Type dans le modal -->
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <label for="type-modifier" class="form-label">Type</label>
-            <div>
-                <input type="radio" class="form-check-input" id="typeAdmin-modifier" name="type" value="admin">
-                <label for="typeAdmin-modifier" class="form-check-label">Admin</label>
+@foreach($users as $user)
+<!-- Modal de modification pour chaque utilisateur -->
+<div id="modifier-modal-{{ $user->id }}" class="modal fade" tabindex="-1" aria-labelledby="modifierModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modifierModalLabel">Modifier l'utilisateur</h5>
+                <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
             </div>
-            <div>
-                <input type="radio" class="form-check-input" id="typeUtilisateur-modifier" name="type" value="utilisateur">
-                <label for="typeUtilisateur-modifier" class="form-check-label">Utilisateur</label>
+            <div class="modal-body">
+                <form method="POST" action="{{ route('utilisateurs.update', $user->id) }}">
+                    @csrf
+                    @method('PUT')
+
+                    <!-- Nom -->
+                    <div class="form-group">
+                        <label for="name">Nom</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ old('name', $user->name) }}" required>
+                        @error('name')
+                            <div class="alert alert-danger">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ old('email', $user->email) }}" required>
+                        @error('email')
+                            <div class="alert alert-danger">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Mot de passe -->
+                    <div class="form-group">
+                        <label for="password">Mot de passe</label>
+                        <input type="password" class="form-control" id="password" name="password">
+                        <small>Si vous ne voulez pas changer le mot de passe, laissez ce champ vide.</small>
+                        @error('password')
+                            <div class="alert alert-danger">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Téléphone -->
+                    <div class="form-group">
+                        <label for="phone">Téléphone</label>
+                        <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone', $user->phone) }}" required>
+                        @error('phone')
+                            <div class="alert alert-danger">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Type -->
+                    <div class="form-group">
+                        <label for="type">Type</label>
+                        <div>
+                            <input type="radio" class="form-check-input" id="typeAdmin-modifier" name="type" value="admin" {{ old('type', $user->type) == 'admin' ? 'checked' : '' }} required>
+                            <label for="typeAdmin-modifier" class="form-check-label">Admin</label>
+                        </div>
+                        <div>
+                            <input type="radio" class="form-check-input" id="typeUtilisateur-modifier" name="type" value="utilisateur" {{ old('type', $user->type) == 'utilisateur' ? 'checked' : '' }} required>
+                            <label for="typeUtilisateur-modifier" class="form-check-label">Utilisateur</label>
+                        </div>
+                    </div>
+
+                 
+
+                    <!-- BaseName (champ caché) -->
+                    <input type="hidden" class="form-control" id="baseName" name="baseName" value="{{ session('database') }}">
+
+                    <!-- Boutons -->
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Mettre à jour</button>
+                        <button type="reset" class="btn btn-secondary me-8">
+                            <i class="fas fa-undo"></i> 
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-
-    <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Modifier</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-    </div>
-</form>
-
-      </div>
-    </div>
-  </div>
 </div>
+@endforeach
+
 
 
 <!-- Div for Tabulator Table -->
@@ -249,20 +270,24 @@ const table = new Tabulator("#example-table", {
         {title: "BaseName", field: "BaseName", headerFilter: "input"},
         {title: "Type", field: "type", headerFilter: "input"},
         {
-            title: "Actions", 
-            field: "id", 
-            formatter: function(cell, formatterParams, onRendered) {
-                var id = cell.getValue();
-                return `
-                    <span class="text-warning edit-client" title="Modifier" style="cursor: pointer;" data-id="${id}" onclick="editUtilisateur(${id})">
-                        <i class="fas fa-edit" style="color:#82d616;"></i>
-                    </span>
-                   <span class="text-danger" title="Supprimer" style="cursor: pointer;" onclick="deleteUtilisateur(${id})">
-                        <i class="fas fa-trash" style="color:#82d616;"></i>
-                    </span>
-                `;
-            }
-        }
+    title: "Actions", 
+    field: "id", 
+    formatter: function(cell, formatterParams, onRendered) {
+        var id = cell.getValue(); // Récupère l'ID de l'utilisateur
+
+        // Générer l'icône Modifier uniquement pour cet utilisateur
+        return `
+            <span class="text-warning" title="Modifier" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modifier-modal-${id}">
+                <i class="fas fa-edit" style="color:#82d616;"></i>
+            </span>
+            <span class="text-danger" title="Supprimer" style="cursor: pointer;" onclick="deleteUtilisateur(${id})">
+                <i class="fas fa-trash" style="color:#82d616;"></i>
+            </span>
+        `;
+    }
+}
+
+
     ]
 });
 // Fonction pour supprimer un utilisateur
@@ -314,6 +339,19 @@ function editUtilisateur(id) {
 }
 
 </script>
+@section('scripts')
+<script>
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const passwordConfirmation = document.getElementById('password_confirmation').value;
+
+        if (password && password !== passwordConfirmation) {
+            e.preventDefault(); // Empêche la soumission du formulaire
+            alert('Les mots de passe ne correspondent pas.');
+        }
+    });
+</script>
+@endsection
 
 </body>
 </html>

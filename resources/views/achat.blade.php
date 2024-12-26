@@ -4,8 +4,8 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <div class="container mt-4">
-    <div class="row">
-        <!-- Conteneur flexible pour aligner les éléments sur la même ligne -->
+    <h6>Achat</h6>
+    <div class="row"  style="margin-left:500px">
         <div class="d-flex align-items-center mb-3">
             <!-- Formulaire de filtrage -->
             <form method="GET" action="" class="d-flex me-3">
@@ -18,7 +18,7 @@
                 </div>
             </form>
 
-            <!-- Formulaire de téléchargement (Charger) -->
+            <!-- Formulaire de téléchargement -->
             <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
                 <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                     @csrf
@@ -38,10 +38,7 @@
     </div>
 </div>
 
-
 <div class="container mt-4">
-    <h3>Fichiers Dossiers de la société</h3>
-
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
         <!-- Ajouter un Dossier -->
         <div class="col">
@@ -60,25 +57,20 @@
             @foreach ($folders as $folder)
                 <div class="col" ondblclick="openFile({{ $folder->id }})">
                     <div class="card shadow-sm" style="width: 10rem; height: 130px; cursor: pointer;">
-                        <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">
+                        <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;background-color:#007bff;border-radius:17px;">
                             <!-- Icône du Dossier -->
-                            <i class="fas fa-folder fa-2x mb-1" style="color: #007bff;"></i>
-                            <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;">
+                            <i class="fas fa-folder fa-2x mb-1" style="color:rgb(227, 231, 235);"></i>
+                            <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;color:rgb(227, 231, 235);">
                                 {{ $folder->name }}
                             </h5>
                             <div class="d-flex justify-content-between" style="font-size: 0.8rem;">
-                                <!-- Formulaire de suppression -->
                                 <form action="{{ route('folder.delete', $folder->id) }}" method="POST" style="display: inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-link p-0" title="Supprimer le dossier">
-                                        <i class="fas fa-trash text-danger"></i>
+                                    <button type="submit" class="btn btn-link p-0" title="Supprimer le dossier" style="margin-top:-180px;margin-left:130px;">
+                                        <i class="fas fa-times" style="color:rgb(227, 231, 235);"></i>
                                     </button>
                                 </form>
-                                <!-- Action de double-clic sur le dossier -->
-                                <button class="btn btn-link p-0" onclick="openFile({{ $folder->id }})">
-                                    <i class="fas fa-arrow-right text-primary"></i>
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -111,37 +103,28 @@
     </div>
 </div>
 
-
+<!-- Gestion des fichiers de type achat -->
 <div class="container mt-4">
-    <h3>Fichiers Achat</h3>
-
     @if ($achatFiles->isEmpty())
         <p>Aucun fichier trouvé pour cette société.</p>
     @else
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
             @foreach ($achatFiles as $file)
-                <div class="col">
+                <div class="col" ondblclick="downloadFile({{ $file->id }})">
                     <div class="card shadow-sm" style="width: 10rem; height: 130px;">
                         <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">
-                            <!-- Affichage de l'aperçu -->
                             <img src="{{ $file->preview }}" alt="{{ $file->name }}" class="img-fluid mb-2" style="max-height: 80px; object-fit: contain;">
-
                             <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;">
                                 {{ $file->name }}
                             </h5>
                             <div class="d-flex justify-content-between" style="font-size: 0.8rem;">
-                                <!-- Formulaire de suppression -->
                                 <form action="{{ route('file.delete', $file->id) }}" method="POST" style="display: inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-link p-0" title="Supprimer le fichier">
-                                        <i class="fas fa-trash text-danger"></i>
+                                    <button type="submit" class="btn btn-link p-0" title="Supprimer le fichier" style="margin-top:-230px;margin-left:130px;">
+                                        <i class="fas fa-times" style="color:#33333333;"></i>
                                     </button>
                                 </form>
-                                <!-- Bouton de téléchargement -->
-                                <a href="{{ route('file.download', $file->id) }}" class="btn btn-link p-0" title="Télécharger">
-                                    <i class="fas fa-download text-primary"></i>
-                                </a>
                             </div>
                         </div>
                     </div>
@@ -150,7 +133,6 @@
         </div>
     @endif
 </div>
-
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -161,8 +143,8 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function handleFileSelect(event, type) {
-    const fileInput = document.getElementById(`file-${type.toLowerCase()}`);
-    const formId = `form-${type.toLowerCase()}`;
+    const fileInput = document.getElementById('file-' + type.toLowerCase());
+    const formId = 'form-' + type.toLowerCase();
     
     if (!fileInput.files.length) {
         alert("Veuillez sélectionner un fichier.");
@@ -178,24 +160,16 @@ function openCreateFolderForm() {
 }
 
 function openFile(folderId) {
+    setFolderId(folderId);  // Mettre à jour l'ID du dossier avant l'ouverture
     window.location.href = '/folder/' + folderId;
 }
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Ajout des événements de double-clic pour toutes les sections
-    document.getElementById('achat-div').addEventListener('dblclick', function () {
-        window.location.href = '{{ route("achat.view") }}';
-    });
-});
 
-function openCreateFolderForm() {
-    var myModal = new bootstrap.Modal(document.getElementById('createFolderModal'));
-    myModal.show();
+function setFolderId(folderId) {
+    document.querySelector('input[name="folders_id"]').value = folderId;
 }
 
-function openFile(folderId) {
-    window.location.href = '/folder/' + folderId;
+function downloadFile(fileId) {
+    window.location.href = '/file/download/' + fileId;
 }
 </script>
 

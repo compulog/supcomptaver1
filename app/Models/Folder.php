@@ -16,7 +16,18 @@ class Folder extends Model
     protected $table = 'folders';
 
     // Définir les champs autorisés pour l'attribution de masse
-    protected $fillable = ['name', 'societe_id'];
+    protected $fillable = ['name', 'societe_id', 'folder_id'];
+
+    public function parent()
+    {
+        return $this->belongsTo(Folder::class, 'folder_id');
+    }
+
+    public function subfolders()
+    {
+        return $this->hasMany(Folder::class, 'folder_id');
+    }
+    
     public function societe()
     {
         return $this->belongsTo(Societe::class);

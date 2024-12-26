@@ -71,7 +71,7 @@
 
                     <!-- Form fields for Name, Email, etc. -->
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="">
                             <div class="form-group">
                                 <label for="user-name" class="form-control-label">{{ __('Nom Complet') }}</label>
                                 <div class="@error('user.name')border border-danger rounded-3 @enderror">
@@ -82,6 +82,24 @@
                                 </div>
                             </div>
                         </div>
+
+
+                        <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="user-raw_password" class="form-control-label">{{ __('Mot DE Passe') }}</label>
+                                <div class="@error('user.raw_password')border border-danger rounded-3 @enderror">
+                                    <input class="form-control" value="{{ auth()->user()->raw_password }}" type="text" placeholder="raw_password" id="user-raw_password" name="raw_password">
+                                    @error('raw_password')
+                                        <p class="text-danger text-xs mt-2">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="user-email" class="form-control-label">{{ __('Email') }}</label>
@@ -125,7 +143,7 @@
                     </div>
 
                     <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn bg-gradient-dark btn-md mt-4 mb-4">{{ 'Sauvgarder Les Modification' }}</button>
+                        <button type="submit" class="btn bg-gradient-dark btn-md mt-4 mb-4">{{ 'Modifier' }}</button>
                     </div>
                 </form>
             </div>

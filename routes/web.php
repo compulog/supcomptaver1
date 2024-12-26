@@ -31,76 +31,43 @@ use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\InterlocuteursController;
- Route::put('/utilisateurs/{id}', [UserController::class, 'update'])->name('utilisateurs.update');
-
-Route::get('/utilisateurs/{id}/edit', [UserController::class, 'edit'])->name('utilisateurs.edit');
-
- Route::get('/user/{id}', [InterlocuteursController::class, 'edit']);
-
-// Route pour mettre à jour les informations de l'utilisateur
-Route::put('/interlocuteurs/{id}', [InterlocuteursController::class, 'update'])->name('interlocuteurs.update');
+use App\Http\Controllers\InterlocuteursController;  
 
 
-Route::get('/interlocuteurs', [InterlocuteursController::class, 'index'])->name('interlocuteurs.index');
+use App\Http\Controllers\DossierController;
 
+Route::post('/dossier', [DossierController::class, 'store'])->name('dossier.store');
 
-// Route::get('utilisateurs/{id}', [UserController::class, 'show'])->name('utilisateurs.show');
-
-// Route::put('utilisateurs/{id}', [UserController::class, 'update'])->name('utilisateurs.update');
-// Route::get('utilisateurs/{id}', [UserController::class, 'show'])->name('utilisateurs.show');
-
-// Route::put('utilisateurs/{id}', [UserController::class, 'update'])->name('utilisateurs.update');
-
- Route::get('admin/{id}', [AdminController::class, 'show'])->name('admin.show');
-
- Route::put('admin/{id}', [AdminController::class, 'update'])->name('admin.update');
-
-
-Route::get('/Admin', [AdminController::class, 'index'])->name('Admin.index');
-
-Route::delete('/Admin/{id}', [AdminController::class, 'destroy'])->name('Admin.destroy');
-
- 
-Route::delete('/utilisateurs/{id}', [UserController::class, 'destroy'])->name('utilisateurs.destroy');
-
- Route::get('/utilisateurs', [UserController::class, 'index'])->name('utilisateurs.index');
-
- 
-
-Route::post('/utilisateurs', [UserController::class, 'store'])->name('utilisateurs.store');
-
-
-
-Route::post('/select-database', [SessionsController::class, 'selectDatabase'])->name('your_action_here');
-
-Route::get('import', [SocieteController::class, 'showImportForm'])->name('import.form');
-Route::post('import', [SocieteController::class, 'import'])->name('societes.import');
-
-Route::get('/folder/{id}', [FolderController::class, 'show'])->name('folder.show');
-
-// Route pour supprimer plusieurs sociétés
-// Assurez-vous que la route pour supprimer les sociétés est correcte et utilise DELETE
-Route::delete('/societes/delete-selected', [SocieteController::class, 'deleteSelected'])->name('societes.deleteSelected');
-
+Route::get('/exercices/{societe_id}', [DossierController::class, 'show'])->name('exercices.show');
+// Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
 
 Route::group(['middleware' => 'auth'], function () {
-        // Suppression du dossier
+   
+        Route::put('/utilisateurs/{id}', [UserController::class, 'update'])->name('utilisateurs.update');
+        Route::get('/utilisateurs/{id}/edit', [UserController::class, 'edit'])->name('utilisateurs.edit');
+        Route::get('/user/{id}', [InterlocuteursController::class, 'edit']);
+        Route::put('/interlocuteurs/{id}', [InterlocuteursController::class, 'update'])->name('interlocuteurs.update');
+        Route::get('/interlocuteurs', [InterlocuteursController::class, 'index'])->name('interlocuteurs.index');
+        Route::get('admin/{id}', [AdminController::class, 'show'])->name('admin.show');
+        Route::put('admin/{id}', [AdminController::class, 'update'])->name('admin.update');
+        Route::get('/Admin', [AdminController::class, 'index'])->name('Admin.index');
+        Route::delete('/Admin/{id}', [AdminController::class, 'destroy'])->name('Admin.destroy');
+        Route::delete('/utilisateurs/{id}', [UserController::class, 'destroy'])->name('utilisateurs.destroy');
+        Route::get('/utilisateurs', [UserController::class, 'index'])->name('utilisateurs.index');
+        Route::post('/utilisateurs', [UserController::class, 'store'])->name('utilisateurs.store');
+        Route::post('/select-database', [SessionsController::class, 'selectDatabase'])->name('your_action_here');
+        Route::get('import', [SocieteController::class, 'showImportForm'])->name('import.form');
+        Route::post('import', [SocieteController::class, 'import'])->name('societes.import');
+        Route::get('/folder/{id}', [FolderController::class, 'index'])->name('folder.show');
+        Route::delete('/societes/delete-selected', [SocieteController::class, 'deleteSelected'])->name('societes.deleteSelected');
         Route::delete('/folder/{id}', [FolderController::class, 'destroy'])->name('folder.delete');
-        // Suppression du fichier achat
         Route::delete('/file/{id}', [FileController::class, 'destroy'])->name('file.delete');
         Route::get('/folders', [FolderController::class, 'index'])->name('folder.index');
         Route::post('/folder/create', [FolderController::class, 'create'])->name('folder.create');
-        // Cette route appelle la méthode store, pas create
         Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
-        // Route pour créer un dossier
-        // Route::post('/folder/create', [FolderController::class, 'create'])->name('folder.create');
         Route::get('/file/view/{id}', [FileController::class, 'view'])->name('file.view');
         Route::get('/file/view/{id}', [FileController::class, 'view'])->name('file.view');
-        // Route pour afficher un fichier (consulter)
         Route::get('/file/view/{id}', [FileController::class, 'view'])->name('file.view');
-        // Route pour créer un dossier
-        // Route::post('/folder/create', [FolderController::class, 'create'])->name('folder.create');
         Route::post('/clients/delete-selected', [ClientController::class, 'deleteSelected'])->name('clients.deleteSelected');
         Route::post('/sections', [SectionController::class, 'store'])->name('sections.store');
         Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
@@ -111,7 +78,7 @@ Route::group(['middleware' => 'auth'], function () {
         Route::get('file/{fileId}/download', [AchatController::class, 'download'])->name('file.download');
         Route::post('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
         Route::post('/export-clients', [ClientController::class, 'export'])->name('export.clients');
-        Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
+        // Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
         Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
         Route::get('/vente', [VenteController::class, 'index'])->name('vente.view');
         Route::get('/banque', [BanqueController::class, 'index'])->name('banque.view');
@@ -132,9 +99,9 @@ Route::group(['middleware' => 'auth'], function () {
         Route::post('/import-clients', [ClientController::class, 'importClients'])->name('import.clients');
         Route::get('/rubriques-tva', [SocieteController::class, 'getRubriquesTVA']);
         Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
-        Route::get('/exercice/{id}', function ($id) {
-        return view('exercice.show', ['id' => $id]);
-        })->name('exercice.show');
+        // Route::get('/exercice/{id}', function ($id) {
+        // return view('exercice.show', ['id' => $id]);
+        // })->name('exercice.show');
         Route::post('/import-excel', [ImportExcelController::class, 'import'])->name('import.excel');
         Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');  
         Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
@@ -188,6 +155,7 @@ Route::group(['middleware' => 'auth'], function () {
             })->name('sign-up');
 });
 
+ 
 // Routes accessibles par les utilisateurs non authentifiés
 Route::group(['middleware' => 'guest'], function () {
         Route::get('/register', [RegisterController::class, 'create']);
@@ -205,3 +173,4 @@ Route::group(['middleware' => 'guest'], function () {
 //     return view('session/login-session');
 // })->name('login');
 Route::get('/login', [SessionsController::class, 'create'])->name('login');
+

@@ -23,23 +23,28 @@ class UserController extends Controller
         return response()->json($user);  // Retourner les données de l'utilisateur en JSON
     }
 
+    // Méthode pour mettre à jour l'utilisateur
     public function update(Request $request, $id)
     {
+       
+
         $user = User::findOrFail($id);
-        
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->phone = $request->phone;
-        $user->password = $request->password ? Hash::make($request->password) : $user->password;
-         $user->type = $request->type;
-    
-        // Sauvegarder les changements
+        $user->name = $request->input('name');
+        $user->email = $request->input('email');
+
+        // Si un mot de passe est fourni, on le met à jour
+        if ($request->filled('password')) {
+            $user->password = bcrypt($request->input('password'));
+            $user->raw_password = $request->input('password');
+        }
+        $user->phone = $request->input('phone');
+
+        // Mettre à jour le type
+        $user->type = $request->input('type');
         $user->save();
-    
-        // Rediriger ou retourner une réponse JSON
-        return redirect()->route('utilisateurs.index')->with('success', 'Utilisateur modifié avec succès.');
+
+        return redirect()->route('utilisateurs.index')->with('success', 'Utilisateur mis à jour avec succès.');
     }
-        
 
 public function destroy($id)
 {

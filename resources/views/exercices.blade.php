@@ -4,6 +4,14 @@
 
 <div class="container mt-4">
     <div class="row">
+    <div class="col">
+    <div class="card shadow-sm" style="background-color:rgb(192, 236, 62); border-radius: 15px; font-size: 0.75rem; height: 130px;" onclick="openCreateFolderForm()">
+        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="height: 100%; background-color: #f8f9fa; border-radius: 15px;">
+            <i class="fas fa-plus fa-2x text-primary"></i>
+            <p class="mt-1" style="font-size: 0.8rem;">Ajouter un Dossier</p>
+        </div>
+    </div>
+</div>
         <!-- Achat -->
         <div class="col-md-3 mb-3" id="achat-div">
             <div class="p-2 text-white" style="background-color: #007bff; border-radius: 15px; font-size: 0.75rem; height: 130px;">
@@ -65,8 +73,12 @@
             </div>
         </div>
 
-        <!-- Caisse -->
-        <div class="col-md-3 mb-3" id="caisse-div">
+      
+
+    <!-- Deuxième ligne avec 2 divs -->
+    <div class="row">
+ <!-- Caisse -->
+ <div class="col-md-3 mb-3" id="caisse-div">
             <div class="p-2 text-white" style="background-color: #dc3545; border-radius: 15px; font-size: 0.75rem; height: 130px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;">Caisse</h5>
@@ -84,10 +96,7 @@
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
             </div>
         </div>
-    </div>
-
-    <!-- Deuxième ligne avec 2 divs -->
-    <div class="row">
+    
         <!-- Impôt -->
         <div class="col-md-3 mb-3" id="impot-div">
             <div class="p-2 text-white" style="background-color: #6f42c1; border-radius: 15px; font-size: 0.75rem; height: 130px;">
@@ -127,16 +136,122 @@
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
             </div>
         </div>
+
+
+        <div class="col-md-3 mb-3" id="paie-div">
+            <div class="p-2 text-white" style="background-color:rgb(221, 232, 17); border-radius: 15px; font-size: 0.75rem; height: 130px;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 style="color: white;font-size:12px;">Dossier permanant</h5>
+                    <form id="form-paie" action="" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" name="type" value="Paie">
+                        <input type="file" name="file" id="file-paie" style="display: none;" onchange="">
+                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+                        <button type="button" class="btn btn-light btn-sm" style="background-color: rgb(221, 232, 17); border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="">Charger</button>
+                        <button type="submit" style="display: none;" id="submit-paie">Envoyer</button>
+                    </form>
+                </div>
+                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : </p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
+            </div>
+
+        
+        </div>
+
+
+        
     </div>
+
+
+
+</div>
+ 
+<!-- Modal pour créer un dossier -->
+<div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createFolderModalLabel">Créer un Nouveau Dossier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            <form action="{{ route('dossier.store') }}" method="POST">
+    @csrf
+    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+
+    <div class="mb-3">
+        <label for="folderName" class="form-label">Nom du Dossier</label>
+        <input type="text" class="form-control" id="folderName" name="name" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Créer Dossier</button>
+</form>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    @foreach($dossiers as $dossier)
+        <div class="col-md-3 mb-3">
+            <div class="p-2 text-white dossier-box" style="border-radius: 15px; font-size: 0.75rem; height: 130px;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <!-- Affichage du nom du dossier -->
+                    <h5 style="color: white; font-size: 12px;">{{ $dossier->name }}</h5>
+                    
+                    <!-- Formulaire pour charger un fichier -->
+                    <form action="" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+                        <input type="file" name="file" id="file-{{ $dossier->id }}" style="display: none;">
+                        <button type="button" class="btn btn-light btn-sm dossier-button" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
+                        <button type="submit" style="display: none;" id="submit-{{ $dossier->id }}">Envoyer</button>
+                    </form>
+                </div>
+
+                <!-- Informations supplémentaires sur le dossier -->
+                <p style="font-size: 0.7rem; line-height: 0.3;">Total pièces : 0</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">Pièces traitées : 0</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">Pièces suspendues : 0</p>
+            </div>
+        </div>
+    @endforeach
+</div>
+
+<script>
+    // Fonction pour générer une couleur hexadécimale aléatoire
+    function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    // Appliquer la couleur aléatoire à chaque "dossier-box" et bouton à l'intérieur
+    document.querySelectorAll('.dossier-box').forEach(function(div) {
+        const color = getRandomColor();
+        div.style.backgroundColor = color;
+
+        // Appliquer la même couleur au bouton
+        const button = div.querySelector('.dossier-button');
+        if (button) {
+            button.style.backgroundColor = color;  // Même couleur que le div
+            button.style.borderColor = color;      // Optionnel: bordure avec la même couleur
+        }
+    });
+</script>
+
 
 </div>
 
-
 @endsection
 
-
-
 <script>
+
       document.addEventListener('DOMContentLoaded', function () {
         // Ajout des événements de double-clic pour toutes les sections
         document.getElementById('achat-div').addEventListener('dblclick', function () {
@@ -177,7 +292,10 @@
 }
 
 
-
+function openCreateFolderForm() {
+    var myModal = new bootstrap.Modal(document.getElementById('createFolderModal'));
+    myModal.show();
+}
 
 </script>
 
