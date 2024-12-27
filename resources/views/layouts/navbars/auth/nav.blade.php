@@ -7,27 +7,26 @@
     <div class="container-fluid py-1 px-3">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
-                <li class="breadcrumb-item text-sm"><a class="opacity-5 text-white" href="javascript:;">Pages</a></li>
                 <li class="breadcrumb-item text-sm text-white active text-capitalize" aria-current="page">{{ $societe->raison_sociale }}</li>
             </ol>
-            <h6 class="font-weight-bolder mb-0 text-capitalize text-white">{{ str_replace('-', ' ', Request::path()) }}</h6>
+            Exercices:
+        
+            <button type="button" class="btn btn-light" style="border-radius: 50%; margin-left: 10px; padding: 10px;height:25px;width:25px;margin-top:12px;">
+        <i class="fas fa-arrow-left" style="font-size:8px;"></i> <!-- Flèche vers la gauche -->
+    </button>
+
+    Du <input type="date" value="{{ $societe->exercice_social_debut }}" style="height:20px;"> 
+    au <input type="date" value="{{ $societe->exercice_social_fin }}" style="height:20px;"/> 
+  
+    <button type="button" class="btn btn-light" style="border-radius: 50%; margin-left: 10px; padding: 10px;height:25px;width:25px;margin-top:12px;">
+        <i class="fas fa-arrow-right"  style="font-size:8px;"></i> <!-- Flèche vers la droite -->
+    </button>
+    
         </nav>
         <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar"> 
        
        
-        <div class="nav-item d-flex align-self-end" style="color:white;">
-        <button type="button" class="btn btn-light" style="border-radius: 50%; margin-left: 10px; padding: 10px;height:25px;width:25px;">
-        <i class="fas fa-arrow-left" style="font-size:8px"></i> <!-- Flèche vers la gauche -->
-    </button>
-    Du <input type="date" value="{{ $societe->exercice_social_debut }}" style="height:20px;"> 
-    au <input type="date" value="{{ $societe->exercice_social_fin }}" style="height:20px;"/> 
-
-    <!-- Ajout des boutons sous forme de flèches -->
-  
-    <button type="button" class="btn btn-light" style="border-radius: 50%; margin-left: 10px; padding: 10px;height:25px;width:25px;">
-        <i class="fas fa-arrow-right"  style="font-size:8px"></i> <!-- Flèche vers la droite -->
-    </button>
-</div>
+    
 
             
             <ul class="navbar-nav justify-content-end">

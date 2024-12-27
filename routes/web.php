@@ -11,12 +11,7 @@ use App\Http\Controllers\FournisseurController;
 use App\Http\Controllers\PlanComptableController;
 use App\Http\Controllers\JournalController;
 use App\Http\Controllers\ExportController;
-use App\Http\Controllers\AchatController;
-use App\Http\Controllers\VenteController;
-use App\Http\Controllers\BanqueController;
-use App\Http\Controllers\PaieController;
-use App\Http\Controllers\ImpotController;
-use App\Http\Controllers\CaisseController;
+
 use App\Exports\FournisseursExport;
 
 use Maatwebsite\Excel\Facades\Excel;
@@ -28,7 +23,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\SocieteController;
 use App\Http\Controllers\ClientController;
-use App\Http\Controllers\FolderController;
+
 
 use App\Http\Controllers\ImportExcelController;
 use App\Exports\SocietesExport;
@@ -40,61 +35,42 @@ use App\Exports\ClientsExport;
 use App\Http\Controllers\ClientsPDFExportController;
 use App\Http\Controllers\SocietesPDFExportController;
 use App\Http\Controllers\ExerciceController;
+use App\Http\Middleware\SetSocieteId;
 
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\FileUploadController;
+use App\Http\Controllers\AchatController;
+use App\Http\Controllers\VenteController;
+use App\Http\Controllers\BanqueController;
+use App\Http\Controllers\CaisseController;
+use App\Http\Controllers\ImpotController;
+use App\Http\Controllers\PaieController;
+use App\Http\Controllers\SectionController;
+use App\Http\Controllers\FolderController;
+
+use App\Http\Controllers\UserController;
+
+ Route::get('/utilisateurs', [UserController::class, 'index']);
 
 
 
-
-
-Route::get('file/{fileId}/download', [AchatController::class, 'download'])->name('file.download');
-
-
-Route::post('/export-clients-pdf', [ClientsPDFExportController::class, 'export'])->name('export.clients.pdf');
-
-Route::post('/export-clients', [ClientController::class, 'export'])->name('export.clients');
-
-
-Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
+Route::post('/user', [UserController::class, 'store'])->name('user.store');
 
 
 
-// Route pour le téléchargement de fichiers
-Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
+Route::post('/select-database', [SessionsController::class, 'selectDatabase'])->name('your_action_here');
 
+Route::get('import', [SocieteController::class, 'showImportForm'])->name('import.form');
+Route::post('import', [SocieteController::class, 'import'])->name('societes.import');
 
-
-
-Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
-
-
-Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
-
-// Route pour le téléchargement de fichiers
-Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
-Route::get('/achat', [AchatController::class, 'index'])->name('achat.view');
-Route::get('/vente', [VenteController::class, 'index'])->name('vente.view');
-Route::get('/banque', [BanqueController::class, 'index'])->name('banque.view');
-Route::get('/caisse', [CaisseController::class, 'index'])->name('caisse.view');
-Route::get('/impot', [ImpotController::class, 'index'])->name('impot.view');
-Route::get('/paie', [PaieController::class, 'index'])->name('paie.view');
-
-// Route pour le téléchargement de fichiers
-Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
-
-
-
-Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
-
-
+Route::get('/folder/{id}', [FolderController::class, 'show'])->name('folder.show');
 
 // Route pour supprimer plusieurs sociétés
 // Assurez-vous que la route pour supprimer les sociétés est correcte et utilise DELETE
 Route::delete('/societes/delete-selected', [SocieteController::class, 'deleteSelected'])->name('societes.deleteSelected');
 
 
-Route::group(['middleware' => 'auth'], function () {
+Route::group(['middleware' => ['auth', SetSocieteId::class]], function (){
 
 
 
@@ -170,7 +146,6 @@ Route::post('/ajouterContrePartie', [PlanComptableController::class, 'ajouterCon
 
 
 // routes/web.php
-Route::resource('operation_courante', OperationCouranteController::class);
 
 Route::post('/clients/delete-selected', [ClientController::class, 'deleteSelected'])->name('clients.deleteSelected');
     Route::get('/clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit');
@@ -327,31 +302,73 @@ Route::post('/import-fournisseur', [FournisseurController::class, 'importFournis
         return view('Fournisseurs');
     })->name('Fournisseurs');
 
-
-
 Route::resource('operation_courante', OperationCouranteController::class);
 
-// Route pour mettre à jour le compte d'une opération
-Route::post('/operation_courante/update-compte/{id}', [OperationCouranteController::class, 'updateCompte']);
+
+// Vue principale pour gérer les opérations
+Route::get('/operations', [OperationCouranteController::class, 'index'])->name('operations.index');
+Route::put('update-row/{id}', [OperationCouranteController::class, 'updateRow']);
+Route::delete('delete-row/{id}', [OperationCouranteController::class, 'deleteRow']);
+Route::get('empty-row', [OperationCouranteController::class, 'getEmptyRow']);
 
 
-Route::get('/operations', [OperationCouranteController::class, 'index'])->name('operation_courante.index');
-Route::post('/operations', [OperationCouranteController::class, 'store'])->name('operation_courante.store');
-Route::post('/operations/update/{id}', [OperationCouranteController::class, 'updateField'])->name('operation_courante.updateField');
-Route::delete('/operations/{id}', [OperationCouranteController::class, 'destroy'])->name('operation_courante.destroy');
+// Route pour charger les journaux
+Route::get('/journaux', [OperationCouranteController::class, 'getJournaux'])->name('journaux.get');
+
+// Route pour charger les périodes
+Route::get('/periodes', [OperationCouranteController::class, 'getPeriodes'])->name('periodes.get');
+
+// Routes pour charger les rubriques et les comptes
+Route::get('/rubriques-tva', [OperationCouranteController::class, 'getRubriquesTva'])->name('rubriques.get');
+Route::get('/comptes', [OperationCouranteController::class, 'getComptes'])->name('comptes.get');
+
+Route::delete('/delete-operations', [OperationCouranteController::class, 'deleteOperations'])->name('deleteOperations');
+
+Route::get('/fournisseurs', [OperationCouranteController::class, 'getFournisseurs']);
+Route::get('/clients', [OperationCouranteController::class, 'getClients']);
+
+Route::get('/fournisseurs-details', [OperationCouranteController::class, 'getFournisseursAvecDetails']);
+Route::get('/get-compte-tva', [OperationCouranteController::class, 'getCompteTva']);
+Route::post('/create-compte-tva', [OperationCouranteController::class, 'createCompteTva']);
+
+// Route pour afficher le formulaire
+Route::get('/operations', [OperationCouranteController::class, 'getOperations'])->name('getOperations');
+// Route pour récupérer les informations de la société (exercice_social_debut)
+Route::get('/session-social', [OperationCouranteController::class, 'getSessionSocial']);
+Route::post('/upload', [OperationCouranteController::class, 'upload']);
 
 
-// Liste des opérations
-Route::get('/operations-courantes', [OperationCouranteController::class, 'index'])->name('operation_courante.index');
+// Routes pour récupérer les données pour le formulaire
+Route::get('/getRubriquesTva', [OperationCouranteController::class, 'getRubriquesTva'])->name('getRubriquesTva');
 
-// Ajouter une opération (via AJAX)
-Route::post('/operations-courantes', [OperationCouranteController::class, 'store'])->name('operation_courante.store');
+Route::get('/comptes', [OperationCouranteController::class, 'getComptes'])->name('getComptes');
 
-// Mettre à jour un champ spécifique d'une opération (via AJAX)
-Route::post('/operations-courantes/update/{id}', [OperationCouranteController::class, 'updateField'])->name('operation_courante.updateField');
+// Route pour sauvegarder les données
+Route::post('/save-operation', [OperationCouranteController::class, 'saveOperation']);
+Route::post('/operation-courante/save', [OperationCouranteController::class, 'saveOperation']);
+Route::get('/transactions', [OperationCouranteController::class, 'getTransactions']);
+Route::get('/societe/details', [OperationCouranteController::class, 'getSocieteDetails']);
+Route::get('/rubriques-tva-ventes', [OperationCouranteController::class, 'getRubriquesTVAVente'])->name('getRubriquesTVAVente');
+
+
+// Route pour récupérer les fournisseurs
+Route::get('/fournisseurs', [FournisseurController::class, 'index'])->name('getFournisseurs');
+Route::get('/journaux-achats', [OperationCouranteController::class, 'getJournauxACH']);
+Route::get('/journaux-ventes', [OperationCouranteController::class, 'getJournauxVTE']);
+Route::get('/journaux-tresorerie', [OperationCouranteController::class, 'getJournauxTRE']);
+Route::get('/journaux-operations-diverses', [OperationCouranteController::class, 'getJournauxOPE']);
+
+Route::get('operationcourante/getFournisseurs', [OperationCouranteController::class, 'getFournisseurs'])->name('operationcourante.getFournisseurs');
+Route::get('operationcourante/fournisseurs/details', [OperationCouranteController::class, 'getFournisseursAvecDetails'])->name('operationcourante.getFournisseursAvecDetails');
+Route::get('/get-journaux-by-societe', [OperationCouranteController::class, 'getJournauxBySociete'])
+    ->name('getJournauxBySociete');
+// Route pour supprimer une ligne
+Route::delete('/operationcourante/{id}', [OperationCouranteController::class, 'delete'])->name('operationcourante.delete');
+Route::get('/getJournalByCode', [OperationCouranteController::class, 'getJournalByCode'])->name('getJournalByCode');
+
+Route::get('/get-operations', [OperationCouranteController::class, 'getOperations'])->name('get.operations');
 
 // Supprimer une opération
-Route::delete('/operations-courantes/{id}', [OperationCouranteController::class, 'destroy'])->name('operation_courante.destroy');
     Route::put('/plancomptable/{id}', [PlanComptableController::class, 'edit']);
     //Route::get('/plancomptable/{id}', [FournisseurController::class, 'show']);
     Route::get('/plancomptable/data', [PlanComptableController::class, 'getData']);

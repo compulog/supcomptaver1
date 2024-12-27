@@ -42,7 +42,7 @@
       </ul>
       <ul class="navbar-nav d-lg-block d-none">
         <li class="nav-item">
-          <a href="https://www.creative-tim.com/product/soft-ui-dashboard-laravel" target="_blank" class="btn btn-sm btn-round mb-0 me-1 bg-gradient-{{ (Request::is('static-sign-up') ? 'light' : 'dark') }}">Free download</a>
+          {{-- <a href="https://www.creative-tim.com/product/soft-ui-dashboard-laravel" target="_blank" class="btn btn-sm btn-round mb-0 me-1 bg-gradient-{{ (Request::is('static-sign-up') ? 'light' : 'dark') }}">Free download</a> --}}
         </li>
       </ul>
     </div>
@@ -50,7 +50,7 @@
 </nav>
 <!-- End Navbar -->
 <!--Navbar dark -->
-<nav
+{{-- <nav
   class="navbar navbar-expand-lg navbar-dark bg-gradient-dark z-index-3 py-3">
   <div class="container">
     <a class="navbar-brand text-white" href="" rel="tooltip" title="Designed and Coded by Creative Tim" data-placement="bottom" target="_blank">
@@ -87,5 +87,5 @@
       </ul>
     </div>
   </div>
-</nav>
+</nav> --}}
 <!-- End Navbar -->

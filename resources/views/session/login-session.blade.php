@@ -32,6 +32,7 @@
                     <!-- Initially hidden select -->
                     <div class="mb-3" id="databaseSelectContainer" style="display: none;">
                       <select name="database" class="form-control" id="databaseSelect">
+                        
                       <option value="">choisire une option</option>
                         @foreach ($dbNames as $dbName)
                        
