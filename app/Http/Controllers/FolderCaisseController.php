@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 use App\Models\Message;
 
@@ -14,9 +15,9 @@ use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
 use PhpOffice\PhpSpreadsheet\IOFactory as PhpSpreadsheetIOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as PhpSpreadsheetException;
 
-class FolderController extends Controller
-{
 
+class FolderCaisseController extends Controller
+{
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
@@ -47,7 +48,7 @@ class FolderController extends Controller
 
             // Récupérer les fichiers de type "achat"
             $achatFiles = File::where('societe_id', $societeId)
-                              ->where('type', 'achat') 
+                              ->where('type', 'Caisse') 
                               ->where('folders', $id)  
                               ->get();
             
@@ -88,7 +89,7 @@ class FolderController extends Controller
             }
 
             // Retourner la vue avec les fichiers, dossiers et notifications
-            return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
+            return view('foldercaisse', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
         } else {
             // Rediriger si aucune société n'est trouvée dans la session
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
@@ -208,8 +209,4 @@ class FolderController extends Controller
        // Retourner une réponse de succès
        return redirect()->back()->with('success', 'Dossier et fichiers supprimés avec succès.');
    }
-   
- 
-
 }
-

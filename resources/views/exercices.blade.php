@@ -3,6 +3,7 @@
 @section('content')
 
 <div class="container mt-4">
+    <h6>Tableau De Board</h6>
     <div class="row">
     <div class="col">
     <div class="card shadow-sm" style="background-color:rgb(192, 236, 62); border-radius: 15px; font-size: 0.75rem; height: 130px;" onclick="openCreateFolderForm()">
@@ -138,20 +139,20 @@
         </div>
 
 
-        <div class="col-md-3 mb-3" id="paie-div">
+        <div class="col-md-3 mb-3" id="Dossier_permanant-div">
             <div class="p-2 text-white" style="background-color:rgb(221, 232, 17); border-radius: 15px; font-size: 0.75rem; height: 130px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;font-size:12px;">Dossier permanant</h5>
-                    <form id="form-paie" action="" method="POST" enctype="multipart/form-data">
+                    <form id="Dossier_permanant" action="" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <input type="hidden" name="type" value="Paie">
+                        <input type="hidden" name="type" value="Dossier_permanant">
                         <input type="file" name="file" id="file-paie" style="display: none;" onchange="">
                         <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: rgb(221, 232, 17); border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="">Charger</button>
-                        <button type="submit" style="display: none;" id="submit-paie">Envoyer</button>
+                        <button type="submit" style="display: none;" id="submit-Dossier_permanant">Envoyer</button>
                     </form>
                 </div>
-                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : </p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $Dossier_permanantCount ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
             </div>
@@ -276,6 +277,9 @@
 
         document.getElementById('paie-div').addEventListener('dblclick', function () {
             window.location.href = '{{ route("paie.view") }}';
+        });
+        document.getElementById('Dossier_permanant-div').addEventListener('dblclick', function () {
+            window.location.href = '{{ route("Dossier_permanant.view") }}';
         });
     });
     function handleFileSelect(event, type) {

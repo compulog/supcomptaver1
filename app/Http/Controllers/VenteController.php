@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\Folder;
+
 class VenteController extends Controller
 {
     public function __construct()
@@ -28,6 +30,10 @@ class VenteController extends Controller
     public function index()
     {
         $societeId = session('societeId'); // Récupère l'ID de la société depuis la session
+        $folders = Folder::where('societe_id', $societeId) 
+        ->whereNull('folder_id') 
+        ->where('type_folder', 'vente')
+        ->get();
 
         if ($societeId) {
             // Filtrer les fichiers de type 'vente' pour la société donnée
@@ -35,11 +41,16 @@ class VenteController extends Controller
                          ->where('type', 'vente') // Modifié pour 'vente' au lieu de 'achat'
                          ->get();
 
-            return view('vente', compact('files')); // Passez les fichiers à la vue
+            return view('vente', compact('files', 'folders')); // Passez les fichiers à la vue
         } else {
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
     }
+
+
+
+
+
 
     public function download($fileId)
     {

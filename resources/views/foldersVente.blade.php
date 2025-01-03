@@ -11,7 +11,7 @@
     <h6 style="margin-top:-60px">
     <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau De Board</a>
     ➢
-    <a href="{{ route('achat.view') }}">Achat</a>
+    <a href="{{ route('achat.view') }}">Vente</a>
     ➢
 
     @php
@@ -214,6 +214,9 @@
 
                     <div class="mb-3">
                         <label for="folderName" class="form-label">Nom du Dossier</label>
+
+                        <input type="hidden" name="type_folder" value="vente">
+
                         <input type="text" class="form-control" id="folderName" name="name" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Créer Dossier</button>
@@ -359,7 +362,9 @@ function viewFile(fileId,folderId) {
 //     alert(folderId);
 //         window.location.href = '/achat/view/' + folderId + fileId;
 // }
-
+function viewFile(fileId) {
+        window.location.href = '/achat/view/' + fileId;
+    }
 </script>
 
 @endsection

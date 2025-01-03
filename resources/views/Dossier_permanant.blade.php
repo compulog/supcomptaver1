@@ -8,7 +8,7 @@
 
 <div class="container mt-4">
 <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau De Board</a>
-➢Vente</h6>
+➢Dossier Permanant</h6>
     <div class="row"  style="margin-left:400px">
         <div class="d-flex align-items-center mb-3">
             <!-- Formulaire de filtrage -->
@@ -26,8 +26,8 @@
             <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
                 <form id="form-vente" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="type" value="Vente">
-                    <input type="file" name="file" id="file-vente" style="display: none;" onchange="handleFileSelect(event, 'Vente')">
+                    <input type="hidden" name="type" value="Dossier_permanant">
+                    <input type="file" name="file" id="file-vente" style="display: none;" onchange="handleFileSelect(event, 'vente')">
                     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                     
                     <input type="hidden" name="folders_id" value="0">
@@ -53,7 +53,7 @@
         </div>
 
 
-
+        
 
         <!-- Modal pour la création de dossier -->
 <div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
@@ -70,7 +70,7 @@
                         <label for="name" class="form-label">Nom du Dossier</label>
                         <input type="text" class="form-control form-control-sm" id="fname" name="name" required>
                     </div>
-                    <input type="hidden" name="type_folder" value="vente">
+                    <input type="hidden" name="type_folder" value="Dossier_permanant">
 
                     <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
                     <button type="submit" class="btn btn-primary btn-sm">Créer le Dossier</button>
@@ -80,7 +80,7 @@
     </div>
 </div>
 
-
+ 
 @if ($folders->isEmpty())
             <p>Aucun dossier trouvé pour cette société.</p>
         @else
@@ -201,6 +201,7 @@
     </div>
 @endif
 </div>
+ 
 
 <script>
     function downloadFile(fileId) {
@@ -230,7 +231,7 @@ function openCreateFolderForm() {
 }
 function openFile(folderId) {
     setFolderId(folderId);  
-    window.location.href = '/folderVente/' + folderId;
+    window.location.href = '/folderDossier_permanant/' + folderId;
 }
 
 function setFolderId(folderId) {

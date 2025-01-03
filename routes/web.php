@@ -32,9 +32,44 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\InterlocuteursController;  
-
-
 use App\Http\Controllers\DossierController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\FolderVenteController;
+use App\Http\Controllers\FolderBanqueController;
+use App\Http\Controllers\FolderCaisseController;
+use App\Http\Controllers\FolderImpotController;
+use App\Http\Controllers\FolderPaieController;
+use App\Http\Controllers\DossierPermanantController;
+use App\Http\Controllers\FolderDossierPermanantController;
+
+
+Route::get('/folderDossier_permanant/{id}', [FolderDossierPermanantController::class, 'index'])->name('folder.show');
+
+
+Route::get('/Dossier_permanant', [DossierPermanantController::class, 'index'])->name('Dossier_permanant.view');
+
+
+
+
+Route::get('/folderPaie/{id}', [FolderPaieController::class, 'index'])->name('folder.show');
+Route::get('/folderImpot/{id}', [FolderImpotController::class, 'index'])->name('folder.show');
+Route::get('/folderCaisse/{id}', [FolderCaisseController::class, 'index'])->name('folder.show');
+Route::get('/folderBanque/{id}', [FolderBanqueController::class, 'index'])->name('folder.show');
+
+Route::get('/folderVente/{id}', [FolderVenteController::class, 'index'])->name('folder.show');
+
+Route::post('/messages/updateStatus/{messageId}', [MessageController::class, 'updateStatus'])->name('messages.updateStatus');
+
+
+Route::get('/messages/getMessages', [MessageController::class, 'getMessages']);
+
+Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
+
+
+Route::get('/achat/view/{fileId}', [AchatController::class, 'viewFile'])->name('achat.view');
+
+
+// Route::get('/achat/view/{fileId}{folderId}', [AchatController::class, 'viewFile'])->name('achat.view');
 
 Route::post('/dossier', [DossierController::class, 'store'])->name('dossier.store');
 

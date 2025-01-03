@@ -27,7 +27,7 @@ class DossierController extends Controller
         $caisseCount = File::where('societe_id', $societe->id)->where('type', 'Caisse')->count();
         $impotCount = File::where('societe_id', $societe->id)->where('type', 'Impot')->count();
         $paieCount = File::where('societe_id', $societe->id)->where('type', 'Paie')->count();
-
+        $Dossier_permanantCount = File::where('societe_id', $societe->id)->where('type', 'Dossier_permanant')->count();
         // Passe les variables à la vue
         return view('exercices', compact(
             'societe',
@@ -37,7 +37,8 @@ class DossierController extends Controller
             'caisseCount',
             'impotCount',
             'paieCount',
-            'dossiers'
+            'dossiers',
+            'Dossier_permanantCount'
         ));
     }
     public function store(Request $request)
