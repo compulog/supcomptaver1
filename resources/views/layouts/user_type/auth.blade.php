@@ -13,20 +13,12 @@
         @include('layouts.footers.guest.footer')
     
     @else
-      
-  <!-- Bouton du menu (hamburger) -->
-  <button id="menuToggle" class="navbar-toggler d-none d-lg-block" type="button" >
-        <i class="fas fa-bars menu-icon" style="color: #67748e"></i>
-            </button>
-        <!-- Overlay pour assombrir l'arrière-plan -->
         <div id="overlay" class="overlay"></div>
 
         @if (\Request::is('rtl'))  
             <div id="sidebar" class="sidebar">
                 @include('layouts.navbars.auth.sidebar-rtl')
-
             </div>
-            
             <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg overflow-hidden">
                 @include('layouts.navbars.auth.nav-rtl')
                 <div class="container-fluid py-4">
@@ -34,7 +26,6 @@
                     @include('layouts.footers.auth.footer') 
                 </div>
             </main>
-
         @elseif (\Request::is('profile'))  
             <div id="sidebar" class="sidebar">
                 @include('layouts.navbars.auth.sidebar')
@@ -43,7 +34,6 @@
                 @include('layouts.navbars.auth.nav')
                 @yield('content')
             </div>
-
         @elseif (\Request::is('virtual-reality')) 
             <div id="sidebar" class="sidebar">
                 @include('layouts.navbars.auth.sidebar')
@@ -54,13 +44,22 @@
                     @yield('content')
                 </main>
             </div>
-            
         @else
             <div id="sidebar" class="sidebar">
                 @include('layouts.navbars.auth.sidebar')
             </div>
             <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg {{ (Request::is('rtl') ? 'overflow-hidden' : '') }}">
-                @include('layouts.navbars.auth.nav')
+                <nav class="navbar d-flex">
+                    <!-- Conteneur de l'icône du menu qui occupe 30px -->
+                    <button id="menuToggle" class="navbar-toggler" type="button" style="width: 30px; padding: 0; border: none; background: transparent;">
+                        <i class="fas fa-bars menu-icon" style="color: #67748e;"></i>
+                    </button>
+                    
+                    <!-- Navbar qui prend le reste de l'espace -->
+                    <div class="navbar-links flex-grow-1">
+                        @include('layouts.navbars.auth.nav') 
+                    </div>
+                </nav>
                 <div class="container-fluid py-4">
                     @yield('content')
                     @include('layouts.footers.auth.footer')
@@ -106,8 +105,7 @@
             background-color: #333; /* Fond de la sidebar */
             color: white;
             transition: all 0.3s ease-in-out; /* Effet de transition */
-            z-index: 1000;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
         }
 
         /* Sidebar ouverte : elle occupe toute la largeur de l'écran */
@@ -123,16 +121,37 @@
 
         /* Cacher le contenu principal lorsqu'il est recouvert par la sidebar */
         .main-content.sidebar-open {
-            opacity: 0.5;
-        }
+         }
 
-        /* Styles pour le bouton de menu (hamburger) */
+        /* Styles pour l'icône du menu */
         #menuToggle {
+            width: 30px; /* Largeur fixe de 30px pour l'icône */
+            height: 30px; /* Hauteur de 30px pour l'icône */
+            padding: 0;
             border: none;
             background: transparent;
             font-size: 30px;
-            cursor: pointer;
             color: #fff;
+            cursor: pointer;
+        }
+
+        /* Conteneur flexible pour la navbar */
+        .navbar {
+            display: flex;
+            align-items: center; /* Centrer verticalement */
+            width: 99%; /* Prendre toute la largeur */
+            padding: 0; /* Pas de padding pour le conteneur de la navbar */
+        }
+
+        /* Navbar links prennent le reste de l'espace */
+        .navbar-links {
+            flex-grow: 1; /* Prendre tout l'espace restant */
+        }
+
+        /* Styles pour la navbar sans box-shadow */
+        .navbar {
+            box-shadow: none; /* Supprimer la boîte d'ombre de la navbar */
+            justify-content: flex-start; /* L'élément suivant sera aligné à gauche */
         }
 
         /* Overlay semi-transparent qui recouvre la page lorsque la sidebar est ouverte */
@@ -144,16 +163,11 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5); /* Fond semi-transparent */
-            z-index: 999;
-        }
+         }
 
         /* Affichage de l'overlay */
         .overlay-open {
-            display: block;
-        }
-        #sidebar ul li a {
-            color: #BDC3C7; /* Couleur des liens en survol */
-        }
+         }
     </style>
 
 @endsection
