@@ -13,4 +13,9 @@ class Dossier extends Model
     protected $connection = 'supcompta';
     // Les champs qui peuvent être assignés en masse
     protected $fillable = ['name', 'societe_id'];
+    public function files()
+    {
+        return $this->hasMany(File::class);  // Exemple : relation avec les fichiers
+    }
 }
+    

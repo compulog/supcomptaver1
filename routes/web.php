@@ -41,7 +41,34 @@ use App\Http\Controllers\FolderImpotController;
 use App\Http\Controllers\FolderPaieController;
 use App\Http\Controllers\DossierPermanantController;
 use App\Http\Controllers\FolderDossierPermanantController;
+use App\Http\Controllers\FoldersVente1Controller;
+use App\Http\Controllers\FoldersBanque1Controller;
+use App\Http\Controllers\FoldersCaisse1Controller;
+use App\Http\Controllers\FoldersImpot1Controller;
+use App\Http\Controllers\FoldersPaie1Controller;
+use App\Http\Controllers\FoldersDossierPermanant1Controller;
+use App\Http\Controllers\DouvrirController;
 
+//                                                                                                          
+
+ 
+Route::get('/Douvrir/{id}', [DouvrirController::class, 'show'])->name('Douvrir');
+Route::post('/Douvrir/upload', [DouvrirController::class, 'uploadFile'])->name('Douvrir.upload');
+Route::post('/Douvrir/create', [DouvrirController::class, 'create'])->name('Douvrir.create');
+// Route::post('/folder/create', [DossierOController::class, 'create'])->name('folder.create');
+
+// Route::post('/dossier/upload', [DossierOController::class, 'uploadFile'])->name('dossier.upload');
+
+// Route::get('/dossier/ouvrir/{id}', [DossierOController::class, 'show'])->name('dossier.ouvrir');
+
+Route::delete('/dossier/{id}/delete', [DossierController::class, 'destroy'])->name('dossier.delete');
+
+Route::post('/messages/reply/{parentMessageId}', [MessageController::class, 'replyToMessage'])->name('messages.reply');
+
+
+Route::post('/messages/update/{id}', [MessageController::class, 'update'])->name('messages.update');
+
+Route::delete('/messages/delete/{id}', [MessageController::class, 'destroy']);
 
 Route::get('/folderDossier_permanant/{id}', [FolderDossierPermanantController::class, 'index'])->name('folder.show');
 
@@ -66,7 +93,7 @@ Route::get('/messages/getMessages', [MessageController::class, 'getMessages']);
 Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
 
 
-Route::get('/achat/view/{fileId}', [AchatController::class, 'viewFile'])->name('achat.view');
+Route::get('/achat/view/{fileId}', [AchatController::class, 'viewFile'])->name('achat.views');
 
 
 // Route::get('/achat/view/{fileId}{folderId}', [AchatController::class, 'viewFile'])->name('achat.view');
@@ -93,6 +120,26 @@ Route::group(['middleware' => 'auth'], function () {
         Route::post('/select-database', [SessionsController::class, 'selectDatabase'])->name('your_action_here');
         Route::get('import', [SocieteController::class, 'showImportForm'])->name('import.form');
         Route::post('import', [SocieteController::class, 'import'])->name('societes.import');
+       
+       
+        
+        Route::get('/foldersVente1/{id}', [FoldersVente1Controller::class, 'index'])->name('foldersVente1');
+        Route::post('/folderVente/create', [FoldersVente1Controller::class, 'create'])->name('folderVente.create');
+        Route::get('/foldersBanque1/{id}', [FoldersBanque1Controller::class, 'index'])->name('foldersBanque1');
+        Route::post('/foldersBanque1/create', [FoldersBanque1Controller::class, 'create'])->name('foldersBanque1.create');
+        Route::get('/foldersCaisse1/{id}', [FoldersCaisse1Controller::class, 'index'])->name('foldersCaisse1');
+        Route::post('/foldersCaisse1/create', [FoldersCaisse1Controller::class, 'create'])->name('foldersCaisse1.create');
+        Route::get('/foldersImpot1/{id}', [FoldersImpot1Controller::class, 'index'])->name('foldersImpot1');
+        Route::post('/foldersImpot1/create', [FoldersImpot1Controller::class, 'create'])->name('foldersImpot1.create');
+        Route::get('/foldersPaie1/{id}', [FoldersPaie1Controller::class, 'index'])->name('foldersPaie1');
+        Route::post('/foldersPaie1/create', [FoldersPaie1Controller::class, 'create'])->name('foldersPaie1.create');
+        Route::get('/foldersDossierPermanant1/{id}', [FoldersDossierPermanant1Controller::class, 'index'])->name('foldersDossierPermanant1');
+        Route::post('/foldersDossierPermanant1/create', [FoldersDossierPermanant1Controller::class, 'create'])->name('foldersDossierPermanant1.create');
+
+
+        
+
+        
         Route::get('/folder/{id}', [FolderController::class, 'index'])->name('folder.show');
         Route::delete('/societes/delete-selected', [SocieteController::class, 'deleteSelected'])->name('societes.deleteSelected');
         Route::delete('/folder/{id}', [FolderController::class, 'destroy'])->name('folder.delete');

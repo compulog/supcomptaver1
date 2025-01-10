@@ -1,6 +1,5 @@
 <?php
 
- 
 namespace App\Http\Controllers;
 use App\Models\Message;
 
@@ -16,9 +15,9 @@ use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
 use PhpOffice\PhpSpreadsheet\IOFactory as PhpSpreadsheetIOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as PhpSpreadsheetException;
 
-class FolderDossierPermanantController extends Controller
-{
 
+class FoldersVente1Controller extends Controller
+{
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
@@ -49,7 +48,7 @@ class FolderDossierPermanantController extends Controller
 
             // Récupérer les fichiers de type "achat"
             $achatFiles = File::where('societe_id', $societeId)
-                              ->where('type', 'Dossier_permanant') 
+                              ->where('type', 'vente') 
                               ->where('folders', $id)  
                               ->get();
             
@@ -90,7 +89,7 @@ class FolderDossierPermanantController extends Controller
             }
 
             // Retourner la vue avec les fichiers, dossiers et notifications
-            return view('foldersDossierPermanant', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
+            return view('foldersVente1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
         } else {
             // Rediriger si aucune société n'est trouvée dans la session
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
@@ -185,7 +184,7 @@ class FolderDossierPermanantController extends Controller
     
         // Si folders_id est fourni, on redirige vers la route associée à ce folder_id
         if ($request->has('folders_id') && $request->folders_id) {
-            return redirect()->route('folder.show', ['id' => $request->folders_id])->with('success', 'Dossier créé avec succès');
+            return redirect()->route('foldersVente1', ['id' => $request->folders_id])->with('success', 'Dossier créé avec succès');
         }
     
         // Sinon, on retourne vers une vue (par exemple folder.create)
@@ -212,6 +211,4 @@ class FolderDossierPermanantController extends Controller
    }
    
  
-
 }
-

@@ -90,7 +90,7 @@ class FolderImpotController extends Controller
             }
 
             // Retourner la vue avec les fichiers, dossiers et notifications
-            return view('foldersVente', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
+            return view('foldersImpot', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
         } else {
             // Rediriger si aucune société n'est trouvée dans la session
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');

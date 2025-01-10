@@ -153,6 +153,7 @@ class FolderController extends Controller
     
     public function create(Request $request)
     {
+        // dd($request);
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255', // Correspond au champ 'name' du formulaire
             'societe_id' => [

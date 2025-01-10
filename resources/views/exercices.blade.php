@@ -197,19 +197,31 @@
 <div class="row">
     @foreach($dossiers as $dossier)
         <div class="col-md-3 mb-3">
-            <div class="p-2 text-white dossier-box" style="border-radius: 15px; font-size: 0.75rem; height: 130px;">
+            <div class="p-2 text-white dossier-box" style="border-radius: 15px; font-size: 0.75rem; height: 130px;" data-id="{{ $dossier->id }}">
                 <div class="d-flex justify-content-between align-items-center">
                     <!-- Affichage du nom du dossier -->
                     <h5 style="color: white; font-size: 12px;">{{ $dossier->name }}</h5>
-                    
-                    <!-- Formulaire pour charger un fichier -->
-                    <form action="" method="POST" enctype="multipart/form-data">
+
+                    <form action="{{ route('dossier.delete', $dossier->id) }}" method="POST" style="display:inline;">
                         @csrf
-                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-                        <input type="file" name="file" id="file-{{ $dossier->id }}" style="display: none;">
-                        <button type="button" class="btn btn-light btn-sm dossier-button" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
-                        <button type="submit" style="display: none;" id="submit-{{ $dossier->id }}">Envoyer</button>
+                        @method('DELETE')
+                        <button type="submit" style="border: 1px solid white; border-radius: 50%; background-color: transparent; color: white; width: 40px; height: 40px; padding: 0; display: flex; justify-content: center; align-items: center;">
+                            <i class="fas fa-trash-alt"></i> <!-- Icône de suppression -->
+                        </button>
                     </form>
+
+                    <!-- Formulaire pour charger un fichier -->
+     @csrf
+     <form id="form-{{ $dossier->id }}" action="{{ route('Douvrir.upload') }}" method="POST" enctype="multipart/form-data">
+     @csrf
+     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+     <input type="hidden" name="folder_type" value="{{ $dossier->name }}"> 
+
+     <input type="file" name="file" id="file-{{ $dossier->id }}" style="display: none;" onchange="handleFileSelect(event, {{ $dossier->id }})">
+     <button type="button" class="btn btn-light btn-sm dossier-button" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
+     <button type="submit" style="display: none;" id="submit-{{ $dossier->id }}">Envoyer</button>
+</form>
+
                 </div>
 
                 <!-- Informations supplémentaires sur le dossier -->
@@ -220,6 +232,8 @@
         </div>
     @endforeach
 </div>
+
+
 
 <script>
     // Fonction pour générer une couleur hexadécimale aléatoire
@@ -244,6 +258,20 @@
             button.style.borderColor = color;      // Optionnel: bordure avec la même couleur
         }
     });
+
+    function handleFileSelect(event, dossierId) {
+    const fileInput = document.getElementById(`file-${dossierId}`);
+    const formId = `form-${dossierId}`;  // Générer l'ID du formulaire
+
+    if (!fileInput.files.length) {
+        alert("Veuillez sélectionner un fichier.");
+        return;
+    }
+
+    // Soumettre le formulaire si un fichier est sélectionné
+    document.getElementById(formId).submit();
+}
+
 </script>
 
 
@@ -300,6 +328,20 @@ function openCreateFolderForm() {
     var myModal = new bootstrap.Modal(document.getElementById('createFolderModal'));
     myModal.show();
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Ajout des événements de double-clic pour chaque dossier dynamique
+    document.querySelectorAll('.dossier-box').forEach(function(div) {
+        div.addEventListener('dblclick', function () {
+            // On récupère l'ID du dossier à partir de l'attribut data-id
+            const dossierId = div.getAttribute('data-id');
+            
+            // On redirige vers la route avec l'ID du dossier
+            window.location.href = `/Douvrir/${dossierId}`;  // Assurez-vous que la route correspond bien à celle définie dans les routes Laravel
+        });
+    });
+});
+
 
 </script>
 

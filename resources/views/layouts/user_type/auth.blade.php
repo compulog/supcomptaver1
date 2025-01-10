@@ -51,8 +51,8 @@
             <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg {{ (Request::is('rtl') ? 'overflow-hidden' : '') }}">
                 <nav class="navbar d-flex">
                     <!-- Conteneur de l'icône du menu qui occupe 30px -->
-                    <button id="menuToggle" class="navbar-toggler" type="button" style="width: 30px; padding: 0; border: none; background: transparent;">
-                        <i class="fas fa-bars menu-icon" style="color: #67748e;"></i>
+                    <button id="menuToggle" class="navbar-toggler" type="button" style="padding: 0; border: none; background: transparent;">
+                       <p style="font-size:15px;color:black;">Menu</p> 
                     </button>
                     
                     <!-- Navbar qui prend le reste de l'espace -->
@@ -105,7 +105,7 @@
             background-color: #333; /* Fond de la sidebar */
             color: white;
             transition: all 0.3s ease-in-out; /* Effet de transition */
-             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+             
         }
 
         /* Sidebar ouverte : elle occupe toute la largeur de l'écran */
@@ -125,13 +125,11 @@
 
         /* Styles pour l'icône du menu */
         #menuToggle {
-            width: 30px; /* Largeur fixe de 30px pour l'icône */
-            height: 30px; /* Hauteur de 30px pour l'icône */
+             height: 30px; /* Hauteur de 30px pour l'icône */
             padding: 0;
-            border: none;
-            background: transparent;
+             background: transparent;
             font-size: 30px;
-            color: #fff;
+            color: #ffffff;
             cursor: pointer;
         }
 

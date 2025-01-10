@@ -39,7 +39,7 @@ class BanqueController extends Controller
                          ->where('type', 'banque') // Modifié pour 'vente' au lieu de 'achat'
                          ->get();
 
-            return view('vente', compact('files', 'folders')); // Passez les fichiers à la vue
+            return view('banque', compact('files', 'folders')); // Passez les fichiers à la vue
         } else {
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }

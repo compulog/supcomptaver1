@@ -11,16 +11,7 @@
 ➢Dossier Permanant</h6>
     <div class="row"  style="margin-left:400px">
         <div class="d-flex align-items-center mb-3">
-            <!-- Formulaire de filtrage -->
-            <form method="GET" action="" class="d-flex me-3">
-                <div class="input-group">
-                    <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
-                        <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Filtrer par Nom</option>
-                        <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Filtrer par Date</option>
-                    </select>
-                    <button class="btn btn-primary btn-sm" type="submit" style="height: 38px;">Filtrer</button>
-                </div>
-            </form>
+        
 
             <!-- Formulaire de téléchargement -->
             <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
@@ -39,18 +30,23 @@
                     <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
                 </form>
             </div>
+                   <!-- Formulaire de filtrage -->
+<form method="GET" action="" class="d-flex me-3">
+    <div class="input-group">
+        <!-- Le bouton est à gauche -->
+        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px; order: -1;">Triée par</button>
+
+        <!-- Le select est à droite -->
+        <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+            <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Nom</option>
+            <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Date</option>
+        </select>
+    </div>
+</form>
+
         </div>
     </div>
 </div>
-        <!-- Ajouter un Dossier -->
-        <div class="col">
-            <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;" onclick="openCreateFolderForm()">
-                <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="height: 100%; background-color: #f8f9fa;">
-                    <i class="fas fa-plus fa-2x text-primary"></i>
-                    <p class="mt-1" style="font-size: 0.8rem;">Ajouter un Dossier</p>
-                </div>
-            </div>
-        </div>
 
 
         
@@ -76,6 +72,18 @@
                     <button type="submit" class="btn btn-primary btn-sm">Créer le Dossier</button>
                 </form>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
+
+<!-- Ajouter un Dossier -->
+<div class="col">
+    <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;" onclick="openCreateFolderForm()">
+        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="height: 100%; background-color: #f8f9fa;">
+            <i class="fas fa-plus fa-2x text-primary"></i>
+            <p class="mt-1" style="font-size: 0.8rem;">Ajouter un Dossier</p>
         </div>
     </div>
 </div>
@@ -108,7 +116,7 @@
             @endforeach
         @endif
  
-
+</div>
    <!-- Gestion des fichiers de type Vente -->
    <div class="container mt-4">
 @if ($files->isEmpty())

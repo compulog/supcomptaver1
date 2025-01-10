@@ -8,10 +8,22 @@
 
 <div class="container mt-4">
 <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau De Board</a>
-➢Caisse</h6>
+➢{{ $dossier->name }}</h6>
     <div class="row"  style="margin-left:400px">
         <div class="d-flex align-items-center mb-3">
-                <!-- Formulaire de filtrage -->
+                <!-- Formulaire de téléchargement -->
+                <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
+                <form id="form-{{ $dossier->id }}" action="{{ route('Douvrir.upload') }}" method="POST" enctype="multipart/form-data">
+     @csrf
+     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+     <input type="hidden" name="folder_type" value="{{ $dossier->name }}"> 
+
+     <input type="file" name="file" id="file-{{ $dossier->id }}" style="display: none;" onchange="handleFileSelect(event, {{ $dossier->id }})">
+     <button type="button" class="btn btn-light btn-sm dossier-button" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
+     <button type="submit" style="display: none;" id="submit-{{ $dossier->id }}">Envoyer</button>
+</form>
+            </div>
+           <!-- Formulaire de filtrage -->
 <form method="GET" action="" class="d-flex me-3">
     <div class="input-group">
         <!-- Le bouton est à gauche -->
@@ -26,72 +38,25 @@
 </form>
 
 
-            <!-- Formulaire de téléchargement -->
-            <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
-                <form id="form-vente" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="type" value="Caisse">
-                    <input type="file" name="file" id="file-vente" style="display: none;" onchange="handleFileSelect(event, 'vente')">
-                    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-                    
-                    <input type="hidden" name="folders_id" value="0">
-
-                    <!-- Charger Button -->
-                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-vente').click()">Charger</button>
-
-                    <!-- Submit Button (hidden initially) -->
-                    <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
         
-
-        <!-- Modal pour la création de dossier -->
-<div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="createFolderModalLabel">Créer un Nouveau Dossier</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form action="{{ route('folder.create') }}" method="POST">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Nom du Dossier</label>
-                        <input type="text" class="form-control form-control-sm" id="fname" name="name" required>
-                    </div>
-                    <input type="hidden" name="type_folder" value="Caisse">
-
-                    <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
-                    <button type="submit" class="btn btn-primary btn-sm">Créer le Dossier</button>
-                </form>
-            </div>
         </div>
     </div>
 </div>
 
-<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
-
-    
-
-
-<!-- Ajouter un Dossier -->
-<div class="col">
-    <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;" onclick="openCreateFolderForm()">
-        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="height: 100%; background-color: #f8f9fa;">
-            <i class="fas fa-plus fa-2x text-primary"></i>
-            <p class="mt-1" style="font-size: 0.8rem;">Ajouter un Dossier</p>
+<div class="container mt-5">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
+        <!-- Ajouter un Dossier -->
+        <div class="col">
+            <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;" onclick="openCreateFolderForm()">
+                <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="height: 100%; background-color: #f8f9fa;">
+                    <i class="fas fa-plus fa-2x text-primary"></i>
+                    <p class="mt-1" style="font-size: 0.8rem;">Ajouter un Dossier</p>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
 
-@if ($folders->isEmpty())
+        <!-- Affichage des Dossiers -->
+        @if ($folders->isEmpty())
             <p>Aucun dossier trouvé pour cette société.</p>
         @else
             @foreach ($folders as $folder)
@@ -117,10 +82,36 @@
                 </div>
             @endforeach
         @endif
+    </div>
 </div>
 
-   <!-- Gestion des fichiers de type Vente -->
-   <div class="container mt-4">
+<!-- Modal pour la création de dossier -->
+<div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createFolderModalLabel">Créer un Nouveau Dossier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ route('Douvrir.create') }}" method="POST">
+                    @csrf
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nom du Dossier</label>
+                        <input type="text" class="form-control form-control-sm" id="fname" name="name" required>
+                    </div>
+                    
+                    <input type="hidden" name="type_folder" value="{{ $dossier->name }}">
+                    <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
+                    <button type="submit" class="btn btn-primary btn-sm">Créer le Dossier</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+   <!-- Gestion des fichiers de type achat -->
+<div class="container mt-4">
 @if ($files->isEmpty())
     <p>Aucun fichier trouvé pour cette société.</p>
 @else
@@ -211,14 +202,14 @@
     </div>
 @endif
 </div>
- 
 
 <script>
-    function downloadFile(fileId) {
- 
- window.location.href = '/file/download/' + fileId;
-}
-
+document.addEventListener('DOMContentLoaded', function () {
+    // Ajout des événements de double-clic pour toutes les sections
+    document.getElementById('achat-div').addEventListener('dblclick', function () {
+        window.location.href = '{{ route("achat.view") }}';
+    });
+});
 
 function handleFileSelect(event, type) {
     const fileInput = document.getElementById('file-' + type.toLowerCase());
@@ -232,20 +223,40 @@ function handleFileSelect(event, type) {
     document.getElementById(formId).submit();
 }
 
-function viewFile(fileId) {
-        window.location.href = '/achat/view/' + fileId;
-    }
 function openCreateFolderForm() {
     var myModal = new bootstrap.Modal(document.getElementById('createFolderModal'));
     myModal.show();
 }
+
 function openFile(folderId) {
-    setFolderId(folderId);  
-    window.location.href = '/folderCaisse/' + folderId;
+    setFolderId(folderId);  // Mettre à jour l'ID du dossier avant l'ouverture
+    window.location.href = '/folder/' + folderId;
 }
 
 function setFolderId(folderId) {
     document.querySelector('input[name="folders_id"]').value = folderId;
 }
+
+function downloadFile(fileId) {
+ 
+    window.location.href = '/file/download/' + fileId;
+}
+
+function viewFile(fileId) {
+        window.location.href = '/achat/view/' + fileId;
+    }
+    function handleFileSelect(event, dossierId) {
+    const fileInput = document.getElementById(`file-${dossierId}`);
+    const formId = `form-${dossierId}`;  // Générer l'ID du formulaire
+
+    if (!fileInput.files.length) {
+        alert("Veuillez sélectionner un fichier.");
+        return;
+    }
+
+    // Soumettre le formulaire si un fichier est sélectionné
+    document.getElementById(formId).submit();
+}
 </script>
+
 @endsection

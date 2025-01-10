@@ -9,7 +9,7 @@ class Message extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['text_message', 'user_id', 'file_id', 'societe_id', 'folder_id', 'is_read'];
+    protected $fillable = ['text_message', 'user_id', 'file_id', 'societe_id', 'folder_id', 'is_read', 'parent_id'];
 
     // Relations
     public function user()
@@ -30,5 +30,14 @@ class Message extends Model
     public function folder()
     {
         return $this->belongsTo(Folder::class);
+    }
+    public function parent()
+    {
+        return $this->belongsTo(Message::class, 'parent_id');
+    }
+
+     public function replies()
+    {
+        return $this->hasMany(Message::class, 'parent_id');
     }
 }

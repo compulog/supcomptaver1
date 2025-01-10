@@ -76,8 +76,8 @@
             <div class="navbar-content">
                 <!-- Icône et texte "supcompta" sur la même ligne -->
                 <a class="align-items-center d-flex m-0 navbar-brand text-wrap" href="{{ route('dashboard') }}">
-                    <img src="../assets/img/acc.png" class="navbar-brand-img h-100" alt="..." style="width:20px">
-                    <span class="ms-3 font-weight-bold">supcompta</span>
+                    <img src="../assets/img/acc.png" class="navbar-brand-img h-100" alt="..." style="width:30px">
+                    <span class="ms-3 font-weight-bold" style="font-size:20px">supcompta</span>
                 </a>
 
                 <!-- Nom de la société -->

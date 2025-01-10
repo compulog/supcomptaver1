@@ -346,7 +346,7 @@ function openCreateFolderForm() {
 }
 
 function openFile(folderId) {
-    window.location.href = '/folder/' + folderId;
+    window.location.href = '/foldersVente1/' + folderId;
 }
 
 function downloadFile(fileId) {

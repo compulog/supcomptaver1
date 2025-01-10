@@ -11,19 +11,8 @@
     ➢Achat</h6>
     <div class="row"  style="margin-left:400px">
         <div class="d-flex align-items-center mb-3">
-            <!-- Formulaire de filtrage -->
-            <form method="GET" action="" class="d-flex me-3">
-                <div class="input-group">
-                    <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
-                        <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Filtrer par Nom</option>
-                        <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Filtrer par Date</option>
-                    </select>
-                    <button class="btn btn-primary btn-sm" type="submit" style="height: 38px;">Filtrer</button>
-                </div>
-            </form>
-
-            <!-- Formulaire de téléchargement -->
-            <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
+                <!-- Formulaire de téléchargement -->
+                <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
                 <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="type" value="Achat">
@@ -39,6 +28,22 @@
                     <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>
                 </form>
             </div>
+           <!-- Formulaire de filtrage -->
+<form method="GET" action="" class="d-flex me-3">
+    <div class="input-group">
+        <!-- Le bouton est à gauche -->
+        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px; order: -1;">Triée par</button>
+
+        <!-- Le select est à droite -->
+        <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+            <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Nom</option>
+            <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Date</option>
+        </select>
+    </div>
+</form>
+
+
+        
         </div>
     </div>
 </div>

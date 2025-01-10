@@ -11,7 +11,7 @@
     <h6 style="margin-top:-60px">
     <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau De Board</a>
     ➢
-    <a href="{{ route('achat.view') }}">banque</a>
+    <a href="{{ route('achat.view') }}">Banque</a>
     ➢
 
     @php
@@ -112,20 +112,19 @@
                     <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
                 <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="type" value="Achat">
+                    <input type="hidden" name="type" value="Banque">
                     <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
                     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                     <input type="hidden" name="folders_id" value="{{ session()->get('foldersId') }}">
-
                     <!-- Charger Button -->
                     <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-achat').click()">Charger</button>
-
+                    
                     <!-- Submit Button (hidden initially) -->
                     <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>    
                 </form>
             </div>
             </div>
-        </div>
+        </div>  
     </div>
 </div>
 <div class="container mt-5">
@@ -206,17 +205,15 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form action="{{ route('folder.create') }}" method="POST">
+                <form action="{{ route('foldersBanque1.create') }}" method="POST">
                     @csrf
                     <input type="hidden" name="folders_id" value="{{ $foldersId }}">
+                    <input type="hidden" name="type_folder" value="banque">
 
                     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
 
                     <div class="mb-3">
                         <label for="folderName" class="form-label">Nom du Dossier</label>
-
-                        <input type="hidden" name="type_folder" value="vente">
-
                         <input type="text" class="form-control" id="folderName" name="name" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Créer Dossier</button>
@@ -233,7 +230,7 @@
 @else
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
     @foreach ($achatFiles as $file)
-        <div class="col" ondblclick="viewFile({{ $file->id }})">
+        <div class="col" ondblclick="viewFile({{ $file->id }}, {{ $folder->id }})">
             <div class="card shadow-sm" style="width: 13rem; height: 250px;">
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">
                     <!-- Vérifiez si le fichier est un PDF -->
@@ -354,17 +351,14 @@ function downloadFile(fileId) {
 }
 
 function viewFile(fileId,folderId) {
-    alert(folderId);
-        window.location.href = '/achat/view/' + folderId ;
+        window.location.href = '/achat/view/' + fileId ;
 }
 
 // function viewFile(fileId,folderId) {
 //     alert(folderId);
 //         window.location.href = '/achat/view/' + folderId + fileId;
 // }
-function viewFile(fileId) {
-        window.location.href = '/achat/view/' + fileId;
-    }
+
 </script>
 
 @endsection

@@ -9,7 +9,15 @@ use App\Models\File; // Assurez-vous d'importer le modèle File
 
 class DossierController extends Controller
 {
-  
+    public function destroy($id)
+    {
+        // Trouver le dossier par son ID et le supprimer
+        $dossier = Dossier::findOrFail($id);
+        $dossier->delete();
+
+        // Rediriger avec un message de succès
+        return redirect()->back()->with('success', 'Dossier supprimé avec succès.');
+    }
     
     public function show($id)
     {

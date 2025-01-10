@@ -38,7 +38,7 @@ class CaisseController extends Controller
                          ->where('type', 'Caisse') // Modifié pour 'vente' au lieu de 'achat'
                          ->get();
 
-            return view('paie', compact('files', 'folders')); // Passez les fichiers à la vue
+            return view('caisse', compact('files', 'folders')); // Passez les fichiers à la vue
         } else {
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }

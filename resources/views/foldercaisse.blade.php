@@ -11,7 +11,7 @@
     <h6 style="margin-top:-60px">
     <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau De Board</a>
     ➢
-    <a href="{{ route('achat.view') }}">banque</a>
+    <a href="{{ route('achat.view') }}">Caisse</a>
     ➢
 
     @php
@@ -346,7 +346,7 @@ function openCreateFolderForm() {
 }
 
 function openFile(folderId) {
-    window.location.href = '/foldersBanque1/' + folderId;
+    window.location.href = '/foldersCaisse1/' + folderId;
 }
 
 function downloadFile(fileId) {
