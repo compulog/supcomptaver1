@@ -8,20 +8,100 @@
 
 <div class="container mt-4">
 <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau De Board</a>
-➢{{ $dossier->name }}</h6>
+    ➢{{$folder->type_folder}}</h6>
+    ➢
+
+@php
+    $currentFolder = $folder;
+    $breadcrumbs = [];
+
+    while ($currentFolder) {
+        $breadcrumbs[] = $currentFolder;
+        $currentFolder = $currentFolder->parent;  
+    }
+
+    $breadcrumbs = array_reverse($breadcrumbs); 
+@endphp
+
+<!-- Affichage des trois derniers dossiers -->
+@foreach ($breadcrumbs as $index => $breadcrumb)
+    @if ($index >= count($breadcrumbs) - 3)
+        <a href="{{ route('folder.show', ['id' => $breadcrumb->id]) }}">{{ $breadcrumb->name }}</a>
+        @if (!$loop->last) ➢ @endif
+    @endif
+@endforeach
+
+<!-- Ajouter les trois points après les trois derniers dossiers -->
+@if (count($breadcrumbs) > 3)
+    <span id="showMore" style="cursor: pointer; color: blue;" onclick="toggleMenu()">...</span>
+@endif
+
+<!-- Afficher le menu déroulant pour les dossiers supplémentaires -->
+@if (count($breadcrumbs) > 3)
+    <div class="mt-2" id="folderMenuWrapper" style="display: none;">
+        <ul id="folderMenu" class="list-unstyled">
+            @foreach ($breadcrumbs as $index => $breadcrumb)
+                @if ($index < count($breadcrumbs) - 3)  <!-- Afficher les dossiers plus anciens -->
+                    <li>
+                        <a href="{{ route('folder.show', ['id' => $breadcrumb->id]) }}" >{{ $breadcrumb->name }}</a>
+                    </li>
+                @endif
+            @endforeach
+        </ul>
+    </div>
+@endif
+</h6>
+
+<!-- Script pour afficher/cacher le menu déroulant et gérer l'affichage -->
+<script>
+function toggleMenu() {
+    // Basculer la visibilité des éléments
+    var menuWrapper = document.getElementById('folderMenuWrapper');
+    
+    // Si le menu est caché, on l'affiche
+    if (menuWrapper.style.display === 'none') {
+        menuWrapper.style.display = 'block';
+    } else {
+        // Sinon, on le cache
+        menuWrapper.style.display = 'none';
+    }
+}
+
+// Fermer le menu si l'utilisateur clique en dehors de la zone
+document.addEventListener('click', function(event) {
+    var showMore = document.getElementById('showMore');
+    var menuWrapper = document.getElementById('folderMenuWrapper');
+    
+    // Vérifier si le clic est en dehors de la zone des trois points ou du menu
+    if (!showMore.contains(event.target) && !menuWrapper.contains(event.target)) {
+        // Fermer le menu déroulant
+        menuWrapper.style.display = 'none';
+    }
+});
+
+// Ajouter une transition pour l'animation de l'affichage
+document.getElementById('folderMenuWrapper').style.transition = "all 0.3s ease-in-out";
+</script>
+
+
     <div class="row"  style="margin-left:400px">
         <div class="d-flex align-items-center mb-3">
                 <!-- Formulaire de téléchargement -->
                 <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
-                <form id="form-{{ $dossier->id }}" action="{{ route('Douvrir.upload') }}" method="POST" enctype="multipart/form-data">
-     @csrf
-     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-     <input type="hidden" name="folder_type" value="{{ $dossier->name }}"> 
+                <form id="form-achat" action="{{ route('uploadFileda') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <!-- <input type="hidden" name="type" value="Achat"> -->
+                    <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
+                    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+                    
+                    <input type="hidden" name="folders_id" value="{{$foldersId}}">
 
-     <input type="file" name="file" id="file-{{ $dossier->id }}" style="display: none;" onchange="handleFileSelect(event, {{ $dossier->id }})">
-     <button type="button" class="btn btn-light btn-sm dossier-button" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
-     <button type="submit" style="display: none;" id="submit-{{ $dossier->id }}">Envoyer</button>
-</form>
+                    <!-- Charger Button -->
+                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-achat').click()">Charger</button>
+
+                    <!-- Submit Button (hidden initially) -->
+                    <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>
+                </form>
             </div>
            <!-- Formulaire de filtrage -->
 <form method="GET" action="" class="d-flex me-3">
@@ -38,7 +118,7 @@
 </form>
 
 
-        
+         
         </div>
     </div>
 </div>
@@ -94,16 +174,18 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form action="{{ route('Douvrir.create') }}" method="POST">
+                <form action="{{ route('folderdasouas.create') }}" method="POST">
                     @csrf
                     <div class="mb-3">
                         <label for="name" class="form-label">Nom du Dossier</label>
                         <input type="text" class="form-control form-control-sm" id="fname" name="name" required>
                     </div>
-                    <input type="hidden" name="dossier_id" value="{{ $dossier->id }}">
+                    <input type="hidden" name="type_folder" value="">
+                    <!-- <input type="text" name="type_folder" value="{{$folder->type_folder}}"> -->
 
-                    <input type="hidden" name="type_folder" value="{{ $dossier->name }}">
-                    <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
+                    <input type="hidden" name="folders_id" value="{{ $foldersId }}">
+ 
+                     <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
                     <button type="submit" class="btn btn-primary btn-sm">Créer le Dossier</button>
                 </form>
             </div>
@@ -113,11 +195,11 @@
 
    <!-- Gestion des fichiers de type achat -->
 <div class="container mt-4">
-@if ($files->isEmpty())
+@if ($achatFiles->isEmpty())
     <p>Aucun fichier trouvé pour cette société.</p>
 @else
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
-    @foreach ($files as $file)
+    @foreach ($achatFiles as $file)
         <div class="col" ondblclick="viewFile({{ $file->id }})">
             <div class="card shadow-sm" style="width: 13rem; height: 250px;">
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">
@@ -206,7 +288,8 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-     document.getElementById('achat-div').addEventListener('dblclick', function () {
+    // Ajout des événements de double-clic pour toutes les sections
+    document.getElementById('achat-div').addEventListener('dblclick', function () {
         window.location.href = '{{ route("achat.view") }}';
     });
 });
@@ -229,9 +312,9 @@ function openCreateFolderForm() {
 }
 
 function openFile(folderId) {
-    window.location.href = '/dasousdossier/' + folderId;   
+    setFolderId(folderId);  // Mettre à jour l'ID du dossier avant l'ouverture
+    window.location.href = '/dasousdossier/' + folderId;
 }
-
 
 function setFolderId(folderId) {
     document.querySelector('input[name="folders_id"]').value = folderId;
@@ -245,18 +328,6 @@ function downloadFile(fileId) {
 function viewFile(fileId) {
         window.location.href = '/achat/view/' + fileId;
     }
-    function handleFileSelect(event, dossierId) {
-    const fileInput = document.getElementById(`file-${dossierId}`);
-    const formId = `form-${dossierId}`;  
-
-    if (!fileInput.files.length) {
-        alert("Veuillez sélectionner un fichier.");
-        return;
-    }
-
-    
-    document.getElementById(formId).submit();
-}
 </script>
 
 @endsection

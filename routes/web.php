@@ -47,9 +47,14 @@ use App\Http\Controllers\FoldersCaisse1Controller;
 use App\Http\Controllers\FoldersImpot1Controller;
 use App\Http\Controllers\FoldersPaie1Controller;
 use App\Http\Controllers\FoldersDossierPermanant1Controller;
-use App\Http\Controllers\DouvrirController;
+use App\Http\Controllers\DouvrirController; 
+use App\Http\Controllers\DasousdossierController;
+Route::post('/uploadFileda', [DasousdossierController::class, 'upload'])->name('uploadFileda');
+Route::post('/folderdasouas/create', [DasousdossierController::class, 'create'])->name('folderdasouas.create');
 
-//                                                                                                          
+Route::get('/dasousdossier/{folderId}', [DasousdossierController::class, 'showSousDossier'])->name('dasousdossier.show');
+
+Route::put('/dossier/{id}', [DossierController::class, 'update']);
 
  
 Route::get('/Douvrir/{id}', [DouvrirController::class, 'show'])->name('Douvrir');

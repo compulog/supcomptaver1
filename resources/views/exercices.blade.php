@@ -1,6 +1,13 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
+<!-- Placer le script jQuery avant le vôtre -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Votre script personnalisé -->
+<script src="{{ asset('js/monScript.js') }}"></script>
+
+<meta name="csrf-token" content="{{ csrf_token() }}">
 
 <div class="container mt-4">
     <h6>Tableau De Board</h6>
@@ -202,13 +209,29 @@
                     <!-- Affichage du nom du dossier -->
                     <h5 style="color: white; font-size: 12px;">{{ $dossier->name }}</h5>
 
-                    <form action="{{ route('dossier.delete', $dossier->id) }}" method="POST" style="display:inline;">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" style="border: 1px solid white; border-radius: 50%; background-color: transparent; color: white; width: 40px; height: 40px; padding: 0; display: flex; justify-content: center; align-items: center;">
-                            <i class="fas fa-trash-alt"></i> <!-- Icône de suppression -->
-                        </button>
-                    </form>
+                    <div class="dropdown">
+                <button class="btn btn-link text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v"></i> <!-- Icône des trois points -->
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <li>
+                        <!-- <a class="dropdown-item" href=""> -->
+                        <a class="dropdown-item" href="#" onclick="openEditFolderModal('{{ $dossier->id }}', '{{ $dossier->name }}')">
+                        Renommer
+</a>
+
+                    </li>
+                    <li>
+                        <form action="{{ route('dossier.delete', $dossier->id) }}" method="POST" style="display:inline;">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="dropdown-item" style="background: transparent; border: none; color: red;">
+                                Supprimer
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
 
                     <!-- Formulaire pour charger un fichier -->
      @csrf
@@ -232,10 +255,60 @@
         </div>
     @endforeach
 </div>
+<!-- Modal pour modifier un dossier -->
+<div class="modal fade" id="editFolderModal" tabindex="-1" aria-labelledby="editFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editFolderModalLabel">Renommer Dossier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            <form action="" method="POST" id="edit-folder-form">
+    @csrf
+    @method('PUT')
+    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+    <input type="hidden" name="dossier_id" id="dossier_id">
+    <div class="mb-3">
+        <label for="folderName" class="form-label">Nom du Dossier</label>
+        <input type="text" class="form-control" id="folderName" name="name" placeholder="{{ $dossier->name }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Renommer Dossier</button>
+</form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
 
 
 
 <script>
+function openEditFolderModal(dossierId, dossierName) {
+    // Mettre à jour le champ du formulaire avec le nom du dossier
+    document.getElementById('folderName').value = dossierName;
+    
+    // Mettre à jour l'ID du dossier dans le formulaire
+    document.getElementById('dossier_id').value = dossierId;
+
+    // Mettre à jour l'action du formulaire pour qu'il pointe vers la bonne URL (route pour PUT)
+    document.getElementById('edit-folder-form').action = `/dossier/${dossierId}`;
+
+    // Afficher le modal de modification
+    var myModal = new bootstrap.Modal(document.getElementById('editFolderModal'));
+    myModal.show();
+}
+
+ 
+
+
+
+
+
+
+
+
     // Fonction pour générer une couleur hexadécimale aléatoire
     function getRandomColor() {
         const letters = '0123456789ABCDEF';

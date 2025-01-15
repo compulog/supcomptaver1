@@ -102,8 +102,7 @@
             background-color: #333;
             color: white;
             transition: all 0.3s ease-in-out;
-             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
-        }
+         }
 
         /* Quand la sidebar est ouverte, elle est décalée à gauche à 0 et visible */
         .sidebar-open {
@@ -122,7 +121,7 @@
             background: transparent;
             font-size: 30px;
             cursor: pointer;
-            color: #fff;
+            color: rgba(0,0,0,0);
         }
 
         /* Style de l'overlay (fond semi-transparent) */

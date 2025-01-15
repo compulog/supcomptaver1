@@ -129,7 +129,7 @@
             padding: 0;
              background: transparent;
             font-size: 30px;
-            color: #ffffff;
+            color: rgba(0,0,0,0);
             cursor: pointer;
         }
 

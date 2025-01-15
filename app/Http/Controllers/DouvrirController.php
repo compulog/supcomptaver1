@@ -13,7 +13,6 @@ class DouvrirController extends Controller
 {
     public function create(Request $request)
     {
-   
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255', // Correspond au champ 'name' du formulaire
             'societe_id' => [
@@ -48,7 +47,7 @@ class DouvrirController extends Controller
         }
     
         // Sinon, on retourne vers une vue (par exemple folder.create)
-        return redirect()->route('Douvrir', ['id' => $request->folders_id])->with('success', 'Dossier créé avec succès');
+        return redirect()->route('Douvrir', ['id' => $request->dossier_id])->with('success', 'Dossier créé avec succès');
 
 
     }
