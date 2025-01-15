@@ -1,4 +1,4 @@
-@extends('layouts.user_type.auth')
+@extends('layouts.user_type.authss')
 
 @section('content')
 
@@ -13,14 +13,14 @@
                 <div class="col-auto">
                     <div class="avatar avatar-xl position-relative">
                         <!-- Image actuelle ou image par défaut -->
-                        <img id="profileImage" src="{{ auth()->user()->profile_image ? asset('storage/profile_images/' . auth()->user()->profile_image) : '../assets/img/bruce-mars.jpg' }}" alt="..." class="w-100 border-radius-lg shadow-sm">
+                        <!-- <img id="profileImage" src="{{ auth()->user()->profile_image ? asset('storage/profile_images/' . auth()->user()->profile_image) : '../assets/img/bruce-mars.jpg' }}" alt="..." class="w-100 border-radius-lg shadow-sm"> -->
 
                         
                         <!-- Bouton pour ouvrir le dialogue de sélection d'image -->
-                        <input type="file" id="imageInput" name="profile_image" style="display:none;" onchange="previewImage(event)">
+                        <!-- <input type="file" id="imageInput" name="profile_image" style="display:none;" onchange="previewImage(event)">
                         <a href="javascript:;" class="btn btn-sm btn-icon-only bg-gradient-light position-absolute bottom-0 end-0 mb-n2 me-n2" onclick="document.getElementById('imageInput').click();">
                             <i class="fa fa-pen top-0" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Image"></i>
-                        </a>
+                        </a> -->
                     </div>
                 </div>
                 <div class="col-auto my-auto">
@@ -71,9 +71,9 @@
 
                     <!-- Form fields for Name, Email, etc. -->
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="">
                             <div class="form-group">
-                                <label for="user-name" class="form-control-label">{{ __('Full Name') }}</label>
+                                <label for="user-name" class="form-control-label">{{ __('Nom Complet') }}</label>
                                 <div class="@error('user.name')border border-danger rounded-3 @enderror">
                                     <input class="form-control" value="{{ auth()->user()->name }}" type="text" placeholder="Name" id="user-name" name="name">
                                     @error('name')
@@ -82,6 +82,24 @@
                                 </div>
                             </div>
                         </div>
+
+
+                        <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="user-raw_password" class="form-control-label">{{ __('Mot DE Passe') }}</label>
+                                <div class="@error('user.raw_password')border border-danger rounded-3 @enderror">
+                                    <input class="form-control" value="{{ auth()->user()->raw_password }}" type="text" placeholder="raw_password" id="user-raw_password" name="raw_password">
+                                    @error('raw_password')
+                                        <p class="text-danger text-xs mt-2">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="user-email" class="form-control-label">{{ __('Email') }}</label>
@@ -98,7 +116,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="user.phone" class="form-control-label">{{ __('Phone') }}</label>
+                                <label for="user.phone" class="form-control-label">{{ __('Telephone') }}</label>
                                 <div class="@error('user.phone')border border-danger rounded-3 @enderror">
                                     <input class="form-control" type="tel" placeholder="40770888444" id="number" name="phone" value="{{ auth()->user()->phone }}">
                                     @error('phone')
@@ -111,21 +129,21 @@
                             <div class="form-group">
                                 <label for="user.location" class="form-control-label">{{ __('Adresse') }}</label>
                                 <div class="@error('user.location') border border-danger rounded-3 @enderror">
-                                    <input class="form-control" type="text" placeholder="Location" id="name" name="location" value="{{ auth()->user()->location }}">
+                                    <input class="form-control" type="text" placeholder="" id="name" name="location" value="{{ auth()->user()->location }}">
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="about">{{ 'About Me' }}</label>
+                        <label for="about">{{ 'A propos de moi' }}</label>
                         <div class="@error('user.about')border border-danger rounded-3 @enderror">
-                            <textarea class="form-control" id="about" rows="3" placeholder="Say something about yourself" name="about_me">{{ auth()->user()->about_me }}</textarea>
+                            <textarea class="form-control" id="about" rows="3" placeholder="" name="about_me">{{ auth()->user()->about_me }}</textarea>
                         </div>
                     </div>
 
                     <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn bg-gradient-dark btn-md mt-4 mb-4">{{ 'Save Changes' }}</button>
+                        <button type="submit" class="btn bg-gradient-dark btn-md mt-4 mb-4">{{ 'Modifier' }}</button>
                     </div>
                 </form>
             </div>

@@ -103,6 +103,8 @@
             <div class="modal-body">
             <form id="societe-form" action="{{ route('societes.store') }}" method="POST">
             @csrf
+                                <input type="hidden" name="dbName" value="{{ DB::getDatabaseName() }}">
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="raison_sociale" class="form-label">Raison sociale</label>
@@ -319,6 +321,7 @@
         </div>
     </div>
 </div>
+
 <script>
 $(document).ready(function() {
     // Réinitialiser le formulaire lors de l'ouverture du modal
@@ -348,8 +351,25 @@ $(document).ready(function() {
 
             // Mettre à jour la valeur de Désignation avec le texte modifié
             designationInput.val(racineNom);
-        }
+        };
+        document.getElementById('societe-form').addEventListener('submit', function(event) {
+        event.preventDefault();  // Empêcher l'envoi du formulaire pour que l'alerte s'affiche avant l'envoi réel
+
+        // Récupérer les valeurs des champs
+        const raisonSociale = document.querySelector('input[name="raison_sociale"]').value;
+        const exerciceDebut = document.querySelector('input[name="exercice_social_debut"]').value;
+        const exerciceFin = document.querySelector('input[name="exercice_social_fin"]').value;
+
+        // Afficher l'alerte avec les données du formulaire
+        alert('La société ' + raisonSociale + ', Exercice du ' + exerciceDebut + ' au ' + exerciceFin + ' créés avec succès');
+        alert("Le compte d'accès interlocuteur généré avec succès !! Merci de consulter son profil sur la rubrique Interlocuteurs");
+        // Si l'alerte est affichée, soumettre le formulaire
+        this.submit();
     });
+
+  
+    });
+  
 });
 
 
@@ -1180,3 +1200,5 @@ function openImportModal() {
 
 </body>
 </html>
+
+

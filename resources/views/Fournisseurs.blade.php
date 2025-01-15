@@ -649,36 +649,57 @@ var designationValue = ''; // Variable globale pour stocker l'intitulé
 // Fonction pour remplir les rubriques TVA
 
 // Fonction pour remplir les options de contrepartie
+// Fonction pour remplir un champ de sélection avec des données provenant d'une API
 function remplirContrePartie(selectId, selectedValue = null, callback = null) {
     $.ajax({
         url: '/comptes',
         type: 'GET',
         success: function (data) {
+            console.log("Données reçues de l'API :", data); // Log des données pour débogage
+
+            // Sélectionner l'élément avec l'ID fourni
             var select = $("#" + selectId);
 
+            // Vérifier si l'élément existe
+            if (select.length === 0) {
+                console.error("Élément avec l'ID", selectId, "non trouvé dans le DOM.");
+                return;
+            }
+
+            // Si Select2 est initialisé, le détruire pour éviter des conflits
             if (select.hasClass("select2-hidden-accessible")) {
                 select.select2("destroy");
             }
+
+            // Réinitialiser le champ de sélection et ajouter une option par défaut
             select.empty();
             select.append(new Option("Sélectionnez une contre partie", ""));
 
+            // Trier les données par ordre alphabétique (par le champ compte)
             data.sort((a, b) => a.compte.localeCompare(b.compte));
+
+            // Ajouter les options au champ de sélection
             data.forEach(function (compte) {
                 let option = new Option(`${compte.compte} - ${compte.intitule}`, compte.compte);
                 select.append(option);
             });
 
+            // Réinitialiser et appliquer Select2
             select.select2({
                 width: '100%',
                 minimumResultsForSearch: 0,
                 dropdownAutoWidth: true
             });
 
+            // Si une valeur sélectionnée est fournie, la définir
             if (selectedValue) {
                 select.val(selectedValue).trigger('change');
             }
 
-            if (callback) callback();
+            // Exécuter le callback si défini
+            if (callback && typeof callback === 'function') {
+                callback();
+            }
         },
         error: function (jqXHR, textStatus, errorThrown) {
             console.error('Erreur lors de la récupération des comptes :', textStatus, errorThrown);
@@ -713,7 +734,7 @@ function envoyerDonnees() {
             identifiant_fiscal: $("#identifiant_fiscal").val(),
             ICE: $("#ICE").val(),
             nature_operation: $("#nature_operation").val(),
-            rubrique_tva: $("#rubrique_tva").val(),
+            rubrique_tva: $("#rubrique_tva option:selected").text(), // Texte complet récupéré
             designation: $("#designation").val(),
             contre_partie: $("#contre_partie").val(),
             societe_id: $("#societe_id").val(),
@@ -839,7 +860,7 @@ $("#fournisseurFormEdit").on("submit", function(e) {
             identifiant_fiscal: $("#editIdentifiantFiscal").val(),
             ICE: $("#editICE").val(),
             nature_operation: $("#editNatureOperation").val(),
-            rubrique_tva: $("#editRubriqueTVA").val(),
+            rubrique_tva: $("#editRubriqueTVA option:selected").text(), // Texte complet récupéré
             designation: $("#editDesignation").val(),
             contre_partie: $("#editContrePartie").val(),
             _token: '{{ csrf_token() }}'
@@ -863,7 +884,9 @@ function editFournisseur(data) {
     $("#editIdentifiantFiscal").val(data.identifiant_fiscal);
     $("#editICE").val(data.ICE);
     $("#editNatureOperation").val(data.nature_operation);
-    remplirRubriquesTva("editRubriqueTVA", data.rubrique_tva);
+    // remplirRubriquesTva("editRubriqueTVA", data.rubrique_tva);
+     $("#editRubriqueTVA option:selected").text(data.rubrique_tva); // Texte complet récupéré
+
     remplirContrePartie("editContrePartie", data.contre_partie);
     $("#editDesignation").val(data.designation);
     $("#fournisseurModaledit").modal("show");
@@ -887,7 +910,7 @@ $(document).ready(function () {
                 identifiant_fiscal: $("#identifiant_fiscal").val(),
                 ICE: $("#ICE").val(),
                 nature_operation: $("#nature_operation").val(),
-                rubrique_tva: $("#rubrique_tva").val(),
+                rubrique_tva: $("#rubrique_tva option:selected").text(),
                 designation: $("#designation").val(),
                 contre_partie: $("#contre_partie").val(),
                 societe_id: $("#societe_id").val(),
@@ -904,7 +927,7 @@ $(document).ready(function () {
                         identifiant_fiscal: $("#identifiant_fiscal").val(),
                         ICE: $("#ICE").val(),
                         nature_operation: $("#nature_operation").val(),
-                        rubrique_tva: $("#rubrique_tva").val(),
+                        rubrique_tva: $("#rubrique_tva option:selected").text(),
                         designation: $("#designation").val(),
                         contre_partie: $("#contre_partie").val(),
                         societe_id: $("#societe_id").val()

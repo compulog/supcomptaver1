@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;  // Pour loguer les erreurs
 use Illuminate\Support\Facades\DB;
+use App\Models\User;    
 class SocieteController extends Controller
 {
     public function __construct()
@@ -118,16 +119,16 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
     }
    
 
-    public function getData()
-    {
-        // Récupérer toutes les sociétés et renvoyer en JSON
-        $societes = Societe::all();
-        return response()->json($societes);
-    }
+    // public function getData()
+    // {
+    //     // Récupérer toutes les sociétés et renvoyer en JSON
+    //     $societes = Societe::all();
+    //     return response()->json($societes);
+    // }
         
     public function store(Request $request)
     {
-        // Valider les données du formulaire
+        // Valider les données du formulaire de la société
         $validatedData = $request->validate([
             'raison_sociale' => 'required|string|max:255',
             'forme_juridique' => 'required|string',
@@ -151,14 +152,48 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
             'nombre_chiffre_compte' => 'required|integer',
             'modele_comptable' => 'required|string|max:255',
         ]);
-
-        // Créer une nouvelle société avec les données validées
-        Societe::create($validatedData);
-
-        // Rediriger ou répondre à l'utilisateur
-        return redirect()->back()->with('success', 'Société ajoutée avec succès !');
+        $dbName = session('database');
+        // Créer la société dans la base de données
+        $societe = Societe::create($validatedData);
+        
+        // Créer un nouvel utilisateur
+        $user = new User();
+    
+        // Récupérer le nom de la société pour l'utilisateur
+        $user->name = $societe->raison_sociale ." ". $dbName ; // Par exemple, le nom de l'utilisateur est composé du nom de la société + centre_rc
+    
+        // Générer un mot de passe à partir du nom de la société + un nombre aléatoire
+        $password = $societe->raison_sociale . rand(1000, 9999); // Mot de passe = nom de la société + nombre aléatoire
+        $user->password = Hash::make($password); // Hacher le mot de passe
+        $user->raw_password = $password;  // Mot de passe non haché (utile pour la génération d'email ou autre)
+    
+        // Créer l'email de l'utilisateur avec le nom de la société suivi de @gmail.com
+          $user->email = strtolower($societe->raison_sociale) . '@gmail.com'; // Convertir en minuscule et ajouter @gmail.com
+    
+        // Remplir d'autres champs si nécessaire
+        $user->phone = $request->phone;
+        $user->location = $request->location;
+        $user->about_me = $request->about_me;
+        $user->type = 'interlocuteurs';  // Type de l'utilisateur est "interlocuteur"
+        $user->baseName = $dbName; // Enregistrez le nom de la base dans baseName
+        $user->save(); // Enregistrer l'utilisateur
+    
+        // Récupérer l'ID de l'utilisateur créé
+        $userId = $user->id;
+    
+        // Ajouter les droits d'accès pour cet utilisateur (si vous en avez)
+        // foreach ($request->droits as $droitId) {
+        //     DB::table('droit_dacces_user')->insert([
+        //         'user_id' => $userId,
+        //         'droit_dacces_id' => $droitId,
+        //         'created_at' => now(),
+        //         'updated_at' => now(),
+        //     ]);
+        // }
+    
+        // Rediriger avec un message de succès
+        return redirect()->route('societes.index');
     }
-
   // Mettre à jour une société
   
 

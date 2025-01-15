@@ -1,129 +1,209 @@
 <head>
+    <style>
+        .dropdown-list {
+            display: none; /* Cacher la liste par défaut */
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 200px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            top: 100%; /* Positionner juste en dessous de l'icône */
+            right: 0; /* Alignement à droite */
+        }
+
+        .dropdown-list a {
+            display: flex;
+            align-items: center; /* Alignement des icônes et du texte */
+            padding: 10px;
+            text-decoration: none;
+            color: black;
+        }
+
+        .dropdown-list a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-list i {
+            margin-right: 10px; /* Espacement entre l'icône et le texte */
+        }
+
+        /* Navbar contenant le nom de la société et l'exercice */
+        .navbar-content {
+            display: flex;
+            justify-content: space-between; /* Espacement entre les éléments */
+            align-items: center; /* Centrer verticalement */
+            width: 100%;
+        }
+
+        /* Alignement du texte pour la société */
+        .breadcrumb {
+            display: inline-block;
+            margin-right: 20px;
+            text-align: left;
+        }
+
+        /* Exercice aligné à droite */
+        .exercice {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .exercice input {
+            height: 20px;
+        }
+
+        .exercice button {
+            border-radius: 50%;
+            padding: 10px;
+            height: 25px;
+            width: 25px;
+            margin-top: 12px;
+        }
+
+        .exercice span {
+            margin-right: 10px;
+        }
+    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
+<nav class="navbar navbar-expand-lg navbar-dark px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
     <div class="container-fluid py-1 px-3">
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
-                <li class="breadcrumb-item text-sm text-white active text-capitalize" aria-current="page">{{ $societe->raison_sociale }}</li>
-            </ol>
-            Exercices:
-        
-            <button type="button" class="btn btn-light" style="border-radius: 50%; margin-left: 10px; padding: 10px;height:25px;width:25px;margin-top:12px;">
-        <i class="fas fa-arrow-left" style="font-size:8px;"></i> <!-- Flèche vers la gauche -->
-    </button>
+            <div class="navbar-content">
+                <!-- Nom de la société -->
+                <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5" style="margin-top:-30px;">
+                    <li class="breadcrumb-item text-sm active text-capitalize" aria-current="page">
+                        {{ $societe->raison_sociale }} {{ $societe->forme_juridique }}
+                    </li>
+                </ol>
 
-    Du <input type="date" value="{{ $societe->exercice_social_debut }}" style="height:20px;"> 
-    au <input type="date" value="{{ $societe->exercice_social_fin }}" style="height:20px;"/> 
-  
-    <button type="button" class="btn btn-light" style="border-radius: 50%; margin-left: 10px; padding: 10px;height:25px;width:25px;margin-top:12px;">
-        <i class="fas fa-arrow-right"  style="font-size:8px;"></i> <!-- Flèche vers la droite -->
-    </button>
-    
+                <!-- Section Exercice -->
+                <div class="exercice" style="margin-top:-25px;">
+                    <span>Exercice:</span>
+
+                    <!-- Flèches pour changer l'exercice -->
+                    <button type="button" class="btn btn-light">
+                        <i class="fas fa-arrow-left" style="font-size:8px;"></i>
+                    </button>
+
+                    <!-- Sélection des dates -->
+                    Du <input type="date" value="{{ $societe->exercice_social_debut }}">
+                    au <input type="date" value="{{ $societe->exercice_social_fin }}">
+
+                    <button type="button" class="btn btn-light">
+                        <i class="fas fa-arrow-right" style="font-size:8px;"></i>
+                    </button>
+                </div>
+            </div>
         </nav>
-        <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar"> 
+
+        <!-- Autres éléments de la navbar -->
+        <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar">
+            <!-- Utilisateur connecté -->
+            <div class="nav-link " style="margin-right:-10px;margin-top:-21px;">
+                <span class="nav-link-text ms-1">{{ Auth::user()->name }}</span>
+            </div>
+
+                 
+<!-- Liste déroulante avec icône -->
+<li class="nav-item d-flex align-items-center" style="position: relative;margin-top:-20px;">
+    <a href="javascript:;" class="nav-link text-white p-0" id="dropdownListButton">
+        <i class="fas fa-user-circle" style="font-size:22px;color:black;"></i>  
+    </a>
+
+    <!-- Vérification du type d'utilisateur et affichage du menu approprié -->
+    @if(Auth::user()->type === 'SuperAdmin')
+    <div class="dropdown-list" id="dropdownList">
        
-       
+
+         <a class="nav-link {{ (Request::is('utilisateurs') ? 'active' : '') }}" href="{{ url('utilisateurs') }}">
+            <i class="fas fa-users"></i>  
+            <span class="nav-link-text ms-1">Utilisateurs</span>  
+        </a>
+
+     
+
+         <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
+            <i class="fas fa-user"></i>  
+            <span class="nav-link-text ms-1">Mon Profil</span> 
+        </a>
+
+         <a href="{{ url('/logout')}}" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i>  
+            <span class="d-sm-inline d-none">Sign Out</span>
+        </a>
+    </div>
     
+    @elseif(Auth::user()->type === 'admin')
+    <div class="dropdown-list" id="dropdownList">
+       <a class="nav-link {{ (Request::is('Admin') ? 'active' : '') }}" href="{{ url('Admin') }}">
+            <i class="fas fa-cogs"></i>  
+            <span class="nav-link-text ms-1">Admin</span>  
+        </a>
+      <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
+            <i class="fas fa-cogs"></i>  
+            <span class="nav-link-text ms-1">interlocuteurs</span>  
+        </a>
+        
+        <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
+            <i class="fas fa-user"></i>  
+            <span class="nav-link-text ms-1">Mon Profil</span> 
+        </a>
 
-            
-            <ul class="navbar-nav justify-content-end">
-                <!-- Dropdown Notifications -->
-                <li class="nav-item dropdown pe-2 d-flex align-items-center">
-                    <a href="javascript:;" class="nav-link text-white p-0" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fa fa-bell cursor-pointer"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end px-2 py-3 me-sm-n4" aria-labelledby="dropdownMenuButton">
-                        <li class="mb-2">
-                            <a class="dropdown-item border-radius-md" href="javascript:;">
-                                <div class="d-flex py-1">
-                                    <div class="my-auto">
-                                        <img src="../assets/img/team-2.jpg" class="avatar avatar-sm me-3 ">
-                                    </div>
-                                    <div class="d-flex flex-column justify-content-center">
-                                        <h6 class="text-sm font-weight-normal mb-1">
-                                            <span class="font-weight-bold">New message</span> 
-                                        </h6>
-                                        <p class="text-xs text-secondary mb-0">
-                                            <i class="fa fa-clock me-1"></i>
-                                            13 minutes ago
-                                        </p>
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="mb-2">
-                            <a class="dropdown-item border-radius-md" href="javascript:;">
-                                <div class="d-flex py-1">
-                                    <div class="my-auto">
-                                        <img src="../assets/img/small-logos/logo-spotify.svg" class="avatar avatar-sm bg-gradient-dark me-3 ">
-                                    </div>
-                                    <div class="d-flex flex-column justify-content-center">
-                                        <!-- <h6 class="text-sm font-weight-normal mb-1">
-                                            <span class="font-weight-bold">New album</span>
-                                        </h6> -->
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item border-radius-md" href="javascript:;">
-                                <div class="d-flex py-1">
-                                    <div class="avatar avatar-sm bg-gradient-secondary me-3 my-auto">
-                                        <svg width="12px" height="12px" viewBox="0 0 43 36" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                                            <title>credit-card</title>
-                                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                                <g transform="translate(-2169.000000, -745.000000)" fill="#FFFFFF" fill-rule="nonzero">
-                                                    <g transform="translate(1716.000000, 291.000000)">
-                                                    <g transform="translate(453.000000, 454.000000)">
-                                                        <path class="color-background" d="M43,10.7482083 L43,3.58333333 C43,1.60354167 41.3964583,0 39.4166667,0 L3.58333333,0 C1.60354167,0 0,1.60354167 0,3.58333333 L0,10.7482083 L43,10.7482083 Z" opacity="0.593633743"></path>
-                                                        <path class="color-background" d="M0,16.125 L0,32.25 C0,34.2297917 1.60354167,35.8333333 3.58333333,35.8333333 L39.4166667,35.8333333 C41.3964583,35.8333333 43,34.2297917 43,32.25 L43,16.125 L0,16.125 Z M19.7083333,26.875 L7.16666667,26.875 L7.16666667,23.2916667 L19.7083333,23.2916667 L19.7083333,26.875 Z M35.8333333,26.875 L28.6666667,26.875 L28.6666667,23.2916667 L35.8333333,23.2916667 L35.8333333,26.875 Z"></path>
-                                                    </g>
-                                                    </g>
-                                                </g>
-                                            </g>
-                                        </svg>
-                                    </div>
-                                    <div class="d-flex flex-column justify-content-center">
-                                        <!-- <h6 class="text-sm font-weight-normal mb-1">
-                                            Payment successfully completed
-                                        </h6> -->
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
+         <a href="{{ url('/logout')}}" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i>  
+            <span class="d-sm-inline d-none">Sign Out</span>
+        </a>
+    </div>
+    @elseif(Auth::user()->type === 'utilisateur')
+    <div class="dropdown-list" id="dropdownList">
+       <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
+            <i class="fas fa-cogs"></i>  
+            <span class="nav-link-text ms-1">interlocuteurs</span>  
+        </a>
 
-                <!-- Sign Out -->
-                <li class="nav-item d-flex align-items-center">
-                    <a href="{{ url('/logout')}}" class="nav-link text-white font-weight-bold px-0">
-                        <i class="fa fa-user me-sm-1"></i>
-                        <span class="d-sm-inline d-none">Sign Out</span>
-                    </a>
-                </li>
+         <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
+            <i class="fas fa-user"></i>  
+            <span class="nav-link-text ms-1">Mon Profil</span> 
+        </a>
+ 
+        <a href="{{ url('/logout')}}" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i>  
+            <span class="d-sm-inline d-none">Sign Out</span>
+        </a>
+    </div>
 
-                <!-- Sidenav Toggle -->
-                <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
-                    <a href="javascript:;" class="nav-link text-white p-0" id="iconNavbarSidenav">
-                        <div class="sidenav-toggler-inner">
-                            <i class="sidenav-toggler-line"></i>
-                            <i class="sidenav-toggler-line"></i>
-                            <i class="sidenav-toggler-line"></i>
-                        </div>
-                    </a>
-                </li>
+    @else
+    <div class="dropdown-list" id="dropdownList">
+         <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
+            <i class="fas fa-user"></i>  
+            <span class="nav-link-text ms-1">Mon Profil</span> 
+        </a>
 
-                <!-- Settings Icon -->
-                <li class="nav-item px-3 d-flex align-items-center">
-                    <a href="javascript:;" class="nav-link text-white p-0">
-                        <i class="fa fa-cog fixed-plugin-button-nav cursor-pointer"></i>
-                    </a>
-                </li>
-            </ul>
+         <a href="{{ url('/logout')}}" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i> 
+            <span class="d-sm-inline d-none">Sign Out</span>
+        </a>
+    </div>
+    @endif
+</li>
+
         </div>
     </div>
 </nav>
-<!-- End Navbar -->
+
+<!-- Script pour afficher/cacher la liste -->
+<script>
+    document.getElementById('dropdownListButton').addEventListener('click', function() {
+        var dropdownList = document.getElementById('dropdownList');
+        if (dropdownList.style.display === "none" || dropdownList.style.display === "") {
+            dropdownList.style.display = "block"; // Afficher la liste
+        } else {
+            dropdownList.style.display = "none"; // Cacher la liste
+        }
+    });
+</script>

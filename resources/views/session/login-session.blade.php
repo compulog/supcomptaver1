@@ -9,19 +9,19 @@
             <div class="col-xl-4 col-lg-5 col-md-6 d-flex flex-column mx-auto">
               <div class="card card-plain mt-8">
                 <div class="card-header pb-0 text-left bg-transparent">
-                  <h3 class="font-weight-bolder text-info text-gradient">Welcome back</h3>
+                <h3 class="font-weight-bolder" style="color: #cb0c9f;">Bienvenue</h3>
                 </div>
                 <div class="card-body">
                   <form role="form" method="POST" action="/session" id="loginForm">
                     @csrf
-                    <label>Email</label>
+                    <label>Nom Complet</label>
                     <div class="mb-3">
-                      <input type="email" class="form-control" name="email" id="email" placeholder="Email" value="admin@softui.com" aria-label="Email" aria-describedby="email-addon">
-                      @error('email')
+                      <input type="text" class="form-control" name="name" id="name" placeholder="nom" value="" aria-label="name" aria-describedby="name-addon">
+                      @error('name')
                         <p class="text-danger text-xs mt-2">{{ $message }}</p>
                       @enderror
                     </div>
-                    <label>Password</label>
+                    <label>Mot de passe</label>
                     <div class="mb-3">
                       <input type="password" class="form-control" name="password" id="password" placeholder="Password" value="secret" aria-label="Password" aria-describedby="password-addon">
                       @error('password')
@@ -43,14 +43,15 @@
 
                     <div class="form-check form-switch">
                       <input class="form-check-input" type="checkbox" id="rememberMe" checked=""/>
-                      <label class="form-check-label" for="rememberMe">Remember me</label>
+                      <label class="form-check-label" for="rememberMe">Souvenez-vous de moi</label>
                     </div>
                     <div class="text-center">
-                      <button type="submit" class="btn bg-gradient-info w-100 mt-4 mb-0">Sign in</button>
+                       <button type="submit" class="btn" style="background-color: #cb0c9f; color: white; width: 100%; margin-top: 1rem; margin-bottom: 0;">Connexion</button>
+
                     </div>
                   </form>
                 </div>
-                <div class="card-footer text-center pt-0 px-lg-2 px-1">
+                <!-- <div class="card-footer text-center pt-0 px-lg-2 px-1">
                   <small class="text-muted">Forgot your password? Reset it 
                     <a href="/login/forgot-password" class="text-info text-gradient font-weight-bold">here</a>
                   </small>
@@ -58,12 +59,12 @@
                     Don't have an account?
                     <a href="register" class="text-info text-gradient font-weight-bold">Sign up</a>
                   </p>
-                </div>
+                </div> -->
               </div>
             </div>
             <div class="col-md-6">
               <div class="oblique position-absolute top-0 h-100 d-md-block d-none me-n8">
-                <div class="oblique-image bg-cover position-absolute fixed-top ms-auto h-100 z-index-0 ms-n6" style="background-image:url('../assets/img/curved-images/tabletop.jpg')"></div>
+                <div class="oblique-image bg-cover position-absolute fixed-top ms-auto h-100 z-index-0 ms-n6" style="background-image:url('../assets/img/curved-images/5362163.jpg')"></div>
               </div>
             </div>
           </div>
@@ -75,17 +76,17 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    const emailInput = document.getElementById('email');
+    const nameInput = document.getElementById('name');
     const passwordInput = document.getElementById('password');
     const databaseSelectContainer = document.getElementById('databaseSelectContainer');
     
     // Function to check credentials
     function checkCredentials() {
-      const email = emailInput.value;
+      const name = nameInput.value;
       const password = passwordInput.value;
       
-      // Check if the email and password match the correct values
-      if (email === 'compulog@gmail.com' && password === 'compulog123') {
+      // Check if the name and password match the correct values
+      if (name === 'COMPULOG_CHABAANE' && password === 'compulog123') {
         // Show the select element if credentials are correct
         databaseSelectContainer.style.display = 'block';
       } else {
@@ -94,8 +95,8 @@
       }
     }
 
-    // Listen to changes in the email and password fields
-    emailInput.addEventListener('input', checkCredentials);
+    // Listen to changes in the name and password fields
+    nameInput.addEventListener('input', checkCredentials);
     passwordInput.addEventListener('input', checkCredentials);
     
     // Initial check in case the user has pre-filled the fields

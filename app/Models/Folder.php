@@ -4,15 +4,30 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Folder extends Model
 {
     use HasFactory;
+    use SoftDeletes; // Active les suppressions douces
+
+    protected $dates = ['deleted_at'];
     protected $connection = 'supcompta';
     protected $table = 'folders';
 
     // Définir les champs autorisés pour l'attribution de masse
-    protected $fillable = ['name', 'societe_id'];
+    protected $fillable = ['name', 'societe_id', 'folder_id'];
+
+    public function parent()
+    {
+        return $this->belongsTo(Folder::class, 'folder_id');
+    }
+
+    public function subfolders()
+    {
+        return $this->hasMany(Folder::class, 'folder_id');
+    }
+    
     public function societe()
     {
         return $this->belongsTo(Societe::class);

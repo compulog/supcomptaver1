@@ -2,11 +2,16 @@
 
 @section('content')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
 <div class="container mt-4">
-    <div class="row">
+<h6>Achat ➢
+{{ session()->get('foldersId') }}</h6>
+    <div class="row"   style="margin-left:450px">
+    
         <!-- Conteneur flexible pour aligner les éléments sur la même ligne -->
         <div class="d-flex align-items-center mb-3">
+        
             <!-- Formulaire de filtrage -->
             <form method="GET" action="" class="d-flex me-3">
                 <div class="input-group">
@@ -39,38 +44,47 @@
 </div>
 
 <div class="container mt-4">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+        <!-- Ajouter un Dossier -->
+        <div class="col">
+            <div class="card shadow-sm" style="cursor: pointer; height: 130px; width: 10rem;" onclick="openCreateFolderForm()">
+                <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="height: 100%; background-color: #f8f9fa;">
+                    <i class="fas fa-plus fa-2x text-primary"></i>
+                    <p class="mt-1" style="font-size: 0.8rem;">Ajouter un Dossier</p>
+                </div>
+            </div>
+        </div>
 
-    <h1>Dossier : {{ $folder->name }}</h1>
-  
+        <!-- Affichage des Dossiers -->
+        <!-- ... -->
+    </div>
+</div>
 
-    
-    @if ($files->isEmpty())
-        <p>Aucun fichier associé à ce dossier.</p>
+ 
+
+<div class="container mt-4">
+    @if ($folders->isEmpty())
+        <p>Aucun dossier trouvé pour cette société.</p>
     @else
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-            @foreach ($files as $file)
-                <div class="col">
-                    <div class="card shadow-sm" style="width: 12rem; height: 6rem;">
-                        <div class="card-body text-center p-2 d-flex flex-column justify-content-between">
-                            <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;">
-                                {{ $file->name }}
+        <div class="d-flex flex-wrap justify-content-start">
+            @foreach ($folders as $folder)
+                <div class="col-3 mb-3" ondblclick="openFile({{ $folder->id }})">
+                    <div class="card shadow-sm" style="width: 10rem; height: 130px; cursor: pointer;">
+                        <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;background-color:#007bff;border-radius:17px;">
+                            <!-- Icône du Dossier -->
+                            <i class="fas fa-folder fa-2x mb-1" style="color:rgb(227, 231, 235);"></i>
+                            <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;color:rgb(227, 231, 235);">
+                                {{ $folder->name }}
                             </h5>
-
-                            <!-- Formulaire de suppression de fichier avec icône uniquement -->
-                              <!-- Formulaire de suppression de fichier avec icône uniquement -->
-                              <form action="{{ route('file.delete', $file->id) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <i class="fas fa-trash text-danger mt-2" style="cursor: pointer;" title="Supprimer le fichier" onclick="this.closest('form').submit();"></i>
-                            </form>
-                            
-                            <!-- Bouton de téléchargement avec icône -->
-                            <!-- <a href="{{ route('file.download', $file->id) }}" class="btn btn-link mt-1" style="font-size: 1.2rem; color: #007bff;" title="Télécharger">
-                                <i class="fas fa-download"></i>
-                            </a> -->
-                              <!-- Bouton de téléchargement avec icône -->
-                              <a href="{{ route('file.download', $file->id) }}" class="btn btn-link mt-1" style="font-size: 1.2rem; color: #007bff;" title="Télécharger">
-                            </a>
+                            <div class="d-flex justify-content-between" style="font-size: 0.8rem;">
+                                <form action="{{ route('folder.delete', $folder->id) }}" method="POST" style="display: inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-link p-0" title="Supprimer le dossier" style="margin-top:-180px;margin-left:130px;">
+                                        <i class="fas fa-times" style="color:rgb(227, 231, 235);"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -78,6 +92,63 @@
         </div>
     @endif
 </div>
+
+
+<!-- Modal pour créer un dossier -->
+<div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createFolderModalLabel">Créer un Nouveau Dossier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ route('folder.create') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="folders_id" value="{{ $foldersId }}">
+
+                    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+
+                    <div class="mb-3">
+                        <label for="folderName" class="form-label">Nom du Dossier</label>
+                        <input type="text" class="form-control" id="folderName" name="name" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Créer Dossier</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+ 
+ <div class="container mt-4">
+    @if ($achatFiles->isEmpty())
+        <p>Aucun fichier trouvé pour cette société.</p>
+    @else
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+            @foreach ($achatFiles as $file)
+                <div class="col" ondblclick="downloadFile({{ $file->id }})">
+                    <div class="card shadow-sm" style="width: 10rem; height: 130px;">
+                        <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">
+                            <img src="{{ $file->preview }}" alt="{{ $file->name }}" class="img-fluid mb-2" style="max-height: 80px; object-fit: contain;">
+                            <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;">
+                                {{ $file->name }}
+                            </h5>
+                            <div class="d-flex justify-content-between" style="font-size: 0.8rem;">
+                                <form action="{{ route('file.delete', $file->id) }}" method="POST" style="display: inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-link p-0" title="Supprimer le fichier" style="margin-top:-230px;margin-left:130px;">
+                                        <i class="fas fa-times" style="color:#33333333;"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+</div> 
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -107,6 +178,11 @@ function openCreateFolderForm() {
 function openFile(folderId) {
     window.location.href = '/folder/' + folderId;
 }
+
+function downloadFile(fileId) {
+    window.location.href = '/file/download/' + fileId;
+}
 </script>
 
 @endsection
+

@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
+    use SoftDeletes; // Active les suppressions douces
+    protected $dates = ['deleted_at'];
     protected $connection = 'mysql';
     protected $table = 'users';
 
@@ -21,9 +24,9 @@ class User extends Authenticatable
      * @var string[]
      */
     protected $fillable = [
-        'name', 'email', 'password', 'phone', 'location', 'about_me', 'BaseName', 'type'
-
+        'name', 'email', 'password', 'raw_password', 'phone', 'location', 'about_me', 'BaseName', 'type'
     ];
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -32,6 +35,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'raw_password',  // Masquer le mot de passe non haché dans les réponses JSON
         'remember_token',
     ];
 
@@ -43,12 +47,11 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+  // Dans le modèle User
+// Dans le modèle User
+public function droits()
+{
+    return $this->belongsToMany(DroitDacces::class, 'droit_dacces_user', 'user_id', 'droit_dacces_id');
+}
 
-    /**
-     * La relation avec la société
-     */
-    public function societe()
-    {
-        return $this->belongsTo(Societe::class);
-    }
 }

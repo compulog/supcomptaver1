@@ -43,7 +43,8 @@ class AchatController extends Controller
             
             // Récupère les dossiers pour la société donnée
             $folders = Folder::where('societe_id', $societeId) // Assurez-vous que "Folder" est le bon modèle
-                             ->get();
+            ->whereNull('folder_id') // Ajout de la condition où folder_id est null
+            ->get();
     
             // Ajouter un champ 'preview' pour chaque fichier afin de passer l'aperçu au front-end
             foreach ($achatFiles as $file) {
@@ -69,11 +70,7 @@ class AchatController extends Controller
                 }
             }
     
-            // Vérifie si la collection de fichiers est vide après le filtre
-            if ($achatFiles->isEmpty()) {
-                // Retourne les fichiers d'achats si aucun fichier n'est trouvé avec 'folders' = 0
-                return view('achat', compact('achatFiles'))->with('message', 'Aucun fichier trouvé avec folders = 0. Voici les fichiers d\'achat.');
-            }
+         
     
             // Si des fichiers sont trouvés, passe les fichiers et les dossiers à la vue
             return view('achat', compact('achatFiles', 'folders'));

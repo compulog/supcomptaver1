@@ -1,28 +1,78 @@
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
+<style>
+         .dropdown-list {
+            display: none; /* Cacher la liste par défaut */
+           
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 200px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .dropdown-list a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: black;
+        }
+        .dropdown-list a:hover {
+            background-color: #f1f1f1;
+        }
+    
+        .dropdown-list {
+            display: none; /* Initially hide the list */
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 200px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            position: absolute; /* To place it below the icon */
+            right: 0; /* Align it to the right of the parent */
+            top: 40px; /* Adjust according to your layout */
+            z-index: 10; /* Ensure it appears above other elements */
+        }
+
+        .dropdown-list a {
+            display: flex;
+            align-items: center; /* Align icons and text */
+            padding: 10px;
+            text-decoration: none;
+            color: black;
+        }
+
+        .dropdown-list a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-list i {
+            margin-right: 10px; /* Space between icon and text */
+        }
+ 
+    </style>
+<nav class="navbar navbar-expand-lg navbar-dark px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
     <div class="container-fluid py-1 px-3">
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
+            <!-- <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
                 <li class="breadcrumb-item text-sm"><a class="opacity-5 text-white" href="javascript:;">Pages</a></li>
                 <li class="breadcrumb-item text-sm text-white active text-capitalize" aria-current="page">{{ str_replace('-', ' ', Request::path()) }}</li>
-            </ol>
-            <h6 class="font-weight-bolder mb-0 text-capitalize text-white">{{ str_replace('-', ' ', Request::path()) }}</h6>
+            </ol> -->
+            <h6 class="font-weight-bolder mb-0 text-capitalize">{{ str_replace('-', ' ', Request::path()) }}</h6>
         </nav>
         <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar"> 
             <div class="nav-item d-flex align-self-end">
-            <a href="{{ route('dashboard') }}" target="_blank" class="btn btn-primary active mb-0 text-white" role="button" aria-pressed="true">
+            <!-- <a href="{{ route('dashboard') }}" target="_blank" class="btn btn-primary active mb-0 text-white" role="button" aria-pressed="true">
    ACCEUIL
-</a>
+</a> -->
 
             </div>
-            <div class="ms-md-3 pe-md-3 d-flex align-items-center">
+            <!-- <div class="ms-md-3 pe-md-3 d-flex align-items-center">
                 <div class="input-group">
                     <span class="input-group-text text-body bg-dark border-light"><i class="fas fa-search" aria-hidden="true"></i></span>
                     <input type="text" class="form-control bg-dark text-white border-light" placeholder="Type here...">
                 </div>
-            </div>
-            <ul class="navbar-nav justify-content-end">
-                <!-- Dropdown Notifications -->
+            </div> -->
+            <!-- <ul class="navbar-nav justify-content-end">
+                
                 <li class="nav-item dropdown pe-2 d-flex align-items-center">
                     <a href="javascript:;" class="nav-link text-white p-0" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa fa-bell cursor-pointer"></i>
@@ -53,9 +103,7 @@
                                         <img src="../assets/img/small-logos/logo-spotify.svg" class="avatar avatar-sm bg-gradient-dark me-3 ">
                                     </div>
                                     <div class="d-flex flex-column justify-content-center">
-                                        <!-- <h6 class="text-sm font-weight-normal mb-1">
-                                            <span class="font-weight-bold">New album</span>
-                                        </h6> -->
+                                       
                                     </div>
                                 </div>
                             </a>
@@ -79,9 +127,7 @@
                                         </svg>
                                     </div>
                                     <div class="d-flex flex-column justify-content-center">
-                                        <!-- <h6 class="text-sm font-weight-normal mb-1">
-                                            Payment successfully completed
-                                        </h6> -->
+                                        
                                     </div>
                                 </div>
                             </a>
@@ -89,16 +135,9 @@
                     </ul>
                 </li>
 
-                <!-- Sign Out -->
-                <li class="nav-item d-flex align-items-center">
-                    <a href="{{ url('/logout')}}" class="nav-link text-white font-weight-bold px-0">
-                        <i class="fa fa-user me-sm-1"></i>
-                        <span class="d-sm-inline d-none">Sign Out</span>
-                    </a>
-                </li>
+             
 
-                <!-- Sidenav Toggle -->
-                <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
+                 <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
                     <a href="javascript:;" class="nav-link text-white p-0" id="iconNavbarSidenav">
                         <div class="sidenav-toggler-inner">
                             <i class="sidenav-toggler-line"></i>
@@ -108,14 +147,125 @@
                     </a>
                 </li>
 
-                <!-- Settings Icon -->
-                <li class="nav-item px-3 d-flex align-items-center">
+                 <li class="nav-item px-3 d-flex align-items-center">
                     <a href="javascript:;" class="nav-link text-white p-0">
                         <i class="fa fa-cog fixed-plugin-button-nav cursor-pointer"></i>
                     </a>
                 </li>
-            </ul>
+            </ul> -->
         </div>
+     
+        <div class="nav-link">
+                    <span class="nav-link-text ms-1"> {{ Auth::user()->name }}</span>
+                </div>
+               <!-- Liste déroulante avec icône -->
+                 
+<!-- Liste déroulante avec icône -->
+<li class="nav-item d-flex align-items-center" style="position: relative;">
+    <a href="javascript:;" class="nav-link text-white p-0" id="dropdownListButton">
+        <i class="fas fa-user-circle" style="font-size:22px;color:black;"></i>  
+    </a>
+
+    <!-- Vérification du type d'utilisateur et affichage du menu approprié -->
+    @if(Auth::user()->type === 'SuperAdmin')
+    <div class="dropdown-list" id="dropdownList">
+       
+
+        <!-- Utilisateurs link with icon -->
+        <a class="nav-link {{ (Request::is('utilisateurs') ? 'active' : '') }}" href="{{ url('utilisateurs') }}">
+            <i class="fas fa-users"></i> <!-- Users icon -->
+            <span class="nav-link-text ms-1">Utilisateurs</span>  
+        </a>
+
+     
+
+        <!-- Mon Profil link with icon -->
+        <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
+            <i class="fas fa-user"></i> <!-- Profile icon -->
+            <span class="nav-link-text ms-1">Mon Profil</span> 
+        </a>
+
+        <!-- Sign Out link with icon -->
+        <a href="{{ url('/logout')}}" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
+            <span class="d-sm-inline d-none">Sign Out</span>
+        </a>
     </div>
+    
+    @elseif(Auth::user()->type === 'admin')
+    <div class="dropdown-list" id="dropdownList">
+      <!-- Admin link with icon -->
+      <a class="nav-link {{ (Request::is('Admin') ? 'active' : '') }}" href="{{ url('Admin') }}">
+            <i class="fas fa-cogs"></i> <!-- Admin icon -->
+            <span class="nav-link-text ms-1">Admin</span>  
+        </a>
+     <!-- interlocuteurs link with icon -->
+     <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
+            <i class="fas fa-cogs"></i> <!-- interlocuteurs icon -->
+            <span class="nav-link-text ms-1">interlocuteurs</span>  
+        </a>
+        <!-- Mon Profil link with icon -->
+        <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
+            <i class="fas fa-user"></i> <!-- Profile icon -->
+            <span class="nav-link-text ms-1">Mon Profil</span> 
+        </a>
+
+        <!-- Sign Out link with icon -->
+        <a href="{{ url('/logout')}}" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
+            <span class="d-sm-inline d-none">Sign Out</span>
+        </a>
+    </div>
+    @elseif(Auth::user()->type === 'utilisateur')
+    <div class="dropdown-list" id="dropdownList">
+      <!-- interlocuteurs link with icon -->
+      <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
+            <i class="fas fa-cogs"></i> <!-- interlocuteurs icon -->
+            <span class="nav-link-text ms-1">interlocuteurs</span>  
+        </a>
+
+        <!-- Mon Profil link with icon -->
+        <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
+            <i class="fas fa-user"></i> <!-- Profile icon -->
+            <span class="nav-link-text ms-1">Mon Profil</span> 
+        </a>
+
+        <!-- Sign Out link with icon -->
+        <a href="{{ url('/logout')}}" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
+            <span class="d-sm-inline d-none">Sign Out</span>
+        </a>
+    </div>
+
+    @else
+    <div class="dropdown-list" id="dropdownList">
+        <!-- Mon Profil link with icon (visible pour tous les utilisateurs) -->
+        <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
+            <i class="fas fa-user"></i> <!-- Profile icon -->
+            <span class="nav-link-text ms-1">Mon Profil</span> 
+        </a>
+
+        <!-- Sign Out link with icon -->
+        <a href="{{ url('/logout')}}" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
+            <span class="d-sm-inline d-none">Sign Out</span>
+        </a>
+    </div>
+    @endif
+</li>
+    </div>
+ 
 </nav>
+</nav>
+<!-- Script pour afficher/cacher la liste -->
+<script>
+    document.getElementById('dropdownListButton').addEventListener('click', function() {
+        var dropdownList = document.getElementById('dropdownList');
+        if (dropdownList.style.display === "none" || dropdownList.style.display === "") {
+            dropdownList.style.display = "block"; // Afficher la liste
+        } else {
+            dropdownList.style.display = "none"; // Cacher la liste
+        }
+    });
+</script>
 <!-- End Navbar -->

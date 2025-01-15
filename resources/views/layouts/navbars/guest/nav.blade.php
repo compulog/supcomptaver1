@@ -1,5 +1,5 @@
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg position-absolute top-0 z-index-3 my-3 {{ (Request::is('static-sign-up') ? 'w-100 shadow-none  navbar-transparent mt-4' : 'blur blur-rounded shadow py-2 start-0 end-0 mx4') }}">
+<!-- <nav class="navbar navbar-expand-lg position-absolute top-0 z-index-3 my-3 {{ (Request::is('static-sign-up') ? 'w-100 shadow-none  navbar-transparent mt-4' : 'blur blur-rounded shadow py-2 start-0 end-0 mx4') }}">
   <div class="container-fluid {{ (Request::is('static-sign-up') ? 'container' : 'container-fluid') }}">
     <a class="navbar-brand font-weight-bolder ms-lg-0 ms-3 {{ (Request::is('static-sign-up') ? 'text-white' : '') }}" href="{{ url('dashboard') }}">
      supcompta
@@ -47,10 +47,10 @@
       </ul>
     </div>
   </div>
-</nav>
+</nav> -->
 <!-- End Navbar -->
 <!--Navbar dark -->
-{{-- <nav
+<!-- <nav
   class="navbar navbar-expand-lg navbar-dark bg-gradient-dark z-index-3 py-3">
   <div class="container">
     <a class="navbar-brand text-white" href="" rel="tooltip" title="Designed and Coded by Creative Tim" data-placement="bottom" target="_blank">
@@ -87,5 +87,5 @@
       </ul>
     </div>
   </div>
-</nav> --}}
+</nav> -->
 <!-- End Navbar -->

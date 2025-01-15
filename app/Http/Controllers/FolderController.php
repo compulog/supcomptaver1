@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\File;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -16,7 +17,7 @@ class FolderController extends Controller
         $this->middleware(function ($request, $next) {
             // Récupérer le nom de la base de données depuis la session.
             $dbName = session('database');
-    
+
             if ($dbName) {
                 // Définir la connexion à la base de données dynamiquement.
                 config(['database.connections.supcompta.database' => $dbName]);
@@ -26,71 +27,128 @@ class FolderController extends Controller
         });
     }
 
-    public function show($id)
+    public function index($id)
     {
-        // Récupérer le dossier en question
-        $folder = Folder::find($id);
+        $societeId = session('societeId');
 
-        // Vérifier si le dossier existe
-        if ($folder) {
-            // Définir l'ID du dossier dans la session
-            session(['foldersId' => $folder->id]);
+        if ($societeId) {
 
-            // Retourner la vue avec les données du dossier
-            return view('folders', compact('folder'));
+            $folders = Folder::where('societe_id', $societeId)
+                             ->where('folder_id', $id)
+                             ->get();
+            //
+            $achatFiles = File::where('societe_id', $societeId)
+                              ->where('type', 'achat')
+                        ->where('folders', $id)
+                    //    ->where('folders', 0)
+                              ->get();
 
-            // Récupérer les fichiers associés au dossier
-            $files = $folder->files; // Utilisation de la relation 'files'
+                session(['foldersId' => $id]);
 
-            // Retourner la vue avec les données du dossier et des fichiers
-            return view('folders', compact('folder', 'files'));
+            $foldersId = session('foldersId');
+
+            foreach ($achatFiles as $file) {
+
+                $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
+
+                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                    $file->preview = asset('storage/' . $file->path); // Image
+                } elseif (in_array($extension, ['pdf'])) {
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
+                } elseif (in_array($extension, ['doc', 'docx'])) {
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Word'; // Word
+                } elseif (in_array($extension, ['xls', 'xlsx'])) {
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel'; // Excel
+                } else {
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
+                }
+            }
+
+
+
+             return view('folders', compact('achatFiles', 'folders', 'foldersId'));
         } else {
-            return redirect()->route('folder.index')->withErrors('Dossier non trouvé.');
+             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
     }
 
 
 
+    // public function index($id)
+    // {
+    //     $societeId = session('societeId'); // Récupère l'ID de la société depuis la session
+
+    //     if ($societeId) {
+    //         // Récupère les fichiers de type 'achat' où le champ 'folders' est égal à $id
+    //         $achatFiles = File::where('societe_id', $societeId)
+    //                           ->where('type', 'achat') // Filtrer par type 'achat'
+    //                           ->where('folders', $id) // Filtrer où le champ 'folders' est égal à $id
+    //                           ->get();
+
+    //         // Récupère les dossiers pour la société donnée et où le 'folder_id' est égal à $id
+    //         $folders = Folder::where('societe_id', $societeId)
+    //                          ->where('folder_id', $id)
+    //                          ->get();
+
+    //         // Stocke l'ID du dossier dans la session pour une utilisation future dans la vue
+    //         session(['foldersId' => $id]);  // Cette ligne enregistre l'ID dans la session
+
+    //         // Assurez-vous que $foldersId est bien défini ici
+    //         $foldersId = session('foldersId'); // Récupère l'ID du dossier depuis la session
+
+    //         // Ajouter un champ 'preview' pour chaque fichier afin de passer l'aperçu au front-end
+    //         foreach ($achatFiles as $file) {
+    //             // Détecte l'extension du fichier
+    //             $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
+
+    //             // Déterminer l'aperçu en fonction du type de fichier
+    //             if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+    //                 $file->preview = asset('storage/' . $file->path); // Image
+    //             } elseif (in_array($extension, ['pdf'])) {
+    //                 $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
+    //             } elseif (in_array($extension, ['doc', 'docx'])) {
+    //                 $file->preview = 'https://via.placeholder.com/80x100.png?text=Word'; // Word
+    //             } elseif (in_array($extension, ['xls', 'xlsx'])) {
+    //                 $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel'; // Excel
+    //             } else {
+    //                 $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
+    //             }
+    //         }
+
+    //         // Vérifie si la collection de fichiers est vide après le filtre
+    //         if ($achatFiles->isEmpty()) {
+    //             // Retourne les fichiers d'achats si aucun fichier n'est trouvé avec 'folders' = $id
+    //             return view('folders', compact('achatFiles'))->with('message', 'Aucun fichier trouvé avec l\'ID du dossier. Voici les fichiers d\'achat.');
+    //         }
+
+    //         // Si des fichiers sont trouvés, passe les fichiers et les dossiers à la vue
+    //         return view('folders', compact('achatFiles', 'folders', 'foldersId')); // Assurez-vous que $foldersId est bien passé
+    //     } else {
+    //         // Si l'ID de la société n'est pas trouvé dans la session, redirige vers la page d'accueil
+    //         return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
+    //     }
+    // }
 
 
-    // Afficher tous les dossiers
-    public function index()
-    {
-        $societe = optional(auth()->user()->societe);
-
-        // Vérifier si la société existe avant de récupérer son id
-        if (!$societe) {
-            // Gérer le cas où la société est absente
-            return redirect()->back()->with('error', 'Aucune société associée à cet utilisateur.');
-        }
-
-        $folders = Folder::where('societe_id', $societe->id)->get();
-        $societes = Societe::all(); // Pour afficher les sociétés dans le formulaire
-
-        return view('achat', compact('folders', 'societes'));
-    }
-
-
-    // Créer un dossier
-
-
-    // Dans votre méthode create()
     public function create(Request $request)
     {
+        // Affiche la requête pour debug
+        // dd($request);
+
         // Validation personnalisée
         $validator = Validator::make($request->all(), [
-            'folder_name' => 'required|string|max:255',
+            'name' => 'required|string|max:255', // Correspond au champ 'name' du formulaire
             'societe_id' => [
                 'required',
                 function ($attribute, $value, $fail) {
-                    // Utilisation de DB::connection pour exécuter la requête sur la base de données 'supcompta'
+                    // Vérifier si la société existe dans la base 'supcompta'
                     $exists = DB::connection('supcompta')->table('societe')->where('id', $value)->exists();
-
                     if (!$exists) {
                         $fail('La société avec cet ID n\'existe pas dans la base supcompta.');
                     }
                 },
             ],
+            'folders_id' => 'nullable|integer', // Correspond au champ 'folders_id' du formulaire
         ]);
 
         // Si la validation échoue, rediriger avec les erreurs
@@ -98,15 +156,17 @@ class FolderController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Si la validation réussit, créer le dossier
+        // Créer le dossier avec les données validées
         Folder::create([
-            'name' => $request->folder_name,
-            'societe_id' => $request->societe_id,
+            'name' => $request->name,          // Champ 'name' du formulaire
+            'societe_id' => $request->societe_id,  // Champ 'societe_id' du formulaire
+            'folder_id' => $request->folders_id, // Champ 'folders_id' du formulaire
         ]);
 
         // Rediriger avec un message de succès
         return redirect()->route('achat.view')->with('success', 'Dossier créé avec succès');
     }
+
 
    // app/Http/Controllers/FolderController.php
 
@@ -116,7 +176,7 @@ class FolderController extends Controller
        $folder = Folder::findOrFail($id);
 
        // Supprimer tous les fichiers associés au dossier (en utilisant une requête SQL brute sur la base de données 'supcompta')
-       \DB::connection('supcompta')->table('files')->where('id', $folder->id)->delete();
+       DB::connection('supcompta')->table('files')->where('id', $folder->id)->delete();
 
        // Supprimer le dossier
        $folder->delete();
@@ -128,3 +188,4 @@ class FolderController extends Controller
 
 
 }
+

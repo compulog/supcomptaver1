@@ -12,6 +12,7 @@ use App\Models\Journal;
 use App\Models\Client;
 
 use Carbon\Carbon;
+use Complex\Operations;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
@@ -26,111 +27,104 @@ class OperationCouranteController extends Controller
     }
 
     public function getOperations(Request $request)
-    {
-        // Valider les données entrantes
-        $validatedData = $request->validate([
-            'type_journal' => 'required|string|in:Achats,Ventes,Trésoreries,Opérations Diverses', // Types valides
-        ]);
+{
+    // Valider les données entrantes
+    $validatedData = $request->validate([
+        'type_journal' => 'required|string|in:Achats,Ventes,Trésoreries,Opérations Diverses', // Types valides
+        'code_journal' => 'required|string', // Assurez-vous que le code_journal est fourni
+        'start_date' => 'required|date', // Date de début
+        'end_date' => 'required|date|after_or_equal:start_date', // Date de fin
+    ]);
 
-        $typeJournal = $validatedData['type_journal'];
+    $typeJournal = $validatedData['type_journal'];
+    $codeJournal = $validatedData['code_journal'];
+    $startDate = $validatedData['start_date'];
+    $endDate = $validatedData['end_date'];
 
-        // Récupérer les opérations du type journal
-        $operations = OperationCourante::where('type_journal', $typeJournal)->get();
+    // Récupérer les opérations filtrées par type_journal, code_journal et plage de dates
+    $operations = OperationCourante::where('type_journal', $typeJournal)
+        ->where('code_journal', $codeJournal)
+        ->whereBetween('created_at', [$startDate, $endDate])
+        ->get();
 
-        // Si aucune opération n'est trouvée
-        if ($operations->isEmpty()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Aucune opération trouvée pour ce type de journal.',
-                'data' => []
-            ], 200);
-        }
-
-        // Retourner les opérations trouvées
+    // Si aucune opération n'est trouvée
+    if ($operations->isEmpty()) {
         return response()->json([
             'success' => true,
-            'data' => $operations,
+            'message' => 'Aucune opération trouvée pour ce type de journal, code journal ou plage de dates.',
+            'data' => []
         ], 200);
     }
 
+    // Retourner les opérations trouvées
+    return response()->json([
+        'success' => true,
+        'data' => $operations,
+    ], 200);
+}
 
-    public function saveOperation(Request $request)
+
+
+public function saveOrUpdateRowData(Request $request)
 {
-    dd($request);
+    // Récupère le societe_id depuis la session
+    $societeId = session('societe_id');  // Vous pouvez remplacer 'societe_id' par la clé utilisée pour la session
+
+    // Vérifier si societe_id existe dans la session
+    if (!$societeId) {
+        return response()->json(['success' => false, 'error' => 'La société n\'est pas définie dans la session.']);
+    }
+
+    // Validation des données reçues
+    $validator = Validator::make($request->all(), [
+        'numero_facture' => 'required|string',
+        'compte' => 'required|string',
+        'libelle' => 'required|string',
+        'debit' => 'nullable|numeric',
+        'credit' => 'nullable|numeric',
+        'contre_Partie' => 'nullable|string',
+        'rubrique_tva' => 'nullable|string',
+        'compte_tva' => 'nullable|string',
+        'prorat_de_deduction' => 'nullable|string',
+        'piece_justificative' => 'nullable|string',
+        'date' => 'nullable|date',
+        'type_journal' => 'required|string', // Validation pour code_journal
+        // Ajoutez d'autres validations selon les besoins
+    ]);
+
+    // Si la validation échoue
+    if ($validator->fails()) {
+        return response()->json(['success' => false, 'errors' => $validator->errors()]);
+    }
+
     try {
-        // Vérifier si 'societeId' existe dans la session
-        $societeId = session('societeId');
-        if (!$societeId) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Aucune société sélectionnée dans la session.',
-            ], 400);
-        }
+        $rowData = $request->all(); // Récupère les données envoyées depuis le frontend
 
-        // Valider les données entrantes
-        $validatedData = $request->validate([
-            'data' => 'required|array|min:1', // Doit contenir au moins un élément
-            'data.*.id' => 'nullable|integer|exists:operation_courante,id',
-            'data.*.date' => 'nullable|date_format:Y-m-d',  // Assurez-vous que le format attendu est correct
-            'data.*.numero_dossier' => 'nullable|string|max:255',
-            'data.*.numero_facture' => 'nullable|string|max:255',
-            'data.*.compte' => 'nullable|string|max:255',
-            'data.*.libelle' => 'nullable|string|max:255',
-            'data.*.debit' => 'required|numeric|min:0',
-            'data.*.credit' => 'required|numeric|min:0',
-            'data.*.contre_partie' => 'nullable|string|max:255',
-            'data.*.rubrique_tva' => 'nullable|string|max:255',
-            'data.*.compte_tva' => 'nullable|string|max:255',
-            'data.*.prorat_de_deduction' => 'nullable|numeric|min:0|max:100',
-            'data.*.piece_justificative' => 'nullable|string|max:255',
-            'data.*.type_journal' => 'nullable|string|in:Achats,Ventes,Trésoreries,Opérations Diverses',
-        ]);
+        // Ajouter societe_id aux données de l'opération
+        $rowData['societe_id'] = $societeId;
 
-        $operations = $validatedData['data'];
-        $savedOperations = [];
-
-        foreach ($operations as $operation) {
-            $operation['societe_id'] = $societeId;
-
-            // Vérifier si une opération existe déjà pour mise à jour
-            if (isset($operation['id'])) {
-                $existingOperation = OperationCourante::find($operation['id']);
-                if ($existingOperation) {
-                    $existingOperation->update($operation);
-                    $savedOperations[] = $existingOperation;
-                }
+        // Vérifier si l'ID existe déjà dans les données
+        if (isset($rowData['id']) && $rowData['id']) {
+            // Mise à jour de la ligne existante
+            $operation = OperationCourante::find($rowData['id']);
+            if ($operation) {
+                $operation->update($rowData); // Mise à jour
+                return response()->json(['success' => true]);
             } else {
-                // Créer une nouvelle opération si l'ID n'existe pas
-                $newOperation = OperationCourante::create($operation);
-                $savedOperations[] = $newOperation;
+                return response()->json(['success' => false, 'error' => 'Ligne non trouvée pour mise à jour.']);
             }
         }
 
-        // Retourner une réponse de succès
-        return response()->json([
-            'success' => true,
-            'message' => 'Opérations enregistrées avec succès.',
-            'updatedData' => $savedOperations,
-        ], 200);
+        // Si l'ID n'existe pas, créer une nouvelle ligne
+        $operation = new OperationCourante($rowData);
+        $operation->save(); // Création
+        return response()->json(['success' => true]);
 
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        // Retourner les erreurs de validation détaillées
-        return response()->json([
-            'success' => false,
-            'error' => 'Validation échouée.',
-            'details' => $e->errors(),
-        ], 422);
     } catch (\Exception $e) {
-        // Gestion des erreurs génériques
-        Log::error('Erreur lors de l\'enregistrement des opérations : ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'error' => 'Erreur interne du serveur.',
-            'details' => $e->getMessage(),
-        ], 500);
+        // Capture et renvoi de l'erreur
+        return response()->json(['success' => false, 'error' => $e->getMessage()]);
     }
 }
-
 
 
 
@@ -255,6 +249,30 @@ public function getJournauxOPE()
    }
 
 
+   public function getSessionProrata()
+   {
+       // Récupérer l'ID de la société depuis la session
+       $societeId = session('societeId');
+
+       // Vérifier si une société est associée à cet ID
+       $societe = Societe::find($societeId);
+
+       if (!$societe) {
+           return response()->json(['error' => 'Société introuvable'], 400);
+       }
+
+       // Vérifier si la valeur de prorata_de_deduction existe
+       $prorataDeDeduction = $societe->prorata_de_deduction ?? 0; // Valeur par défaut 0 si non défini
+
+       // Retourner la valeur de prorata_de_deduction
+       return response()->json([
+           'prorata_de_deduction' => $prorataDeDeduction,
+       ]);
+   }
+
+
+
+
    public function getSessionSocial()
 {
     $societeId = session('societeId');
@@ -284,13 +302,13 @@ public function getSocieteDetails()
 
 public function getRubriquesTVAVente() {
     // Définir les num_racines autorisés
-    $numRacinesAutorises = ['120', '121', '122', '123', '124', '125', '126', '127', '128', '129'];
+    // $numRacinesAutorises = ['120', '121', '122', '123', '124', '125', '126', '127', '128', '129'];
 
     // Récupérer les rubriques TVA pour les ventes, incluant les num_racines spécifiques
-    $rubriques = Racine::select('categorie', 'Nom_racines', 'Taux', 'Num_racines')
+    $rubriques = Racine::select('Num_racines','categorie', 'Nom_racines', 'Taux' )
         ->where('type', 'vente')
-        ->whereIn('Num_racines', $numRacinesAutorises)  // Ajouter la condition pour les num_racines autorisés
-        ->having('Taux', '>=', 0)
+        // ->whereIn('Num_racines')  // Ajouter la condition pour les num_racines autorisés
+
         ->get();
 
     // Organiser les rubriques par catégorie
@@ -313,7 +331,7 @@ public function getRubriquesTVAVente() {
     // Liste des numéros de racines à exclure
     $exclusions = ['190', '182', '200', '201', '205'];
 
-    $rubriques = Racine::select('categorie', 'Nom_racines', 'Taux', 'Num_racines')
+    $rubriques = Racine::select('Num_racines','categorie', 'Nom_racines', 'Taux' )
         ->where('type', 'Achat')
         ->whereNotIn('Num_racines', $exclusions)  // Exclure les numéros de racines spécifiés
         ->get();
@@ -330,68 +348,107 @@ public function getRubriquesTVAVente() {
     return response()->json(['rubriques' => $rubriquesParCategorie]);
 }
 
+public function getTva(Request $request)
+{
+    $rubriqueTva = $request->input('rubrique_tva'); // Ex: "Nom_racines"
+
+    if (!$rubriqueTva) {
+        return response()->json(['error' => 'La rubrique TVA est obligatoire'], 400);
+    }
+
+    // Rechercher la rubrique dans la base de données
+    $rubrique = OperationCourante::where('rubrique_tva', $rubriqueTva)->first();
+
+    if (!$rubrique) {
+        return response()->json(['error' => 'Rubrique introuvable'], 404);
+    }
+
+    return response()->json(['taux' => $rubrique->Taux]);
+}
+
 
     // Récupère les comptes de la société depuis le plan comptable
-    public function getComptes()
+    public function getComptesjrx(Request $request)
 {
-    // Récupérer l'ID de la société depuis la session
-    $societeId = session('societeId');
+    $societeId = $request->input('societe_id');
+    $codeJournal = $request->input('code_journal'); // Récupérer le code_journal
 
-    // Vérifier si l'ID de la société est défini
     if (!$societeId) {
         return response()->json(['error' => 'Aucune société sélectionnée'], 400);
     }
 
-    // Récupérer les comptes liés à cette société
-    $comptes = PlanComptable::where('societe_id', $societeId) // Filtrer par société
-        ->where(function ($query) {
-            $query->where('compte', 'LIKE', '21%')
-                ->orWhere('compte', 'LIKE', '22%')
-                ->orWhere('compte', 'LIKE', '23%')
-                ->orWhere('compte', 'LIKE', '24%')
-                ->orWhere('compte', 'LIKE', '25%')
-                ->orWhere('compte', 'LIKE', '613%')
-                ->orWhere('compte', 'LIKE', '611%')
-                ->orWhere('compte', 'LIKE', '614%')
-                ->orWhere('compte', 'LIKE', '618%')
-                ->orWhere('compte', 'LIKE', '631%')
-                ->orWhere('compte', 'LIKE', '612%');
-        })
-        ->get(['compte', 'intitule']); // Récupérer uniquement les champs nécessaires
+    // Récupérer les comptes liés à cette société et au code_journal
+    $comptes = Fournisseur::where('societe_id', $societeId) // Filtrer par société
+        ->where('contre_partie')
+        ->get(['contre_partie', 'intitule']); // Récupérer uniquement les champs nécessaires
 
     return response()->json($comptes);
 }
 
-public function createCompteTva(Request $request)
+public function getDetailsParCompte(Request $request)
 {
-    $validated = $request->validate([
-        'compte' => 'required|string|unique:plan_comptable,compte',
-        'intitule' => 'required|string',
-    ]);
+    $compte = $request->query('compte'); // Récupérer le compte en paramètre
 
-    $societeId = session('societe_id');
+    if (!$compte) {
+        return response()->json(['error' => 'Le compte est manquant'], 400);
+    }
 
-    PlanComptable::create([
-        'compte' => $validated['compte'],
-        'intitule' => $validated['intitule'],
-        'societe_id' => $societeId,
-    ]);
+    // Rechercher les détails dans la table des Journaux
+    $details = Fournisseur::where('compte', $compte)->first(['contre_partie', 'rubrique_tva']);
 
-    return response()->json(['message' => 'Compte créé avec succès.']);
+    if (!$details) {
+        return response()->json(['error' => 'Aucun détail trouvé pour ce compte'], 404);
+    }
+
+    return response()->json($details);
 }
 
-public function getCompteTva(Request $request)
+public function getComptesjrxCP(Request $request)
 {
-    // Utilisation de 'orWhere' pour récupérer les comptes qui commencent par '4455' ou '3455'
-    $ComptesTva = PlanComptable::where(function($query) {
-            $query->where('compte', 'like', '4455%')  // Comptes commençant par 4455
-                  ->orWhere('compte', 'like', '3455%'); // Ou comptes commençant par 3455
-        })
+    $societeId = $request->input('societe_id');
+    $codeJournal = $request->input('code_journal'); // Récupérer le code_journal
+
+    if (!$societeId) {
+        return response()->json(['error' => 'Aucune société sélectionnée'], 400);
+    }
+
+    if (!$codeJournal) {
+        return response()->json(['error' => 'Aucun code journal sélectionné'], 400);
+    }
+
+    // Récupérer les comptes liés à cette société et au code_journal
+    $comptes = Journal::where('societe_id', $societeId) // Filtrer par société
+        ->where('code_journal', $codeJournal) // Filtrer par code_journal
+        ->get(['contre_partie', 'intitule']); // Récupérer uniquement les champs nécessaires
+
+    return response()->json($comptes);
+}
+
+
+public function getCompteTvaAch(Request $request)
+{
+    // Récupérer les comptes TVA pour les achats, ceux qui commencent par '4456'
+    $ComptesTva = PlanComptable::where('compte', 'like', '4455%')  // Comptes d'achats commençant par '4456'
         ->get(['compte', 'intitule']); // Récupérer le compte et son intitulé
 
     // Vérifier si des comptes ont été trouvés
     if ($ComptesTva->isEmpty()) {
-        return response()->json(['error' => 'Aucun compte TVA trouvé'], 404);
+        return response()->json(['error' => 'Aucun compte TVA pour les achats trouvé'], 404);
+    }
+
+    // Retourner les comptes sous forme de JSON
+    return response()->json($ComptesTva);
+}
+
+public function getCompteTvaVente(Request $request)
+{
+    // Récupérer les comptes TVA pour les ventes, ceux qui commencent par '3455'
+    $ComptesTva = PlanComptable::where('compte', 'like', '3455%')  // Comptes de ventes commençant par '3455'
+        ->get(['compte', 'intitule']); // Récupérer le compte et son intitulé
+
+    // Vérifier si des comptes ont été trouvés
+    if ($ComptesTva->isEmpty()) {
+        return response()->json(['error' => 'Aucun compte TVA pour les ventes trouvé'], 404);
     }
 
     // Retourner les comptes sous forme de JSON
@@ -426,93 +483,66 @@ public function getTypeJournal(Request $request)
         return view('operationcourante.form');
     }
 
-    // Récupère les fournisseurs associés à la société
-    public function getFournisseurs()
+
+
+    public function getClients(Request $request)
     {
-        $societeId = session('societe_id');
+        // Vérifie que le societe_id est bien présent dans la requête
+        $societeId = $request->input('societe_id');
 
         if (!$societeId) {
-            return response()->json(['error' => 'Aucune société sélectionnée'], 400);
+            return response()->json(['error' => 'Aucune société sélectionnée'], 400); // Erreur si pas de société
         }
 
         try {
-            $fournisseurs = Fournisseur::where('societe_id', $societeId)
-                ->get(['compte', 'intitule', 'contre_partie', 'rubrique_tva']);
+            $clients = Client::where('societe_id', $societeId)
+                ->get(['compte', 'intitule', 'type_client']); // Récupère les informations des clients
 
-            return response()->json($fournisseurs);
+            if ($clients->isEmpty()) {
+                return response()->json(['message' => 'Aucun client trouvé'], 200); // Si pas de clients trouvés
+            }
+
+            return response()->json($clients); // Retourne les clients
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Erreur lors de la récupération des fournisseurs: ' . $e->getMessage()], 500);
+            Log::error('Erreur dans getClients: ' . $e->getMessage());
+            return response()->json(['error' => 'Erreur lors de la récupération des clients'], 500); // Erreur serveur
         }
     }
-    public function getClients()
-{
-    $societeId = session('societe_id');
 
-    if (!$societeId) {
-        return response()->json(['error' => 'Aucune société sélectionnée'], 400);
-    }
 
-    try {
-        $clients = Client::where('societe_id', $societeId)
-            ->get(['compte', 'intitule', 'type_client']);
-
-        if ($clients->isEmpty()) {
-            return response()->json(['message' => 'Aucun client trouvé'], 200);
-        }
-
-        return response()->json($clients);
-    } catch (\Exception $e) {
-        Log::error('Erreur dans getClients: ' . $e->getMessage());
-        return response()->json(['error' => 'Erreur lors de la récupération des clients'], 500);
-    }
-}
-
-public function upload(Request $request)
+    public function getFournisseursAvecDetails(Request $request)
     {
-        if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $path = $file->store('uploads'); // Chemin de stockage
-            return response()->json(['message' => 'Fichier uploadé avec succès', 'path' => $path]);
-        }
-        return response()->json(['error' => 'Aucun fichier reçu'], 400);
-    }
-
-    // Récupère les fournisseurs avec détails supplémentaires
-    public function getFournisseursAvecDetails()
-    {
-        $societeId = session('societe_id');
+        $societeId = $request->input('societe_id');
 
         if (!$societeId) {
             return response()->json(['error' => 'Aucune société sélectionnée'], 400);
         }
 
         try {
+            // Récupère les fournisseurs de la société donnée
             $fournisseurs = Fournisseur::where('societe_id', $societeId)
-                ->where('compte', 'LIKE', '44%')
+                ->where('compte', 'LIKE', '44%') // Filtre sur les comptes commençant par '44'
                 ->get(['compte', 'intitule', 'contre_partie', 'rubrique_tva']);
 
-            $fournisseursAvecDetails = $fournisseurs->map(function ($fournisseur) use ($societeId) {
-                $rubriqueTva = Racine::where('type', 'Achat')
-                    ->where('societe_id', $societeId)
-                    ->first(['Num_racines', 'Nom_racines']);
+            // Ajoute le taux TVA à chaque fournisseur
+            $fournisseursAvecDetails = $fournisseurs->map(function ($fournisseur) {
+                $rubriqueTva = $fournisseur->rubrique_tva;
 
-                return [
-                    'compte' => $fournisseur->compte,
-                    'intitule' => $fournisseur->intitule,
-                    'contre_partie' => "Contre-Partie Automatique pour " . $fournisseur->intitule,
-                    'rubrique_tva' => $rubriqueTva ? [
-                        'num_racines' => $rubriqueTva->Num_racines,
-                        'nom_racines' => $rubriqueTva->Nom_racines,
-                    ] : null,
-                ];
+                // Récupère le taux de TVA depuis la table Racine
+                $racine = Racine::where('num_racines', $rubriqueTva)->first();
+                $tauxTva = $racine ? $racine->Taux : 0;
+
+                // Ajout des détails supplémentaires
+                $fournisseur->taux_tva = $tauxTva; // Taux TVA
+                return $fournisseur;
             });
 
             return response()->json($fournisseursAvecDetails);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Erreur lors de la récupération des fournisseurs avec détails: ' . $e->getMessage()], 500);
+            // Capture les erreurs
+            return response()->json(['error' => 'Erreur lors de la récupération des fournisseurs : ' . $e->getMessage()], 500);
         }
     }
-
 
 
 public function getTransactions()
@@ -593,6 +623,17 @@ public function updateRow(Request $request, $id)
         return response()->json(['message' => 'Donnée supprimée avec succès']);
     }
 
+
+
+public function upload(Request $request)
+    {
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $path = $file->store('uploads'); // Chemin de stockage
+            return response()->json(['message' => 'Fichier uploadé avec succès', 'path' => $path]);
+        }
+        return response()->json(['error' => 'Aucun fichier reçu'], 400);
+    }
 
 public function deleteOperations(Request $request)
 {
