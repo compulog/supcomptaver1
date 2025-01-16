@@ -14,19 +14,19 @@
          
             <!-- Formulaire de téléchargement -->
             <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
-                <form id="form-vente" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
+                <form id="form-banque" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="type" value="Banque">
-                    <input type="file" name="file" id="file-vente" style="display: none;" onchange="handleFileSelect(event, 'Vente')">
+                    <input type="hidden" name="type" value="banque">
+                    <input type="file" name="file" id="file-banque" style="display: none;" onchange="handleFileSelect(event, 'banque')">
                     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                     
                     <input type="hidden" name="folders_id" value="0">
 
                     <!-- Charger Button -->
-                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-vente').click()">Charger</button>
+                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-banque').click()">Charger</button>
 
                     <!-- Submit Button (hidden initially) -->
-                    <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
+                    <button type="submit" style="display: none;" id="submit-banque">Envoyer</button>
                 </form>
             </div>
        <!-- Formulaire de filtrage -->

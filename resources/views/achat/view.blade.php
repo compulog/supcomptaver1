@@ -226,7 +226,6 @@
     </a>
 
     <div id="word-preview-{{ $file->id }}" class="word-preview" ></div>
-    
     <script>
         var fileUrl = "{{ Storage::url($file->path) }}";
         var xhr = new XMLHttpRequest();
@@ -292,7 +291,7 @@
 
 
 <!-- Navigation entre les fichiers -->
-<div class="navigation-buttons">
+<!-- <div class="navigation-buttons">
         <a href="#" title="Fichier Précédent">
             <i class="fas fa-chevron-left" style="font-size: 24px; color: #007bff; cursor: pointer;"></i>
         </a>
@@ -300,7 +299,7 @@
         <a href="#" title="Fichier Suivant">
             <i class="fas fa-chevron-right" style="font-size: 24px; color: #007bff; cursor: pointer;"></i>
         </a>
-</div>
+</div> -->
 
 <script>
 window.onload = function() {

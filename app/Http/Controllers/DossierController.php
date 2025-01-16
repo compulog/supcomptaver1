@@ -37,7 +37,7 @@ class DossierController extends Controller
     {
         $dossiers = Dossier::where('societe_id', $id)
         ->get();
-    
+     
          // Récupère la société avec l'ID donné
         $societe = Societe::findOrFail($id);
         session()->put('societeId', $societe->id);
@@ -50,6 +50,7 @@ class DossierController extends Controller
         $impotCount = File::where('societe_id', $societe->id)->where('type', 'Impot')->count();
         $paieCount = File::where('societe_id', $societe->id)->where('type', 'Paie')->count();
         $Dossier_permanantCount = File::where('societe_id', $societe->id)->where('type', 'Dossier_permanant')->count();
+       
         // Passe les variables à la vue
         return view('exercices', compact(
             'societe',

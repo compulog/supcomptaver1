@@ -25,6 +25,8 @@
             <div class="p-2 text-white" style="background-color: #007bff; border-radius: 15px; font-size: 0.75rem; height: 130px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;">Achat</h5>
+
+                    
                     <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="type" value="Achat">
@@ -34,6 +36,8 @@
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #007bff; border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-achat').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>
                     </form>
+
+                    
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $achatCount ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
@@ -48,8 +52,8 @@
                     <h5 style="color: white;">Vente</h5>
                     <form id="form-vente" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <input type="hidden" name="type" value="Vente">
-                        <input type="file" name="file" id="file-vente" style="display: none;" onchange="handleFileSelect(event, 'Vente')">
+                        <input type="hidden" name="type" value="vente">
+                        <input type="file" name="file" id="file-vente" style="display: none;" onchange="handleFileSelect(event, 'vente')">
                         <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #28a745; border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-vente').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
@@ -68,8 +72,8 @@
                     <h5 style="color: white;">Banque</h5>
                     <form id="form-banque" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <input type="hidden" name="type" value="Banque">
-                        <input type="file" name="file" id="file-banque" style="display: none;" onchange="handleFileSelect(event, 'Banque')">
+                        <input type="hidden" name="type" value="banque">
+                        <input type="file" name="file" id="file-banque" style="display: none;" onchange="handleFileSelect(event, 'banque')">
                         <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #ffc107; border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-banque').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-banque">Envoyer</button>
@@ -92,8 +96,8 @@
                     <h5 style="color: white;">Caisse</h5>
                     <form id="form-caisse" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <input type="hidden" name="type" value="Caisse">
-                        <input type="file" name="file" id="file-caisse" style="display: none;" onchange="handleFileSelect(event, 'Caisse')">
+                        <input type="hidden" name="type" value="caisse">
+                        <input type="file" name="file" id="file-caisse" style="display: none;" onchange="handleFileSelect(event, 'caisse')">
                         <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #dc3545; border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-caisse').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-caisse">Envoyer</button>
@@ -112,8 +116,8 @@
                     <h5 style="color: white;">Impôt</h5>
                     <form id="form-impot" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <input type="hidden" name="type" value="Impot">
-                        <input type="file" name="file" id="file-impot" style="display: none;" onchange="handleFileSelect(event, 'Impot')">
+                        <input type="hidden" name="type" value="impot">
+                        <input type="file" name="file" id="file-impot" style="display: none;" onchange="handleFileSelect(event, 'impot')">
                         <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #6f42c1; border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-impot').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-impot">Envoyer</button>
@@ -132,8 +136,8 @@
                     <h5 style="color: white;">Paie</h5>
                     <form id="form-paie" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <input type="hidden" name="type" value="Paie">
-                        <input type="file" name="file" id="file-paie" style="display: none;" onchange="handleFileSelect(event, 'Paie')">
+                        <input type="hidden" name="type" value="paie">
+                        <input type="file" name="file" id="file-paie" style="display: none;" onchange="handleFileSelect(event, 'paie')">
                         <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #17a2b8; border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-paie').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-paie">Envoyer</button>
@@ -150,14 +154,20 @@
             <div class="p-2 text-white" style="background-color:rgb(221, 232, 17); border-radius: 15px; font-size: 0.75rem; height: 130px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;font-size:12px;">Dossier permanant</h5>
-                    <form id="Dossier_permanant" action="" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" name="type" value="Dossier_permanant">
-                        <input type="file" name="file" id="file-paie" style="display: none;" onchange="">
-                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-                        <button type="button" class="btn btn-light btn-sm" style="background-color: rgb(221, 232, 17); border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="">Charger</button>
-                        <button type="submit" style="display: none;" id="submit-Dossier_permanant">Envoyer</button>
-                    </form>
+                         <form id="form-dossier_permanant" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="type" value="dossier_permanant">
+                    <input type="file" name="file" id="file-dossier_permanant" style="display: none;" onchange="handleFileSelect(event, 'dossier_permanant')">
+                    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+                    
+                    <input type="hidden" name="folders_id" value="0">
+
+                    <!-- Charger Button -->
+                     <button type="button" class="btn btn-light btn-sm" style="background-color: rgb(221, 232, 17); border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-dossier_permanant').click()">Charger</button>
+
+                    <!-- Submit Button (hidden initially) -->
+                    <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
+                </form>
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $Dossier_permanantCount ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
@@ -248,7 +258,7 @@
                 </div>
 
                 <!-- Informations supplémentaires sur le dossier -->
-                <p style="font-size: 0.7rem; line-height: 0.3;">Total pièces : 0</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">Total pièces : {{ $Dossier_ajouteCount ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">Pièces traitées : 0</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">Pièces suspendues : 0</p>
             </div>
@@ -271,8 +281,8 @@
     <input type="hidden" name="dossier_id" id="dossier_id">
     <div class="mb-3">
         <label for="folderName" class="form-label">Nom du Dossier</label>
-        <input type="text" class="form-control" id="folderName" name="name" placeholder="{{ $dossier->name }}" required>
-    </div>
+
+        <input type="text" class="form-control" id="folderName" name="name" placeholder="{{ $dossier->name ?? 'Nom du dossier' }}" required>    </div>
     <button type="submit" class="btn btn-primary">Renommer Dossier</button>
 </form>
 

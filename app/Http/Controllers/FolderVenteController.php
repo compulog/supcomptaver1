@@ -47,7 +47,7 @@ class FolderVenteController extends Controller
 
             // Récupérer les fichiers de type "achat"
             $achatFiles = File::where('societe_id', $societeId)
-                              ->where('type', 'achat') 
+                              ->where('type', 'vente') 
                               ->where('folders', $id)  
                               ->get();
             

@@ -31,39 +31,57 @@ class FolderController extends Controller
             return $next($request);
         });
     }
-
+    
     public function index($id)
     {
-        // Récupérer le dossier avec l'ID stocké dans la session
+ 
+        // Récupérer le dossier avec l'ID passé en paramètre
         $folder = Folder::find($id);
-
-        $societeId = session('societeId'); 
-
+        // dd($folder->folder_id);
+        $societeId = session('societeId');
+    
         if ($societeId) {
             // Récupérer les dossiers associés à la société
             $folders = Folder::where('societe_id', $societeId)
                              ->where('folder_id', $id)
-                             ->get();   
-
-            // Récupérer les fichiers de type "achat"
+                             ->get();
+    
+            // Récupérer les fichiers de type "achat" associés au dossier
             $achatFiles = File::where('societe_id', $societeId)
-                              ->where('type', 'achat') 
-                              ->where('folders', $id)  
+                              ->where('type', 'achat')
+                              ->where('folders', $id)
                               ->get();
-            
+    
             // Enregistrer l'ID du dossier dans la session
-            session(['foldersId' => $id]);  
-
+            session(['foldersId' => $id]);
+    
             // Récupérer l'ID du dossier de la session
-            $foldersId = session('foldersId'); 
-
+            $foldersId = session('foldersId');
+    
+            // Liste des notifications pour les dossiers
+            $folderNotifications = [];
+    
+            // Vérifier les messages non lus dans le dossier
+            $unreadMessagesForFolder = Message::whereHas('file', function ($query) use ($folder) {
+                // Vérifier que le fichier est dans le dossier spécifié
+                $query->where('folders', $folder->folder_id); // Vérifie que le fichier appartient au dossier
+            })
+            ->where('is_read', 0) // Filtrer pour les messages non lus
+            ->get();
+    
+            // Si des messages non lus existent pour ce dossier, les ajouter aux notifications
+            if ($unreadMessagesForFolder->count() > 0) {
+                // Ajouter le nombre de messages non lus pour ce dossier
+                $folderNotifications['folder_'.$id] = $unreadMessagesForFolder->count();
+            }
+    
             // Liste des notifications pour les fichiers
-            $notifications = [];
-
+            $fileNotifications = [];
+    
             foreach ($achatFiles as $file) {
                 // Vérifier l'extension du fichier pour afficher une prévisualisation
                 $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
-
+    
                 if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
                     $file->preview = asset('storage/' . $file->path); // Image
                 } elseif (in_array($extension, ['pdf'])) {
@@ -75,26 +93,28 @@ class FolderController extends Controller
                 } else {
                     $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
                 }
-
+    
                 // Vérifier si un message existe pour ce fichier et si le champ 'is_read' est égal à 0
-                $unreadMessages = Message::where('file_id', $file->id)
-                                         ->where('is_read', 0)
-                                         ->get();
-
+                $unreadMessagesForFile = Message::where('file_id', $file->id)
+                                                ->where('is_read', 0)
+                                                ->get();
+    
                 // Si des messages non lus existent pour ce fichier, les ajouter aux notifications
-                if ($unreadMessages->count() > 0) {
-                    $notifications[$file->id] = $unreadMessages->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
+                if ($unreadMessagesForFile->count() > 0) {
+                    $fileNotifications[$file->id] = $unreadMessagesForFile->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
                 }
             }
-
+    // dd($folderNotifications);
             // Retourner la vue avec les fichiers, dossiers et notifications
-            return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
+            return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications'));
         } else {
             // Rediriger si aucune société n'est trouvée dans la session
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
     }
- 
+    
+    
+    
     // public function index($id)
     // {
     //     $societeId = session('societeId'); // Récupère l'ID de la société depuis la session

@@ -16,7 +16,7 @@
             <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
                 <form id="form-vente" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="type" value="Vente">
+                    <input type="hidden" name="type" value="vente">
                     <input type="file" name="file" id="file-vente" style="display: none;" onchange="handleFileSelect(event, 'Vente')">
                     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                     
