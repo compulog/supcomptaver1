@@ -130,7 +130,7 @@
     </div>
 </div>
 <div class="container mt-5">
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
         <!-- Ajouter un Dossier -->
         <div class="col">
             <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;" onclick="openCreateFolderForm()">

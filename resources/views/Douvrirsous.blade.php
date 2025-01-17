@@ -95,6 +95,7 @@ document.getElementById('folderMenuWrapper').style.transition = "all 0.3s ease-i
                     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                     
                     <input type="hidden" name="folders_id" value="{{$foldersId}}">
+                    <input type="hidden" name="type" value="{{$folder->type_folder}}">
 
                     <!-- Charger Button -->
                     <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-achat').click()">Charger</button>
@@ -124,7 +125,7 @@ document.getElementById('folderMenuWrapper').style.transition = "all 0.3s ease-i
 </div>
 
 <div class="container mt-5">
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
         <!-- Ajouter un Dossier -->
         <div class="col">
             <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;" onclick="openCreateFolderForm()">
@@ -180,9 +181,9 @@ document.getElementById('folderMenuWrapper').style.transition = "all 0.3s ease-i
                         <label for="name" class="form-label">Nom du Dossier</label>
                         <input type="text" class="form-control form-control-sm" id="fname" name="name" required>
                     </div>
-                    <input type="hidden" name="type_folder" value="">
+                    <input type="text" name="type_folder" value="{{$folder->type_folder}}">
                     <!-- <input type="text" name="type_folder" value="{{$folder->type_folder}}"> -->
-
+                   
                     <input type="hidden" name="folders_id" value="{{ $foldersId }}">
  
                      <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
@@ -235,7 +236,7 @@ document.getElementById('folderMenuWrapper').style.transition = "all 0.3s ease-i
                 </div>
             </div>
         </div>
- 
+
         <script>
             // S'assurer que chaque PDF est traité indépendamment
             document.addEventListener("DOMContentLoaded", function() {

@@ -6,7 +6,7 @@ use App\Models\Dossier;
 use Illuminate\Http\Request;
 use App\Models\Societe; // Assurez-vous d'importer le modèle Societe
 use App\Models\File; // Assurez-vous d'importer le modèle File
-
+use App\Models\Folder;
 class DossierController extends Controller
 {
 
@@ -35,35 +35,48 @@ class DossierController extends Controller
     
     public function show($id)
     {
-        $dossiers = Dossier::where('societe_id', $id)
-        ->get();
-     
-         // Récupère la société avec l'ID donné
+        // Récupère tous les dossiers pour la société spécifiée
+        $dossiers = Dossier::where('societe_id', $id)->get();
+        
+        // Récupère la société avec l'ID donné
         $societe = Societe::findOrFail($id);
         session()->put('societeId', $societe->id);
-
-        // Récupère le total des pièces pour chaque type de fichier
-        $achatCount = File::where('societe_id', $societe->id)->where('type', 'Achat')->count();
-        $venteCount = File::where('societe_id', $societe->id)->where('type', 'Vente')->count();
-        $banqueCount = File::where('societe_id', $societe->id)->where('type', 'Banque')->count();
-        $caisseCount = File::where('societe_id', $societe->id)->where('type', 'Caisse')->count();
-        $impotCount = File::where('societe_id', $societe->id)->where('type', 'Impot')->count();
-        $paieCount = File::where('societe_id', $societe->id)->where('type', 'Paie')->count();
-        $Dossier_permanantCount = File::where('societe_id', $societe->id)->where('type', 'Dossier_permanant')->count();
-       
+        
+        // Récupère tous les types distincts de fichiers pour cette société
+        $fileTypes = File::where('societe_id', $societe->id)
+                         ->distinct()
+                         ->pluck('type'); // On récupère juste les types distincts
+        
+        // Créer un tableau pour stocker les comptages des différents types
+        $fileCounts = [];
+        
+        // Pour chaque type distinct de fichier, compter le nombre de fichiers de ce type
+        foreach ($fileTypes as $type) {
+            $fileCounts[$type] = File::where('societe_id', $societe->id)
+                                     ->where('type', $type)
+                                     ->count();
+        }
+        
+        // Créer un tableau pour stocker le comptage des fichiers par dossier
+        $dossierFileCounts = [];
+        
+        // Pour chaque dossier, compter le nombre de fichiers associés
+        foreach ($dossiers as $dossier) {
+            $dossierFileCounts[$dossier->id] = File::where('societe_id', $societe->id)
+                                                   ->where('type', $dossier->name)
+                                                   ->count();
+        }
+        
         // Passe les variables à la vue
         return view('exercices', compact(
             'societe',
-            'achatCount',
-            'venteCount',
-            'banqueCount',
-            'caisseCount',
-            'impotCount',
-            'paieCount',
             'dossiers',
-            'Dossier_permanantCount'
+            'fileCounts', // Passe le tableau des comptages des types
+            'dossierFileCounts' // Passe le tableau des comptages des fichiers par dossier
         ));
     }
+    
+    
     public function store(Request $request)
     {
         // Valider les données envoyées par le formulaire

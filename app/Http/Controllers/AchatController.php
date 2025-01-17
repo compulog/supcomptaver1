@@ -30,61 +30,66 @@ class AchatController extends Controller
     }
     
 
-    public function index()
+    public function index(Request $request)
     {
-        
         $societeId = session('societeId');
-    
+        
         if ($societeId) {
-            $achatFiles = File::where('societe_id', $societeId)
-                              ->where('type', 'achat') 
-                              ->where('folders', 0) 
-                              ->get();
-            
-            $folders = Folder::where('societe_id', $societeId) 
-            ->whereNull('folder_id') 
-            ->where('type_folder', 'achat')
-            ->get();
+            // Filtrage et tri des fichiers de type 'achat'
+            $query = File::where('societe_id', $societeId)
+                         ->where('type', 'achat')
+                         ->where('folders', 0);
+    
+            // Appliquer le filtre par nom ou date
+            if ($request->has('filter_by')) {
+                $filterBy = $request->get('filter_by');
+                if ($filterBy == 'name') {
+                    $query->orderBy('name', $request->get('order_by', 'asc'));  // Tri par nom
+                } elseif ($filterBy == 'date') {
+                    $query->orderBy('created_at', $request->get('order_by', 'asc'));  // Tri par date
+                }
+            } else {
+                $query->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
+            }
+    
+            $achatFiles = $query->get();
+    
+            // Récupérer les dossiers de la même manière
+            $folders = Folder::where('societe_id', $societeId)
+                             ->whereNull('folder_id')
+                             ->where('type_folder', 'achat');
+    
+            // Appliquer le filtre par nom ou date pour les dossiers
+            if ($request->has('filter_by')) {
+                $filterBy = $request->get('filter_by');
+                if ($filterBy == 'name') {
+                    $folders->orderBy('name', $request->get('order_by', 'asc'));  // Tri par nom
+                } elseif ($filterBy == 'date') {
+                    $folders->orderBy('created_at', $request->get('order_by', 'asc'));  // Tri par date
+                }
+            } else {
+                $folders->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
+            }
+    
+            $folders = $folders->get();
+    
+            // Notification des messages non lus
             $notifications = [];
             foreach ($achatFiles as $file) {
-                $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
-    
-                // Déterminer l'aperçu en fonction du type de fichier
-                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                    // Si c'est une image, l'aperçu sera l'image elle-même
-                    $file->preview = asset('storage/' . $file->path);
-                } elseif (in_array($extension, ['pdf'])) {
-                    // Si c'est un PDF, afficher une image d'aperçu générique
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF';
-                } elseif (in_array($extension, ['doc', 'docx'])) { 
-                    // Si c'est un fichier Word, afficher une image d'aperçu générique
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Word';
-                } elseif (in_array($extension, ['xls', 'xlsx'])) {
-                    // Si c'est un fichier Excel, afficher une image d'aperçu générique
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel';
-                } else {
-                    // Pour tous les autres fichiers, une image d'aperçu générique
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier';
-                }
                 $unreadMessages = Message::where('file_id', $file->id)
-                ->where('is_read', 0)
-                ->get();
-
-                // Si des messages non lus existent pour ce fichier, les ajouter aux notifications
+                                         ->where('is_read', 0)
+                                         ->get();
+    
                 if ($unreadMessages->count() > 0) {
-                $notifications[$file->id] = $unreadMessages->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
+                    $notifications[$file->id] = $unreadMessages->count();
                 }
             }
     
-         
-    
-            // Si des fichiers sont trouvés, passe les fichiers et les dossiers à la vue
             return view('achat', compact('achatFiles', 'folders', 'notifications'));
         } else {
-            // Si l'ID de la société n'est pas trouvé dans la session, redirige vers la page d'accueil
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
-    }  
+    }
     
     
 

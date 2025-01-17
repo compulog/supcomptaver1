@@ -300,6 +300,13 @@
             <i class="fas fa-chevron-right" style="font-size: 24px; color: #007bff; cursor: pointer;"></i>
         </a>
 </div> -->
+<!-- <div class="navigation-buttons">
+             <i class="fas fa-chevron-left" style="font-size: 24px; color: #007bff; cursor: pointer;"></i>
+        
+        
+             <i class="fas fa-chevron-right" style="font-size: 24px; color: #007bff; cursor: pointer;"></i>
+ </div> -->
+
 
 <script>
 window.onload = function() {

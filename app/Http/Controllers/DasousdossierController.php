@@ -43,7 +43,7 @@ class DasousdossierController extends Controller
             $fileRecord = new File();
             $fileRecord->name = $filename;  // Nom du fichier
             $fileRecord->path = $path;  // Sauvegarde du chemin d'accès (assurez-vous que le chemin est relatif au dossier 'storage/app/public')
-            $fileRecord->type = 'Null';  // Type du fichier (Achat, Vente, etc.)
+            $fileRecord->type = $request->input('type');  // Type du fichier (Achat, Vente, etc.)
             $fileRecord->societe_id = $request->input('societe_id');  // ID de la société
             $fileRecord->folders = $request->input('folders_id');  // ID de la société
             $fileRecord->save();  // Sauvegarde dans la base de données
@@ -54,7 +54,7 @@ class DasousdossierController extends Controller
         }
     }
 
-
+    
 
 //     public function download($fileId)
 // {
@@ -101,7 +101,7 @@ class DasousdossierController extends Controller
             'name' => $request->name,
             'societe_id' => $request->societe_id,
             'folder_id' => $request->folders_id,
-            'type_folder' => 'Null',
+            'type_folder' => $request->type_folder,
 
         ]); 
     

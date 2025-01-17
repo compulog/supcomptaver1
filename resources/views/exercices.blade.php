@@ -8,12 +8,12 @@
 <script src="{{ asset('js/monScript.js') }}"></script>
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
-
+ 
 <div class="container mt-4">
     <h6>Tableau De Board</h6>
     <div class="row">
     <div class="col">
-    <div class="card shadow-sm" style="background-color:rgb(192, 236, 62); border-radius: 15px; font-size: 0.75rem; height: 130px;" onclick="openCreateFolderForm()">
+    <div class="card shadow-sm" style="border-radius: 15px; font-size: 0.75rem; height: 130px;" onclick="openCreateFolderForm()">
         <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="height: 100%; background-color: #f8f9fa; border-radius: 15px;">
             <i class="fas fa-plus fa-2x text-primary"></i>
             <p class="mt-1" style="font-size: 0.8rem;">Ajouter un Dossier</p>
@@ -29,18 +29,18 @@
                     
                     <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <input type="hidden" name="type" value="Achat">
-                        <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
+                        <input type="hidden" name="type" value="achat">
+                        <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'achat')">
                         <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <input type="hidden" name="folders_id" value="0">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: #007bff; border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-achat').click()">Charger</button>
                         <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>
                     </form>
 
-                    
+                     
                 </div>
-                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $achatCount ?? 0 }}</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Achat'] ?? 0 }}</p>     
+                           <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
             </div>
         </div>
@@ -59,7 +59,7 @@
                         <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
                     </form>
                 </div>
-                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $venteCount ?? 0 }}</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Vente'] ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
             </div>
@@ -79,13 +79,13 @@
                         <button type="submit" style="display: none;" id="submit-banque">Envoyer</button>
                     </form>
                 </div>
-                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $banqueCount ?? 0 }}</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Banque'] ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
             </div>
         </div>
 
-      
+    
 
     <!-- Deuxième ligne avec 2 divs -->
     <div class="row">
@@ -103,7 +103,7 @@
                         <button type="submit" style="display: none;" id="submit-caisse">Envoyer</button>
                     </form>
                 </div>
-                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $caisseCount ?? 0 }}</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Caisse'] ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
             </div>
@@ -123,7 +123,7 @@
                         <button type="submit" style="display: none;" id="submit-impot">Envoyer</button>
                     </form>
                 </div>
-                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $impotCount ?? 0 }}</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['impot'] ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
             </div>
@@ -143,13 +143,13 @@
                         <button type="submit" style="display: none;" id="submit-paie">Envoyer</button>
                     </form>
                 </div>
-                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $paieCount ?? 0 }}</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Paie'] ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
             </div>
         </div>
 
-
+   <!-- Dossier_permanant -->
         <div class="col-md-3 mb-3" id="Dossier_permanant-div">
             <div class="p-2 text-white" style="background-color:rgb(221, 232, 17); border-radius: 15px; font-size: 0.75rem; height: 130px;">
                 <div class="d-flex justify-content-between align-items-center">
@@ -169,7 +169,7 @@
                     <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
                 </form>
                 </div>
-                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $Dossier_permanantCount ?? 0 }}</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Dossier_permanant'] ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
             </div>
@@ -220,51 +220,52 @@
                     <h5 style="color: white; font-size: 12px;">{{ $dossier->name }}</h5>
 
                     <div class="dropdown">
-                <button class="btn btn-link text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-ellipsis-v"></i> <!-- Icône des trois points -->
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <li>
-                        <!-- <a class="dropdown-item" href=""> -->
-                        <a class="dropdown-item" href="#" onclick="openEditFolderModal('{{ $dossier->id }}', '{{ $dossier->name }}')">
-                        Renommer
-</a>
-
-                    </li>
-                    <li>
-                        <form action="{{ route('dossier.delete', $dossier->id) }}" method="POST" style="display:inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="dropdown-item" style="background: transparent; border: none; color: red;">
-                                Supprimer
-                            </button>
-                        </form>
-                    </li>
-                </ul>
-            </div>
+                        <button class="btn btn-link text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i> <!-- Icône des trois points -->
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="openEditFolderModal('{{ $dossier->id }}', '{{ $dossier->name }}')">
+                                    Renommer
+                                </a>
+                            </li>
+                            <li>
+                                <form action="{{ route('dossier.delete', $dossier->id) }}" method="POST" style="display:inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="dropdown-item" style="background: transparent; border: none; color: red;">
+                                        Supprimer
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
 
                     <!-- Formulaire pour charger un fichier -->
-     @csrf
-     <form id="form-{{ $dossier->id }}" action="{{ route('Douvrir.upload') }}" method="POST" enctype="multipart/form-data">
-     @csrf
-     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-     <input type="hidden" name="folder_type" value="{{ $dossier->name }}"> 
+                    @csrf
+                    <form id="form-{{ $dossier->id }}" action="{{ route('Douvrir.upload') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+                        <input type="hidden" name="folder_type" value="{{ $dossier->name }}"> 
 
-     <input type="file" name="file" id="file-{{ $dossier->id }}" style="display: none;" onchange="handleFileSelect(event, {{ $dossier->id }})">
-     <button type="button" class="btn btn-light btn-sm dossier-button" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
-     <button type="submit" style="display: none;" id="submit-{{ $dossier->id }}">Envoyer</button>
-</form>
+                        <input type="file" name="file" id="file-{{ $dossier->id }}" style="display: none;" onchange="handleFileSelect(event, {{ $dossier->id }})">
+                        <button type="button" class="btn btn-light btn-sm dossier-button" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
+                        <button type="submit" style="display: none;" id="submit-{{ $dossier->id }}">Envoyer</button>
+                    </form>
 
                 </div>
 
                 <!-- Informations supplémentaires sur le dossier -->
-                <p style="font-size: 0.7rem; line-height: 0.3;">Total pièces : {{ $Dossier_ajouteCount ?? 0 }}</p>
+
+                <!-- Affichage du nombre de fichiers dans le dossier -->
+                <p style="font-size: 0.7rem; line-height: 0.3;">Total fichiers : {{ $dossierFileCounts[$dossier->id] ?? 0 }}</p>  
                 <p style="font-size: 0.7rem; line-height: 0.3;">Pièces traitées : 0</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">Pièces suspendues : 0</p>
             </div>
         </div>
     @endforeach
 </div>
+
 <!-- Modal pour modifier un dossier -->
 <div class="modal fade" id="editFolderModal" tabindex="-1" aria-labelledby="editFolderModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -337,8 +338,8 @@ function openEditFolderModal(dossierId, dossierName) {
         // Appliquer la même couleur au bouton
         const button = div.querySelector('.dossier-button');
         if (button) {
-            button.style.backgroundColor = color;  // Même couleur que le div
-            button.style.borderColor = color;      // Optionnel: bordure avec la même couleur
+            button.style.backgroundColor = color;  
+            
         }
     });
 
