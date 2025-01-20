@@ -13,16 +13,58 @@
     <style>
         /* Styles généraux */
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f6f9;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
             color: #333;
             margin: 0;
             padding: 0;
         }
 
         .container {
-            width: 80%;
-            margin: 0 auto;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h3 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 20px;
+        }
+
+        /* Styles des boutons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-radius: 5px;
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.3s;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background-color: #1a73e8;
+        }
+
+        .btn-primary:hover {
+            background-color: #0c59b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #bdbdbd;
+            transform: translateY(-2px);
         }
 
         /* Amélioration de la boîte de chat */
@@ -43,7 +85,7 @@
 
         .chat-box h5 {
             font-size: 20px;
-            color: #007bff;
+            color: #1a73e8;
             margin-bottom: 20px;
             text-align: center;
         }
@@ -60,7 +102,7 @@
         }
 
         .chat-box form textarea:focus {
-            border-color: #007bff;
+            border-color: #1a73e8;
         }
 
         .chat-box form button {
@@ -105,13 +147,13 @@
             background: none;
             border: none;
             cursor: pointer;
-            color: #007bff;
+            color: #1a73e8;
             font-size: 16px;
             transition: color 0.3s;
         }
 
         .message-actions button:hover {
-            color: #0056b3;
+            color: #0c59b3;
         }
 
         /* Pour les fichiers téléchargés */
@@ -119,85 +161,121 @@
             text-align: center;
             margin: 20px 0;
         }
-
         .file-preview img {
             max-width: 100%;
             border-radius: 8px;
         }
 
+        /* Navigation entre les fichiers */
+        .navigation-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 10px;
+        }
 
+        .navigation-container a {
+            text-decoration: none;
+            color: #1a73e8;
+            font-size: 24px;
+            transition: color 0.3s;
+        }
+
+        .navigation-container a:hover {
+            color: #0c59b3;
+        }
     </style>
 </head>
 <body>
+<div class="container"  style="height:;">
+    <!-- <h3>{{ $file->name }}</h3> -->
 
-<!-- Affichage du fichier selon son type -->
-@if(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'pdf')
-    <a href="{{ Storage::url($file->path) }}" class="btn btn-primary mt-3" style="margin-left:800px;" download>
-        <i class="fas fa-download" title="Télécharger"></i> 
-    </a>
-    
-    <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printPDF('{{ Storage::url($file->path) }}')" title="Imprimer">
-        <i class="fas fa-print"></i>
-    </a>
+    <!-- Affichage du fichier selon son type -->
+    @if(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'pdf')
+        <a href="{{ Storage::url($file->path) }}" class="btn btn-primary mt-3" download>
+            <i class="fas fa-download" title="Télécharger"></i>
+        </a>
 
-    <div id="pdf-preview-{{ $file->id }}" class="pdf-preview" style="overflow: hidden; width: 70%; margin: 0 auto;"></div>
-    
-    <script>
-        var url = "{{ Storage::url($file->path) }}";
-        var container = document.getElementById('pdf-preview-{{ $file->id }}');
+        <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printPDF('{{ Storage::url($file->path) }}')" title="Imprimer">
+            <i class="fas fa-print"></i>
+        </a>
 
-        pdfjsLib.getDocument(url).promise.then(function(pdf) {
-            var totalPages = pdf.numPages;
-            for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
-                pdf.getPage(pageNum).then(function(page) {
-                    var canvas = document.createElement('canvas');
-                    container.appendChild(canvas);
+        <div id="pdf-preview-{{ $file->id }}" class="pdf-preview" style="overflow: hidden; width: 70%; margin: 0 auto;"></div>
+        <div id="page-num-{{ $file->id }}" class="page-num" style="text-align: center; margin-top: 10px;"></div>
 
-                    var context = canvas.getContext('2d');
-                    var scale = 0.7;
-                    var viewport = page.getViewport({ scale: scale });
+        <script>
+            var url = "{{ Storage::url($file->path) }}";
+            var container = document.getElementById('pdf-preview-{{ $file->id }}');
+            var pageNumDiv = document.getElementById('page-num-{{ $file->id }}'); // Pour afficher le numéro de page
 
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
+            pdfjsLib.getDocument(url).promise.then(function(pdf) {
+                var totalPages = pdf.numPages;
+                var currentPage = 1;
 
-                    page.render({ canvasContext: context, viewport: viewport });
+                // Fonction pour afficher une page
+                function renderPage(pageNum) {
+                    container.innerHTML = '';
+                    pdf.getPage(pageNum).then(function(page) {
+                        var canvas = document.createElement('canvas');
+                        container.appendChild(canvas);
+
+                        var context = canvas.getContext('2d');
+                        var scale = 0.7;
+                        var viewport = page.getViewport({ scale: scale });
+
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        page.render({ canvasContext: context, viewport: viewport });
+
+                        // Mettre à jour la numérotation de la page
+                        pageNumDiv.textContent = 'Page ' + currentPage + ' sur ' + totalPages;
+                    });
+                }
+
+                // Afficher la première page
+                renderPage(currentPage);
+
+                // Navigation entre les pages
+                document.getElementById('next-page').addEventListener('click', function() {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        renderPage(currentPage);
+                    }
                 });
+
+                document.getElementById('prev-page').addEventListener('click', function() {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        renderPage(currentPage);
+                    }
+                });
+            });
+
+            function printPDF(url) {
+                var printWindow = window.open(url, '_blank');
+                printWindow.onload = function() {
+                    printWindow.print();
+                };
             }
-        });
+        </script>
 
-        function printPDF(url) {
-            var printWindow = window.open(url, '_blank');
-            printWindow.onload = function() {
-                printWindow.print();
-            };
-        }
-    </script>
-@elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'xlsx' || strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'xls')
-    <a href="{{ Storage::url($file->path) }}" class="btn btn-primary mt-3" style="margin-left:800px;" download>
-        <i class="fas fa-download" title="Télécharger"></i> 
-    </a>   
+        <!-- Boutons pour naviguer entre les pages -->
+        <button id="prev-page" class="btn btn-secondary">Page Précédente</button>
+        <button id="next-page" class="btn btn-secondary">Page Suivante</button>
+    @elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'xlsx' || strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'xls')
+        <a href="{{ Storage::url($file->path) }}" class="btn btn-primary mt-3" download>
+            <i class="fas fa-download" title="Télécharger"></i>
+        </a>
 
-    <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printExcel('{{ Storage::url($file->path) }}')" title="Imprimer">
-        <i class="fas fa-print"></i>
-    </a>
+        <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printExcel('{{ Storage::url($file->path) }}')" title="Imprimer">
+            <i class="fas fa-print"></i>
+        </a>
 
-    <div id="excel-preview-{{ $file->id }}" class="excel-preview" style="overflow: clip;"></div>
-    
-    <script>
-        var fileUrl = "{{ Storage::url($file->path) }}";
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', fileUrl, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.onload = function() {
-            var data = xhr.response;
-            var workbook = XLSX.read(data, { type: 'array' });
-            var sheet = workbook.Sheets[workbook.SheetNames[0]];
-            var htmlString = XLSX.utils.sheet_to_html(sheet);
-            document.getElementById('excel-preview-{{ $file->id }}').innerHTML = htmlString;
-        };
-        xhr.send();
+        <div id="excel-preview-{{ $file->id }}" class="excel-preview" style="overflow: clip;"></div>
 
-        function printExcel(fileUrl) {
+        <script>
+            var fileUrl = "{{ Storage::url($file->path) }}";
             var xhr = new XMLHttpRequest();
             xhr.open('GET', fileUrl, true);
             xhr.responseType = 'arraybuffer';
@@ -206,26 +284,40 @@
                 var workbook = XLSX.read(data, { type: 'array' });
                 var sheet = workbook.Sheets[workbook.SheetNames[0]];
                 var htmlString = XLSX.utils.sheet_to_html(sheet);
-                var printWindow = window.open('', '_blank');
-                printWindow.document.write('<html><head><title>Impression</title></head><body>');
-                printWindow.document.write(htmlString);
-                printWindow.document.write('</body></html>');
-                printWindow.document.close();
-                printWindow.print();
+                document.getElementById('excel-preview-{{ $file->id }}').innerHTML = htmlString;
             };
             xhr.send();
-        }
-    </script>
+
+            function printExcel(fileUrl) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', fileUrl, true);
+                xhr.responseType = 'arraybuffer';
+                xhr.onload = function() {
+                    var data = xhr.response;
+                    var workbook = XLSX.read(data, { type: 'array' });
+                    var sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    var htmlString = XLSX.utils.sheet_to_html(sheet);
+                    var printWindow = window.open('', '_blank');
+                    printWindow.document.write('<html><head><title>Impression</title></head><body>');
+                    printWindow.document.write(htmlString);
+                    printWindow.document.write('</body></html>');
+                    printWindow.document.close();
+                    printWindow.print();
+                };
+                xhr.send();
+            }
+        </script>
 @elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'docx' || strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'doc')
     <a href="{{ Storage::url($file->path) }}" class="btn btn-primary mt-3" download>
-        <i class="fas fa-download" title="Télécharger"></i> 
-    </a>   
+        <i class="fas fa-download" title="Télécharger"></i>
+    </a>
 
     <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printWord('{{ Storage::url($file->path) }}')" title="Imprimer">
         <i class="fas fa-print"></i>
     </a>
 
-    <div id="word-preview-{{ $file->id }}" class="word-preview" ></div>
+    <div id="word-preview-{{ $file->id }}" class="word-preview" style="overflow: auto; width: 100%; margin: 0 auto;"></div>
+    
     <script>
         var fileUrl = "{{ Storage::url($file->path) }}";
         var xhr = new XMLHttpRequest();
@@ -234,79 +326,83 @@
         xhr.onload = function() {
             var data = xhr.response;
             mammoth.convertToHtml({ arrayBuffer: data }).then(function(result) {
-                document.getElementById('word-preview-{{ $file->id }}').innerHTML = result.value;
+                var previewContainer = document.getElementById('word-preview-{{ $file->id }}');
+                previewContainer.innerHTML = result.value;
+
+                // Réduire l'échelle de l'affichage pour que tout le document soit visible
+                previewContainer.style.transform = 'scale(0.2)'; // Réduit à 50% de la taille originale
+                previewContainer.style.transformOrigin = 'top left'; // Le point de référence pour l'échelle est le coin supérieur gauche
+                previewContainer.style.width = '250%'; // Augmente la largeur pour éviter la coupure du contenu après l'échelle
             }).catch(function(err) {
                 console.log("Erreur lors de la conversion du fichier Word:", err);
             });
         };
         xhr.send();
-
+        
         function printWord(url) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.responseType = 'arraybuffer';
-    xhr.onload = function() {
-        var data = xhr.response;
-        mammoth.convertToHtml({ arrayBuffer: data }).then(function(result) {
-            var printWindow = window.open('', '_blank');
-            printWindow.document.write('<html><head><title>Impression</title></head><body>');
-            printWindow.document.write(result.value);
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-            printWindow.print();
-        }).catch(function(err) {
-            console.log("Erreur lors de la conversion du fichier Word:", err);
-        });
-    };
-    xhr.send();
-}
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.responseType = 'arraybuffer';
+            xhr.onload = function() {
+                var data = xhr.response;
+                mammoth.convertToHtml({ arrayBuffer: data }).then(function(result) {
+                    var printWindow = window.open('', '_blank');
+                    printWindow.document.write('<html><head><title>Impression</title></head><body>');
+                    printWindow.document.write(result.value);
+                    printWindow.document.write('</body></html>');
+                    printWindow.document.close();
+                    printWindow.print();
+                }).catch(function(err) {
+                    console.log("Erreur lors de la conversion du fichier Word:", err);
+                });
+            };
+            xhr.send();
+        }
     </script>
-@else
-    <a href="{{ Storage::url($file->path) }}" class="btn btn-primary mt-3" download>
-        <i class="fas fa-download" title="Télécharger"></i> 
-    </a>
-    <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printImage('{{ Storage::url($file->path) }}')" title="Imprimer">
-        <i class="fas fa-print"></i>
-    </a>
 
-    <img src="{{ Storage::url($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2" style="overflow-clip-margin: content-box; overflow: clip; height: 50%; width: 50%">
-@endif
+    @else
+        <a href="{{ Storage::url($file->path) }}" class="btn btn-primary mt-3" download>
+            <i class="fas fa-download" title="Télécharger"></i>
+        </a>
+        <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printImage('{{ Storage::url($file->path) }}')" title="Imprimer">
+            <i class="fas fa-print"></i>
+        </a>
 
-<!-- Boîte de communication -->
-<div class="chat-box">
-    <h5>Communication</h5>
-    <div id="messages-container" style="max-height: 400px; overflow-y: auto;">
-        <!-- Les messages seront affichés ici -->
+        <img src="{{ Storage::url($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2" style="height: 50%; width: 50%">
+    @endif
+
+    <!-- Boîte de communication -->
+    <div class="chat-box">
+        <h5>Communication</h5>
+        <div id="messages-container" style="max-height: 400px; overflow-y: auto;">
+            <!-- Les messages seront affichés ici -->
+        </div>
+
+        <form action="{{ route('messages.store') }}" method="POST">
+            @csrf  
+            <textarea id="message_text" name="text_message" placeholder="Écrivez ici..."></textarea>
+            <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
+            <input type="hidden" name="file_id" value="{{ $file->id ?? 'null' }}">
+            <input type="hidden" name="societe_id" value="{{ session('societeId') }}">
+            <button type="submit">Envoyer</button>
+        </form>
     </div>
 
-    <form action="{{ route('messages.store') }}" method="POST">
-        @csrf  
-        <textarea id="message_text" name="text_message" placeholder="Écrivez ici..."></textarea>
-        <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
-        <input type="hidden" name="file_id" value="{{ $file->id ?? 'null' }}">
-        <input type="hidden" name="societe_id" value="{{ session('societeId') }}">
-        <button type="submit">Envoyer</button>
-    </form>
+    <!-- Navigation entre les fichiers -->
+    <div class="navigation-container">
+        @if($currentFileIndex > 0)
+            <a href="{{ route('achat.views', ['fileId' => $files[$currentFileIndex - 1]->id]) }}" class="btn btn-secondary">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        @endif
+
+        @if($currentFileIndex < count($files) - 1)
+            <a href="{{ route('achat.views', ['fileId' => $files[$currentFileIndex + 1]->id]) }}" class="btn btn-secondary">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        @endif
+    </div>
 </div>
-
-
-<!-- Navigation entre les fichiers -->
-<!-- <div class="navigation-buttons">
-        <a href="#" title="Fichier Précédent">
-            <i class="fas fa-chevron-left" style="font-size: 24px; color: #007bff; cursor: pointer;"></i>
-        </a>
-        
-        <a href="#" title="Fichier Suivant">
-            <i class="fas fa-chevron-right" style="font-size: 24px; color: #007bff; cursor: pointer;"></i>
-        </a>
-</div> -->
-<!-- <div class="navigation-buttons">
-             <i class="fas fa-chevron-left" style="font-size: 24px; color: #007bff; cursor: pointer;"></i>
-        
-        
-             <i class="fas fa-chevron-right" style="font-size: 24px; color: #007bff; cursor: pointer;"></i>
- </div> -->
-
 
 <script>
 window.onload = function() {
@@ -336,7 +432,7 @@ window.onload = function() {
                     // Bouton de réponse
                     var replyButton = document.createElement("button");
                     replyButton.innerHTML = '<i class="fas fa-reply" title="Répondre"></i>';
-                    replyButton.style = "background: none; border: none; cursor: pointer; color: #007bff;";
+                    replyButton.style = "background: none; border: none; cursor: pointer; color: #1a73e8;";
                     replyButton.addEventListener("click", function() {
                         var replyForm = document.createElement("form");
                         replyForm.action = "{{ route('messages.store') }}";
@@ -441,116 +537,106 @@ window.onload = function() {
                     messagesContainer.appendChild(messageDiv);
 
                     // Afficher les réponses
-                    // Afficher les réponses
-if (message.replies.length > 0) {
-    var repliesDiv = document.createElement("div");
-    repliesDiv.style.marginLeft = "20px"; // Décalage pour les réponses
-    message.replies.forEach(function(reply) {
-        var replyDiv = document.createElement("div");
-        replyDiv.classList.add("message");
+                    if (message.replies.length > 0) {
+                        var repliesDiv = document.createElement("div");
+                        repliesDiv.style.marginLeft = "20px"; // Décalage pour les réponses
+                        message.replies.forEach(function(reply) {
+                            var replyDiv = document.createElement("div");
+                            replyDiv.classList.add("message");
 
-        // Affichage du message de la réponse
-        replyDiv.innerHTML = `<p><strong>${reply.user_name}:</strong><i>Posté le: ${reply.created_at}</i><br>${reply.text_message}</p>`;
-        
-        // Afficher la date de la réponse
-        // var replyDate = document.createElement("p");
-        // replyDate.innerHTML = `<i>Posté le: ${reply.created_at}</i>`; // Afficher la date de la réponse
-        // replyDiv.appendChild(replyDate); // Ajouter la date après le texte du message
+                            // Affichage du message de la réponse
+                            replyDiv.innerHTML = `<p><strong>${reply.user_name}:</strong><i>Posté le: ${reply.created_at}</i><br>${reply.text_message}</p>`;
+                            
+                            // Actions de la réponse
+                            var replyActionsDiv = document.createElement("div");
+                            replyActionsDiv.style.display = "flex"; 
+                            replyActionsDiv.style.alignItems = "center"; 
+                            replyActionsDiv.style.gap = "10px"; 
 
-        // Actions de la réponse
-        var replyActionsDiv = document.createElement("div");
-        replyActionsDiv.style.display = "flex"; 
-        replyActionsDiv.style.alignItems = "center"; 
-        replyActionsDiv.style.gap = "10px"; 
+                            // Bouton de modification de la réponse
+                            var editReplyButton = document.createElement("button");
+                            editReplyButton.innerHTML = '<i class="fas fa-edit" title="Modifier"></i>';
+                            editReplyButton.style = "background: none; border: none; cursor: pointer; color: #f39c12;";
 
-        // Bouton de modification de la réponse
-        var editReplyButton = document.createElement("button");
-        editReplyButton.innerHTML = '<i class="fas fa-edit" title="Modifier"></i>';
-        editReplyButton.style = "background: none; border: none; cursor: pointer; color: #f39c12;";
+                            editReplyButton.addEventListener("click", function() {
+                                var newReplyText = prompt("Modifiez votre réponse:", reply.text_message);
+                                if (newReplyText) {
+                                    fetch(`/messages/update/${reply.id}`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                        },
+                                        body: JSON.stringify({ text_message: newReplyText })
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            location.reload();
+                                        } else {
+                                            alert("Erreur lors de la modification de la réponse.");
+                                        }
+                                    })
+                                    .catch(error => console.error("Erreur lors de la modification de la réponse:", error));
+                                }
+                            });
 
-        editReplyButton.addEventListener("click", function() {
-            var newReplyText = prompt("Modifiez votre réponse:", reply.text_message);
-            if (newReplyText) {
-                fetch(`/messages/update/${reply.id}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({ text_message: newReplyText })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert("Erreur lors de la modification de la réponse.");
+                            // Bouton de suppression de la réponse
+                            var deleteReplyButton = document.createElement("button");
+                            deleteReplyButton.innerHTML = '<i class="fas fa-trash" title="Supprimer"></i>';
+                            deleteReplyButton.style = "background: none; border: none; cursor: pointer; color: #ff0000;";
+                            deleteReplyButton.addEventListener("click", function() {
+                                if (confirm("Êtes-vous sûr de vouloir supprimer cette réponse ?")) {
+                                    fetch(`/messages/delete/${reply.id}`, {
+                                        method: 'DELETE',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                        }
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            replyDiv.remove();
+                                        } else {
+                                            alert("Erreur lors de la suppression de la réponse.");
+                                        }
+                                    })
+                                    .catch(error => console.error("Erreur lors de la suppression de la réponse:", error));
+                                }
+                            });
+
+                            // Bouton de marquage comme lu pour la réponse
+                            var markAsReadButton = document.createElement("button");
+                            markAsReadButton.innerHTML = '<i class="fas fa-envelope" title="Marquer comme lue" style="cursor: pointer; font-size: 15px; color: rgb(231, 74, 59);"></i>';
+                            markAsReadButton.style = "background: none; border: none; cursor: pointer; color: #28a745;";
+                            markAsReadButton.addEventListener("click", function() {
+                                fetch(`/messages/read/${reply.id}`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            alert("Réponse marquée comme lue");
+                                            // Mise à jour de l'icône
+                                            replyDiv.querySelector("i").classList.replace("fa-envelope", "fa-envelope-open");
+                                        }
+                                    })
+                                    .catch(error => console.error("Erreur lors du marquage comme lu de la réponse:", error));
+                            });
+
+                            replyActionsDiv.appendChild(editReplyButton);
+                            replyActionsDiv.appendChild(deleteReplyButton);
+                            replyActionsDiv.appendChild(markAsReadButton); // Ajouter le bouton "Marquer comme lu"
+
+                            replyDiv.appendChild(replyActionsDiv);
+                            repliesDiv.appendChild(replyDiv);
+                        });
+                        messageDiv.appendChild(repliesDiv);
                     }
-                })
-                .catch(error => console.error("Erreur lors de la modification de la réponse:", error));
-            }
-        });
-
-        // Bouton de suppression de la réponse
-        var deleteReplyButton = document.createElement("button");
-        deleteReplyButton.innerHTML = '<i class="fas fa-trash" title="Supprimer"></i>';
-        deleteReplyButton.style = "background: none; border: none; cursor: pointer; color: #ff0000;";
-        deleteReplyButton.addEventListener("click", function() {
-            if (confirm("Êtes-vous sûr de vouloir supprimer cette réponse ?")) {
-                fetch(`/messages/delete/${reply.id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        replyDiv.remove();
-                    } else {
-                        alert("Erreur lors de la suppression de la réponse.");
-                    }
-                })
-                .catch(error => console.error("Erreur lors de la suppression de la réponse:", error));
-            }
-        });
-
-        // Bouton de marquage comme lu pour la réponse
-        var markAsReadButton = document.createElement("button");
-        markAsReadButton.innerHTML = '<i class="fas fa-envelope" title="Marquer comme lue" style="cursor: pointer; font-size: 15px; color: rgb(231, 74, 59);"></i>';
-        markAsReadButton.style = "background: none; border: none; cursor: pointer; color: #28a745;";
-        markAsReadButton.addEventListener("click", function() {
-            fetch(`/messages/read/${reply.id}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert("Réponse marquée comme lue");
-                        // Mise à jour de l'icône
-                        replyDiv.querySelector("i").classList.replace("fa-envelope", "fa-envelope-open");
-                    }
-                })
-                .catch(error => console.error("Erreur lors du marquage comme lu de la réponse:", error));
-        });
-
-        replyActionsDiv.appendChild(editReplyButton);
-        replyActionsDiv.appendChild(deleteReplyButton);
-        replyActionsDiv.appendChild(markAsReadButton); // Ajouter le bouton "Marquer comme lu"
-
-        replyDiv.appendChild(replyActionsDiv);
-        repliesDiv.appendChild(replyDiv);
-    });
-    messageDiv.appendChild(repliesDiv);
-}
-
                 });
             }
         })
         .catch(error => console.error("Erreur lors du chargement des messages:", error));
 };
-
-
-
 </script>
 
 </body>

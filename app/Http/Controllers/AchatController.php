@@ -94,15 +94,21 @@ class AchatController extends Controller
     
 
     public function viewFile($fileId)
-{
+    {
+        // Récupérer le fichier recherché par son ID
+        $file = File::findOrFail($fileId);
     
-    // Récupérer le fichier de type "Achat" à partir de la base de données
-    $file = File::findOrFail($fileId);
-    // dd($file);
-    // Afficher une vue avec les détails du fichier
-    return view('achat.view', compact('file'));
-}
-
+        
+        $files = File::where('folders', $file->folders)->get();
+    
+        // Trouver l'index du fichier recherché pour la navigation
+        $currentFileIndex = $files->search(fn($f) => $f->id == $fileId);
+    
+        // Passer le fichier recherché, tous les fichiers, et l'index à la vue
+        return view('achat.view', compact('file', 'files', 'currentFileIndex'));
+    }
+     
+    
 
 
 // public function viewFile($fileId,$folderId)

@@ -32,38 +32,68 @@ class FolderBanqueController extends Controller
         });
     }
 
-    public function index($id)
+    public function index($id, Request $request)
     {
-        // Récupérer le dossier avec l'ID stocké dans la session
+        // Récupérer le dossier avec l'ID passé en paramètre
         $folder = Folder::find($id);
-
+    
         $societeId = session('societeId'); 
-
+    
         if ($societeId) {
             // Récupérer les dossiers associés à la société
             $folders = Folder::where('societe_id', $societeId)
-                             ->where('folder_id', $id)
-                             ->get();   
-
+                             ->where('folder_id', $id);
+    
+            // Appliquer le filtrage et le tri sur les dossiers si des paramètres sont présents
+            if ($request->has('filter_by')) {
+                $filterBy = $request->get('filter_by');
+                if ($filterBy == 'name') {
+                    $folders->orderBy('name', $request->get('order_by', 'asc'));
+                } elseif ($filterBy == 'date') {
+                    $folders->orderBy('created_at', $request->get('order_by', 'asc'));
+                }
+            } else {
+                // Par défaut, trier les dossiers par date ascendante
+                $folders->orderBy('created_at', 'asc');
+            }
+    
+            // Récupérer les dossiers
+            $folders = $folders->get();
+    
             // Récupérer les fichiers de type "achat"
             $achatFiles = File::where('societe_id', $societeId)
                               ->where('type', 'achat') 
-                              ->where('folders', $id)  
-                              ->get();
+                              ->where('folders', $id);
+    
+            // Appliquer le filtrage et le tri sur les fichiers si des paramètres sont présents
+            if ($request->has('filter_by')) {
+                $filterBy = $request->get('filter_by');
+                if ($filterBy == 'name') {
+                    $achatFiles->orderBy('name', $request->get('order_by', 'asc'));
+                } elseif ($filterBy == 'date') {
+                    $achatFiles->orderBy('created_at', $request->get('order_by', 'asc'));
+                }
+            } else {
+                // Par défaut, trier les fichiers par date ascendante
+                $achatFiles->orderBy('created_at', 'asc');
+            }
+    
+            // Récupérer les fichiers
+            $achatFiles = $achatFiles->get();
             
             // Enregistrer l'ID du dossier dans la session
             session(['foldersId' => $id]);  
-
+    
             // Récupérer l'ID du dossier de la session
             $foldersId = session('foldersId'); 
-
+    
             // Liste des notifications pour les fichiers
             $notifications = [];
-
+    
             foreach ($achatFiles as $file) {
                 // Vérifier l'extension du fichier pour afficher une prévisualisation
                 $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
-
+    
                 if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
                     $file->preview = asset('storage/' . $file->path); // Image
                 } elseif (in_array($extension, ['pdf'])) {
@@ -75,18 +105,18 @@ class FolderBanqueController extends Controller
                 } else {
                     $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
                 }
-
+    
                 // Vérifier si un message existe pour ce fichier et si le champ 'is_read' est égal à 0
                 $unreadMessages = Message::where('file_id', $file->id)
                                          ->where('is_read', 0)
                                          ->get();
-
+    
                 // Si des messages non lus existent pour ce fichier, les ajouter aux notifications
                 if ($unreadMessages->count() > 0) {
                     $notifications[$file->id] = $unreadMessages->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
                 }
             }
-
+    
             // Retourner la vue avec les fichiers, dossiers et notifications
             return view('folderbanque', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
         } else {
@@ -94,7 +124,7 @@ class FolderBanqueController extends Controller
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
     }
- 
+    
     // public function index($id)
     // {
     //     $societeId = session('societeId'); // Récupère l'ID de la société depuis la session

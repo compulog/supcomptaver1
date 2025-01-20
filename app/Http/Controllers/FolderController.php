@@ -32,25 +32,50 @@ class FolderController extends Controller
         });
     }
     
-    public function index($id)
+    public function index($id, Request $request)
     {
- 
+      
         // Récupérer le dossier avec l'ID passé en paramètre
         $folder = Folder::find($id);
-        // dd($folder->folder_id);
         $societeId = session('societeId');
     
         if ($societeId) {
-            // Récupérer les dossiers associés à la société
+            // Filtrage et tri des dossiers associés à la société
             $folders = Folder::where('societe_id', $societeId)
-                             ->where('folder_id', $id)
-                             ->get();
+                             ->where('folder_id', $id);
     
-            // Récupérer les fichiers de type "achat" associés au dossier
-            $achatFiles = File::where('societe_id', $societeId)
-                              ->where('type', 'achat')
-                              ->where('folders', $id)
-                              ->get();
+            // Appliquer le filtre pour les dossiers
+            if ($request->has('filter_by')) {
+                $filterBy = $request->get('filter_by');
+                if ($filterBy == 'name') {
+                    $folders->orderBy('name', $request->get('order_by', 'asc'));  // Tri par nom
+                } elseif ($filterBy == 'date') {
+                    $folders->orderBy('created_at', $request->get('order_by', 'asc'));  // Tri par date
+                }
+            } else {
+                $folders->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
+            }
+    
+            $folders = $folders->get();
+    
+            // Filtrage et tri des fichiers de type "achat"
+            $query = File::where('societe_id', $societeId)
+                         ->where('type', 'achat')
+                         ->where('folders', $id);
+    
+            // Appliquer le filtre pour les fichiers
+            if ($request->has('filter_by')) {
+                $filterBy = $request->get('filter_by');
+                if ($filterBy == 'name') {
+                    $query->orderBy('name', $request->get('order_by', 'asc'));  // Tri par nom
+                } elseif ($filterBy == 'date') {
+                    $query->orderBy('created_at', $request->get('order_by', 'asc'));  // Tri par date
+                }
+            } else {
+                $query->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
+            }
+    
+            $achatFiles = $query->get();
     
             // Enregistrer l'ID du dossier dans la session
             session(['foldersId' => $id]);
@@ -62,9 +87,9 @@ class FolderController extends Controller
             $folderNotifications = [];
     
             // Vérifier les messages non lus dans le dossier
-            $unreadMessagesForFolder = Message::whereHas('file', function ($query) use ($folder) {
+            $unreadMessagesForFolder = Message::whereHas('file', function ($query) use ($foldersId) {
                 // Vérifier que le fichier est dans le dossier spécifié
-                $query->where('folders', $folder->folder_id); // Vérifie que le fichier appartient au dossier
+                $query->where('folders', $foldersId); // Vérifie que le fichier appartient au dossier
             })
             ->where('is_read', 0) // Filtrer pour les messages non lus
             ->get();
@@ -104,7 +129,7 @@ class FolderController extends Controller
                     $fileNotifications[$file->id] = $unreadMessagesForFile->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
                 }
             }
-    // dd($folderNotifications);
+    
             // Retourner la vue avec les fichiers, dossiers et notifications
             return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications'));
         } else {
