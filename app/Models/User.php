@@ -53,5 +53,8 @@ public function droits()
 {
     return $this->belongsToMany(DroitDacces::class, 'droit_dacces_user', 'user_id', 'droit_dacces_id');
 }
-
+public function droitsAcces()
+{
+    return $this->belongsToMany(DroitDacces::class, 'droit_dacces_user', 'user_id', 'droit_dacces_id');
+}
 }

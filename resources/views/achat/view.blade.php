@@ -19,7 +19,7 @@
             margin: 0;
             padding: 0;
         }
-
+        
         .container {
             width: 90%;
             max-width: 1200px;
@@ -28,6 +28,8 @@
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            /* height:800px; */
+       
         }
 
         h3 {
@@ -187,7 +189,7 @@
     </style>
 </head>
 <body>
-<div class="container"  style="height:;">
+<div class="container">
     <!-- <h3>{{ $file->name }}</h3> -->
 
     <!-- Affichage du fichier selon son type -->
@@ -200,7 +202,7 @@
             <i class="fas fa-print"></i>
         </a>
 
-        <div id="pdf-preview-{{ $file->id }}" class="pdf-preview" style="overflow: hidden; width: 70%; margin: 0 auto;"></div>
+        <div id="pdf-preview-{{ $file->id }}" class="pdf-preview" style="overflow: hidden; width: 70%;"></div>
         <div id="page-num-{{ $file->id }}" class="page-num" style="text-align: center; margin-top: 10px;"></div>
 
         <script>
@@ -220,7 +222,7 @@
                         container.appendChild(canvas);
 
                         var context = canvas.getContext('2d');
-                        var scale = 0.7;
+                        var scale = 0.9;
                         var viewport = page.getViewport({ scale: scale });
 
                         canvas.height = viewport.height;

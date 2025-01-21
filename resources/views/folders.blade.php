@@ -100,7 +100,21 @@
             <!-- Formulaire de téléchargement (Charger) -->
             <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
                <!-- Formulaire de filtrage -->
-               <form method="GET" action="{{ route('folder.show', $folder->id) }}" class="d-flex me-3">
+               <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="type" value="Achat">
+                    <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
+                    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+                    <input type="hidden" name="folders_id" value="{{ session()->get('foldersId') }}">
+
+                    <!-- Charger Button -->
+                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-achat').click()">Charger</button>
+
+                    <!-- Submit Button (hidden initially) -->
+                    <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>    
+                </form>
+                    <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
+                    <form method="GET" action="{{ route('folder.show', $folder->id) }}" class="d-flex me-3">
     <div class="input-group">
         <button class="btn btn-primary btn-sm" type="submit" style="height: 38px; order: -1;">Triée par</button>
         
@@ -116,21 +130,7 @@
             <option value="desc" {{ request()->get('order_by') == 'desc' ? 'selected' : '' }}>↓ Descendant</option>
         </select>
     </div>
-</form>
-                    <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
-                <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="type" value="Achat">
-                    <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
-                    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-                    <input type="hidden" name="folders_id" value="{{ session()->get('foldersId') }}">
-
-                    <!-- Charger Button -->
-                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-achat').click()">Charger</button>
-
-                    <!-- Submit Button (hidden initially) -->
-                    <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>    
-                </form>
+</form> 
             </div>
             </div>
         </div>
@@ -164,6 +164,14 @@
                 <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold; color:rgb(227, 231, 235);">
                     {{ $folder->name }} 
                 </h5>
+                <form action="{{ route('folder.delete', $folder->id) }}" method="POST" style="display: inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-link p-0" title="Supprimer le dossier" style="margin-top:-115px;margin-left:130px;">
+                                        <i class="fas fa-times" style="color:rgb(227, 231, 235);"></i>
+                                    </button>
+                                </form>
+                                
             </div>
         </div>
     </div>

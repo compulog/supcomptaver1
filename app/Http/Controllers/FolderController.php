@@ -85,7 +85,7 @@ class FolderController extends Controller
     
             // Liste des notifications pour les dossiers
             $folderNotifications = [];
-    
+  
             // Vérifier les messages non lus dans le dossier
             $unreadMessagesForFolder = Message::whereHas('file', function ($query) use ($foldersId) {
                 // Vérifier que le fichier est dans le dossier spécifié

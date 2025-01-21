@@ -49,67 +49,51 @@ use App\Http\Controllers\FoldersPaie1Controller;
 use App\Http\Controllers\FoldersDossierPermanant1Controller;
 use App\Http\Controllers\DouvrirController; 
 use App\Http\Controllers\DasousdossierController;
-Route::post('/uploadFileda', [DasousdossierController::class, 'upload'])->name('uploadFileda');
-Route::post('/folderdasouas/create', [DasousdossierController::class, 'create'])->name('folderdasouas.create');
+use App\Http\Controllers\EtatDeCaisseController;
 
-Route::get('/dasousdossier/{folderId}', [DasousdossierController::class, 'showSousDossier'])->name('dasousdossier.show');
+use App\Http\Controllers\TransactionController;
 
-Route::put('/dossier/{id}', [DossierController::class, 'update']);
-
- 
-Route::get('/Douvrir/{id}', [DouvrirController::class, 'show'])->name('Douvrir');
-Route::post('/Douvrir/upload', [DouvrirController::class, 'uploadFile'])->name('Douvrir.upload');
-Route::post('/Douvrir/create', [DouvrirController::class, 'create'])->name('Douvrir.create');
-// Route::post('/folder/create', [DossierOController::class, 'create'])->name('folder.create');
-
-// Route::post('/dossier/upload', [DossierOController::class, 'uploadFile'])->name('dossier.upload');
-
-// Route::get('/dossier/ouvrir/{id}', [DossierOController::class, 'show'])->name('dossier.ouvrir');
-
-Route::delete('/dossier/{id}/delete', [DossierController::class, 'destroy'])->name('dossier.delete');
-
-Route::post('/messages/reply/{parentMessageId}', [MessageController::class, 'replyToMessage'])->name('messages.reply');
+Route::post('/savetransaction', [TransactionController::class, 'store'])->name('savetransaction');
 
 
-Route::post('/messages/update/{id}', [MessageController::class, 'update'])->name('messages.update');
-
-Route::delete('/messages/delete/{id}', [MessageController::class, 'destroy']);
-
-Route::get('/folderDossier_permanant/{id}', [FolderDossierPermanantController::class, 'index'])->name('folder.show');
-
-
-Route::get('/Dossier_permanant', [DossierPermanantController::class, 'index'])->name('Dossier_permanant.view');
+Route::get('/etat-de-caisse', [EtatDeCaisseController::class, 'index'])->name('etat_de_caisse');
 
 
 
 
-Route::get('/folderPaie/{id}', [FolderPaieController::class, 'index'])->name('folder.show');
-Route::get('/folderImpot/{id}', [FolderImpotController::class, 'index'])->name('folder.show');
-Route::get('/folderCaisse/{id}', [FolderCaisseController::class, 'index'])->name('folder.show');
-Route::get('/folderBanque/{id}', [FolderBanqueController::class, 'index'])->name('folder.show');
 
-Route::get('/folderVente/{id}', [FolderVenteController::class, 'index'])->name('folder.show');
-
-Route::post('/messages/updateStatus/{messageId}', [MessageController::class, 'updateStatus'])->name('messages.updateStatus');
-
-
-Route::get('/messages/getMessages', [MessageController::class, 'getMessages']);
-
-Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
-
-
-Route::get('/achat/view/{fileId}', [AchatController::class, 'viewFile'])->name('achat.views');
-
-
-// Route::get('/achat/view/{fileId}{folderId}', [AchatController::class, 'viewFile'])->name('achat.view');
-
-Route::post('/dossier', [DossierController::class, 'store'])->name('dossier.store');
-
-Route::get('/exercices/{societe_id}', [DossierController::class, 'show'])->name('exercices.show');
-// Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');
+// Route::middleware(['auth', 'permission:vue_dashboard'])->get('dashboard', [SocieteController::class, 'index'])->name('dashboard');
 
 Route::group(['middleware' => 'auth'], function () {
-   
+        Route::post('/uploadFileda', [DasousdossierController::class, 'upload'])->name('uploadFileda');
+        Route::post('/folderdasouas/create', [DasousdossierController::class, 'create'])->name('folderdasouas.create');
+        Route::get('/dasousdossier/{folderId}', [DasousdossierController::class, 'showSousDossier'])->name('dasousdossier.show');
+        Route::put('/dossier/{id}', [DossierController::class, 'update']);
+        Route::get('/Douvrir/{id}', [DouvrirController::class, 'show'])->name('Douvrir');
+        Route::post('/Douvrir/upload', [DouvrirController::class, 'uploadFile'])->name('Douvrir.upload');
+        Route::post('/Douvrir/create', [DouvrirController::class, 'create'])->name('Douvrir.create');
+        // Route::post('/folder/create', [DossierOController::class, 'create'])->name('folder.create');
+        // Route::post('/dossier/upload', [DossierOController::class, 'uploadFile'])->name('dossier.upload');
+        // Route::get('/dossier/ouvrir/{id}', [DossierOController::class, 'show'])->name('dossier.ouvrir');
+        Route::delete('/dossier/{id}/delete', [DossierController::class, 'destroy'])->name('dossier.delete');
+        Route::post('/messages/reply/{parentMessageId}', [MessageController::class, 'replyToMessage'])->name('messages.reply');
+        Route::post('/messages/update/{id}', [MessageController::class, 'update'])->name('messages.update');
+        Route::delete('/messages/delete/{id}', [MessageController::class, 'destroy']);
+        Route::get('/folderDossier_permanant/{id}', [FolderDossierPermanantController::class, 'index'])->name('folder.show');
+        Route::get('/Dossier_permanant', [DossierPermanantController::class, 'index'])->name('Dossier_permanant.view');
+        Route::get('/folderPaie/{id}', [FolderPaieController::class, 'index'])->name('folder.show');
+        Route::get('/folderImpot/{id}', [FolderImpotController::class, 'index'])->name('folder.show');
+        Route::get('/folderCaisse/{id}', [FolderCaisseController::class, 'index'])->name('folder.show');
+        Route::get('/folderBanque/{id}', [FolderBanqueController::class, 'index'])->name('folder.show');
+        Route::get('/folderVente/{id}', [FolderVenteController::class, 'index'])->name('folder.show');
+        Route::post('/messages/updateStatus/{messageId}', [MessageController::class, 'updateStatus'])->name('messages.updateStatus');
+        Route::get('/messages/getMessages', [MessageController::class, 'getMessages']);
+        Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
+        Route::get('/achat/view/{fileId}', [AchatController::class, 'viewFile'])->name('achat.views');
+        // Route::get('/achat/view/{fileId}{folderId}', [AchatController::class, 'viewFile'])->name('achat.view');
+        Route::post('/dossier', [DossierController::class, 'store'])->name('dossier.store');
+        Route::middleware(['auth', 'permission:vue_tableau_de_board'])->get('/exercices/{societe_id}', [DossierController::class, 'show'])->name('exercices.show');
+        // Route::get('/exercices/{id}', [ExerciceController::class, 'show'])->name('exercices.show');    
         Route::put('/utilisateurs/{id}', [UserController::class, 'update'])->name('utilisateurs.update');
         Route::get('/utilisateurs/{id}/edit', [UserController::class, 'edit'])->name('utilisateurs.edit');
         Route::get('/user/{id}', [InterlocuteursController::class, 'edit']);
@@ -190,7 +174,7 @@ Route::group(['middleware' => 'auth'], function () {
         // return view('exercice.show', ['id' => $id]);
         // })->name('exercice.show');
         Route::post('/import-excel', [ImportExcelController::class, 'import'])->name('import.excel');
-        Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');  
+        Route::middleware(['auth', 'permission:vue_client'])->get('/clients', [ClientController::class, 'index'])->name('clients.index');  
         Route::post('/clients', [ClientController::class, 'store'])->name('client.store');
         Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->name('clients.destroy');
         Route::delete('/societes/{id}', [SocieteController::class, 'destroy'])->name('societes.destroy');
@@ -200,7 +184,7 @@ Route::group(['middleware' => 'auth'], function () {
         Route::get('/societes/{id}/edit', [SocieteController::class, 'edit'])->name('societes.edit');
         Route::put('/societes/{id}', [SocieteController::class, 'update']);
         Route::get('/societes', [SocieteController::class, 'index'])->name('societes.index');
-        Route::get('dashboard', [SocieteController::class, 'index'])->name('dashboard');
+        Route::middleware(['auth', 'permission:vue_dashboard'])->get('dashboard', [SocieteController::class, 'index'])->name('dashboard');
         Route::get('/', [HomeController::class, 'home']);
         Route::get('gestion_des_journaux', function () {
                 return view('gestion_des_journaux');
@@ -210,9 +194,9 @@ Route::group(['middleware' => 'auth'], function () {
             })->name('profile');
         Route::get('/saisie', [SaisieMouvementController::class, 'index'])->name('saisie.index');
         Route::post('/saisie', [SaisieMouvementController::class, 'store'])->name('saisie.store');
-        Route::get('client', function () {
-                return view('client');
-            })->name('client');
+        // Route::get('client', function () {
+        //         return view('client');
+        //     })->name('client');
         Route::get('Fournisseurs', function () {
                 return view('Fournisseurs');
             })->name('Fournisseurs');

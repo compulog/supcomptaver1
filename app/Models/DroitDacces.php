@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class DroitDacces extends Model
 {
     use HasFactory, SoftDeletes;
-
+    protected $connection = 'supcompta';
     // Nom de la table associée à ce modèle
     protected $table = 'droit_dacces';
  

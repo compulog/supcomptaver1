@@ -180,7 +180,8 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
     
         // Récupérer l'ID de l'utilisateur créé
         $userId = $user->id;
-    
+        $societe->user_id = $userId;
+        $societe->save();
         // Ajouter les droits d'accès pour cet utilisateur (si vous en avez)
         // foreach ($request->droits as $droitId) {
         //     DB::table('droit_dacces_user')->insert([

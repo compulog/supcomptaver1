@@ -11,7 +11,7 @@
     <h6 style="margin-top:-60px">
     <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau De Board</a>
     ➢
-    <a href="{{ route('achat.view') }}">Vente</a>
+    <a href="{{ route('vente.view') }}">Vente</a>
     ➢
 
     @php
@@ -92,7 +92,21 @@
         <!-- Conteneur flexible pour aligner les éléments sur la même ligne -->
         <div class="d-flex align-items-center mb-3">
          
+        <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
+                <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="type" value="vente">
+                    <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
+                    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+                    <input type="hidden" name="folders_id" value="{{ session()->get('foldersId') }}">
 
+                    <!-- Charger Button -->
+                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-achat').click()">Charger</button>
+
+                    <!-- Submit Button (hidden initially) -->
+                    <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>    
+                </form>
+            </div>
             <!-- Formulaire de téléchargement (Charger) -->
             <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
                <!-- Formulaire de filtrage -->
@@ -113,21 +127,7 @@
         </select>
     </div>
 </form>
-                    <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
-                <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="type" value="Achat">
-                    <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
-                    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-                    <input type="hidden" name="folders_id" value="{{ session()->get('foldersId') }}">
-
-                    <!-- Charger Button -->
-                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-achat').click()">Charger</button>
-
-                    <!-- Submit Button (hidden initially) -->
-                    <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>    
-                </form>
-            </div>
+                
             </div>
         </div>
     </div>
@@ -232,11 +232,11 @@
 
 <!-- Gestion des fichiers de type achat -->
 <div class="container mt-4">
-@if ($achatFiles->isEmpty())
+@if ($venteFiles->isEmpty())
     <p>Aucun fichier trouvé pour cette société.</p>
 @else
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
-    @foreach ($achatFiles as $file)
+    @foreach ($venteFiles as $file)
         <div class="col" ondblclick="viewFile({{ $file->id }})">
             <div class="card shadow-sm" style="width: 13rem; height: 250px;">
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">

@@ -84,7 +84,32 @@ class AchatController extends Controller
                     $notifications[$file->id] = $unreadMessages->count();
                 }
             }
+            foreach ($achatFiles as $file) {
+                // Vérifier l'extension du fichier pour afficher une prévisualisation
+                $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
     
+                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                    $file->preview = asset('storage/' . $file->path); // Image
+                } elseif (in_array($extension, ['pdf'])) {
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
+                } elseif (in_array($extension, ['doc', 'docx'])) {
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Word'; // Word
+                } elseif (in_array($extension, ['xls', 'xlsx'])) {
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel'; // Excel
+                } else {
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
+                }
+    
+                // Vérifier si un message existe pour ce fichier et si le champ 'is_read' est égal à 0
+                $unreadMessagesForFile = Message::where('file_id', $file->id)
+                                                ->where('is_read', 0)
+                                                ->get();
+    
+                // Si des messages non lus existent pour ce fichier, les ajouter aux notifications
+                if ($unreadMessagesForFile->count() > 0) {
+                    $fileNotifications[$file->id] = $unreadMessagesForFile->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
+                }
+            }
             return view('achat', compact('achatFiles', 'folders', 'notifications'));
         } else {
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');

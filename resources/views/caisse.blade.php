@@ -11,6 +11,25 @@
 ➢Caisse</h6>
     <div class="row"  style="margin-left:400px">
         <div class="d-flex align-items-center mb-3">
+
+        
+            <!-- Formulaire de téléchargement -->
+            <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
+                <form id="form-vente" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="type" value="Caisse">
+                    <input type="file" name="file" id="file-vente" style="display: none;" onchange="handleFileSelect(event, 'vente')">
+                    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+                    
+                    <input type="hidden" name="folders_id" value="0">
+
+                    <!-- Charger Button -->
+                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-vente').click()">Charger</button>
+
+                    <!-- Submit Button (hidden initially) -->
+                    <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
+                </form>
+            </div>
                 <!-- Formulaire de filtrage -->
                 <form method="GET" action="" class="d-flex me-3">
     <div class="input-group">
@@ -29,23 +48,6 @@
 </form>
 
 
-            <!-- Formulaire de téléchargement -->
-            <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
-                <form id="form-vente" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="type" value="Caisse">
-                    <input type="file" name="file" id="file-vente" style="display: none;" onchange="handleFileSelect(event, 'vente')">
-                    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-                    
-                    <input type="hidden" name="folders_id" value="0">
-
-                    <!-- Charger Button -->
-                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-vente').click()">Charger</button>
-
-                    <!-- Submit Button (hidden initially) -->
-                    <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
-                </form>
-            </div>
         </div>
     </div>
 </div>
@@ -93,6 +95,26 @@
         </div>
     </div>
 </div>
+
+
+
+
+
+<!-- État de Caisse -->
+<div class="col">
+    <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;" ondblclick="redirectToEtatDeCaisse()">
+        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="height: 100%; background-color: #f8f9fa;">
+            <i class="fas fa-cash-register fa-2x text-success"></i>
+            <p class="mt-1" style="font-size: 0.8rem;">État de Caisse</p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
 
 @if ($folders->isEmpty())
             <p>Aucun dossier trouvé pour cette société.</p>
@@ -250,5 +272,12 @@ function openFile(folderId) {
 function setFolderId(folderId) {
     document.querySelector('input[name="folders_id"]').value = folderId;
 }
+
+
+function redirectToEtatDeCaisse() {
+    window.location.href = '{{ route('etat_de_caisse') }}';
+}
+
+
 </script>
 @endsection

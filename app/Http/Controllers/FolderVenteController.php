@@ -33,6 +33,7 @@ class FolderVenteController extends Controller
     }
     public function index($id, Request $request)
     {
+        // dd($id);
         // Récupérer le dossier avec l'ID stocké dans la session
         $folder = Folder::find($id);
     
@@ -58,7 +59,7 @@ class FolderVenteController extends Controller
             $folders = $folders->get();  // Exécuter la requête
     
             // Récupérer les fichiers de type "achat"
-            $achatFiles = File::where('societe_id', $societeId)
+            $venteFiles = File::where('societe_id', $societeId)
                               ->where('type', 'vente') 
                               ->where('folders', $id);
     
@@ -71,10 +72,10 @@ class FolderVenteController extends Controller
                     $achatFiles->orderBy('created_at', $request->get('order_by', 'asc'));  // Tri par date
                 }
             } else {
-                $achatFiles->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
+                $venteFiles->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
             }
     
-            $achatFiles = $achatFiles->get();  // Exécuter la requête
+            $venteFiles = $venteFiles->get();  // Exécuter la requête
     
             // Enregistrer l'ID du dossier dans la session
             session(['foldersId' => $id]);  
@@ -85,7 +86,7 @@ class FolderVenteController extends Controller
             // Liste des notifications pour les fichiers
             $notifications = [];
     
-            foreach ($achatFiles as $file) {
+            foreach ($venteFiles as $file) {
                 // Vérifier l'extension du fichier pour afficher une prévisualisation
                 $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
     
@@ -113,7 +114,7 @@ class FolderVenteController extends Controller
             }
     
             // Retourner la vue avec les fichiers, dossiers et notifications
-            return view('foldersVente', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
+            return view('foldersVente', compact('venteFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
         } else {
             // Rediriger si aucune société n'est trouvée dans la session
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
