@@ -46,14 +46,25 @@ use App\Http\Controllers\FoldersBanque1Controller;
 use App\Http\Controllers\FoldersCaisse1Controller;
 use App\Http\Controllers\FoldersImpot1Controller;
 use App\Http\Controllers\FoldersPaie1Controller;
-use App\Http\Controllers\FoldersDossierPermanant1Controller;
+use App\Http\Controllers\FoldersDossierPermanant1Controller;    
 use App\Http\Controllers\DouvrirController; 
 use App\Http\Controllers\DasousdossierController;
 use App\Http\Controllers\EtatDeCaisseController;
 
 use App\Http\Controllers\TransactionController;
 
-Route::post('/savetransaction', [TransactionController::class, 'store'])->name('savetransaction');
+
+ use App\Http\Controllers\SoldeMensuelController;
+
+// Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
+
+
+Route::post('/save-solde', [SoldeMensuelController::class, 'store'])->name('save-solde');
+
+
+
+// Route::post('/save-transaction', [TransactionController::class, 'save'])->name('save-transaction');
+Route::post('/save-transaction', [EtatDeCaisseController::class, 'save'])->name('save-transaction');
 
 
 Route::get('/etat-de-caisse', [EtatDeCaisseController::class, 'index'])->name('etat_de_caisse');

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Transaction;  // Assurez-vous que le modèle Transaction existe
+use App\Models\Transaction;   
 
 class TransactionController extends Controller
 {
