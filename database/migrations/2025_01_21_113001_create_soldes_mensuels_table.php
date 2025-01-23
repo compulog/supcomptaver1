@@ -15,7 +15,9 @@ class CreateSoldesMensuelsTable extends Migration
     {
         Schema::create('soldes_mensuels', function (Blueprint $table) {
             $table->id();
-            $table->date('mois');  // Le premier jour du mois
+            $table->decimal('mois')->default(0);  
+            $table->decimal('annee')->default(0); 
+
             $table->decimal('solde_initial', 10, 2)->default(0); // Solde initial
             $table->decimal('total_recette', 10, 2)->default(0); // Total des recettes
             $table->decimal('total_depense', 10, 2)->default(0); // Total des dépenses

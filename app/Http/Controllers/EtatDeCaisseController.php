@@ -4,18 +4,22 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Transaction;  
+use App\Models\SoldeMensuel; // Assurez-vous d'importer votre modèle
 
 class EtatDeCaisseController extends Controller
 {
+
     // Méthode pour afficher la page de l'état de caisse
     public function index()
     {
         // Récupérer toutes les transactions de la base de données
         $transactions = Transaction::all();
+        $soldesMensuels = SoldeMensuel::all(); // Récupérer tous les soldes mensuels
 
         // Passer les données à la vue 'etat_de_caisse.blade.php'
-        return view('etat_de_caisse', compact('transactions'));
+        return view('etat_de_caisse', compact('transactions','soldesMensuels'));
     }
+    
     public function save(Request $request)
 {
     // Vérifier les données reçues

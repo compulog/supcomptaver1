@@ -7,6 +7,25 @@ use App\Models\Transaction;
 
 class TransactionController extends Controller
 {
+
+   
+
+    public function delete(Request $request)
+    {
+        $transactionId = $request->input('id');
+    
+        // Trouver et supprimer la transaction
+        $transaction = Transaction::find($transactionId);
+        
+        if ($transaction) {
+            $transaction->delete();
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['success' => false, 'message' => 'Transaction non trouvée']);
+        }
+    }
+
+
     public function save(Request $request)
     {
         dd($request);   

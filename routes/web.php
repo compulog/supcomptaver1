@@ -58,8 +58,9 @@ use App\Http\Controllers\TransactionController;
 
 // Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
 
+Route::post('/delete-transaction', [TransactionController::class, 'delete'])->name('transaction.delete');
 
-Route::post('/save-solde', [SoldeMensuelController::class, 'store'])->name('save-solde');
+Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
 
 
 

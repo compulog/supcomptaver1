@@ -17,6 +17,7 @@ class SoldeMensuel extends Model
     // Colonnes que vous pouvez remplir massivement
     protected $fillable = [
         'mois',
+        'annee',
         'solde_initial',
         'total_recette',
         'total_depense',
