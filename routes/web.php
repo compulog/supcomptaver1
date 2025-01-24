@@ -62,7 +62,8 @@ Route::post('/delete-transaction', [TransactionController::class, 'delete'])->na
 
 Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
 
-
+Route::put('/update-transaction', [EtatDeCaisseController::class, 'update'])->name('update-transaction');
+Route::get('/etat-caisse/{id}/edit', [EtatDeCaisseController::class, 'edit'])->name('etat-caisse.edit');
 
 // Route::post('/save-transaction', [TransactionController::class, 'save'])->name('save-transaction');
 Route::post('/save-transaction', [EtatDeCaisseController::class, 'save'])->name('save-transaction');

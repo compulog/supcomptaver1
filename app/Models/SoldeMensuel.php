@@ -22,6 +22,8 @@ class SoldeMensuel extends Model
         'total_recette',
         'total_depense',
         'solde_final',
+        'societe_id',  
+
     ];
 
     // Pour éviter l'auto-gestion des timestamps (created_at, updated_at) si vous ne les utilisez pas

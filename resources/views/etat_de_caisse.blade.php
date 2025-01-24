@@ -93,14 +93,122 @@
     </select>
 
     <label for="year-select">L'année :</label>
-    <input type="text" value="{{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}" readonly>
+    <input type="text" id="year-select" value="{{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}" readonly>
 </div>
 
-<!-- Solde initial -->
+<!-- Solde initial à afficher en fonction du mois et de l'année choisis -->
 <div class="form-group">
     <label for="initial-balance">Solde initial :</label>
-    <input type="number" id="initial-balance" placeholder="Solde initial">
+    <input type="number" id="initial-balance" readonly>
 </div>
+
+
+
+
+
+
+
+
+<!-- Modal pour la modification detat de caisse -->
+<div class="modal fade" id="editcaisseModal" tabindex="-1" role="dialog" aria-labelledby="editClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="etat_de_caisse" method="POST" action="">
+                @csrf
+                @method('PUT')
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editClientModalLabel">Modifier</h5>
+                    <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="date">Date</label>
+                        <input type="date" class="form-control" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="N° Référence">N° Référence</label>
+                        <input type="number" class="form-control" name="N° Référence" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="Libellé">Libellé</label>
+                        <input type="text" class="form-control" name="Libellé" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="Recette">Recette</label>
+                        <input type="number" class="form-control" name="Recette" required>
+                    </div>
+                    <div class="form-group">
+                    <label for="Dépense">Dépense</label>
+                    <input type="number" class="form-control" name="Dépense" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                     <!-- Bouton Réinitialiser avec marge très grande à droite -->
+                     <button type="reset" class="btn btn-secondary me-8">
+                            <i class="fas fa-undo"></i> 
+                        </button>
+                    <button type="submit" class="btn btn-primary">Modifier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+
+<script>
+// Passer les soldes mensuels récupérés depuis Laravel à JavaScript
+var soldesMensuels = @json($soldesMensuels);
+console.log(soldesMensuels);  // Vérifiez les données reçues
+
+// Fonction pour filtrer le solde initial en fonction du mois et de l'année
+function filterSoldeInitial(month, year) {
+    // Chercher le solde mensuel correspondant au mois et à l'année
+    var solde = soldesMensuels.find(function(soldeMensuel) {
+        // Convertir mois et année en valeurs comparables (en entier ou chaîne formatée)
+        var moisComparaison = parseInt(soldeMensuel.mois).toString().padStart(2, '0'); // Mois comme "01", "02", etc.
+        var anneeComparaison = parseInt(soldeMensuel.annee).toString(); // Année comme "2011", "2012", etc.
+        
+        console.log('Comparaison:', moisComparaison, month, anneeComparaison, year);  // Debugging
+
+        // Vérification de la correspondance du mois et de l'année
+        return moisComparaison === month && anneeComparaison === year;
+    });
+
+    // Si un solde est trouvé, afficher le solde initial, sinon afficher 0
+    if (solde) {
+        document.getElementById('initial-balance').value = solde.solde_initial;
+    } else {
+        document.getElementById('initial-balance').value = 0;
+    }
+
+    // Rendre le champ éditable uniquement pour le mois de janvier (01)
+    if (month === "01") {
+        document.getElementById('initial-balance').readOnly = false; // Rendre le champ modifiable
+    } else {
+        document.getElementById('initial-balance').readOnly = true; // Le rendre en lecture seule
+    }
+}
+
+// Ajouter un événement pour filtrer lorsque le mois ou l'année change
+document.getElementById('month-select').addEventListener('change', function() {
+    var selectedMonth = this.value;
+    var selectedYear = document.getElementById('year-select').value;
+    filterSoldeInitial(selectedMonth, selectedYear);
+});
+
+// Filtrer par défaut lors du chargement de la page avec le mois et l'année initiale
+document.addEventListener('DOMContentLoaded', function() {
+    var selectedMonth = document.getElementById('month-select').value;
+    var selectedYear = document.getElementById('year-select').value;
+    filterSoldeInitial(selectedMonth, selectedYear);
+});
+</script>
+
+
 
 <!-- Conteneur pour le tableau -->
 <div id="example-table"></div>
@@ -164,24 +272,55 @@
         {title: "Libellé", field: "libelle", editor: "input", editorPlaceholder: "Entrez le libellé", width: 200},
         {title: "Recette", field: "recette", editor: "input", editorPlaceholder: "Entrez la recette", width: 200, formatter:"money"},
         {title: "Dépense", field: "depense", editor: "input", editorPlaceholder: "Entrez la dépense", width: 200, formatter:"money"},
-        {title: "Actions", field: "actions", width: 100, formatter: function(cell, formatterParams, onRendered) {
-    // Récupérer les données de la ligne
-    var rowData = cell.getRow().getData();
+        { 
+    title: "Actions", 
+    field: "actions", 
+    width: 100, 
+    formatter: function(cell, formatterParams, onRendered) {
+        // Récupérer les données de la ligne
+        var rowData = cell.getRow().getData();
 
-    // Si la ligne est vide, ne pas afficher l'icône de suppression
-    if (rowData.date === "" && rowData.ref === "" && rowData.libelle === "" && rowData.recette === "" && rowData.depense === "") {
-        return "";  // Pas d'icône pour cette ligne vide
+        // Si la ligne est vide, ne pas afficher l'icône de suppression
+        if (rowData.date === "" && rowData.ref === "" && rowData.libelle === "" && rowData.recette === "" && rowData.depense === "") {
+            return "";  // Pas d'icône pour cette ligne vide
+        }
+
+        // Créer une icône de suppression pour les autres lignes
+        var deleteIcon = document.createElement("i");
+        deleteIcon.classList.add("fas", "fa-trash-alt");  // Ajoute les classes FontAwesome pour l'icône de suppression
+        deleteIcon.style.cursor = "pointer";  // Rendre l'icône cliquable
+
+        // Créer un élément span pour l'icône de modification
+        var editIcon = document.createElement("span");
+        editIcon.classList.add("text-warning", "edit-etat-caisse");
+        editIcon.setAttribute("title", "Modifier");
+        editIcon.style.cursor = "pointer";
+        editIcon.innerHTML = `<i class="fas fa-edit" style="color:#82d616;"></i>`;
+
+        // Ajouter les événements sur les icônes
+        deleteIcon.onclick = function() {
+            deleteTransaction(rowData.id);  // Suppression de la ligne avec l'id
+        };
+
+        // Attacher un événement au bouton de modification (si nécessaire)
+        editIcon.onclick = function() {
+            // Fonction de modification si nécessaire
+            editTransaction(rowData.id);
+        };
+
+        // Retourner l'HTML combiné avec les éléments DOM créés
+        // Nous retournons ici les éléments DOM qui seront ajoutés au tableau.
+        onRendered(function() {
+            // On s'assure d'attacher l'événement à la suppression une fois le rendu effectué
+            cell.getElement().appendChild(deleteIcon);
+            cell.getElement().appendChild(editIcon);
+        });
+
+        // Ne rien retourner ici directement sous forme de texte.
+        return "";
     }
+}
 
-    // Créer une icône de suppression pour les autres lignes
-    var deleteIcon = document.createElement("i");
-    deleteIcon.classList.add("fas", "fa-trash-alt");  // Ajoute les classes FontAwesome pour l'icône de suppression
-    deleteIcon.style.cursor = "pointer";  // Rendre l'icône cliquable
-    deleteIcon.onclick = function() {
-        deleteTransaction(rowData.id);  // Suppression de la ligne avec l'id
-    };
-    return deleteIcon;
-}}
 
 
     ],
@@ -194,6 +333,37 @@
     }
 });
 
+
+$(document).ready(function() {
+    // Événement pour le clic sur le bouton d'édition
+    $(document).on('click', '.edit-etat-caisse', function() {
+        var caisseId = $(this).data('id');
+        $('#editcaisseModal').modal('show');
+        // Requête AJAX pour récupérer les données du client
+        // $.ajax({
+        //     url: '/etat-caisse/' + caisseId + '/edit',
+        //     method: 'GET',
+        //     success: function(data) {
+        //         // Remplir le formulaire dans le pop-up avec les données
+        //         $('#clientForm [name="compte"]').val(data.compte);
+        //         $('#clientForm [name="intitule"]').val(data.intitule);
+        //         $('#clientForm [name="identifiant_fiscal"]').val(data.identifiant_fiscal);
+        //         $('#clientForm [name="ICE"]').val(data.ICE);
+        //         // Remplir d'autres champs si nécessaire
+
+        //         // Mettre à jour l'URL d'action du formulaire pour la modification
+        //         $('#clientForm').attr('action', '/clients/' + caiseId);
+
+        //         // Afficher le pop-up
+        //         $('#editcaisseModal').modal('show');
+        //     },
+        //     error: function(xhr) {
+        //         console.error('Erreur lors de la récupération des données :', xhr);
+        //         alert('Erreur lors de la récupération des données du client.');
+        //     }
+        // });
+    });
+});
 // Fonction pour supprimer une transaction via AJAX
 function deleteTransaction(transactionId) {
     $.ajax({

@@ -14,6 +14,9 @@ class SoldeMensuelController extends Controller
     
     public function saveSolde(Request $request)
     {
+        // Récupérer l'ID de la société à partir de la session
+        $societeId = session('societeId');
+   
         // Validation des données envoyées
         $request->validate([
             'mois' => 'required|numeric',
@@ -22,25 +25,26 @@ class SoldeMensuelController extends Controller
             'total_depense' => 'required|numeric',
             'solde_final' => 'required|numeric',
         ]);
-
-        // Vérifier si un solde existe déjà pour ce mois et cette année
+    
+        // Vérifier si un solde existe déjà pour ce mois et cette année pour cette société
         $existingSolde = SoldeMensuel::where('mois', $request->mois)
                                      ->where('annee', $request->annee)
+                                     ->where('societe_id', $societeId) // Ajout de la vérification du societe_id
                                      ->first();
-
+    
         if ($existingSolde) {
-            // Si un enregistrement existe déjà, vous pouvez soit le mettre à jour, soit retourner un message d'erreur.
-            // Exemple : Mise à jour des valeurs
+            // Si un enregistrement existe déjà, mise à jour des valeurs
             $existingSolde->update([
                 'solde_initial' => $request->solde_initial,
                 'total_recette' => $request->total_recette,
                 'total_depense' => $request->total_depense,
                 'solde_final' => $request->solde_final,
+                'societe_id' => $societeId,
             ]);
-
+    
             return response()->json(['message' => 'Solde mensuel mis à jour avec succès!']);
         } else {
-            // Sinon, créer un nouvel enregistrement
+            // Sinon, création d'un nouvel enregistrement
             SoldeMensuel::create([
                 'mois' => $request->mois,
                 'annee' => $request->annee,  // L'année envoyée depuis la vue
@@ -48,9 +52,11 @@ class SoldeMensuelController extends Controller
                 'total_recette' => $request->total_recette,
                 'total_depense' => $request->total_depense,
                 'solde_final' => $request->solde_final,
+                'societe_id' => $societeId, 
             ]);
-
+    
             return response()->json(['message' => 'Solde mensuel enregistré avec succès!']);
         }
     }
+    
 }
