@@ -51,9 +51,13 @@
             <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg {{ (Request::is('rtl') ? 'overflow-hidden' : '') }}">
                 <nav class="navbar d-flex">
                     <!-- Conteneur de l'icône du menu qui occupe 30px -->
-                    <button id="menuToggle" class="navbar-toggler" type="button" style="padding: 0; border: none; background: transparent;">
-                       <p style="font-size:15px;color:black;">Menu</p> 
-                    </button>
+                    {{-- Assurez-vous que l'utilisateur est connecté et que son type n'est pas "interlocuteurs" --}}
+@if(auth()->check() && auth()->user()->type !== 'interlocuteurs')
+    <button id="menuToggle" class="navbar-toggler" type="button" style="padding: 0; border: none; background: transparent;">
+        <p style="font-size:15px;color:black;">Menu</p> 
+    </button>
+@endif
+
                     
                     <!-- Navbar qui prend le reste de l'espace -->
                     <div class="navbar-links flex-grow-1">

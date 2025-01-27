@@ -57,27 +57,16 @@ use App\Http\Controllers\TransactionController;
  use App\Http\Controllers\SoldeMensuelController;
 
 // Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
-
-Route::post('/delete-transaction', [TransactionController::class, 'delete'])->name('transaction.delete');
-
-Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
-
-Route::put('/update-transaction', [EtatDeCaisseController::class, 'update'])->name('update-transaction');
-Route::get('/etat-caisse/{id}/edit', [EtatDeCaisseController::class, 'edit'])->name('etat-caisse.edit');
-
-// Route::post('/save-transaction', [TransactionController::class, 'save'])->name('save-transaction');
-Route::post('/save-transaction', [EtatDeCaisseController::class, 'save'])->name('save-transaction');
-
-
-Route::get('/etat-de-caisse', [EtatDeCaisseController::class, 'index'])->name('etat_de_caisse');
-
-
-
-
-
 // Route::middleware(['auth', 'permission:vue_dashboard'])->get('dashboard', [SocieteController::class, 'index'])->name('dashboard');
 
 Route::group(['middleware' => 'auth'], function () {
+        Route::post('/delete-transaction', [TransactionController::class, 'delete'])->name('transaction.delete');
+        Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
+        Route::put('/update-transaction/{id}', [EtatDeCaisseController::class, 'update'])->name('update-transaction');
+        Route::get('/etat-caisse/{id}/edit', [EtatDeCaisseController::class, 'edit'])->name('etat-caisse.edit');
+        // Route::post('/save-transaction', [TransactionController::class, 'save'])->name('save-transaction');
+        Route::post('/save-transaction', [EtatDeCaisseController::class, 'save'])->name('save-transaction');
+        Route::get('/etat-de-caisse', [EtatDeCaisseController::class, 'index'])->name('etat_de_caisse');
         Route::post('/uploadFileda', [DasousdossierController::class, 'upload'])->name('uploadFileda');
         Route::post('/folderdasouas/create', [DasousdossierController::class, 'create'])->name('folderdasouas.create');
         Route::get('/dasousdossier/{folderId}', [DasousdossierController::class, 'showSousDossier'])->name('dasousdossier.show');

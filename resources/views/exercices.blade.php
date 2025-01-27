@@ -40,8 +40,8 @@
                      
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Achat'] ?? 0 }}</p>     
-                           <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
+                           <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : </p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : </p>
             </div>
         </div>
 
@@ -60,8 +60,8 @@
                     </form>
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Vente'] ?? 0 }}</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : </p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : </p>
             </div>
         </div>
 
@@ -80,8 +80,8 @@
                     </form>
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Banque'] ?? 0 }}</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : </p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : </p>
             </div>
         </div>
 
@@ -104,8 +104,8 @@
                     </form>
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Caisse'] ?? 0 }}</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 3</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : 2</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : </p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : </p>
             </div>
         </div>
     
@@ -124,8 +124,8 @@
                     </form>
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['impot'] ?? 0 }}</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : </p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : </p>
             </div>
         </div>
 
@@ -144,8 +144,8 @@
                     </form>
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Paie'] ?? 0 }}</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : </p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : </p>
             </div>
         </div>
 
@@ -170,8 +170,8 @@
                 </form>
                 </div>
                 <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Dossier_permanant'] ?? 0 }}</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : </p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : </p>
             </div>
 
         
@@ -255,12 +255,11 @@
 
                 </div>
 
-                <!-- Informations supplémentaires sur le dossier -->
-
+ 
                 <!-- Affichage du nombre de fichiers dans le dossier -->
                 <p style="font-size: 0.7rem; line-height: 0.3;">Total fichiers : {{ $dossierFileCounts[$dossier->id] ?? 0 }}</p>  
-                <p style="font-size: 0.7rem; line-height: 0.3;">Pièces traitées : 0</p>
-                <p style="font-size: 0.7rem; line-height: 0.3;">Pièces suspendues : 0</p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">Pièces traitées : </p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">Pièces suspendues : </p>
             </div>
         </div>
     @endforeach

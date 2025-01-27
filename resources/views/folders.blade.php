@@ -219,6 +219,7 @@
                 <form action="{{ route('folder.create') }}" method="POST">
                     @csrf
                     <input type="hidden" name="folders_id" value="{{ $foldersId }}">
+                    <input type="hidden" name="type_folder" value="Achat">
 
                     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
 

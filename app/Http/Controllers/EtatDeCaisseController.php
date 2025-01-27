@@ -73,16 +73,16 @@ public function update(Request $request, $id)
         $transaction = Transaction::findOrFail($id);
         $transaction->update([
             'date' => $request->input('date'),
-            'reference' => $request->input('N° Référence'),
+            'reference' => $request->input('Nreference'),
             'libelle' => $request->input('Libellé'),
             'recette' => $request->input('Recette'),
-            'depense' => $request->input('Dépense'),
+            'depense' => $request->input('Depense'),
         ]);
 
-        return response()->json(['success' => true]);
+        return redirect()->route('etat_de_caisse')->with('success', 'Transaction mise à jour avec succès.');
     } catch (\Exception $e) {
         \Log::error('Erreur lors de la modification de la transaction', ['error' => $e->getMessage()]);
-        return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        return redirect()->route('etat_de_caisse')->with('error', 'Erreur lors de la mise à jour de la transaction.');
     }
 }
 

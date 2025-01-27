@@ -198,7 +198,7 @@ class FolderController extends Controller
     
     public function create(Request $request)
     {
-        // dd($request);
+    //    dd($request);
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255', // Correspond au champ 'name' du formulaire
             'societe_id' => [
@@ -231,11 +231,36 @@ class FolderController extends Controller
         if ($request->has('folders_id') && $request->folders_id) {
             return redirect()->route('folder.show', ['id' => $request->folders_id])->with('success', 'Dossier créé avec succès');
         }
-    
-        // Sinon, on retourne vers une vue (par exemple folder.create)
-        return redirect()->route('achat.view');
+    // Redirection selon le type du dossier
+    switch ($request->type_folder) {
+        case 'achat': // Exemple de type de dossier
+            return redirect()->route('achat.view')->with('success', 'Dossier créé avec succès');
+        
+        case 'vente': // Exemple d'un autre type de dossier
+            return redirect()->route('vente.view')->with('success', 'Dossier créé avec succès');
+        
+            case 'banque': // Exemple d'un autre type de dossier
+                return redirect()->route('banque.view')->with('success', 'Dossier créé avec succès');
+        
+                case 'Caisse': // Exemple d'un autre type de dossier
+                    return redirect()->route('caisse.view')->with('success', 'Dossier créé avec succès');
+        
+                    case 'impot': // Exemple d'un autre type de dossier
+                        return redirect()->route('impot.view')->with('success', 'Dossier créé avec succès');
+                    
+                        case 'paie': // Exemple d'un autre type de dossier
+                            return redirect()->route('paie.view')->with('success', 'Dossier créé avec succès');
+        
+                            case 'Dossier_permanant': // Exemple d'un autre type de dossier
+                                return redirect()->route('Dossier_permanant.view')->with('success', 'Dossier créé avec succès');
+            
+        // Ajouter d'autres types de dossier si nécessaire
+        default:
+            return redirect()->route('achat.view')->with('success', 'Dossier créé avec succès');
     }
-    
+        // Sinon, on retourne vers une vue (par exemple folder.create)
+       
+    }
     
     
    // app/Http/Controllers/FolderController.php

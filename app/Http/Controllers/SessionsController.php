@@ -23,7 +23,7 @@ class SessionsController extends Controller
     }
     public function store(Request $request)
     {
-       
+     
         $attributes = request()->validate([
             'name'=>'required',
             'password'=>'required'
@@ -81,7 +81,6 @@ if ($user->type === 'interlocuteurs') {
 
     public function create()
     {
-       
             // Si BaseName est 'compulog', récupérer les bases de données qui commencent par 'supcompta'
             $databases = DB::select("SHOW DATABASES LIKE 'supcompta%'");
 
