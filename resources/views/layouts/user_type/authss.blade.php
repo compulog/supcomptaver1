@@ -47,7 +47,7 @@
             <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg {{ (Request::is('rtl') ? 'overflow-hidden' : '') }}">
                 <nav class="navbar">
                     <button id="menuToggle" class="navbar-toggler d-none d-lg-block" type="button" style="padding: 0; border: none; background: transparent;">
-                    <p style="font-size:15px;color:black;">Menu</p> 
+                    <p style="font-size:15px;color:black;"><i class="fas fa-bars"></i></p> 
                     </button>
                     @include('layouts.navbars.auth.nav1')
                 </nav>

@@ -6,10 +6,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SoldeMensuel extends Model
 {
     use HasFactory;
+    use SoftDeletes;
+
     protected $connection = 'supcompta';
     // Nom de la table associée au modèle
     protected $table = 'soldes_mensuels';
