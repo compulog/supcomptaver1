@@ -8,6 +8,8 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+<!-- Ajouter le CDN de SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- Styles personnalisés -->
 <style>
@@ -116,6 +118,16 @@
     <a href="">Etat de caisse</a>
 </nav>
 <center><h5>ETAT DE CAISSE MENSUELLE</h5></center>
+ <!-- Sélecteur de code journal -->
+ <label for="journal-select" style="margin-left: 20px;">Code Journal :</label>
+    <select id="journal-select" style="margin-left:10px;width:150px;height:31px;">
+        <option value="J001">J001</option>
+        <option value="J002">J002</option>
+        <option value="J003">J003</option>
+        <!-- Ajouter d'autres options ici -->
+    </select>
+    <i class="fa fa-share" aria-hidden="true"></i>
+
 
 <!-- Sélecteur de mois et d'année -->
 <div class="form-group" style="margin-left:-700px;">
@@ -145,7 +157,7 @@
 </div>
 
 <!-- Modal pour la modification d'état de caisse -->
-<div class="modal fade" id="editcaisseModal" tabindex="-1" role="dialog" aria-labelledby="editClientModalLabel" aria-hidden="true">
+<!-- <div class="modal fade" id="editcaisseModal" tabindex="-1" role="dialog" aria-labelledby="editClientModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <form id="etat_de_caisse" method="POST" action="">
@@ -186,9 +198,9 @@
             </form>
         </div>
     </div>
-</div>
+</div> -->
 
-  <i class="fa fa-trash" id="delete-selected"></i>
+<!-- <i class="fa fa-trash" id="delete-selected"></i> -->
 
 <script>
 // Passer les soldes mensuels récupérés depuis Laravel à JavaScript
@@ -255,17 +267,43 @@ document.addEventListener('DOMContentLoaded', function() {
     <label for="final-balance">Solde final :</label>
     <input type="number" id="final-balance" placeholder="Solde final">
 </div>
-
+<button id="cloturer-button" class="btn btn-primary">Clôturer</button>
 <script>
-    var transactions = @json($transactions);
 
+document.getElementById('cloturer-button').addEventListener('click', function() {
+    var mois = $('#month-select').val();
+    var annee = $('input[type="text"]').val();
+    var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
+
+    $.ajax({
+        url: '/cloturer-solde', // L'URL de votre route pour cloturer
+        type: 'POST',
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content'),
+            mois: mois,
+            annee: annee,
+            journal_code: journalCode
+        },
+        success: function(response) {
+            console.log(response.message);
+            // Vous pouvez ajouter une alerte ou un message de succès ici
+            alert('Le solde a été clôturé avec succès !');
+        },
+        error: function(xhr, status, error) {
+            console.error("Erreur lors de la clôture :", error);
+            alert('Erreur lors de la clôture du solde.');
+        }
+    });
+});
+    var transactions = @json($transactions);
+ 
     function filterTransactions(month, year) {
         return transactions.filter(function(transaction) {
             var transactionDate = new Date(transaction.date);
             return transactionDate.getMonth() + 1 === parseInt(month) && transactionDate.getFullYear() === parseInt(year);
         });
     }
-
+    
     function updateTableData(month, year) {
         var filteredTransactions = filterTransactions(month, year);
         var tableData = filteredTransactions.map(function(transaction) {
@@ -286,49 +324,93 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTotals(month, year);
     }
 
+    
     var table = new Tabulator("#example-table", {
-        height: 300,
-        layout: "fitColumns",
-        columns: [
-            {title: "Jour", field: "day", editor: "input", editorPlaceholder: "Entrez le jour", width: 100},
-            {title: "N° Référence", field: "ref", editor: "input", editorPlaceholder: "Entrez le N° Référence", width: 200},
-            {title: "Libellé", field: "libelle", editor: "input", editorPlaceholder: "Entrez le libellé", width: 382},
-            {title: "Recette", field: "recette", editor: "input", editorPlaceholder: "Entrez la recette", width: 200, formatter:"money"},
-            {title: "Dépense", field: "depense", editor: "input", editorPlaceholder: "Entrez la dépense", width: 200, formatter:"money"},
-            { 
-                title: "Actions", 
-                field: "actions", 
-                width: 100, 
-                formatter: function(cell, formatterParams, onRendered) {
-                    var rowData = cell.getRow().getData();
-                    if (rowData.day === "" && rowData.ref === "" && rowData.libelle === "" && rowData.recette === "" && rowData.depense === "") {
-                        return "";
+    height: 300,
+    layout: "fitColumns",
+    columns: [
+        {title: "Jour", field: "day", editor: "input", editorPlaceholder: "Entrez le jour", width: 100},
+        {title: "N° Référence", field: "ref", editor: "input", editorPlaceholder: "Entrez le N° Référence", width: 200},
+        {title: "Libellé", field: "libelle", editor: "input", editorPlaceholder: "Entrez le libellé", width: 382},
+        {title: "Recette", field: "recette", editor: "input", editorPlaceholder: "Entrez la recette", width: 200, formatter: "money"},
+        {title: "Dépense", field: "depense", editor: "input", editorPlaceholder: "Entrez la dépense", width: 200, formatter: "money"},
+        { 
+            title: `
+                <i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="selectAllRows()"></i>
+                <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;" onclick="deleteSelectedRows()"></i>
+            `,
+            field: "actions", 
+            width: 100, 
+            formatter: function(cell, formatterParams, onRendered) {
+                var rowData = cell.getRow().getData();
+
+                // Créer un conteneur pour les icônes et la case à cocher
+                var actionContainer = document.createElement("div");
+                actionContainer.style.display = "flex";
+                actionContainer.style.alignItems = "center";
+
+                // Créer une case à cocher pour la ligne
+                var checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.style.cursor = "pointer";
+
+                // Écouter l'événement de clic sur la case à cocher
+                checkbox.addEventListener('change', function() {
+                    if (checkbox.checked) {
+                        // Sélectionner la ligne si la case est cochée
+                        cell.getRow().select();
+                    } else {
+                        // Désélectionner la ligne si la case est décochée
+                        cell.getRow().deselect();
                     }
+                });
 
-                    var deleteIcon = document.createElement("i");
-                    deleteIcon.classList.add("fas", "fa-trash-alt");
-                    deleteIcon.style.cursor = "pointer";
+                // Vérifier l'état initial de la ligne (si elle est déjà sélectionnée)
+                checkbox.checked = cell.getRow().isSelected();
 
-                    deleteIcon.onclick = function() {
-                        deleteTransaction(rowData.id);
-                    };
+                actionContainer.appendChild(checkbox);
 
-                    onRendered(function() {
-                        cell.getElement().appendChild(deleteIcon);
-                    });
+                // Icône de suppression
+                var deleteIcon = document.createElement("i");
+                deleteIcon.classList.add("fas", "fa-trash-alt");
+                deleteIcon.style.cursor = "pointer";
+                deleteIcon.onclick = function() {
+                    deleteTransaction(rowData.id);
+                };
+                actionContainer.appendChild(deleteIcon);
 
-                    return "";
-                }
+                onRendered(function() {
+                    cell.getElement().appendChild(actionContainer);
+                });
+
+                return ""; // Retourner une chaîne vide car les icônes ont été ajoutées manuellement
             }
-        ],
-        
-        data: [],
-        selectable: true,  // Permet la sélection de lignes
-        cellEdited: function(cell) {
-            updateTotals($('#month-select').val(), $('input[type="text"]').val());
-            saveData();
+        },
+    ],
+    
+    data: [],
+    selectable: true,  // Permet la sélection de lignes
+    cellEdited: function(cell) {
+        updateTotals($('#month-select').val(), $('input[type="text"]').val());
+        saveData();
+    }
+});
+
+// Fonction pour sélectionner toutes les lignes et cocher toutes les cases
+function selectAllRows() {
+    // Sélectionner toutes les lignes
+    table.selectRow();
+    
+    // Cocher toutes les cases à cocher
+    table.getRows().forEach(function(row) {
+        var checkbox = row.getCell("actions").getElement().querySelector("input[type='checkbox']");
+        if (checkbox) {
+            checkbox.checked = true; // Cocher la case
         }
     });
+}
+
+
 
     $(document).on('click', '.edit-etat-caisse', function() {
         var caisseId = $(this).data('id');
@@ -386,8 +468,20 @@ document.addEventListener('DOMContentLoaded', function() {
         location.reload();
     }
 
-    // Gestionnaire d'événements pour le bouton de suppression
-    document.getElementById('delete-selected').addEventListener('click', function() {
+    // Fonction pour sélectionner ou désélectionner toutes les lignes
+    function toggleSelectAll() {
+        var allRows = table.getRows();
+        var allSelected = allRows.every(row => row.getSelected());
+
+        if (allSelected) {
+            table.deselectRow();
+        } else {
+            table.selectRow();
+        }
+    }
+
+    // Fonction pour supprimer les lignes sélectionnées
+    function deleteSelectedRows() {
         var selectedRows = table.getSelectedRows();
         if (selectedRows.length === 0) {
             alert("Aucune ligne sélectionnée !");
@@ -400,51 +494,67 @@ document.addEventListener('DOMContentLoaded', function() {
                 deleteTransaction(rowData.id);
             });
         }
-            location.reload();
-    });
+    }
 
+    // Gestionnaire d'événements pour le bouton de suppression
+    // document.getElementById('delete-selected').addEventListener('click', function() {
+    //     var selectedRows = table.getSelectedRows();
+    //     if (selectedRows.length === 0) {
+    //         alert("Aucune ligne sélectionnée !");
+    //         return;
+    //     }
+
+    //     if (confirm("Êtes-vous sûr de vouloir supprimer les lignes sélectionnées ?")) {
+    //         selectedRows.forEach(function(row) {
+    //             var rowData = row.getData();
+    //             deleteTransaction(rowData.id);
+    //         });
+    //     }
+    //     location.reload();
+    // });
     $('#example-table').on('keydown', function(e) {
-        if (e.key === "Enter") {
-            var selectedRows = table.getSelectedRows();
-            if (selectedRows.length > 0) {
-                var rowData = selectedRows[0].getData();
-                console.log("Données de la ligne sélectionnée :");
-                console.log("Jour :", rowData.day);
-                console.log("Référence :", rowData.ref);
-                console.log("Libellé :", rowData.libelle);
-                console.log("Recette :", rowData.recette);
-                console.log("Dépense :", rowData.depense);
+    if (e.key === "Enter") {
+        var selectedRows = table.getSelectedRows();
+        if (selectedRows.length > 0) {
+            var rowData = selectedRows[0].getData();
+            console.log("Données de la ligne sélectionnée :");
+            console.log("Jour :", rowData.day);
+            console.log("Référence :", rowData.ref);
+            console.log("Libellé :", rowData.libelle);
+            console.log("Recette :", rowData.recette);
+            console.log("Dépense :", rowData.depense);
 
-                var selectedMonth = $('#month-select').val();
-                var selectedYear = $('input[type="text"]').val();
-                var formattedDate = selectedYear + '-' + selectedMonth + '-' + rowData.day.padStart(2, '0');
+            var selectedMonth = $('#month-select').val();
+            var selectedYear = $('input[type="text"]').val();
+            var formattedDate = selectedYear + '-' + selectedMonth + '-' + rowData.day.padStart(2, '0');
+            var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
 
-                $.ajax({
-                    url: '/save-transaction',
-                    type: "POST",
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        date: formattedDate,
-                        ref: rowData.ref,
-                        libelle: rowData.libelle,
-                        recette: rowData.recette,
-                        depense: rowData.depense
-                    },
-                    success: function(response) {
-                        console.log("Données envoyées avec succès :", response);
-                        location.reload();
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Erreur lors de l'envoi des données :", error);
-                        console.log(xhr.responseText);
-                    }
-                });
-            } else {
-                console.log("Aucune ligne sélectionnée !");
-            }
+            $.ajax({
+                url: '/save-transaction',
+                type: "POST",
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    date: formattedDate,
+                    ref: rowData.ref,
+                    libelle: rowData.libelle,
+                    recette: rowData.recette,
+                    depense: rowData.depense,
+                    journal_code: journalCode // Inclure le code journal dans les données envoyées
+                },
+                success: function(response) {
+                    console.log("Données envoyées avec succès :", response);
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Erreur lors de l'envoi des données :", error);
+                    console.log(xhr.responseText);
+                }
+            });
+        } else {
+            console.log("Aucune ligne sélectionnée !");
         }
-    });
-
+    }
+});
     function saveData() {
         var mois = $('#month-select').val();
         var soldeInitial = parseFloat($('#initial-balance').val() || 0);
@@ -453,7 +563,8 @@ document.addEventListener('DOMContentLoaded', function() {
         var soldeFinal = parseFloat($('#final-balance').val() || 0);
         var year = $('input[type="text"]').val();
         var date = new Date(year + '-' + mois + '-01');
-
+        var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
+        console.log(journalCode);
         $.ajax({
             url: '/save-solde',
             method: 'POST',
@@ -464,6 +575,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 total_recette: totalRecette,
                 total_depense: totalDepense,
                 solde_final: soldeFinal,
+                journal_code: journalCode ,
+
                 _token: "{{ csrf_token() }}"
             },
             success: function(response) {
@@ -521,6 +634,60 @@ document.addEventListener('DOMContentLoaded', function() {
         var currentYear = $('input[type="text"]').val();
         updateTableData(currentMonth, currentYear);
     });
+// Fonction pour vérifier si la référence existe déjà dans le tableau
+function checkReferenceExists(reference, currentRowId) {
+    const existingTransaction = transactions.find(function(transaction) {
+        return transaction.reference === reference && transaction.id !== currentRowId;
+    });
+    return existingTransaction ? {
+        exists: true,
+        month: new Date(existingTransaction.date).getMonth() + 1, // Récupérer le mois (1-12)
+        year: new Date(existingTransaction.date).getFullYear() // Récupérer l'année
+    } : { exists: false };
+}
+
+// Événement cellEdited pour vérifier la référence
+table.on("cellEdited", function(cell) {
+    var field = cell.getField();
+    var newValue = cell.getValue();
+    var rowData = cell.getRow().getData();
+
+    // Vérifiez si le champ modifié est la référence
+    if (field === "ref") {
+        var referenceCheck = checkReferenceExists(newValue, rowData.id);
+        if (referenceCheck.exists) {
+            // Afficher une alerte avec SweetAlert2
+            var period = referenceCheck.month + '/' + referenceCheck.year; // Format de la période
+            Swal.fire({
+                title: `La référence N° "${newValue}" existe déjà dans la période ${period}`,
+                text: "Voulez-vous continuer, annuler ou mettre à jour la référence ?",
+                icon: 'warning',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: 'Oui',
+                cancelButtonText: 'Non',
+                denyButtonText: 'Mettre à jour'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Si l'utilisateur choisit "Oui", accepter la modification et conserver la nouvelle valeur
+                    // (La nouvelle valeur est déjà appliquée par cellEdited)
+                } else if (result.isDenied) {
+                    // Si l'utilisateur choisit "Mettre à jour", procéder à la mise à jour
+                    rowData.ref = newValue; // Mettre à jour la référence dans la ligne
+                    cell.getRow().update(rowData); // Mettre à jour la ligne avec la nouvelle valeur
+                } else {
+                    // Si l'utilisateur choisit "Non", réinitialiser la valeur de la cellule et supprimer la ligne
+                    cell.setValue(rowData.ref); // Réinitialiser à l'ancienne valeur
+                    cell.getRow().delete(); // Supprimer la ligne
+                    location.reload(); // Recharger la page après suppression
+                }
+            });
+        }
+    }
+
+    // Mettre à jour les totaux après modification
+    updateTotals($('#month-select').val(), $('input[type="text"]').val());
+});
 
 </script>
 

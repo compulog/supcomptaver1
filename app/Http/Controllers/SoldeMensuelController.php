@@ -14,6 +14,7 @@ class SoldeMensuelController extends Controller
     
     public function saveSolde(Request $request)
     {
+
         // Récupérer l'ID de la société à partir de la session
         $societeId = session('societeId');
    
@@ -24,6 +25,8 @@ class SoldeMensuelController extends Controller
             'total_recette' => 'required|numeric',
             'total_depense' => 'required|numeric',
             'solde_final' => 'required|numeric',
+            'journal_code' => 'nullable|string|max:10', // Validation pour le code journal
+
         ]);
     
         // Vérifier si un solde existe déjà pour ce mois et cette année pour cette société
@@ -40,6 +43,8 @@ class SoldeMensuelController extends Controller
                 'total_depense' => $request->total_depense,
                 'solde_final' => $request->solde_final,
                 'societe_id' => $societeId,
+                // 'code_journal' => $request->input('journal_code'), // Mettre à jour le code journal
+
             ]);
     
             return response()->json(['message' => 'Solde mensuel mis à jour avec succès!']);
@@ -53,10 +58,43 @@ class SoldeMensuelController extends Controller
                 'total_depense' => $request->total_depense,
                 'solde_final' => $request->solde_final,
                 'societe_id' => $societeId, 
+                'code_journal' => $request->input('journal_code'), // Mettre à jour le code journal
+
             ]);
     
             return response()->json(['message' => 'Solde mensuel enregistré avec succès!']);
         }
     }
-    
+    public function cloturerSolde(Request $request)
+{
+    // Validation des données envoyées
+    $request->validate([
+        'mois' => 'required|numeric',
+        'annee' => 'required|numeric',
+        'journal_code' => 'nullable|string|max:10',
+    ]);
+
+    // Récupérer l'ID de la société à partir de la session
+    $societeId = session('societeId');
+
+    // Trouver le solde correspondant au mois et à l'année
+    $solde = SoldeMensuel::where('mois', $request->mois)
+                         ->where('annee', $request->annee)
+                         ->where('societe_id', $societeId)
+                         ->first();
+
+    if ($solde) {
+        // Mettre à jour le champ cloturer
+        $solde->cloturer = true; // ou 1
+        $solde->save();
+
+        return response()->json(['message' => 'Le solde a été clôturé avec succès !']);
+    } else {
+        return response()->json(['message' => 'Aucun solde trouvé pour ce mois et cette année.'], 404);
+    }
+}
+
+
+
+
 }

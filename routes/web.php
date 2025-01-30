@@ -55,7 +55,8 @@ use App\Http\Controllers\TransactionController;
 
 
  use App\Http\Controllers\SoldeMensuelController;
-
+ 
+ Route::post('/cloturer-solde', [SoldeMensuelController::class, 'cloturerSolde']);
 // Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
 // Route::middleware(['auth', 'permission:vue_dashboard'])->get('dashboard', [SocieteController::class, 'index'])->name('dashboard');
 

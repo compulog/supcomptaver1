@@ -26,7 +26,8 @@ class SoldeMensuel extends Model
         'total_depense',
         'solde_final',
         'societe_id',  
-
+        'code_journal',
+        'cloturer',
     ];
 
     // Pour éviter l'auto-gestion des timestamps (created_at, updated_at) si vous ne les utilisez pas

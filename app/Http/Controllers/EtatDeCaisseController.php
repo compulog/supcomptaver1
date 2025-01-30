@@ -33,7 +33,6 @@ class EtatDeCaisseController extends Controller
     
     public function save(Request $request)
     {
-        
         // Vérifier les données reçues
         \Log::info($request->all()); // Log les données
         $societeId = session('societeId'); 
@@ -42,10 +41,11 @@ class EtatDeCaisseController extends Controller
         // Validation des données
         $request->validate([
             'date' => 'required|date',
-            'ref' => 'required|string|max:50',
-            'libelle' => 'required|string',
+            'ref' => 'nullable|string|max:50',
+            'libelle' => 'nullable|string',
             'recette' => 'nullable|numeric',
             'depense' => 'nullable|numeric',
+            'journal_code' => 'nullable|string|max:10', // Validation pour le code journal
         ]);
     
         try {
@@ -53,7 +53,7 @@ class EtatDeCaisseController extends Controller
             $transaction = Transaction::where('reference', $request->input('ref'))
                                        ->where('societe_id', $societeId)
                                        ->first();
-    
+            
             // Si la transaction existe, on la met à jour
             if ($transaction) {
                 $transaction->update([
@@ -61,6 +61,7 @@ class EtatDeCaisseController extends Controller
                     'libelle' => $request->input('libelle'),
                     'recette' => $request->input('recette', 0),
                     'depense' => $request->input('depense', 0),
+                    'code_journal' => $request->input('journal_code'), // Mettre à jour le code journal
                 ]);
     
                 return response()->json(['success' => true, 'message' => 'Transaction mise à jour avec succès.']);
@@ -74,6 +75,7 @@ class EtatDeCaisseController extends Controller
                 'recette' => $request->input('recette', 0),
                 'depense' => $request->input('depense', 0),
                 'societe_id' => $societeId, // Insertion du societe_id
+                'code_journal' => $request->input('journal_code'), // Insertion du code journal
             ]);
     
             return response()->json(['success' => true, 'message' => 'Transaction créée avec succès.']);
@@ -83,7 +85,6 @@ class EtatDeCaisseController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
-    
 public function update(Request $request, $id)
 {
     // dd($request); // Pour vérifier les données reçues
@@ -123,37 +124,7 @@ public function update(Request $request, $id)
     }
 }
 
-
-// public function update(Request $request, $id)
-// {
-//     try {
-//         // Validation des champs
-//         $request->validate([
-//             'date' => 'required|date',
-//             'Nreference' => 'required|string',
-//             'Libellé' => 'required|string',
-//             'Recette' => 'nullable|numeric', // Recette peut être nulle mais doit être un nombre si présente
-//             'Depense' => 'nullable|numeric',  // Idem pour Depense
-//         ]);
-
-//         // Récupérer la transaction
-//         $transaction = Transaction::findOrFail($id);
-
-//         // Mise à jour des champs, avec vérification pour Recette et Depense
-//         $transaction->update([
-//             'date' => $request->input('date'),
-//             'reference' => $request->input('Nreference'),
-//             'libelle' => $request->input('Libellé'),
-//             'recette' => $request->input('Recette') ?? 0, // Si Recette est vide ou null, on met à 0
-//             'depense' => $request->input('Depense') ?? 0,  // Pareil pour Depense
-//         ]);
-
-//         return redirect()->route('etat_de_caisse')->with('success', 'Transaction mise à jour avec succès.');
-//     } catch (\Exception $e) {
-//         \Log::error('Erreur lors de la modification de la transaction', ['error' => $e->getMessage()]);
-//         return redirect()->route('etat_de_caisse')->with('error', 'Erreur lors de la mise à jour de la transaction.');
-//     }
-// }
+ 
 
 
 public function edit($id)
