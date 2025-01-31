@@ -24,7 +24,7 @@ class User extends Authenticatable
      * @var string[]
      */
     protected $fillable = [
-        'name', 'email', 'password', 'raw_password', 'phone', 'location', 'about_me', 'BaseName', 'type'
+        'name', 'email', 'password', 'raw_password', 'phone', 'location', 'about_me', 'BaseName', 'type', 'societe_id'
     ];
 
 
@@ -53,5 +53,8 @@ public function droits()
 {
     return $this->belongsToMany(DroitDacces::class, 'droit_dacces_user', 'user_id', 'droit_dacces_id');
 }
-
+public function droitsAcces()
+{
+    return $this->belongsToMany(DroitDacces::class, 'droit_dacces_user', 'user_id', 'droit_dacces_id');
+}
 }

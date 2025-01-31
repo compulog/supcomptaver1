@@ -11,21 +11,8 @@
 ➢Caisse</h6>
     <div class="row"  style="margin-left:400px">
         <div class="d-flex align-items-center mb-3">
-                <!-- Formulaire de filtrage -->
-<form method="GET" action="" class="d-flex me-3">
-    <div class="input-group">
-        <!-- Le bouton est à gauche -->
-        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px; order: -1;">Triée par</button>
 
-        <!-- Le select est à droite -->
-        <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
-            <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Nom</option>
-            <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Date</option>
-        </select>
-    </div>
-</form>
-
-
+        
             <!-- Formulaire de téléchargement -->
             <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
                 <form id="form-vente" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
@@ -43,6 +30,24 @@
                     <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
                 </form>
             </div>
+                <!-- Formulaire de filtrage -->
+                <form method="GET" action="" class="d-flex me-3">
+    <div class="input-group">
+        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px; order: -1;">Triée par</button>
+        
+        <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+            <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Nom</option>
+            <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Date</option>
+        </select>
+        
+        <select name="order_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+            <option value="asc" {{ request()->get('order_by') == 'asc' ? 'selected' : '' }}>↑ Ascendant</option>
+            <option value="desc" {{ request()->get('order_by') == 'desc' ? 'selected' : '' }}>↓ Descendant</option>
+        </select>
+    </div>
+</form>
+
+
         </div>
     </div>
 </div>
@@ -75,8 +80,8 @@
         </div>
     </div>
 </div>
-
-<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
+<div class="container mt-5">
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
 
     
 
@@ -90,6 +95,26 @@
         </div>
     </div>
 </div>
+
+
+
+
+
+<!-- État de Caisse -->
+<div class="col">
+    <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;" ondblclick="redirectToEtatDeCaisse()">
+        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="height: 100%; background-color: #f8f9fa;">
+            <i class="fas fa-cash-register fa-2x text-success"></i>
+            <p class="mt-1" style="font-size: 0.8rem;">État de Caisse</p>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
 
 @if ($folders->isEmpty())
             <p>Aucun dossier trouvé pour cette société.</p>
@@ -118,7 +143,7 @@
             @endforeach
         @endif
 </div>
-
+</div>
    <!-- Gestion des fichiers de type Vente -->
    <div class="container mt-4">
 @if ($files->isEmpty())
@@ -247,5 +272,12 @@ function openFile(folderId) {
 function setFolderId(folderId) {
     document.querySelector('input[name="folders_id"]').value = folderId;
 }
+
+
+function redirectToEtatDeCaisse() {
+    window.location.href = '{{ route('etat_de_caisse') }}';
+}
+
+
 </script>
 @endsection

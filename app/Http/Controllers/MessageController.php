@@ -26,6 +26,7 @@ class MessageController extends Controller
     // MessageController.php
 public function updateStatus(Request $request, $messageId)
 {
+
     $message = Message::find($messageId);
 
     if ($message) {

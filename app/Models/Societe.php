@@ -38,6 +38,7 @@ class Societe extends Model
         'nombre_chiffre_compte',  // Champ pour le nombre de chiffres du compte
         'modele_comptable' ,        // Nouveau champ ajouté
         'dbName',
+        'created_by_user_id',
     ];
 
     // /**

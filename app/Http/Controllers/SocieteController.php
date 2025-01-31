@@ -113,11 +113,29 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
 
     public function index()
     {
-        $societes = Societe::all(); // Changer 'Societes' en 'Societe'
+       
+        $societes = Societe::all(); 
 
         return view('dashboard', ['societes' => $societes->toJson()]);
     }
    
+
+    // public function index()
+    // {
+    //     // Vérifiez si l'utilisateur est un SuperAdmin
+    //     if (auth()->user()->type === 'SuperAdmin') {
+    //         // Si l'utilisateur est un SuperAdmin, récupérer toutes les sociétés
+    //         $societes = Societe::all();
+    //     } else {
+    //         // Si l'utilisateur n'est pas un SuperAdmin, récupérer les sociétés créées par l'utilisateur connecté
+    //         $societes = Societe::where('created_by_user_id', auth()->id())->get();
+    //     }
+    
+    //     // Retourner la vue avec les sociétés
+    //     return view('dashboard', ['societes' => $societes->toJson()]);
+    // }
+
+
 
     // public function getData()
     // {
@@ -125,75 +143,78 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
     //     $societes = Societe::all();
     //     return response()->json($societes);
     // }
-        
     public function store(Request $request)
-    {
-        // Valider les données du formulaire de la société
-        $validatedData = $request->validate([
-            'raison_sociale' => 'required|string|max:255',
-            'forme_juridique' => 'required|string',
-            'siege_social' => 'required|string|max:255',
-            'patente' => 'required|string|max:255',
-            'rc' => 'required|string|max:255',
-            'centre_rc' => 'required|string|max:255',
-            'identifiant_fiscal' => 'required|string|max:8',
-            'ice' => 'required|string|max:15',
-            'date_creation' => 'required|date',
-            'exercice_social_debut' => 'required|date',
-            'exercice_social_fin' => 'required|date',
-            'nature_activite' => 'required|string',
-            'activite' => 'required|string|max:255',
-            'assujettie_partielle_tva' => 'nullable|boolean',
-            'prorata_de_deduction' => 'nullable|string|max:255',
-            'regime_declaration' => 'required|string|max:255',
-            'fait_generateur' => 'required|string',
-            'rubrique_tva' => 'required|string',
-            'designation' => 'required|string|max:255',
-            'nombre_chiffre_compte' => 'required|integer',
-            'modele_comptable' => 'required|string|max:255',
-        ]);
-        $dbName = session('database');
-        // Créer la société dans la base de données
-        $societe = Societe::create($validatedData);
-        
-        // Créer un nouvel utilisateur
-        $user = new User();
+{
+    // Valider les données du formulaire de la société
+    $validatedData = $request->validate([
+        'raison_sociale' => 'required|string|max:255',
+        'forme_juridique' => 'required|string',
+        'siege_social' => 'required|string|max:255',
+        'patente' => 'required|string|max:255',
+        'rc' => 'required|string|max:255',
+        'centre_rc' => 'required|string|max:255',
+        'identifiant_fiscal' => 'required|string|max:8',
+        'ice' => 'required|string|max:15',
+        'date_creation' => 'required|date',
+        'exercice_social_debut' => 'required|date',
+        'exercice_social_fin' => 'required|date',
+        'nature_activite' => 'required|string',
+        'activite' => 'required|string|max:255',
+        'assujettie_partielle_tva' => 'nullable|boolean',
+        'prorata_de_deduction' => 'nullable|string|max:255',
+        'regime_declaration' => 'required|string|max:255',
+        'fait_generateur' => 'required|string',
+        'rubrique_tva' => 'required|string',
+        'designation' => 'required|string|max:255',
+        'nombre_chiffre_compte' => 'required|integer',
+        'modele_comptable' => 'required|string|max:255',
+    ]);
+
+    $dbName = session('database');
     
-        // Récupérer le nom de la société pour l'utilisateur
-        $user->name = $societe->raison_sociale ." ". $dbName ; // Par exemple, le nom de l'utilisateur est composé du nom de la société + centre_rc
+    // Ajouter l'ID de l'utilisateur connecté à l'array de données validées
+    $validatedData['created_by_user_id'] = auth()->id(); // L'ID de l'utilisateur connecté
+
+    // Créer la société dans la base de données
+    $societe = Societe::create($validatedData);
     
-        // Générer un mot de passe à partir du nom de la société + un nombre aléatoire
-        $password = $societe->raison_sociale . rand(1000, 9999); // Mot de passe = nom de la société + nombre aléatoire
-        $user->password = Hash::make($password); // Hacher le mot de passe
-        $user->raw_password = $password;  // Mot de passe non haché (utile pour la génération d'email ou autre)
+    // Créer un nouvel utilisateur
+    $user = new User();
     
-        // Créer l'email de l'utilisateur avec le nom de la société suivi de @gmail.com
-          $user->email = strtolower($societe->raison_sociale) . '@gmail.com'; // Convertir en minuscule et ajouter @gmail.com
+    // Récupérer le nom de la société pour l'utilisateur
+    $user->name = $societe->raison_sociale . " " . $dbName; // Nom de l'utilisateur
     
-        // Remplir d'autres champs si nécessaire
-        $user->phone = $request->phone;
-        $user->location = $request->location;
-        $user->about_me = $request->about_me;
-        $user->type = 'interlocuteurs';  // Type de l'utilisateur est "interlocuteur"
-        $user->baseName = $dbName; // Enregistrez le nom de la base dans baseName
-        $user->save(); // Enregistrer l'utilisateur
+    // Générer un mot de passe à partir du nom de la société + un nombre aléatoire
+    $password = $societe->raison_sociale . rand(1000, 9999); // Mot de passe
+    $user->password = Hash::make($password); // Hacher le mot de passe
+    $user->raw_password = $password; // Mot de passe non haché
     
-        // Récupérer l'ID de l'utilisateur créé
-        $userId = $user->id;
+    // Créer l'email de l'utilisateur avec le nom de la société suivi de @gmail.com
+    $user->email = strtolower($societe->raison_sociale) . '@gmail.com'; // Email de l'utilisateur
     
-        // Ajouter les droits d'accès pour cet utilisateur (si vous en avez)
-        // foreach ($request->droits as $droitId) {
-        //     DB::table('droit_dacces_user')->insert([
-        //         'user_id' => $userId,
-        //         'droit_dacces_id' => $droitId,
-        //         'created_at' => now(),
-        //         'updated_at' => now(),
-        //     ]);
-        // }
+    // Remplir d'autres champs si nécessaire
+    $user->phone = $request->phone;
+    $user->location = $request->location;
+    $user->about_me = $request->about_me;
+    $user->type = 'interlocuteurs';  // Type de l'utilisateur est "interlocuteur"
+    $user->baseName = $dbName; // Enregistrez le nom de la base dans baseName
     
-        // Rediriger avec un message de succès
-        return redirect()->route('societes.index');
-    }
+    // **Ajout du societe_id** (Association de l'utilisateur à la société)
+    $user->societe_id = $societe->id;  // Ajouter l'ID de la société
+    
+    $user->save(); // Enregistrer l'utilisateur
+    
+    // Récupérer l'ID de l'utilisateur créé
+    $userId = $user->id;
+    
+    // Lier l'utilisateur à la société (si nécessaire)
+    $societe->user_id = $userId;
+    $societe->save();
+    
+    // Rediriger avec un message de succès
+    return redirect()->route('societes.index');
+}
+
   // Mettre à jour une société
   
 

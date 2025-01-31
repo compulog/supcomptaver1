@@ -83,13 +83,13 @@
                 <!-- Nom de la société -->
                 <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
                     <li class="breadcrumb-item text-sm active text-capitalize" aria-current="page">
-                        {{ $societe->raison_sociale }} {{ $societe->forme_juridique }}
+                        {{ $societe->raison_sociale }}
+                         <!-- {{ $societe->forme_juridique }} -->
                     </li>
                 </ol>
-
 <!-- Exercice -->
-                <div class="exercice">
-                    <span>Exercice:</span>
+<div class="exercice">
+  <span>Exercice:</span>
 
                     <button type="button" class="btn btn-light">
                 <div class="arrow-left"></div>
@@ -100,27 +100,80 @@ au <input type="date" value="{{ $societe->exercice_social_fin }}">
 
 <button type="button" class="btn btn-light">
 
+  <button type="button" class="btn-arrow left">
+    <div class="arrow-left"></div>
+  </button>
+
+  <div class="date-range">
+    Du <input type="date" value="{{ $societe->exercice_social_debut }}">
+    au <input type="date" value="{{ $societe->exercice_social_fin }}">
+  </div>
+
+  <button type="button" class="btn-arrow right">
     <div class="arrow-right"></div>
-</button>
+  </button>
+</div>
+
 
 <style>
-  /* Flèche droite */
-  .arrow-right {
-    width: 0;
-    height: 0;
-    border-top: 5px solid transparent; /* Taille de la flèche */
-    border-bottom: 5px solid transparent; /* Taille de la flèche */
-    border-left: 15px solid black; /* Taille et couleur de la flèche */
-  }
+  /* Style global de l'exercice */
+.exercice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
 
-  /* Flèche gauche */
-  .arrow-left {
-    width: 0;
-    height: 0;
-    border-top: 5px solid transparent; /* Taille de la flèche */
-    border-bottom: 5px solid transparent; /* Taille de la flèche */
-    border-right: 15px solid black; /* Taille et couleur de la flèche (inversée pour flèche gauche) */
-  }
+.exercice span {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.date-range input {
+  font-size: 14px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.date-range input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.btn-arrow {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.btn-arrow:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Flèche droite */
+.arrow-right {
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 15px solid #007bff; /* Flèche bleue */
+}
+
+/* Flèche gauche */
+.arrow-left {
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 15px solid #007bff; /* Flèche bleue inversée */
+}
+
 </style>
 
                 </div>
@@ -128,12 +181,12 @@ au <input type="date" value="{{ $societe->exercice_social_fin }}">
         </nav>
 
         <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar">
-            <div class="nav-link" style="margin-right:-10px;margin-top:-21px;">
+            <div class="nav-link" style="margin-right:-10px;margin-top:-55px;">
                 <span class="nav-link-text ms-1">{{ Auth::user()->name }}</span>
             </div>
 
             <!-- Liste déroulante -->
-            <li class="nav-item d-flex align-items-center" style="position: relative;margin-top:-20px;">
+            <li class="nav-item d-flex align-items-center" style="position: relative;margin-top:-50px;">
                 <a href="javascript:;" class="nav-link text-white p-0" id="dropdownListButton">
                     <i class="fas fa-user-circle" style="font-size:22px;color:black;"></i>
                 </a>

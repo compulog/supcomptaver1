@@ -31,18 +31,22 @@
                 </form>
             </div>
                    <!-- Formulaire de filtrage -->
-<form method="GET" action="" class="d-flex me-3">
+                   <form method="GET" action="" class="d-flex me-3">
     <div class="input-group">
-        <!-- Le bouton est à gauche -->
         <button class="btn btn-primary btn-sm" type="submit" style="height: 38px; order: -1;">Triée par</button>
-
-        <!-- Le select est à droite -->
+        
         <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
             <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Nom</option>
             <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Date</option>
         </select>
+        
+        <select name="order_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+            <option value="asc" {{ request()->get('order_by') == 'asc' ? 'selected' : '' }}>↑ Ascendant</option>
+            <option value="desc" {{ request()->get('order_by') == 'desc' ? 'selected' : '' }}>↓ Descendant</option>
+        </select>
     </div>
 </form>
+
 
         </div>
     </div>
@@ -75,8 +79,8 @@
         </div>
     </div>
 </div>
-
-<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
+<div class="container mt-5">
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
 
 <!-- Ajouter un Dossier -->
 <div class="col">
@@ -116,6 +120,7 @@
             @endforeach
         @endif
  
+</div>
 </div>
    <!-- Gestion des fichiers de type Vente -->
    <div class="container mt-4">

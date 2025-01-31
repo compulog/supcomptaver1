@@ -14,34 +14,38 @@
          
             <!-- Formulaire de téléchargement -->
             <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
-                <form id="form-vente" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
+                <form id="form-banque" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="type" value="Banque">
-                    <input type="file" name="file" id="file-vente" style="display: none;" onchange="handleFileSelect(event, 'Vente')">
+                    <input type="hidden" name="type" value="banque">
+                    <input type="file" name="file" id="file-banque" style="display: none;" onchange="handleFileSelect(event, 'banque')">
                     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                     
                     <input type="hidden" name="folders_id" value="0">
 
                     <!-- Charger Button -->
-                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-vente').click()">Charger</button>
+                    <button type="button" class="btn btn-primary btn-sm" style="height: 38px; margin-right: 10px;" onclick="document.getElementById('file-banque').click()">Charger</button>
 
                     <!-- Submit Button (hidden initially) -->
-                    <button type="submit" style="display: none;" id="submit-vente">Envoyer</button>
+                    <button type="submit" style="display: none;" id="submit-banque">Envoyer</button>
                 </form>
             </div>
        <!-- Formulaire de filtrage -->
        <form method="GET" action="" class="d-flex me-3">
     <div class="input-group">
-        <!-- Le bouton est à gauche -->
         <button class="btn btn-primary btn-sm" type="submit" style="height: 38px; order: -1;">Triée par</button>
-
-        <!-- Le select est à droite -->
+        
         <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
             <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Nom</option>
             <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Date</option>
         </select>
+        
+        <select name="order_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+            <option value="asc" {{ request()->get('order_by') == 'asc' ? 'selected' : '' }}>↑ Ascendant</option>
+            <option value="desc" {{ request()->get('order_by') == 'desc' ? 'selected' : '' }}>↓ Descendant</option>
+        </select>
     </div>
 </form>
+
 
 
         </div>
@@ -76,8 +80,8 @@
         </div>
     </div>
 </div>
-
-<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
+<div class="container mt-5">
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
 
 
         <!-- Ajouter un Dossier -->
@@ -117,6 +121,7 @@
             @endforeach
         @endif
  
+</div>
 </div>
    <!-- Gestion des fichiers de type Vente -->
    <div class="container mt-4">

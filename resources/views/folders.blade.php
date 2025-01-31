@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
     
 <div class="container mt-4">
+
     <h6 style="margin-top:-60px">
     <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau De Board</a>
     ➢
@@ -99,18 +100,7 @@
             <!-- Formulaire de téléchargement (Charger) -->
             <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
                <!-- Formulaire de filtrage -->
-                    <form method="GET" action="" class="d-flex me-3">
-                        <div class="input-group">
-                        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px;">Trier Par</button>
-
-                            <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
-                                <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Nom</option>
-                                <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Date</option>
-                            </select>
-                        </div>
-                    </form>
-                    <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
-                <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
+               <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="type" value="Achat">
                     <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
@@ -123,13 +113,31 @@
                     <!-- Submit Button (hidden initially) -->
                     <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>    
                 </form>
+                    <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
+                    <form method="GET" action="{{ route('folder.show', $folder->id) }}" class="d-flex me-3">
+    <div class="input-group">
+        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px; order: -1;">Triée par</button>
+        
+        <!-- Le select pour le tri -->
+        <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+            <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Nom</option>
+            <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Date</option>
+        </select>
+        
+        <!-- Le select pour l'ordre (ascendant ou descendant) -->
+        <select name="order_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+            <option value="asc" {{ request()->get('order_by') == 'asc' ? 'selected' : '' }}>↑ Ascendant</option>
+            <option value="desc" {{ request()->get('order_by') == 'desc' ? 'selected' : '' }}>↓ Descendant</option>
+        </select>
+    </div>
+</form> 
             </div>
             </div>
         </div>
     </div>
 </div>
 <div class="container mt-5">
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
         <!-- Ajouter un Dossier -->
         <div class="col">
             <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;" onclick="openCreateFolderForm()">
@@ -139,34 +147,36 @@
                 </div>
             </div>
         </div>
+       
+<!-- Affichage des Dossiers -->
+@foreach ($folders as $folder)
+    <div class="col" ondblclick="openFile({{ $folder->id }})">
+        <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;">
+            <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem; background-color:#007bff; border-radius:17px; position: relative;">
+                <!-- Icône du Dossier -->
+                @foreach ($folderNotifications as $folderNotification)
+                 <span class="badge bg-danger" style="font-size: 0.5rem; position: absolute; left: 10px; top: 80px;">
+                 {{ $folderNotification }}
+                    </span>
+                    @endforeach       
 
-        <!-- Affichage des Dossiers -->
-        @if ($folders->isEmpty())
-            <p>Aucun dossier trouvé pour cette société.</p>
-        @else
-            @foreach ($folders as $folder)
-                <div class="col" ondblclick="openFile({{ $folder->id }})">
-                    <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;">
-                        <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;background-color:#007bff;border-radius:17px;">
-                            <!-- Icône du Dossier -->
-                            <i class="fas fa-folder fa-2x mb-1" style="color:rgb(227, 231, 235);"></i>
-                            <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;color:rgb(227, 231, 235);">
-                                {{ $folder->name }} 
-                            </h5>
-                            <div class="d-flex justify-content-between" style="font-size: 0.8rem;">
-                                <form action="{{ route('folder.delete', $folder->id) }}" method="POST" style="display: inline;">
+                <i class="fas fa-folder fa-2x mb-1" style="color:rgb(227, 231, 235);"></i>
+                <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold; color:rgb(227, 231, 235);">
+                    {{ $folder->name }} 
+                </h5>
+                <form action="{{ route('folder.delete', $folder->id) }}" method="POST" style="display: inline;">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-link p-0" title="Supprimer le dossier" style="margin-top:-115px;margin-left:130px;">
                                         <i class="fas fa-times" style="color:rgb(227, 231, 235);"></i>
                                     </button>
                                 </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        @endif
+                                
+            </div>
+        </div>
+    </div>
+@endforeach
+
     </div>
 </div>
 <!-- Script pour trier la liste par nom -->
@@ -209,6 +219,7 @@
                 <form action="{{ route('folder.create') }}" method="POST">
                     @csrf
                     <input type="hidden" name="folders_id" value="{{ $foldersId }}">
+                    <input type="hidden" name="type_folder" value="Achat">
 
                     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
 
@@ -246,9 +257,9 @@
                     <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;">
                         {{ $file->name }}
                         <!-- Vérifier si des messages non lus existent pour ce fichier -->
-                        @if(isset($notifications[$file->id]) && $notifications[$file->id] > 0)
+                        @if(isset($fileNotifications[$file->id]) && $fileNotifications[$file->id] > 0)
                             <span class="badge bg-danger" style="font-size: 0.5rem; position: absolute; left: 10px;top:232px;">
-                                {{ $notifications[$file->id] }}
+                                {{ $fileNotifications[$file->id] }}
                             </span>
                         @endif
                     </h5>
@@ -350,9 +361,9 @@ function downloadFile(fileId) {
     window.location.href = '/file/download/' + fileId;
 }
 
-function viewFile(fileId,folderId) {
-    alert(folderId);
-        window.location.href = '/achat/view/' + folderId ;
+function viewFile(fileId) {
+   
+        window.location.href = '/achat/view/' + fileId ;
 }
 
 // function viewFile(fileId,folderId) {

@@ -37,34 +37,60 @@ class FoldersVente1Controller extends Controller
     {
         // Récupérer le dossier avec l'ID stocké dans la session
         $folder = Folder::find($id);
-
+    
         $societeId = session('societeId'); 
-
+    
         if ($societeId) {
             // Récupérer les dossiers associés à la société
-            $folders = Folder::where('societe_id', $societeId)
-                             ->where('folder_id', $id)
-                             ->get();   
-
+            $foldersQuery = Folder::where('societe_id', $societeId)
+                                  ->where('folder_id', $id);
+    
+            // Appliquer les filtres et le tri pour les dossiers
+            if (request()->has('filter_by')) {
+                $filterBy = request('filter_by');
+                if ($filterBy == 'name') {
+                    $foldersQuery->orderBy('name', request('order_by', 'asc'));
+                } elseif ($filterBy == 'date') {
+                    $foldersQuery->orderBy('created_at', request('order_by', 'asc'));
+                }
+            } else {
+                $foldersQuery->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
+            }
+    
+            $folders = $foldersQuery->get();   
+    
             // Récupérer les fichiers de type "achat"
-            $achatFiles = File::where('societe_id', $societeId)
-                              ->where('type', 'vente') 
-                              ->where('folders', $id)  
-                              ->get();
-            
+            $achatFilesQuery = File::where('societe_id', $societeId)
+                                   ->where('type', 'vente') 
+                                   ->where('folders', $id);
+    
+            // Appliquer les filtres et le tri pour les fichiers
+            if (request()->has('filter_by')) {
+                $filterBy = request('filter_by');
+                if ($filterBy == 'name') {
+                    $achatFilesQuery->orderBy('name', request('order_by', 'asc'));
+                } elseif ($filterBy == 'date') {
+                    $achatFilesQuery->orderBy('created_at', request('order_by', 'asc'));
+                }
+            } else {
+                $achatFilesQuery->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
+            }
+    
+            $achatFiles = $achatFilesQuery->get();
+    
             // Enregistrer l'ID du dossier dans la session
-            session(['foldersId' => $id]);  
-
+            session(['foldersId' => $id]);
+    
             // Récupérer l'ID du dossier de la session
-            $foldersId = session('foldersId'); 
-
+            $foldersId = session('foldersId');
+    
             // Liste des notifications pour les fichiers
             $notifications = [];
-
+    
             foreach ($achatFiles as $file) {
                 // Vérifier l'extension du fichier pour afficher une prévisualisation
                 $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
-
+    
                 if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
                     $file->preview = asset('storage/' . $file->path); // Image
                 } elseif (in_array($extension, ['pdf'])) {
@@ -76,25 +102,26 @@ class FoldersVente1Controller extends Controller
                 } else {
                     $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
                 }
-
+    
                 // Vérifier si un message existe pour ce fichier et si le champ 'is_read' est égal à 0
                 $unreadMessages = Message::where('file_id', $file->id)
                                          ->where('is_read', 0)
                                          ->get();
-
+    
                 // Si des messages non lus existent pour ce fichier, les ajouter aux notifications
                 if ($unreadMessages->count() > 0) {
                     $notifications[$file->id] = $unreadMessages->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
                 }
             }
-
+    
             // Retourner la vue avec les fichiers, dossiers et notifications
-            return view('foldersVente1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
+            return view('foldersVente1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications'));
         } else {
             // Rediriger si aucune société n'est trouvée dans la session
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
     }
+    
  
     // public function index($id)
     // {

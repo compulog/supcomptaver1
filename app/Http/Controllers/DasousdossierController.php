@@ -43,7 +43,7 @@ class DasousdossierController extends Controller
             $fileRecord = new File();
             $fileRecord->name = $filename;  // Nom du fichier
             $fileRecord->path = $path;  // Sauvegarde du chemin d'accès (assurez-vous que le chemin est relatif au dossier 'storage/app/public')
-            $fileRecord->type = 'Null';  // Type du fichier (Achat, Vente, etc.)
+            $fileRecord->type = $request->input('type');  // Type du fichier (Achat, Vente, etc.)
             $fileRecord->societe_id = $request->input('societe_id');  // ID de la société
             $fileRecord->folders = $request->input('folders_id');  // ID de la société
             $fileRecord->save();  // Sauvegarde dans la base de données
@@ -54,7 +54,7 @@ class DasousdossierController extends Controller
         }
     }
 
-
+    
 
 //     public function download($fileId)
 // {
@@ -101,7 +101,7 @@ class DasousdossierController extends Controller
             'name' => $request->name,
             'societe_id' => $request->societe_id,
             'folder_id' => $request->folders_id,
-            'type_folder' => 'Null',
+            'type_folder' => $request->type_folder,
 
         ]); 
     
@@ -115,38 +115,67 @@ class DasousdossierController extends Controller
     }
     
  
-    public function showSousDossier($id)
+    public function showSousDossier($id, Request $request)
     {
-        
-        // Récupérer le dossier avec l'ID stocké dans la session
+        // Récupérer le dossier avec l'ID passé en paramètre
         $folder = Folder::find($id);
-
+    
         $societeId = session('societeId'); 
-
+    
         if ($societeId) {
             // Récupérer les dossiers associés à la société
-            $folders = Folder::where('societe_id', $societeId)
-                             ->where('folder_id', $id)
-                             ->get();   
-
-            // Récupérer les fichiers de type "achat"
-            $achatFiles = File::where('societe_id', $societeId)
-                               ->where('folders', $id)  
-                              ->get();
-          
+            $foldersQuery = Folder::where('societe_id', $societeId)
+                                 ->where('folder_id', $id);
+    
+            // Appliquer le filtrage et le tri sur les dossiers si des paramètres sont présents
+            if ($request->has('filter_by')) {
+                $filterBy = $request->get('filter_by');
+                if ($filterBy == 'name') {
+                    $foldersQuery->orderBy('name', $request->get('order_by', 'asc'));
+                } elseif ($filterBy == 'date') {
+                    $foldersQuery->orderBy('created_at', $request->get('order_by', 'asc'));
+                }
+            } else {
+                // Par défaut, trier les dossiers par date de création
+                $foldersQuery->orderBy('created_at', 'asc');
+            }
+    
+            // Récupérer les dossiers après le tri
+            $folders = $foldersQuery->get();
+    
+            // Récupérer les fichiers associés à ce dossier
+            $achatFilesQuery = File::where('societe_id', $societeId)
+                                   ->where('folders', $id);
+    
+            // Appliquer le filtrage et le tri sur les fichiers si des paramètres sont présents
+            if ($request->has('filter_by')) {
+                $filterBy = $request->get('filter_by');
+                if ($filterBy == 'name') {
+                    $achatFilesQuery->orderBy('name', $request->get('order_by', 'asc'));
+                } elseif ($filterBy == 'date') {
+                    $achatFilesQuery->orderBy('created_at', $request->get('order_by', 'asc'));
+                }
+            } else {
+                // Par défaut, trier les fichiers par date de création
+                $achatFilesQuery->orderBy('created_at', 'asc');
+            }
+    
+            // Récupérer les fichiers après le tri
+            $achatFiles = $achatFilesQuery->get();
+    
             // Enregistrer l'ID du dossier dans la session
             session(['foldersId' => $id]);  
-
+    
             // Récupérer l'ID du dossier de la session
             $foldersId = session('foldersId'); 
-
+    
             // Liste des notifications pour les fichiers
             $notifications = [];
-
+    
             foreach ($achatFiles as $file) {
                 // Vérifier l'extension du fichier pour afficher une prévisualisation
                 $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
-
+    
                 if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
                     $file->preview = asset('storage/' . $file->path); // Image
                 } elseif (in_array($extension, ['pdf'])) {
@@ -158,18 +187,18 @@ class DasousdossierController extends Controller
                 } else {
                     $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
                 }
-
+    
                 // Vérifier si un message existe pour ce fichier et si le champ 'is_read' est égal à 0
                 $unreadMessages = Message::where('file_id', $file->id)
                                          ->where('is_read', 0)
                                          ->get();
-
+    
                 // Si des messages non lus existent pour ce fichier, les ajouter aux notifications
                 if ($unreadMessages->count() > 0) {
                     $notifications[$file->id] = $unreadMessages->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
                 }
             }
-
+    
             // Retourner la vue avec les fichiers, dossiers et notifications
             return view('Douvrirsous', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications')); 
         } else {
@@ -177,7 +206,7 @@ class DasousdossierController extends Controller
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
     }
-
+    
 
      
 

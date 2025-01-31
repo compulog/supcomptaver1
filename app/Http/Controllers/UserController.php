@@ -69,9 +69,11 @@ public function index()
 {
     $databaseName = DB::getDatabaseName();
     $droits = DroitDacces::all(); // Récupère tous les droits d'accès
+    $societeId = session('societeId');
 
     // Récupération des utilisateurs et rendre 'raw_password' visible
     $users = User::where('baseName', $databaseName)
+                ->where('societe_id',$societeId)
                  ->get()
                  ->makeVisible('raw_password');  // Inclure raw_password dans la réponse
  
@@ -82,9 +84,9 @@ public function index()
  
 public function store(Request $request)
 {
+    $societeId = session('societeId');
   
-    
-    // Hacher le mot de passe
+      // Hacher le mot de passe
     $hashedPassword = Hash::make($request->password);
 
     // Créer un nouvel utilisateur
@@ -98,6 +100,8 @@ public function store(Request $request)
     $user->about_me = $request->about_me;
     $user->type = $request->type;
     $user->baseName = $request->baseName;
+    $user->societe_id = $societeId;
+
     $user->save();
 
     // Récupérer l'ID de l'utilisateur créé

@@ -55,6 +55,14 @@
                        <p style="font-size:15px;color:black;">Menu</p>
                     </button>
 
+                    {{-- Assurez-vous que l'utilisateur est connecté et que son type n'est pas "interlocuteurs" --}}
+@if(auth()->check() && auth()->user()->type !== 'interlocuteurs')
+    <button id="menuToggle" class="navbar-toggler" type="button" style="padding: 0; border: none; background: transparent;margin-left:20px;">
+        <p style="font-size:15px;color:black;"><i class="fas fa-bars"></i></p>
+    </button>
+@endif
+
+
                     <!-- Navbar qui prend le reste de l'espace -->
                     <div class="navbar-links flex-grow-1">
                         @include('layouts.navbars.auth.nav')

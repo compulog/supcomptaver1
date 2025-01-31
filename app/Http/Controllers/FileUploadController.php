@@ -23,19 +23,20 @@ class FileUploadController extends Controller
             return $next($request);
         });
     }
-    public function show($id)
-    {
-        // Récupérer le nombre de fichiers par type
-        $achatCount = File::where('type', 'Achat')->count();
-        $venteCount = File::where('type', 'Vente')->count();
-        $banqueCount = File::where('type', 'Banque')->count();
-        $caisseCount = File::where('type', 'Caisse')->count();
-        $impotCount = File::where('type', 'Impot')->count();
-        $paieCount = File::where('type', 'Paie')->count();
-    
-        // Retourner la vue avec les données
-        return view('exercices', compact('achatCount', 'venteCount', 'banqueCount', 'caisseCount', 'impotCount', 'paieCount'));
-    }
+    // public function show($id)
+    // {
+       
+    //     // Récupérer le nombre de fichiers par type
+    //     $achatCount = File::where('type', 'Achat')->count();
+    //     $venteCount = File::where('type', 'Vente')->count();
+    //     $banqueCount = File::where('type', 'Banque')->count();
+    //     $caisseCount = File::where('type', 'Caisse')->count();
+    //     $impotCount = File::where('type', 'Impot')->count();
+    //     $paieCount = File::where('type', 'Paie')->count();
+ 
+    //     // Retourner la vue avec les données
+    //     return view('exercices', compact('achatCount', 'venteCount', 'banqueCount', 'caisseCount', 'impotCount', 'paieCount'));
+    // }
     
     public function upload(Request $request)
     {
@@ -43,7 +44,7 @@ class FileUploadController extends Controller
         $request->validate([
             'file' => 'required|file|mimes:jpg,png,pdf,docx,xlsx,doc', // Types de fichiers acceptés
             'type' => 'required|string', // Le type (Achat, Vente, etc.)
-            'folders' => 'nullable|string', // Le type (Achat, Vente, etc.)
+            'folders' => 'nullable|string', 
             'societe_id' => 'required|integer', // Validation pour societe_id
             
         ]);

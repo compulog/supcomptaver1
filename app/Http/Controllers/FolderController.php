@@ -32,36 +32,50 @@ class FolderController extends Controller
         });
     }
 
-    public function index($id)
+    public function index($id, Request $request)
     {
-        $societeId = session('societeId');
 
-        // Récupérer le dossier avec l'ID stocké dans la session
+        // Récupérer le dossier avec l'ID passé en paramètre
         $folder = Folder::find($id);
-
         $societeId = session('societeId');
 
         if ($societeId) {
-            // Récupérer les dossiers associés à la société
+            // Filtrage et tri des dossiers associés à la société
             $folders = Folder::where('societe_id', $societeId)
-                             ->where('folder_id', $id)
-                             ->get();
-            //
-                             ->get();
+                             ->where('folder_id', $id);
 
-            // Récupérer les fichiers de type "achat"
-            $achatFiles = File::where('societe_id', $societeId)
-                              ->where('type', 'achat')
-                        ->where('folders', $id)
-                    //    ->where('folders', 0)
-                              ->where('type', 'achat')
-                              ->where('folders', $id)
-                              ->get();
+            // Appliquer le filtre pour les dossiers
+            if ($request->has('filter_by')) {
+                $filterBy = $request->get('filter_by');
+                if ($filterBy == 'name') {
+                    $folders->orderBy('name', $request->get('order_by', 'asc'));  // Tri par nom
+                } elseif ($filterBy == 'date') {
+                    $folders->orderBy('created_at', $request->get('order_by', 'asc'));  // Tri par date
+                }
+            } else {
+                $folders->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
+            }
 
-                session(['foldersId' => $id]);
+            $folders = $folders->get();
 
-            $foldersId = session('foldersId');
+            // Filtrage et tri des fichiers de type "achat"
+            $query = File::where('societe_id', $societeId)
+                         ->where('type', 'achat')
+                         ->where('folders', $id);
 
+            // Appliquer le filtre pour les fichiers
+            if ($request->has('filter_by')) {
+                $filterBy = $request->get('filter_by');
+                if ($filterBy == 'name') {
+                    $query->orderBy('name', $request->get('order_by', 'asc'));  // Tri par nom
+                } elseif ($filterBy == 'date') {
+                    $query->orderBy('created_at', $request->get('order_by', 'asc'));  // Tri par date
+                }
+            } else {
+                $query->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
+            }
+
+            $achatFiles = $query->get();
 
             // Enregistrer l'ID du dossier dans la session
             session(['foldersId' => $id]);
@@ -69,8 +83,25 @@ class FolderController extends Controller
             // Récupérer l'ID du dossier de la session
             $foldersId = session('foldersId');
 
+            // Liste des notifications pour les dossiers
+            $folderNotifications = [];
+
+            // Vérifier les messages non lus dans le dossier
+            $unreadMessagesForFolder = Message::whereHas('file', function ($query) use ($foldersId) {
+                // Vérifier que le fichier est dans le dossier spécifié
+                $query->where('folders', $foldersId); // Vérifie que le fichier appartient au dossier
+            })
+            ->where('is_read', 0) // Filtrer pour les messages non lus
+            ->get();
+
+            // Si des messages non lus existent pour ce dossier, les ajouter aux notifications
+            if ($unreadMessagesForFolder->count() > 0) {
+                // Ajouter le nombre de messages non lus pour ce dossier
+                $folderNotifications['folder_'.$id] = $unreadMessagesForFolder->count();
+            }
+
             // Liste des notifications pour les fichiers
-            $notifications = [];
+            $fileNotifications = [];
 
             foreach ($achatFiles as $file) {
 
@@ -88,31 +119,26 @@ class FolderController extends Controller
                 } else {
                     $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
                 }
-            }
-
-
-
-             return view('folders', compact('achatFiles', 'folders', 'foldersId'));
 
                 // Vérifier si un message existe pour ce fichier et si le champ 'is_read' est égal à 0
-                $unreadMessages = Message::where('file_id', $file->id)
-                                         ->where('is_read', 0)
-                                         ->get();
+                $unreadMessagesForFile = Message::where('file_id', $file->id)
+                                                ->where('is_read', 0)
+                                                ->get();
 
                 // Si des messages non lus existent pour ce fichier, les ajouter aux notifications
-                if ($unreadMessages->count() > 0) {
-                    $notifications[$file->id] = $unreadMessages->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
+                if ($unreadMessagesForFile->count() > 0) {
+                    $fileNotifications[$file->id] = $unreadMessagesForFile->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
                 }
             }
 
             // Retourner la vue avec les fichiers, dossiers et notifications
             return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications'));
+            return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications'));
         } else {
             // Rediriger si aucune société n'est trouvée dans la session
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
     }
-
 
 
 
@@ -174,9 +200,7 @@ class FolderController extends Controller
 
     public function create(Request $request)
     {
-        // dd($request);
-
-        // Validation personnalisée
+    //    dd($request);
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255', // Correspond au champ 'name' du formulaire
             'societe_id' => [
@@ -219,11 +243,36 @@ class FolderController extends Controller
         if ($request->has('folders_id') && $request->folders_id) {
             return redirect()->route('folder.show', ['id' => $request->folders_id])->with('success', 'Dossier créé avec succès');
         }
+    // Redirection selon le type du dossier
+    switch ($request->type_folder) {
+        case 'achat': // Exemple de type de dossier
+            return redirect()->route('achat.view')->with('success', 'Dossier créé avec succès');
 
-        // Sinon, on retourne vers une vue (par exemple folder.create)
-        return redirect()->route('achat.view');
+        case 'vente': // Exemple d'un autre type de dossier
+            return redirect()->route('vente.view')->with('success', 'Dossier créé avec succès');
+
+            case 'banque': // Exemple d'un autre type de dossier
+                return redirect()->route('banque.view')->with('success', 'Dossier créé avec succès');
+
+                case 'Caisse': // Exemple d'un autre type de dossier
+                    return redirect()->route('caisse.view')->with('success', 'Dossier créé avec succès');
+
+                    case 'impot': // Exemple d'un autre type de dossier
+                        return redirect()->route('impot.view')->with('success', 'Dossier créé avec succès');
+
+                        case 'paie': // Exemple d'un autre type de dossier
+                            return redirect()->route('paie.view')->with('success', 'Dossier créé avec succès');
+
+                            case 'Dossier_permanant': // Exemple d'un autre type de dossier
+                                return redirect()->route('Dossier_permanant.view')->with('success', 'Dossier créé avec succès');
+
+        // Ajouter d'autres types de dossier si nécessaire
+        default:
+            return redirect()->route('achat.view')->with('success', 'Dossier créé avec succès');
     }
+        // Sinon, on retourne vers une vue (par exemple folder.create)
 
+    }
 
 
    // app/Http/Controllers/FolderController.php

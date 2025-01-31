@@ -23,6 +23,7 @@ class SessionsController extends Controller
     }
     public function store(Request $request)
     {
+     
         $attributes = request()->validate([
             'name'=>'required',
             'password'=>'required'
@@ -55,7 +56,21 @@ class SessionsController extends Controller
             session()->regenerate();
             session(['database' => $dbName]);
             // dd(session('database'));
-            return redirect('dashboard')->with(['success'=>'You are logged in.'.$dbName]);
+           // Supposons que l'utilisateur est déjà authentifié et que vous avez accès à l'objet $user.
+if ($user->type === 'interlocuteurs') {
+    // Récupérer l'ID de la société associée à l'utilisateur
+    $societeId = \App\Models\Societe::where('user_id', $user->id)->value('id');
+
+    // Si une société existe pour cet utilisateur, rediriger vers l'exercice correspondant à l'ID de la société
+    if ($societeId) {
+        return redirect("exercices/{$societeId}")->with(['success' => 'You are logged in.' . $dbName]);
+    } else {
+        // Gérer le cas où l'utilisateur n'a pas de société associée
+        return redirect('error')->with(['error' => 'No company associated with this user.']);
+    }
+} else {
+    return redirect('dashboard')->with(['success' => 'You are logged in.' . $dbName]);
+}
         }
         else{
 
@@ -66,7 +81,6 @@ class SessionsController extends Controller
 
     public function create()
     {
-       
             // Si BaseName est 'compulog', récupérer les bases de données qui commencent par 'supcompta'
             $databases = DB::select("SHOW DATABASES LIKE 'supcompta%'");
 

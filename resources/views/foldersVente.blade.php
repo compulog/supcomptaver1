@@ -11,7 +11,7 @@
     <h6 style="margin-top:-60px">
     <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau De Board</a>
     ➢
-    <a href="{{ route('achat.view') }}">Vente</a>
+    <a href="{{ route('vente.view') }}">Vente</a>
     ➢
 
     @php
@@ -87,32 +87,15 @@
 </script>
 
 
-
-
-
     <div class="row"   style="margin-left:450px">
 
         <!-- Conteneur flexible pour aligner les éléments sur la même ligne -->
         <div class="d-flex align-items-center mb-3">
          
-
-            <!-- Formulaire de téléchargement (Charger) -->
-            <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
-               <!-- Formulaire de filtrage -->
-                    <form method="GET" action="" class="d-flex me-3">
-                        <div class="input-group">
-                        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px;">Trier Par</button>
-
-                            <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
-                                <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Nom</option>
-                                <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Date</option>
-                            </select>
-                        </div>
-                    </form>
-                    <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
+        <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
                 <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="type" value="Achat">
+                    <input type="hidden" name="type" value="vente">
                     <input type="file" name="file" id="file-achat" style="display: none;" onchange="handleFileSelect(event, 'Achat')">
                     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                     <input type="hidden" name="folders_id" value="{{ session()->get('foldersId') }}">
@@ -124,12 +107,33 @@
                     <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>    
                 </form>
             </div>
+            <!-- Formulaire de téléchargement (Charger) -->
+            <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
+               <!-- Formulaire de filtrage -->
+               <form method="GET" action="" class="d-flex me-3">
+    <div class="input-group">
+        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px; order: -1;">Triée par</button>
+        
+        <!-- Le select pour le tri -->
+        <select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+            <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Nom</option>
+            <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Date</option>
+        </select>
+        
+        <!-- Le select pour l'ordre (ascendant ou descendant) -->
+        <select name="order_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
+            <option value="asc" {{ request()->get('order_by') == 'asc' ? 'selected' : '' }}>↑ Ascendant</option>
+            <option value="desc" {{ request()->get('order_by') == 'desc' ? 'selected' : '' }}>↓ Descendant</option>
+        </select>
+    </div>
+</form>
+                
             </div>
         </div>
     </div>
 </div>
 <div class="container mt-5">
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-3">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
         <!-- Ajouter un Dossier -->
         <div class="col">
             <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;" onclick="openCreateFolderForm()">
@@ -228,11 +232,11 @@
 
 <!-- Gestion des fichiers de type achat -->
 <div class="container mt-4">
-@if ($achatFiles->isEmpty())
+@if ($venteFiles->isEmpty())
     <p>Aucun fichier trouvé pour cette société.</p>
 @else
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
-    @foreach ($achatFiles as $file)
+    @foreach ($venteFiles as $file)
         <div class="col" ondblclick="viewFile({{ $file->id }})">
             <div class="card shadow-sm" style="width: 13rem; height: 250px;">
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">
