@@ -39,6 +39,8 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\SetSocieteId::class,
             \App\Http\Middleware\SetFoldersId::class,
+            \App\Http\Middleware\VerifyCsrfToken::class,  // Cette ligne doit être présente
+
 
         ],
 

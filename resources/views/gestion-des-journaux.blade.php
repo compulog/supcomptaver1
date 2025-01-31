@@ -109,12 +109,23 @@
                                 <option value="" selected>Sélectionner un type</option>
                                 <option value="Achats">Achats</option>
                                 <option value="Ventes">Ventes</option>
-                                <option value="Trésoreries">Trésoreries</option>
-                                <option value="Opérations Diverses">Opérations Diverses</option>
+                                <option value="Caisse">Caisse</option>
+                                <option value="Banque">Banque</option>
+                               <option value="Opérations Diverses">Opérations Diverses</option>
                             </select>
                             <!-- Flèche FontAwesome -->
                             <i class="fas fa-chevron-down position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);"></i>
                         </div>
+
+<!-- Champs IF et ICE cachés par défaut -->
+<div class="col-md-6" id="if_ice_container" style="display: none;">
+    <label for="if" class="form-label fw-semibold">IF</label>
+    <input type="text" class="form-control" id="if" name="if" maxlength="8" pattern="\d{8}" placeholder="Entrez votre IF (8 chiffres)">
+
+    <label for="ice" class="form-label fw-semibold mt-2">ICE</label>
+    <input type="text" class="form-control" id="ice" name="ice" maxlength="15" pattern="\d{15}" placeholder="Entrez votre ICE (15 chiffres)">
+</div>
+
 
                         <!-- Contre Partie -->
                         <div class="col-md-6 position-relative">
@@ -143,7 +154,7 @@
         </div>
     </div>
 </div>
-
+</div>
 <!-- Modal d'édition -->
 <div class="modal fade" id="journalModalEdit" tabindex="-1" role="dialog" aria-labelledby="journalModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -181,13 +192,21 @@
                                 <option value="" selected>Sélectionner un type</option>
                                 <option value="Achats">Achats</option>
                                 <option value="Ventes">Ventes</option>
-                                <option value="Trésoreries">Trésoreries</option>
+                                <option value="Caisse">Caisse</option>
+                                <option value="Banque">Banque</option>
                                 <option value="Opérations Diverses">Opérations Diverses</option>
                             </select>
                             <!-- Flèche FontAwesome -->
                             {{-- <i class="fas fa-chevron-down position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);"></i> --}}
                         </div>
+<!-- Champs IF et ICE cachés par défaut -->
+<div class="col-md-6" id="edit_if_ice_container" style="display: none;">
+    <label for="edit_if" class="form-label fw-semibold">IF</label>
+    <input type="text" class="form-control" id="edit_if" name="edit_if" maxlength="8" pattern="\d{8}" placeholder="Entrez votre IF (8 chiffres)">
 
+    <label for="edit_ice" class="form-label fw-semibold mt-2">ICE</label>
+    <input type="text" class="form-control" id="edit_ice" name="edit_ice" maxlength="15" pattern="\d{15}" placeholder="Entrez votre ICE (15 chiffres)">
+</div>
                         <!-- Contre Partie -->
                         <div class="col-md-6 position-relative" id="contrePartieContainer">
                             <label for="editContrePartie" class="form-label">Contre Partie</label>
@@ -216,6 +235,7 @@
         </div>
     </div>
 </div>
+</div>
 
 
 
@@ -224,15 +244,43 @@
 
 <script>
 
-    $(document).ready(function () {
+
+
+
+$(document).ready(function () {
     // Initialisation de Select2 pour les champs de type de journal et contrepartie
     $('#type_journal, #contre_partie').select2({
         allowClear: true,
         width: '100%',
         theme: 'bootstrap-5',
         placeholder: 'Sélectionnez une option',
-        dropdownAutoWidth: true, // Assurez-vous que le dropdown s'ajuste correctement
-        dropdownParent: $('#ajouterJournalModal') // Définir le parent du dropdown pour éviter les conflits dans le modal
+        dropdownAutoWidth: true,
+        dropdownParent: $('#ajouterJournalModal') // Évite les conflits dans le modal
+    });
+
+    const ifIceContainer = $('#if_ice_container');
+    const ifInput = $('#if');
+    const iceInput = $('#ice');
+
+    // Fonction pour afficher ou masquer les champs IF et ICE
+    $('#type_journal').on('change', function () {
+        if ($(this).val() === "Banque") {
+            ifIceContainer.show();
+        } else {
+            ifIceContainer.hide();
+            ifInput.val('');
+            iceInput.val('');
+        }
+    });
+
+    // Validation IF : 8 chiffres uniquement
+    ifInput.on('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 8);
+    });
+
+    // Validation ICE : 15 chiffres uniquement
+    iceInput.on('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 15);
     });
 
  // Initialisation du focus sur le champ de recherche du select2
@@ -324,6 +372,22 @@ document.querySelector('#journalModalEdit #resetFormBtn').addEventListener('clic
         { title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input" },
         { title: "Type Journal", field: "type_journal", editor: "input", headerFilter: "input" },
         { title: "Contre Partie", field: "contre_partie", editor: "input", headerFilter: "input" },
+        {
+    title: "IF",
+    field: "if",
+    editor: "input",
+    headerFilter: "input",
+    visible: false // Masquer la colonne
+},
+{
+    title: "ice",
+    field: "ice",
+    editor: "input",
+    headerFilter: "input",
+    visible: false // Masquer la colonne
+},
+
+
         {
             title: "Actions",
             field: "action-icons",
@@ -444,7 +508,9 @@ $(document).ready(function() {
 function getComptesUrl(typeJournal) {
     if (typeJournal === 'Achats') return '/comptes-achats';
     if (typeJournal === 'Ventes') return '/comptes-ventes';
-    if (typeJournal === 'Trésoreries') return '/comptes-tresorerie';
+    if (typeJournal === 'Caisse') return '/comptes-Caisse';
+    if (typeJournal === 'Banque') return '/comptes-Banque';
+
     return null;
 }
 
@@ -482,19 +548,56 @@ function editJournal(rowData) {
     $("#editCodeJournal").val(rowData.code_journal);
     $("#editIntituleJournal").val(rowData.intitule);
     $("#editTypeJournal").val(rowData.type_journal);
-    $("#editContrePartie").val(rowData.contre_partie); // Mettre la valeur existante de contrepartie
+    $("#editContrePartie").val(rowData.contre_partie);
     $("#editJournalId").val(rowData.id);
 
-    // Charger les comptes en fonction du type de journal pour l'édition et masquer/afficher le champ
-    loadComptesEdit(rowData.type_journal, rowData.contre_partie); // Charger les comptes et pré-sélectionner celui existant
+    // Vérifie si les valeurs if et ice existent avant de les attribuer
+    if (rowData.if) {
+        $("#edit_if").val(rowData.if);  // Remplir le champ "if"
+    } else {
+        $("#edit_if").val('');  // Si aucune valeur, vider le champ
+    }
 
+    if (rowData.ice) {
+        $("#edit_ice").val(rowData.ice);  // Remplir le champ "ice"
+    } else {
+        $("#edit_ice").val('');  // Si aucune valeur, vider le champ
+    }
+
+    // Vérifie si le type de journal est "Banque" pour afficher les champs IF & ICE
+    toggleIfIceFields(rowData.type_journal);
+
+    // Charger les comptes en fonction du type de journal
+    loadComptesEdit(rowData.type_journal, rowData.contre_partie);
+
+    // Ouvre le modal d'édition
     $('#journalModalEdit').modal('show');
 }
 
-// Réagir au changement de type de journal dans le modal d'édition
+// Fonction pour afficher/masquer les champs IF & ICE en fonction du type de journal
+function toggleIfIceFields(selectedType) {
+    if (selectedType === "Banque") {
+        $("#edit_if_ice_container").show();  // Afficher les champs IF et ICE
+    } else {
+        $("#edit_if_ice_container").hide();  // Masquer les champs IF et ICE
+        $("#edit_if").val('');  // Réinitialiser la valeur du champ IF
+        $("#edit_ice").val('');  // Réinitialiser la valeur du champ ICE
+    }
+}
+
+// Détection du changement de type de journal dans l'édition
 $("#editTypeJournal").on('change', function () {
     var selectedType = $(this).val();
-    loadComptesEdit(selectedType, null); // Recharger les comptes pour le champ "contre_partie" et masquer/afficher le champ
+    toggleIfIceFields(selectedType);
+    loadComptesEdit(selectedType, null);
+});
+
+// Validation en temps réel des champs IF & ICE
+$("#edit_if").on('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, 8); // Seulement 8 chiffres
+});
+$("#edit_ice").on('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, 15); // Seulement 15 chiffres
 });
 
 // Soumission du formulaire d'édition
@@ -511,6 +614,8 @@ $('#journalFormEdit').on('submit', function (e) {
             type_journal: $("#editTypeJournal").val(),
             contre_partie: $("#editContrePartie").val(),
             intitule: $("#editIntituleJournal").val(),
+            if: $("#edit_if").val(),  // Corrigé : correspond au nom de la colonne en BDD
+            ice: $("#edit_ice").val(), // Corrigé : correspond au nom de la colonne en BDD
         },
         success: function (response) {
             if (response.success) {
@@ -530,6 +635,13 @@ $('#journalFormEdit').on('submit', function (e) {
     });
 });
 
+// Réinitialiser les champs lors de la fermeture du modal
+$('#journalModalEdit').on('hidden.bs.modal', function () {
+    $("#edit_if_ice_container").hide();  // Cacher les champs IF et ICE
+    $("#edit_if").val('');  // Réinitialiser le champ IF
+    $("#edit_ice").val('');  // Réinitialiser le champ ICE
+});
+
 // Gestionnaire d'événement pour la soumission du formulaire d'ajout
 $('#ajouterJournalForm').on('submit', function (e) {
     e.preventDefault();
@@ -540,6 +652,8 @@ $('#ajouterJournalForm').on('submit', function (e) {
         type_journal: $("#type_journal").val(),
         contre_partie: $("#contre_partie").val(),  // Assurez-vous que la valeur de "contre_partie" est capturée
         intitule: $("#intitule").val(),
+        if: $("#if").val(),
+        ice: $("#ice").val(),
     };
 
     $.ajax({

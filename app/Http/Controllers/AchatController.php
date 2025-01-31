@@ -1,12 +1,12 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\Message;
 
 use App\Models\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Models\Folder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -32,23 +32,21 @@ class AchatController extends Controller
 
     public function index()
     {
-        $societeId = session('societeId'); // Récupère l'ID de la société depuis la session
+        
+        $societeId = session('societeId');
     
         if ($societeId) {
-            // Récupère les fichiers de type 'achat' où le champ 'folders' est égal à 0
             $achatFiles = File::where('societe_id', $societeId)
-                              ->where('type', 'achat') // Filtrer par type 'achat'
-                              ->where('folders', 0) // Filtrer où le champ 'folders' est égal à 0
+                              ->where('type', 'achat') 
+                              ->where('folders', 0) 
                               ->get();
             
-            // Récupère les dossiers pour la société donnée
-            $folders = Folder::where('societe_id', $societeId) // Assurez-vous que "Folder" est le bon modèle
-            ->whereNull('folder_id') // Ajout de la condition où folder_id est null
+            $folders = Folder::where('societe_id', $societeId) 
+            ->whereNull('folder_id') 
+            ->where('type_folder', 'achat')
             ->get();
-    
-            // Ajouter un champ 'preview' pour chaque fichier afin de passer l'aperçu au front-end
+            $notifications = [];
             foreach ($achatFiles as $file) {
-                // Détecte l'extension du fichier
                 $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
     
                 // Déterminer l'aperçu en fonction du type de fichier
@@ -58,7 +56,7 @@ class AchatController extends Controller
                 } elseif (in_array($extension, ['pdf'])) {
                     // Si c'est un PDF, afficher une image d'aperçu générique
                     $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF';
-                } elseif (in_array($extension, ['doc', 'docx'])) {
+                } elseif (in_array($extension, ['doc', 'docx'])) { 
                     // Si c'est un fichier Word, afficher une image d'aperçu générique
                     $file->preview = 'https://via.placeholder.com/80x100.png?text=Word';
                 } elseif (in_array($extension, ['xls', 'xlsx'])) {
@@ -68,21 +66,53 @@ class AchatController extends Controller
                     // Pour tous les autres fichiers, une image d'aperçu générique
                     $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier';
                 }
+                $unreadMessages = Message::where('file_id', $file->id)
+                ->where('is_read', 0)
+                ->get();
+
+                // Si des messages non lus existent pour ce fichier, les ajouter aux notifications
+                if ($unreadMessages->count() > 0) {
+                $notifications[$file->id] = $unreadMessages->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
+                }
             }
     
          
     
             // Si des fichiers sont trouvés, passe les fichiers et les dossiers à la vue
-            return view('achat', compact('achatFiles', 'folders'));
+            return view('achat', compact('achatFiles', 'folders', 'notifications'));
         } else {
             // Si l'ID de la société n'est pas trouvé dans la session, redirige vers la page d'accueil
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
-    }
+    }  
     
     
 
+    public function viewFile($fileId)
+{
     
+    // Récupérer le fichier de type "Achat" à partir de la base de données
+    $file = File::findOrFail($fileId);
+    // dd($file);
+    // Afficher une vue avec les détails du fichier
+    return view('achat.view', compact('file'));
+}
+
+
+
+// public function viewFile($fileId,$folderId)
+// {
+//     // Récupérer le fichier de type "Achat" à partir de la base de données
+//     $file = File::findOrFail($fileId);
+//     // dd($file);
+//     // Afficher une vue avec les détails du fichier
+//     return view('achat.view', compact('file', 'folderId'));
+// }
+
+
+
+
+
 
     public function download($fileId)
 {

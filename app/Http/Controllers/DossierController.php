@@ -9,7 +9,29 @@ use App\Models\File; // Assurez-vous d'importer le modèle File
 
 class DossierController extends Controller
 {
-  
+
+    public function update(Request $request, $id)
+    {
+        // dd($request);
+         $dossier = Dossier::findOrFail($id);
+        $dossier->name = $request->input('name');
+        $dossier->save();
+    
+        return redirect()->route('exercices.show', ['societe_id' => $request->societe_id])->with('success', 'Dossier créé avec succès');
+    }
+    
+ 
+
+
+    public function destroy($id)
+    {
+        // Trouver le dossier par son ID et le supprimer
+        $dossier = Dossier::findOrFail($id);
+        $dossier->delete();
+
+        // Rediriger avec un message de succès
+        return redirect()->back()->with('success', 'Dossier supprimé avec succès.');
+    }
     
     public function show($id)
     {
@@ -27,7 +49,7 @@ class DossierController extends Controller
         $caisseCount = File::where('societe_id', $societe->id)->where('type', 'Caisse')->count();
         $impotCount = File::where('societe_id', $societe->id)->where('type', 'Impot')->count();
         $paieCount = File::where('societe_id', $societe->id)->where('type', 'Paie')->count();
-
+        $Dossier_permanantCount = File::where('societe_id', $societe->id)->where('type', 'Dossier_permanant')->count();
         // Passe les variables à la vue
         return view('exercices', compact(
             'societe',
@@ -37,7 +59,8 @@ class DossierController extends Controller
             'caisseCount',
             'impotCount',
             'paieCount',
-            'dossiers'
+            'dossiers',
+            'Dossier_permanantCount'
         ));
     }
     public function store(Request $request)

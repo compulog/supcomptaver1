@@ -10,14 +10,14 @@ use Illuminate\Support\Facades\Hash;
 
 class JournalController extends Controller
 {
-   
+
 
         // Afficher tous les journaux
         public function index()
         {
            // Récupérer l'ID de la société dans la session
     $societeId = session('societeId');
-    
+
     // Vérifier si l'ID de la société existe dans la session
     if (!$societeId) {
         return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
@@ -30,25 +30,25 @@ class JournalController extends Controller
     return response()->json($journaux);
         }
 
-      
+
         public function getData()
         {
             // Récupérer l'ID de la société dans la session
             $societeId = session('societeId');
-            
+
             // Vérifier si l'ID de la société existe
             if (!$societeId) {
                 return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
             }
-    
+
             // Récupérer tous les plans comptables pour la société spécifiée
             $journaux = Journal::where('societe_id', $societeId)->get();
-    
+
             return response()->json($journaux);
         }
 
 
-        
+
         public function getComptesAchats()
         {
             $comptes = PlanComptable::where(function($query) {
@@ -65,10 +65,10 @@ class JournalController extends Controller
                       ->orWhere('compte', 'LIKE', '612%');
             })
             ->get(['compte', 'intitule']);
-    
+
             return response()->json($comptes);
         }
-    
+
         public function getComptesVentes()
         {
             $comptes = PlanComptable::where(function($query) {
@@ -80,49 +80,62 @@ class JournalController extends Controller
                       ->orWhere('compte', 'LIKE', '733%');
             })
             ->get(['compte', 'intitule']);
-    
+
             return response()->json($comptes);
         }
-    
-        public function getComptesTresoreries()
+
+        public function getComptesCaisse()
         {
-            $comptes = PlanComptable::where('compte', 'LIKE', '514%')
-            ->orWhere('compte', 'LIKE', '516%')
-            ->orWhere('compte', 'LIKE', '554%')
+            $comptes = PlanComptable::where('compte', 'LIKE', '516%')
                                     ->get(['compte', 'intitule']);
+
             return response()->json($comptes);
         }
+
+        public function getComptesBanque()
+        {
+            $comptes = PlanComptable::where(function ($query) {
+                $query->where('compte', 'LIKE', '514%')
+                      ->orWhere('compte', 'LIKE', '554%');
+            })->get(['compte', 'intitule']);
+
+            return response()->json($comptes);
+        }
+
 
         // Stocker un nouveau journal
         public function store(Request $request)
         {
             // Récupérer l'ID de la société depuis la session
             $societeId = session('societeId');
-            
+
             // Vérifier si l'ID de la société existe dans la session
             if (!$societeId) {
                 return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
             }
-    
+
             // Validation des données
             $validatedData = $request->validate([
                 'code_journal' => 'required|string|max:255',
                 'type_journal' => 'required|string|max:255',
                 'intitule' => 'required|string|max:255',
                 'contre_partie' => 'nullable|string|max:255',
+                'if' => 'nullable|digits:8',
+                'ice' => 'nullable|digits:15',
+
             ]);
-    
+
             // Ajouter l'ID de la société au journal
             $validatedData['societe_id'] = $societeId;
-    
+
             // Créer un nouveau journal
             Journal::create($validatedData);
-    
+
             // Retourner une réponse JSON avec un message de succès
             return response()->json(['message' => 'Journal ajouté avec succès.']);
         }
-    
-      
+
+
     // Méthode pour afficher les détails d'un journal spécifique
     public function edit($id)
     {
@@ -161,6 +174,8 @@ public function update(Request $request, $id)
         'type_journal' => 'nullable|string',
         'intitule' => 'nullable|string',
         'contre_partie' => 'nullable|string',
+        'if' => 'nullable|digits:8',
+        'ice' => 'nullable|digits:15',
     ]);
 
     // Mise à jour du journal
@@ -173,9 +188,9 @@ public function update(Request $request, $id)
 
 
 
-        
 
-        
+
+
         // Supprimer un journal
         public function destroy($id)
         {
@@ -191,11 +206,11 @@ public function update(Request $request, $id)
                 'ids' => 'required|array',
                 'ids.*' => 'integer',  // Chaque ID doit être un entier
             ]);
-        
+
             try {
                 // Supprimer les lignes avec les IDs reçus
                 $deletedCount = journal::whereIn('id', $request->ids)->delete();
-        
+
                 return response()->json([
                     'status' => 'success',
                     'message' => "{$deletedCount} lignes supprimées"

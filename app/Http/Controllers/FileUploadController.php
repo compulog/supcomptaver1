@@ -37,12 +37,11 @@ class FileUploadController extends Controller
         return view('exercices', compact('achatCount', 'venteCount', 'banqueCount', 'caisseCount', 'impotCount', 'paieCount'));
     }
     
-    
     public function upload(Request $request)
     {
         // Validation des fichiers uploadés
         $request->validate([
-            'file' => 'required|file|mimes:jpg,png,pdf,docx,xlsx', // Types de fichiers acceptés
+            'file' => 'required|file|mimes:jpg,png,pdf,docx,xlsx,doc', // Types de fichiers acceptés
             'type' => 'required|string', // Le type (Achat, Vente, etc.)
             'folders' => 'nullable|string', // Le type (Achat, Vente, etc.)
             'societe_id' => 'required|integer', // Validation pour societe_id

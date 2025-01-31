@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\Folder;
+use App\Models\Message;
 
 use App\Models\File; // Assurez-vous d'importer le modèle File
 use Illuminate\Http\Request;
@@ -26,18 +28,23 @@ class BanqueController extends Controller
     public function index()
     {
         $societeId = session('societeId'); // Récupère l'ID de la société depuis la session
+        $folders = Folder::where('societe_id', $societeId) 
+        ->whereNull('folder_id') 
+        ->where('type_folder', 'banque')
+        ->get();
 
         if ($societeId) {
-            // Filtrer les fichiers de type 'banque' pour la société donnée
+            // Filtrer les fichiers de type 'vente' pour la société donnée
             $files = File::where('societe_id', $societeId)
-                         ->where('type', 'banque') // Filtrer par type 'banque'
+                         ->where('type', 'banque') // Modifié pour 'vente' au lieu de 'achat'
                          ->get();
 
-            return view('banque', compact('files')); // Passez les fichiers à la vue
+            return view('banque', compact('files', 'folders')); // Passez les fichiers à la vue
         } else {
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
     }
+
 
     public function download($fileId)
     {

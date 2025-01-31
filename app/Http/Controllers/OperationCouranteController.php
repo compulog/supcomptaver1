@@ -14,7 +14,9 @@ use App\Models\Client;
 use Carbon\Carbon;
 use Complex\Operations;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
 use Illuminate\Support\Facades\Session;
 
 
@@ -26,129 +28,253 @@ class OperationCouranteController extends Controller
         return view('operations'); // Chemin de votre vue Blade
     }
 
-    public function getOperations(Request $request)
+    public function updateField(Request $request, $id)
 {
-    // Valider les données entrantes
-    $validatedData = $request->validate([
-        'type_journal' => 'required|string|in:Achats,Ventes,Trésoreries,Opérations Diverses', // Types valides
-        'code_journal' => 'required|string', // Assurez-vous que le code_journal est fourni
-        'start_date' => 'required|date', // Date de début
-        'end_date' => 'required|date|after_or_equal:start_date', // Date de fin
-    ]);
+    Log::info("Requête reçue pour mise à jour", ['id' => $id, 'data' => $request->all()]);
 
-    $typeJournal = $validatedData['type_journal'];
-    $codeJournal = $validatedData['code_journal'];
-    $startDate = $validatedData['start_date'];
-    $endDate = $validatedData['end_date'];
-
-    // Récupérer les opérations filtrées par type_journal, code_journal et plage de dates
-    $operations = OperationCourante::where('type_journal', $typeJournal)
-        ->where('code_journal', $codeJournal)
-        ->whereBetween('created_at', [$startDate, $endDate])
-        ->get();
-
-    // Si aucune opération n'est trouvée
-    if ($operations->isEmpty()) {
-        return response()->json([
-            'success' => true,
-            'message' => 'Aucune opération trouvée pour ce type de journal, code journal ou plage de dates.',
-            'data' => []
-        ], 200);
+    // Vérification de la société active
+    $societeId = session('societeId');
+    if (!$societeId) {
+        Log::error("Aucune société sélectionnée.");
+        return response()->json(['error' => 'Aucune société sélectionnée'], 400);
     }
 
-    // Retourner les opérations trouvées
-    return response()->json([
-        'success' => true,
-        'data' => $operations,
-    ], 200);
+    // Vérification de l'existence de la ligne
+    $ligne = OperationCourante::where('id', $id)
+                ->where('societe_id', $societeId)
+                ->first();
+
+    if (!$ligne) {
+        Log::error("Ligne non trouvée pour ID : $id et société : $societeId");
+        return response()->json(['error' => 'Ligne non trouvée'], 404);
+    }
+
+    // Validation des données
+    $validatedData = $request->validate([
+        'field' => 'required|string',
+        'value' => 'required',
+    ], [
+        'field.required' => 'Le champ "field" est obligatoire.',
+        'value.required' => 'Le champ "value" est obligatoire.',
+    ]);
+
+    try {
+        $field = $validatedData['field'];
+        $value = $validatedData['value'];
+
+        // Vérifier que le champ existe dans la table pour éviter des erreurs SQL
+        if (!Schema::hasColumn('operation_courante', $field)) {
+            Log::error("Champ invalide : $field");
+            return response()->json(['error' => "Le champ '$field' n'existe pas."], 400);
+        }
+
+        // Mise à jour de la ligne en cours
+        $ligne->{$field} = $value;
+        $ligne->save();
+
+        Log::info("Mise à jour réussie pour ID : $id");
+
+        // Mettre à jour les autres lignes avec le même numéro de facture
+        $numeroFacture = $ligne->numero_facture;
+        $updatedRows = OperationCourante::where('numero_facture', $numeroFacture)
+            ->where('societe_id', $societeId)
+            ->where('id', '!=', $id) // Exclure la ligne actuelle
+            ->update([$field => $value]);
+
+        Log::info("Mise à jour de $updatedRows lignes avec le même numéro de facture.");
+
+        return response()->json([
+            'message' => 'Mise à jour réussie pour toutes les lignes associées.',
+            'ligne' => $ligne
+        ]);
+    } catch (\Exception $e) {
+        Log::error("Erreur lors de la mise à jour", ['error' => $e->getMessage()]);
+        return response()->json(['error' => 'Erreur interne lors de la mise à jour'], 500);
+    }
 }
 
 
 
-public function saveOrUpdateRowData(Request $request)
-{
-    // Récupère le societe_id depuis la session
-    $societeId = session('societe_id');  // Vous pouvez remplacer 'societe_id' par la clé utilisée pour la session
 
-    // Vérifier si societe_id existe dans la session
+public function store(Request $request)
+{
+    // Récupérer l'ID de la société depuis la session
+    $societeId = session('societeId');
+
     if (!$societeId) {
-        return response()->json(['success' => false, 'error' => 'La société n\'est pas définie dans la session.']);
+        return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
     }
 
-    // Validation des données reçues
-    $validator = Validator::make($request->all(), [
-        'numero_facture' => 'required|string',
-        'compte' => 'required|string',
-        'libelle' => 'required|string',
-        'debit' => 'nullable|numeric',
-        'credit' => 'nullable|numeric',
-        'contre_Partie' => 'nullable|string',
-        'rubrique_tva' => 'nullable|string',
-        'compte_tva' => 'nullable|string',
-        'prorat_de_deduction' => 'nullable|string',
-        'piece_justificative' => 'nullable|string',
-        'date' => 'nullable|date',
-        'type_journal' => 'required|string', // Validation pour code_journal
-        // Ajoutez d'autres validations selon les besoins
+    // Valider les données sans champs obligatoires stricts
+    $validatedData = $request->validate([
+        'lignes' => 'required|array',
+        'lignes.*.date' => 'required|date',
+        'lignes.*.numero_facture' => 'required|string',
+        'lignes.*.compte' => 'required|string',
+        'lignes.*.debit' => 'nullable|numeric|min:0',
+        'lignes.*.credit' => 'nullable|numeric|min:0',
+        'lignes.*.contre_partie' => 'nullable|string',
+        'lignes.*.rubrique_tva' => 'nullable|string',
+        'lignes.*.compte_tva' => 'nullable|string',
+        'lignes.*.type_journal' => 'required|string',
+        'lignes.*.prorat_de_deduction' => 'nullable|string',
+        'lignes.*.piece_justificative' => 'nullable|string',
+        'lignes.*.libelle' => 'nullable|string',
     ]);
 
-    // Si la validation échoue
-    if ($validator->fails()) {
-        return response()->json(['success' => false, 'errors' => $validator->errors()]);
-    }
+    // Débogage : Affichage des données reçues
+    Log::debug('Données validées :', $validatedData);
 
     try {
-        $rowData = $request->all(); // Récupère les données envoyées depuis le frontend
+        foreach ($validatedData['lignes'] as $ligneData) {
+            // Débogage : Affichage des données de chaque ligne avant l'enregistrement
+            Log::debug('Traitement de la ligne :', $ligneData);
 
-        // Ajouter societe_id aux données de l'opération
-        $rowData['societe_id'] = $societeId;
+            // Vérifier les valeurs de débit et crédit avant de les enregistrer
+            if (is_null($ligneData['debit']) || is_null($ligneData['credit'])) {
+                Log::warning('Débit ou Crédit manquant :', $ligneData);
+            }
 
-        // Vérifier si l'ID existe déjà dans les données
-        if (isset($rowData['id']) && $rowData['id']) {
-            // Mise à jour de la ligne existante
-            $operation = OperationCourante::find($rowData['id']);
-            if ($operation) {
-                $operation->update($rowData); // Mise à jour
-                return response()->json(['success' => true]);
+            if (isset($ligneData['id']) && $ligneData['id'] !== null) {
+                // Mise à jour de la ligne existante
+                $ligneExistante = OperationCourante::find($ligneData['id']);
+
+                if ($ligneExistante && $ligneExistante->societe_id === $societeId) {
+                    $ligneExistante->update([
+                        'date' => $ligneData['date'],
+                        'numero_facture' => $ligneData['numero_facture'],
+                        'compte' => $ligneData['compte'],
+                        'debit' => $ligneData['debit'],
+                        'credit' => $ligneData['credit'],
+                        'contre_partie' => $ligneData['contre_partie'] ?? null, // Ne pas forcer si null
+                        'rubrique_tva' => $ligneData['rubrique_tva'] ?? null,
+                        'compte_tva' => $ligneData['compte_tva'] ?? null,
+                        'type_journal' => $ligneData['type_journal'],
+                        'prorat_de_deduction' => $ligneData['prorat_de_deduction'] ?? null,
+                        'piece_justificative' => $ligneData['piece_justificative'] ?? null,
+                        'libelle' => $ligneData['libelle'] ?? null,
+                        'updated_at' => now(),
+                    ]);
+                }
             } else {
-                return response()->json(['success' => false, 'error' => 'Ligne non trouvée pour mise à jour.']);
+                // Création d'une nouvelle ligne
+                OperationCourante::create([
+                    'date' => $ligneData['date'],
+                    'numero_facture' => $ligneData['numero_facture'],
+                    'compte' => $ligneData['compte'],
+                    'debit' => $ligneData['debit'],
+                    'credit' => $ligneData['credit'],
+                    'contre_partie' => $ligneData['contre_partie'] ?? null, // Ne pas forcer si null
+                    'rubrique_tva' => $ligneData['rubrique_tva'] ?? null,
+                    'compte_tva' => $ligneData['compte_tva'] ?? null,
+                    'type_journal' => $ligneData['type_journal'],
+                    'prorat_de_deduction' => $ligneData['prorat_de_deduction'] ?? null,
+                    'piece_justificative' => $ligneData['piece_justificative'] ?? null,
+                    'libelle' => $ligneData['libelle'] ?? null,
+                    'societe_id' => $societeId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
             }
         }
 
-        // Si l'ID n'existe pas, créer une nouvelle ligne
-        $operation = new OperationCourante($rowData);
-        $operation->save(); // Création
-        return response()->json(['success' => true]);
-
+        return response()->json(['message' => 'Lignes enregistrées avec succès'], 200);
     } catch (\Exception $e) {
-        // Capture et renvoi de l'erreur
-        return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        Log::error('Erreur lors de l\'enregistrement des lignes :', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTrace(),
+        ]);
+
+        return response()->json([
+            'message' => 'Erreur lors de l\'enregistrement',
+            'error' => $e->getMessage(),
+            'trace' => $e->getTrace(),
+        ], 500);
     }
 }
 
 
 
+ public function getOperations(Request $request)
+ {
+     $societeId = session('societeId');
+     if (!$societeId) {
+         return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+     }
 
-public function getEmptyRow()
+     $mois = $request->input('mois');
+     $annee = $request->input('annee');
+     $codeJournal = $request->input('code_journal');
+
+     // Initialisation de la requête de base
+     $query = OperationCourante::where('societe_id', $societeId);
+
+     // Appliquer les filtres en fonction des entrées de l'utilisateur
+     if ($codeJournal && (!$mois || !$annee)) {
+         // Filtrer uniquement par code_journal
+         $query->where('type_journal', $codeJournal);
+     } elseif ($mois && $annee && !$codeJournal) {
+         // Filtrer uniquement par mois et année
+         $query->whereYear('date', $annee)->whereMonth('date', $mois);
+     } elseif ($mois && $annee && $codeJournal) {
+         // Filtrer par code_journal, mois et année
+         $query->where('type_journal', $codeJournal)
+               ->whereYear('date', $annee)
+               ->whereMonth('date', $mois);
+     }
+
+     // Exécution de la requête
+     $operations = $query->get();
+
+     // Ajouter une ligne vide au début des résultats
+     $operations->prepend([
+         'id' => '',
+         'date' => '',
+         'debit' => '',
+         'credit' => '',
+         'type_journal' => '',
+     ]);
+
+     // Retourner les données filtrées sous forme de JSON
+     return response()->json($operations);
+ }
+
+public function deleteRows(Request $request)
 {
-    return response()->json([
-        'id' => null,
-        'date' => null,
-        'numero_dossier' => null,
-        'numero_facture' => null,
-        'compte' => null,
-        'libelle' => null,
-        'debit' => null,
-        'credit' => null,
-        'contre_partie' => null,
-        'rubrique_tva' => null,
-        'compte_tva' => null,
-        'prorat_de_deduction' => null,
-        'piece_justificative' => null,
-        'type_journal' => null,
-        'societe_id' => session('societeId'),
-    ]);
+    // Récupérer les identifiants des lignes à supprimer
+    $rowIds = $request->input('rowIds');
+
+    // Supposons que vous avez un modèle "TableRow" pour gérer la base de données
+    try {
+        OperationCourante::whereIn('id', $rowIds)->delete();
+        return response()->json(['success' => true]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Erreur lors de la suppression des lignes.'], 500);
+    }
 }
+
+public function getContreParties(Request $request)
+{
+    $codeJournal = $request->query('code_journal');
+
+    if (!$codeJournal) {
+        return response()->json(['error' => 'Code journal manquant.'], 400);
+    }
+
+    $contreParties = Journal::where('code_journal', $codeJournal)
+        ->distinct()
+        ->pluck('contre_partie')
+        ->filter(); // Supprime les valeurs nulles
+
+    return response()->json($contreParties);
+}
+
+
+
+
+
+
+
 
 
 
@@ -187,7 +313,7 @@ public function getJournauxVTE()
     return response()->json($journaux);
 }
 
-public function getJournauxTRE()
+public function getJournauxBanque()
 {
     $societeId = session('societeId');
     $societe = Societe::find($societeId);
@@ -196,9 +322,25 @@ public function getJournauxTRE()
         return response()->json(['error' => 'Société introuvable'], 400);
     }
 
-    // Filtrer par type_journal 'Trésorerie'
+    // Filtrer par type_journal 'banque'
     $journaux = Journal::select('code_journal', 'intitule', 'type_journal')
-        ->where('type_journal', 'Trésoreries') // Filtrer par type_journal
+        ->where('type_journal', 'Banque') // Filtrer par type_journal
+        ->get();
+
+    return response()->json($journaux);
+}
+public function getJournauxCaisse()
+{
+    $societeId = session('societeId');
+    $societe = Societe::find($societeId);
+
+    if (!$societe) {
+        return response()->json(['error' => 'Société introuvable'], 400);
+    }
+
+    // Filtrer par type_journal 'caisse'
+    $journaux = Journal::select('code_journal', 'intitule', 'type_journal')
+        ->where('type_journal', 'Caisse') // Filtrer par type_journal
         ->get();
 
     return response()->json($journaux);

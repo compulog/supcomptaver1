@@ -26,5 +26,9 @@ class File extends Model
     {
         return $this->belongsTo(Folder::class, 'folders'); // 
             }
+            public function dossier()
+            {
+                return $this->belongsTo(Dossier::class); // Chaque fichier appartient à un dossier
+            }
     
 }

@@ -1,8 +1,16 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
+<!-- Placer le script jQuery avant le vôtre -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Votre script personnalisé -->
+<script src="{{ asset('js/monScript.js') }}"></script>
+
+<meta name="csrf-token" content="{{ csrf_token() }}">
 
 <div class="container mt-4">
+    <h6>Tableau De Board</h6>
     <div class="row">
     <div class="col">
     <div class="card shadow-sm" style="background-color:rgb(192, 236, 62); border-radius: 15px; font-size: 0.75rem; height: 130px;" onclick="openCreateFolderForm()">
@@ -138,20 +146,20 @@
         </div>
 
 
-        <div class="col-md-3 mb-3" id="paie-div">
+        <div class="col-md-3 mb-3" id="Dossier_permanant-div">
             <div class="p-2 text-white" style="background-color:rgb(221, 232, 17); border-radius: 15px; font-size: 0.75rem; height: 130px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;font-size:12px;">Dossier permanant</h5>
-                    <form id="form-paie" action="" method="POST" enctype="multipart/form-data">
+                    <form id="Dossier_permanant" action="" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <input type="hidden" name="type" value="Paie">
+                        <input type="hidden" name="type" value="Dossier_permanant">
                         <input type="file" name="file" id="file-paie" style="display: none;" onchange="">
                         <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                         <button type="button" class="btn btn-light btn-sm" style="background-color: rgb(221, 232, 17); border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="">Charger</button>
-                        <button type="submit" style="display: none;" id="submit-paie">Envoyer</button>
+                        <button type="submit" style="display: none;" id="submit-Dossier_permanant">Envoyer</button>
                     </form>
                 </div>
-                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : </p>
+                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $Dossier_permanantCount ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces générées : 3</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : 2</p>
             </div>
@@ -196,19 +204,47 @@
 <div class="row">
     @foreach($dossiers as $dossier)
         <div class="col-md-3 mb-3">
-            <div class="p-2 text-white dossier-box" style="border-radius: 15px; font-size: 0.75rem; height: 130px;">
+            <div class="p-2 text-white dossier-box" style="border-radius: 15px; font-size: 0.75rem; height: 130px;" data-id="{{ $dossier->id }}">
                 <div class="d-flex justify-content-between align-items-center">
                     <!-- Affichage du nom du dossier -->
                     <h5 style="color: white; font-size: 12px;">{{ $dossier->name }}</h5>
-                    
+
+                    <div class="dropdown">
+                <button class="btn btn-link text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v"></i> <!-- Icône des trois points -->
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <li>
+                        <!-- <a class="dropdown-item" href=""> -->
+                        <a class="dropdown-item" href="#" onclick="openEditFolderModal('{{ $dossier->id }}', '{{ $dossier->name }}')">
+                        Renommer
+</a>
+
+                    </li>
+                    <li>
+                        <form action="{{ route('dossier.delete', $dossier->id) }}" method="POST" style="display:inline;">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="dropdown-item" style="background: transparent; border: none; color: red;">
+                                Supprimer
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+
                     <!-- Formulaire pour charger un fichier -->
-                    <form action="" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-                        <input type="file" name="file" id="file-{{ $dossier->id }}" style="display: none;">
-                        <button type="button" class="btn btn-light btn-sm dossier-button" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
-                        <button type="submit" style="display: none;" id="submit-{{ $dossier->id }}">Envoyer</button>
-                    </form>
+     @csrf
+     <form id="form-{{ $dossier->id }}" action="{{ route('Douvrir.upload') }}" method="POST" enctype="multipart/form-data">
+     @csrf
+     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+     <input type="hidden" name="folder_type" value="{{ $dossier->name }}"> 
+
+     <input type="file" name="file" id="file-{{ $dossier->id }}" style="display: none;" onchange="handleFileSelect(event, {{ $dossier->id }})">
+     <button type="button" class="btn btn-light btn-sm dossier-button" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
+     <button type="submit" style="display: none;" id="submit-{{ $dossier->id }}">Envoyer</button>
+</form>
+
                 </div>
 
                 <!-- Informations supplémentaires sur le dossier -->
@@ -219,8 +255,60 @@
         </div>
     @endforeach
 </div>
+<!-- Modal pour modifier un dossier -->
+<div class="modal fade" id="editFolderModal" tabindex="-1" aria-labelledby="editFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editFolderModalLabel">Renommer Dossier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            <form action="" method="POST" id="edit-folder-form">
+    @csrf
+    @method('PUT')
+    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+    <input type="hidden" name="dossier_id" id="dossier_id">
+    <div class="mb-3">
+        <label for="folderName" class="form-label">Nom du Dossier</label>
+        <input type="text" class="form-control" id="folderName" name="name" placeholder="{{ $dossier->name }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Renommer Dossier</button>
+</form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 
 <script>
+function openEditFolderModal(dossierId, dossierName) {
+    // Mettre à jour le champ du formulaire avec le nom du dossier
+    document.getElementById('folderName').value = dossierName;
+    
+    // Mettre à jour l'ID du dossier dans le formulaire
+    document.getElementById('dossier_id').value = dossierId;
+
+    // Mettre à jour l'action du formulaire pour qu'il pointe vers la bonne URL (route pour PUT)
+    document.getElementById('edit-folder-form').action = `/dossier/${dossierId}`;
+
+    // Afficher le modal de modification
+    var myModal = new bootstrap.Modal(document.getElementById('editFolderModal'));
+    myModal.show();
+}
+
+ 
+
+
+
+
+
+
+
+
     // Fonction pour générer une couleur hexadécimale aléatoire
     function getRandomColor() {
         const letters = '0123456789ABCDEF';
@@ -243,6 +331,20 @@
             button.style.borderColor = color;      // Optionnel: bordure avec la même couleur
         }
     });
+
+    function handleFileSelect(event, dossierId) {
+    const fileInput = document.getElementById(`file-${dossierId}`);
+    const formId = `form-${dossierId}`;  // Générer l'ID du formulaire
+
+    if (!fileInput.files.length) {
+        alert("Veuillez sélectionner un fichier.");
+        return;
+    }
+
+    // Soumettre le formulaire si un fichier est sélectionné
+    document.getElementById(formId).submit();
+}
+
 </script>
 
 
@@ -277,6 +379,9 @@
         document.getElementById('paie-div').addEventListener('dblclick', function () {
             window.location.href = '{{ route("paie.view") }}';
         });
+        document.getElementById('Dossier_permanant-div').addEventListener('dblclick', function () {
+            window.location.href = '{{ route("Dossier_permanant.view") }}';
+        });
     });
     function handleFileSelect(event, type) {
     const fileInput = document.getElementById(`file-${type.toLowerCase()}`);
@@ -296,6 +401,20 @@ function openCreateFolderForm() {
     var myModal = new bootstrap.Modal(document.getElementById('createFolderModal'));
     myModal.show();
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Ajout des événements de double-clic pour chaque dossier dynamique
+    document.querySelectorAll('.dossier-box').forEach(function(div) {
+        div.addEventListener('dblclick', function () {
+            // On récupère l'ID du dossier à partir de l'attribut data-id
+            const dossierId = div.getAttribute('data-id');
+            
+            // On redirige vers la route avec l'ID du dossier
+            window.location.href = `/Douvrir/${dossierId}`;  // Assurez-vous que la route correspond bien à celle définie dans les routes Laravel
+        });
+    });
+});
+
 
 </script>
 

@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\Message;
+use App\Models\Folder;
 
 use App\Models\File; // Assurez-vous d'importer le modèle File
 use Illuminate\Http\Request;
@@ -25,14 +27,18 @@ class CaisseController extends Controller
     public function index()
     {
         $societeId = session('societeId'); // Récupère l'ID de la société depuis la session
+        $folders = Folder::where('societe_id', $societeId) 
+        ->whereNull('folder_id') 
+        ->where('type_folder', 'Caisse')
+        ->get();
 
         if ($societeId) {
-            // Filtrer les fichiers de type 'caisse' pour la société donnée
+            // Filtrer les fichiers de type 'vente' pour la société donnée
             $files = File::where('societe_id', $societeId)
-                         ->where('type', 'caisse') // Filtrer par type 'caisse'
+                         ->where('type', 'Caisse') // Modifié pour 'vente' au lieu de 'achat'
                          ->get();
 
-            return view('caisse', compact('files')); // Passez les fichiers à la vue
+            return view('caisse', compact('files', 'folders')); // Passez les fichiers à la vue
         } else {
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }

@@ -1,14 +1,19 @@
 <?php
 namespace App\Http\Controllers;
+use App\Models\Message;
 
 use App\Models\File;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;  // Ajouter cette ligne pour importer DB
+use Illuminate\Support\Facades\DB;
 use App\Models\Folder;
 use App\Models\societe;
 use Illuminate\Support\Facades\Auth;
+use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
+use PhpOffice\PhpSpreadsheet\IOFactory as PhpSpreadsheetIOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Exception as PhpSpreadsheetException;
+
 class FolderController extends Controller
 {
 
@@ -31,24 +36,45 @@ class FolderController extends Controller
     {
         $societeId = session('societeId');
 
-        if ($societeId) {
+        // Récupérer le dossier avec l'ID stocké dans la session
+        $folder = Folder::find($id);
 
+        $societeId = session('societeId');
+
+        if ($societeId) {
+            // Récupérer les dossiers associés à la société
             $folders = Folder::where('societe_id', $societeId)
                              ->where('folder_id', $id)
                              ->get();
             //
+                             ->get();
+
+            // Récupérer les fichiers de type "achat"
             $achatFiles = File::where('societe_id', $societeId)
                               ->where('type', 'achat')
                         ->where('folders', $id)
                     //    ->where('folders', 0)
+                              ->where('type', 'achat')
+                              ->where('folders', $id)
                               ->get();
 
                 session(['foldersId' => $id]);
 
             $foldersId = session('foldersId');
 
+
+            // Enregistrer l'ID du dossier dans la session
+            session(['foldersId' => $id]);
+
+            // Récupérer l'ID du dossier de la session
+            $foldersId = session('foldersId');
+
+            // Liste des notifications pour les fichiers
+            $notifications = [];
+
             foreach ($achatFiles as $file) {
 
+                // Vérifier l'extension du fichier pour afficher une prévisualisation
                 $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
 
                 if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
@@ -67,10 +93,26 @@ class FolderController extends Controller
 
 
              return view('folders', compact('achatFiles', 'folders', 'foldersId'));
+
+                // Vérifier si un message existe pour ce fichier et si le champ 'is_read' est égal à 0
+                $unreadMessages = Message::where('file_id', $file->id)
+                                         ->where('is_read', 0)
+                                         ->get();
+
+                // Si des messages non lus existent pour ce fichier, les ajouter aux notifications
+                if ($unreadMessages->count() > 0) {
+                    $notifications[$file->id] = $unreadMessages->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
+                }
+            }
+
+            // Retourner la vue avec les fichiers, dossiers et notifications
+            return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications'));
         } else {
-             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
+            // Rediriger si aucune société n'est trouvée dans la session
+            return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
     }
+
 
 
 
@@ -132,7 +174,6 @@ class FolderController extends Controller
 
     public function create(Request $request)
     {
-        // Affiche la requête pour debug
         // dd($request);
 
         // Validation personnalisée
@@ -152,20 +193,37 @@ class FolderController extends Controller
         ]);
 
         // Si la validation échoue, rediriger avec les erreurs
+
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
         // Créer le dossier avec les données validées
+
+        // Création du dossier
         Folder::create([
-            'name' => $request->name,          // Champ 'name' du formulaire
-            'societe_id' => $request->societe_id,  // Champ 'societe_id' du formulaire
-            'folder_id' => $request->folders_id, // Champ 'folders_id' du formulaire
+            'name' => $request->name,
+            'societe_id' => $request->societe_id,
+            'folder_id' => $request->folders_id,
+            'type_folder' => $request->type_folder,
+
         ]);
 
         // Rediriger avec un message de succès
         return redirect()->route('achat.view')->with('success', 'Dossier créé avec succès');
     }
+
+
+
+        // Si folders_id est fourni, on redirige vers la route associée à ce folder_id
+        if ($request->has('folders_id') && $request->folders_id) {
+            return redirect()->route('folder.show', ['id' => $request->folders_id])->with('success', 'Dossier créé avec succès');
+        }
+
+        // Sinon, on retourne vers une vue (par exemple folder.create)
+        return redirect()->route('achat.view');
+    }
+
 
 
    // app/Http/Controllers/FolderController.php
@@ -184,6 +242,8 @@ class FolderController extends Controller
        // Retourner une réponse de succès
        return redirect()->back()->with('success', 'Dossier et fichiers supprimés avec succès.');
    }
+
+
 
 
 

@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\Message;
+use App\Models\Folder;
 use App\Models\File; // Assurez-vous d'importer le modèle File
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,14 +26,18 @@ class ImpotController extends Controller
     public function index()
     {
         $societeId = session('societeId'); // Récupère l'ID de la société depuis la session
+        $folders = Folder::where('societe_id', $societeId) 
+        ->whereNull('folder_id') 
+        ->where('type_folder', 'impot')
+        ->get();
 
         if ($societeId) {
-            // Filtrer les fichiers de type 'impot' pour la société donnée
+            // Filtrer les fichiers de type 'vente' pour la société donnée
             $files = File::where('societe_id', $societeId)
-                         ->where('type', 'impot') // Filtrer par type 'impot'
+                         ->where('type', 'impot') // Modifié pour 'vente' au lieu de 'achat'
                          ->get();
 
-            return view('impot', compact('files')); // Passez les fichiers à la vue
+            return view('impot', compact('files', 'folders')); // Passez les fichiers à la vue
         } else {
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
         }
