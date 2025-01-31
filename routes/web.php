@@ -56,11 +56,12 @@ use App\Http\Controllers\TransactionController;
 
  use App\Http\Controllers\SoldeMensuelController;
  
- Route::post('/cloturer-solde', [SoldeMensuelController::class, 'cloturerSolde']);
-// Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
-// Route::middleware(['auth', 'permission:vue_dashboard'])->get('dashboard', [SocieteController::class, 'index'])->name('dashboard');
 
 Route::group(['middleware' => 'auth'], function () {
+    Route::post('/cloturer-solde', [SoldeMensuelController::class, 'cloturerSolde']);
+    // Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
+    // Route::middleware(['auth', 'permission:vue_dashboard'])->get('dashboard', [SocieteController::class, 'index'])->name('dashboard');
+    
         Route::post('/delete-transaction', [TransactionController::class, 'delete'])->name('transaction.delete');
         Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
         Route::put('/update-transaction/{id}', [EtatDeCaisseController::class, 'update'])->name('update-transaction');

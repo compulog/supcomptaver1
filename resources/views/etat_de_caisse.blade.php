@@ -10,8 +10,7 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 <!-- Ajouter le CDN de SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<!-- Styles personnalisés -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script><!-- Styles personnalisés -->
 <style>
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -118,21 +117,20 @@
     <a href="">Etat de caisse</a>
 </nav>
 <center><h5>ETAT DE CAISSE MENSUELLE</h5></center>
- <!-- Sélecteur de code journal -->
- <label for="journal-select" style="margin-left: 20px;">Code Journal :</label>
-    <select id="journal-select" style="margin-left:10px;width:150px;height:31px;">
+<!-- Conteneur pour les sélecteurs -->
+<div class="form-group" style="display: flex; align-items: center; margin-left: -500px;">
+    <!-- Sélecteur de code journal -->
+    <label for="journal-select" style="margin-right: 10px;">Code Journal :</label>
+    <select id="journal-select" style="width: 150px; height: 31px; margin-right: 20px;">
         <option value="J001">J001</option>
         <option value="J002">J002</option>
         <option value="J003">J003</option>
         <!-- Ajouter d'autres options ici -->
     </select>
-    <i class="fa fa-share" aria-hidden="true"></i>
 
-
-<!-- Sélecteur de mois et d'année -->
-<div class="form-group" style="margin-left:-700px;">
-    <label for="month-select">Période :</label>
-    <select id="month-select">
+    <!-- Sélecteur de mois et d'année -->
+    <label for="month-select" style="margin-right: 10px;">Période :</label>
+    <select id="month-select" style="margin-right: 10px;">
         <option value="01">Janvier</option>
         <option value="02">Février</option>
         <option value="03">Mars</option>
@@ -147,8 +145,12 @@
         <option value="12">Décembre</option>
     </select>
 
-    <input type="text" id="year-select" value="{{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}" readonly style="margin-left:-30px;border-radius:  0 4px 4px 0 ;border-left:none;width:70px;height:31px;">
+    <input type="text" id="year-select" value="{{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}" readonly style="border-radius: 0 4px 4px 0; border-left: none; width: 70px; height: 31px;margin-left:-50px;">
+    <i id="export-excel-icon" class="fas fa-file-excel" title="Exporter en Excel" style="cursor: pointer; font-size: 17px; color: green;margin-right:3px;"></i>
+    <i class="fa fa-share" aria-hidden="true"></i>
+
 </div>
+
 
 <!-- Solde initial à afficher en fonction du mois et de l'année choisis -->
 <div class="form-group" style="margin-left:850px;">
@@ -156,49 +158,6 @@
     <input type="number" id="initial-balance" readonly>
 </div>
 
-<!-- Modal pour la modification d'état de caisse -->
-<!-- <div class="modal fade" id="editcaisseModal" tabindex="-1" role="dialog" aria-labelledby="editClientModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <form id="etat_de_caisse" method="POST" action="">
-                @csrf
-                @method('PUT')
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editEtatCaisseModalLabel">Modifier</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="day">Jour</label>
-                        <input type="number" class="form-control" name="day" required min="1" max="31">
-                    </div>
-                    <div class="form-group">
-                        <label for="Nreference">N° Référence</label>
-                        <input type="number" class="form-control" name="Nreference" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="Libellé">Libellé</label>
-                        <input type="text" class="form-control" name="Libellé" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="Recette">Recette</label>
-                        <input type="number" class="form-control" name="Recette">
-                    </div>
-                    <div class="form-group">
-                        <label for="Depense">Dépense</label>
-                        <input type="number" class="form-control" name="Depense">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="reset" class="btn btn-secondary me-8">
-                        <i class="fas fa-undo"></i> Réinitialiser
-                    </button>
-                    <button type="submit" class="btn btn-primary">Modifier</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div> -->
 
 <!-- <i class="fa fa-trash" id="delete-selected"></i> -->
 
@@ -254,16 +213,14 @@ document.addEventListener('DOMContentLoaded', function() {
     filterSoldeInitial(selectedMonth, selectedYear);
 });
 </script>
-
-<!-- Conteneur pour le tableau -->
 <div id="example-table"></div>
 
 <!-- Total recette, dépense et solde final -->
-<div class="total-container">
-    <label for="total-revenue">Total recette :</label>
+<div class="total-container" >
+    <label for="total-revenue" >Total recette :</label>
     <input type="number" id="total-revenue" placeholder="Total recette">
     <label for="total-expense">Total dépense :</label>
-    <input type="number" id="total-expense" placeholder="Total dépense">
+    <input type="number" id="total-expense" placeholder="Total dépense"> 
     <label for="final-balance">Solde final :</label>
     <input type="number" id="final-balance" placeholder="Solde final">
 </div>
@@ -276,7 +233,7 @@ document.getElementById('cloturer-button').addEventListener('click', function() 
     var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
 
     $.ajax({
-        url: '/cloturer-solde', // L'URL de votre route pour cloturer
+        url: '/cloturer-solde', 
         type: 'POST',
         data: {
             _token: $('meta[name="csrf-token"]').attr('content'),
@@ -295,6 +252,11 @@ document.getElementById('cloturer-button').addEventListener('click', function() 
         }
     });
 });
+
+
+document.getElementById('export-excel-icon').addEventListener('click', exportToExcel);
+
+
     var transactions = @json($transactions);
  
     function filterTransactions(month, year) {
@@ -496,65 +458,50 @@ function selectAllRows() {
         }
     }
 
-    // Gestionnaire d'événements pour le bouton de suppression
-    // document.getElementById('delete-selected').addEventListener('click', function() {
-    //     var selectedRows = table.getSelectedRows();
-    //     if (selectedRows.length === 0) {
-    //         alert("Aucune ligne sélectionnée !");
-    //         return;
-    //     }
+//     $('#example-table').on('keydown', function(e) {
+//     if (e.key === "Enter") {
+//         var selectedRows = table.getSelectedRows();
+//         if (selectedRows.length > 0) {
+//             var rowData = selectedRows[0].getData();
+//             console.log("Données de la ligne sélectionnée :");
+//             console.log("Jour :", rowData.day);
+//             console.log("Référence :", rowData.ref);
+//             console.log("Libellé :", rowData.libelle);
+//             console.log("Recette :", rowData.recette);
+//             console.log("Dépense :", rowData.depense);
 
-    //     if (confirm("Êtes-vous sûr de vouloir supprimer les lignes sélectionnées ?")) {
-    //         selectedRows.forEach(function(row) {
-    //             var rowData = row.getData();
-    //             deleteTransaction(rowData.id);
-    //         });
-    //     }
-    //     location.reload();
-    // });
-    $('#example-table').on('keydown', function(e) {
-    if (e.key === "Enter") {
-        var selectedRows = table.getSelectedRows();
-        if (selectedRows.length > 0) {
-            var rowData = selectedRows[0].getData();
-            console.log("Données de la ligne sélectionnée :");
-            console.log("Jour :", rowData.day);
-            console.log("Référence :", rowData.ref);
-            console.log("Libellé :", rowData.libelle);
-            console.log("Recette :", rowData.recette);
-            console.log("Dépense :", rowData.depense);
+//             var selectedMonth = $('#month-select').val();
+//             var selectedYear = $('input[type="text"]').val();
+//             var formattedDate = selectedYear + '-' + selectedMonth + '-' + rowData.day.padStart(2, '0');
+//             var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
 
-            var selectedMonth = $('#month-select').val();
-            var selectedYear = $('input[type="text"]').val();
-            var formattedDate = selectedYear + '-' + selectedMonth + '-' + rowData.day.padStart(2, '0');
-            var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
+//             $.ajax({
+//                 url: '/save-transaction',
+//                 type: "POST",
+//                 data: {
+//                     _token: $('meta[name="csrf-token"]').attr('content'),
+//                     date: formattedDate,
+//                     ref: rowData.ref,
+//                     libelle: rowData.libelle,
+//                     recette: rowData.recette,
+//                     depense: rowData.depense,
+//                     journal_code: journalCode 
+//                 },
+//                 success: function(response) {
+//                     console.log("Données envoyées avec succès :", response);
+//                     location.reload();
+//                 },
+//                 error: function(xhr, status, error) {
+//                     console.error("Erreur lors de l'envoi des données :", error);
+//                     console.log(xhr.responseText);
+//                 }
+//             });
+//         } else {
+//             console.log("Aucune ligne sélectionnée !");
+//         }
+//     }
+// });
 
-            $.ajax({
-                url: '/save-transaction',
-                type: "POST",
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'),
-                    date: formattedDate,
-                    ref: rowData.ref,
-                    libelle: rowData.libelle,
-                    recette: rowData.recette,
-                    depense: rowData.depense,
-                    journal_code: journalCode // Inclure le code journal dans les données envoyées
-                },
-                success: function(response) {
-                    console.log("Données envoyées avec succès :", response);
-                    location.reload();
-                },
-                error: function(xhr, status, error) {
-                    console.error("Erreur lors de l'envoi des données :", error);
-                    console.log(xhr.responseText);
-                }
-            });
-        } else {
-            console.log("Aucune ligne sélectionnée !");
-        }
-    }
-});
     function saveData() {
         var mois = $('#month-select').val();
         var soldeInitial = parseFloat($('#initial-balance').val() || 0);
@@ -634,6 +581,9 @@ function selectAllRows() {
         var currentYear = $('input[type="text"]').val();
         updateTableData(currentMonth, currentYear);
     });
+// Variable pour stocker la réponse de l'utilisateur
+let userResponse = null;
+
 // Fonction pour vérifier si la référence existe déjà dans le tableau
 function checkReferenceExists(reference, currentRowId) {
     const existingTransaction = transactions.find(function(transaction) {
@@ -646,6 +596,7 @@ function checkReferenceExists(reference, currentRowId) {
     } : { exists: false };
 }
 
+// Événement cellEdited pour vérifier la référence
 // Événement cellEdited pour vérifier la référence
 table.on("cellEdited", function(cell) {
     var field = cell.getField();
@@ -660,26 +611,19 @@ table.on("cellEdited", function(cell) {
             var period = referenceCheck.month + '/' + referenceCheck.year; // Format de la période
             Swal.fire({
                 title: `La référence N° "${newValue}" existe déjà dans la période ${period}`,
-                text: "Voulez-vous continuer, annuler ou mettre à jour la référence ?",
+                text: "Voulez-vous continuer ou annuler ?",
                 icon: 'warning',
                 showCancelButton: true,
-                showDenyButton: true,
                 confirmButtonText: 'Oui',
-                cancelButtonText: 'Non',
-                denyButtonText: 'Mettre à jour'
+                cancelButtonText: 'Non'
             }).then((result) => {
                 if (result.isConfirmed) {
                     // Si l'utilisateur choisit "Oui", accepter la modification et conserver la nouvelle valeur
-                    // (La nouvelle valeur est déjà appliquée par cellEdited)
-                } else if (result.isDenied) {
-                    // Si l'utilisateur choisit "Mettre à jour", procéder à la mise à jour
-                    rowData.ref = newValue; // Mettre à jour la référence dans la ligne
-                    cell.getRow().update(rowData); // Mettre à jour la ligne avec la nouvelle valeur
+                    userResponse = 'continue'; // Stocker la réponse
                 } else {
-                    // Si l'utilisateur choisit "Non", réinitialiser la valeur de la cellule et supprimer la ligne
+                    // Si l'utilisateur choisit "Non", réinitialiser la valeur de la cellule
                     cell.setValue(rowData.ref); // Réinitialiser à l'ancienne valeur
-                    cell.getRow().delete(); // Supprimer la ligne
-                    location.reload(); // Recharger la page après suppression
+                    userResponse = 'cancel'; // Stocker la réponse
                 }
             });
         }
@@ -688,7 +632,73 @@ table.on("cellEdited", function(cell) {
     // Mettre à jour les totaux après modification
     updateTotals($('#month-select').val(), $('input[type="text"]').val());
 });
+// Événement pour enregistrer les données lors de l'appui sur "Entrée"
+$('#example-table').on('keydown', function(e) {
+    if (e.key === "Enter") {
+        var selectedRows = table.getSelectedRows();
+        if (selectedRows.length > 0) {
+            var rowData = selectedRows[0].getData();
+            var selectedMonth = $('#month-select').val();
+            var selectedYear = $('input[type="text"]').val();
+            var formattedDate = selectedYear + '-' + selectedMonth + '-' + rowData.day.padStart(2, '0');
+            var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
 
+            // Vérifier si userResponse est vide et le remplacer par 0
+            var userResponseToSend = userResponse ? userResponse : 0;
+
+            $.ajax({
+                url: '/save-transaction',
+                type: "POST",
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    date: formattedDate,
+                    ref: rowData.ref,
+                    libelle: rowData.libelle,
+                    recette: rowData.recette,
+                    depense: rowData.depense,
+                    journal_code: journalCode,
+                    user_response: userResponseToSend // Envoyer la réponse de l'utilisateur ou 0
+                },
+                success: function(response) {
+                    console.log("Données envoyées avec succès :", response);
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Erreur lors de l'envoi des données :", error);
+                    console.log(xhr.responseText);
+                }
+            });
+        } else {
+            console.log("Aucune ligne sélectionnée !");
+        }
+    }
+});
+
+
+
+function exportToExcel() {
+    // Récupérer les données du tableau
+    const tableData = table.getData();
+    
+    // Créer un tableau pour les en-têtes et les données
+    const headers = ["Jour", "N° Référence", "Libellé", "Recette", "Dépense"];
+    const data = [headers];
+
+    // Ajouter les données du tableau
+    tableData.forEach(row => {
+        data.push([row.day, row.ref, row.libelle, row.recette, row.depense]);
+    });
+
+    // Créer un nouveau classeur
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Ajouter la feuille au classeur
+    XLSX.utils.book_append_sheet(wb, ws, "État de Caisse");
+
+    // Exporter le fichier Excel
+    XLSX.writeFile(wb, "etat_caisse_mensuelle.xlsx");
+}
 </script>
 
 @endsection

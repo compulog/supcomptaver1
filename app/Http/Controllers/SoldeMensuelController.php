@@ -9,9 +9,6 @@ class SoldeMensuelController extends Controller
 {
 
  
-  
-
-    
     public function saveSolde(Request $request)
     {
 
@@ -65,6 +62,8 @@ class SoldeMensuelController extends Controller
             return response()->json(['message' => 'Solde mensuel enregistré avec succès!']);
         }
     }
+
+    
     public function cloturerSolde(Request $request)
 {
     // Validation des données envoyées
