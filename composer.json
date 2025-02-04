@@ -1,4 +1,6 @@
 {
+
+
     "name": "laravel/laravel",
     "type": "project",
     "description": "The Laravel Framework.",
@@ -13,6 +15,8 @@
         "dompdf/dompdf": "^3.0",
         "guzzlehttp/guzzle": "^7.4",
         "laravel/framework": "^11.0",
+        "illuminate/validation": "*",
+        "intervention/image": "^3.9",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.6",
         "maatwebsite/excel": "^3.1",
@@ -66,4 +70,9 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true
+
+
+
+
+
 }

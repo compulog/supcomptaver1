@@ -64,7 +64,7 @@
             margin-right: 10px; /* Espacement entre l'icône et le texte */
         }
     </style>
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
@@ -90,7 +90,7 @@
 <!-- Exercice -->
 <div class="exercice">
   <span>Exercice:</span>
-
+ 
   <button type="button" class="btn-arrow left">
     <div class="arrow-left"></div>
   </button>
@@ -186,55 +186,55 @@
                 @if(Auth::user()->type === 'SuperAdmin')
                 <div class="dropdown-list" id="dropdownList">
                     <a class="nav-link {{ (Request::is('utilisateurs') ? 'active' : '') }}" href="{{ url('utilisateurs') }}">
-                        <i class="fas fa-users"></i>  
-                        <span class="nav-link-text ms-1">Utilisateurs</span>  
+                        <i class="fas fa-users"></i>
+                        <span class="nav-link-text ms-1">Utilisateurs</span>
                     </a>
 
                     <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
-                        <i class="fas fa-user"></i>  
-                        <span class="nav-link-text ms-1">Mon Profil</span> 
+                        <i class="fas fa-user"></i>
+                        <span class="nav-link-text ms-1">Mon Profil</span>
                     </a>
 
                     <a href="{{ url('/logout')}}" class="nav-link">
-                        <i class="fas fa-sign-out-alt"></i>  
+                        <i class="fas fa-sign-out-alt"></i>
                         <span class="d-sm-inline d-none">Sign Out</span>
                     </a>
                 </div>
                 @elseif(Auth::user()->type === 'admin')
                 <div class="dropdown-list" id="dropdownList">
                     <a class="nav-link {{ (Request::is('Admin') ? 'active' : '') }}" href="{{ url('Admin') }}">
-                        <i class="fas fa-cogs"></i>  
-                        <span class="nav-link-text ms-1">Admin</span>  
+                        <i class="fas fa-cogs"></i>
+                        <span class="nav-link-text ms-1">Admin</span>
                     </a>
                     <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
-                        <i class="fas fa-cogs"></i>  
-                        <span class="nav-link-text ms-1">interlocuteurs</span>  
+                        <i class="fas fa-cogs"></i>
+                        <span class="nav-link-text ms-1">interlocuteurs</span>
                     </a>
-                    
+
                     <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
-                        <i class="fas fa-user"></i>  
-                        <span class="nav-link-text ms-1">Mon Profil</span> 
+                        <i class="fas fa-user"></i>
+                        <span class="nav-link-text ms-1">Mon Profil</span>
                     </a>
 
                     <a href="{{ url('/logout')}}" class="nav-link">
-                        <i class="fas fa-sign-out-alt"></i>  
+                        <i class="fas fa-sign-out-alt"></i>
                         <span class="d-sm-inline d-none">Sign Out</span>
                     </a>
                 </div>
                 @elseif(Auth::user()->type === 'utilisateur')
                 <div class="dropdown-list" id="dropdownList">
                     <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
-                        <i class="fas fa-cogs"></i>  
-                        <span class="nav-link-text ms-1">interlocuteurs</span>  
+                        <i class="fas fa-cogs"></i>
+                        <span class="nav-link-text ms-1">interlocuteurs</span>
                     </a>
 
                     <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
-                        <i class="fas fa-user"></i>  
-                        <span class="nav-link-text ms-1">Mon Profil</span> 
+                        <i class="fas fa-user"></i>
+                        <span class="nav-link-text ms-1">Mon Profil</span>
                     </a>
 
                     <a href="{{ url('/logout')}}" class="nav-link">
-                        <i class="fas fa-sign-out-alt"></i>  
+                        <i class="fas fa-sign-out-alt"></i>
                         <span class="d-sm-inline d-none">Sign Out</span>
                     </a>
                 </div>
@@ -242,12 +242,12 @@
                 @else
                 <div class="dropdown-list" id="dropdownList">
                     <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
-                        <i class="fas fa-user"></i>  
-                        <span class="nav-link-text ms-1">Mon Profil</span> 
+                        <i class="fas fa-user"></i>
+                        <span class="nav-link-text ms-1">Mon Profil</span>
                     </a>
 
                     <a href="{{ url('/logout')}}" class="nav-link">
-                        <i class="fas fa-sign-out-alt"></i> 
+                        <i class="fas fa-sign-out-alt"></i>
                         <span class="d-sm-inline d-none">Sign Out</span>
                     </a>
                 </div>
@@ -268,3 +268,4 @@
         }
     });
 </script>
+

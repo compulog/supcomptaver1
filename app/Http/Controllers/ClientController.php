@@ -117,6 +117,7 @@ class ClientController extends Controller
     }
     
     
+    
    // Dans ClientController.php
    public function edit($id)
    {

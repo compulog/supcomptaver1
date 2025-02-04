@@ -15,7 +15,7 @@ class CreateRegimesDeclarationTvaTable extends Migration
     {
         Schema::create('regimes_declaration_tva', function (Blueprint $table) {
             $table->id(); // Ajoute une clé primaire auto-incrémentée
-            $table->string('numero')->unique(); // Numéro du régime de déclaration (unique)
+            $table->string('numero', 191)->unique();
             $table->text('description')->nullable(); // Description du régime de déclaration (facultatif)
             $table->timestamps(); // Créera les champs created_at et updated_at
         });

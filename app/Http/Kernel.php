@@ -39,6 +39,8 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\SetSocieteId::class,
             \App\Http\Middleware\SetFoldersId::class,
+            \App\Http\Middleware\VerifyCsrfToken::class,  // Cette ligne doit être présente
+
 
         ],
 
@@ -66,7 +68,11 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'set.societe' => \App\Http\Middleware\SetSocieteId::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
 
-    ];
+         // autres middlewares
+
+   ];
+
 }

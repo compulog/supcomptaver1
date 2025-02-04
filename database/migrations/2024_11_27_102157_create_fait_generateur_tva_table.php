@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('fait_generateur_tva', function (Blueprint $table) {
             $table->id();
-            $table->string('numero')->unique(); 
-            $table->text('description')->nullable(); 
+            $table->string('numero', 191)->unique();
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }

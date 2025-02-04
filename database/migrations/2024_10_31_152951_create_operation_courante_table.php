@@ -26,8 +26,13 @@ class CreateOperationCouranteTable extends Migration
             $table->string('rubrique_tva'); // Rubrique TVA
             $table->string('compte_tva'); // Compte TVA
             $table->boolean('prorat_de_deduction')->default(false); // Prorat de déduction
-            $table->string('piece_justificative'); // Pièce justificative
+            $table->string('piece_justificative')->nullable(); // Pièce justificative (nullable si non obligatoire)
             $table->string('type_journal'); // Type de journal
+            
+            // Clé étrangère vers `societes`
+            $table->unsignedBigInteger('societe_id');
+            $table->foreign('societe_id')->references('id')->on('societes')->onDelete('cascade');
+
             $table->timestamps(); // Champs created_at et updated_at
         });
     }

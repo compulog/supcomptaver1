@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use Yajra\DataTables\Facades\DataTables;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,7 +26,7 @@ class SaisieMouvementController extends Controller
     // Méthode pour afficher le formulaire de saisie
     public function index()
     {
-        return view('saisie mouvement(J ACH-VTE)'); // Remplacez 'saisie.index' par le nom de votre vue
+        return view('Operation_courante'); // Remplacez 'saisie.index' par le nom de votre vue
     }
 
     // Méthode pour traiter la soumission du formulaire
@@ -42,7 +43,7 @@ class SaisieMouvementController extends Controller
         // Traiter les données
         // Exemple : Enregistrement dans la base de données
 
-        return redirect()->route('saisie.index')->with('success', 'Mouvement enregistré avec succès !');
+        return redirect()->route('Operation_Courante.index')->with('success', 'Mouvement enregistré avec succès !');
     }
 
     // Autres méthodes (show, edit, update, destroy) selon les besoins...

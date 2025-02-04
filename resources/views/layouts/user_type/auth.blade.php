@@ -2,20 +2,20 @@
 
 @section('auth')
 
-    @if(\Request::is('static-sign-up')) 
+    @if(\Request::is('static-sign-up'))
         @include('layouts.navbars.guest.nav')
         @yield('content')
         @include('layouts.footers.guest.footer')
-    
-    @elseif (\Request::is('static-sign-in')) 
+
+    @elseif (\Request::is('static-sign-in'))
         @include('layouts.navbars.guest.nav')
         @yield('content')
         @include('layouts.footers.guest.footer')
-    
+
     @else
         <div id="overlay" class="overlay"></div>
 
-        @if (\Request::is('rtl'))  
+        @if (\Request::is('rtl'))
             <div id="sidebar" class="sidebar">
                 @include('layouts.navbars.auth.sidebar-rtl')
             </div>
@@ -23,10 +23,10 @@
                 @include('layouts.navbars.auth.nav-rtl')
                 <div class="container-fluid py-4">
                     @yield('content')
-                    @include('layouts.footers.auth.footer') 
+                    @include('layouts.footers.auth.footer')
                 </div>
             </main>
-        @elseif (\Request::is('profile'))  
+        @elseif (\Request::is('profile'))
             <div id="sidebar" class="sidebar">
                 @include('layouts.navbars.auth.sidebar')
             </div>
@@ -34,7 +34,7 @@
                 @include('layouts.navbars.auth.nav')
                 @yield('content')
             </div>
-        @elseif (\Request::is('virtual-reality')) 
+        @elseif (\Request::is('virtual-reality'))
             <div id="sidebar" class="sidebar">
                 @include('layouts.navbars.auth.sidebar')
             </div>
@@ -50,18 +50,19 @@
             </div>
             <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg {{ (Request::is('rtl') ? 'overflow-hidden' : '') }}">
                 <nav class="navbar d-flex">
-                    <!-- Conteneur de l'icône du menu qui occupe 30px -->
+                  
+
                     {{-- Assurez-vous que l'utilisateur est connecté et que son type n'est pas "interlocuteurs" --}}
 @if(auth()->check() && auth()->user()->type !== 'interlocuteurs')
     <button id="menuToggle" class="navbar-toggler" type="button" style="padding: 0; border: none; background: transparent;margin-left:20px;">
-        <p style="font-size:15px;color:black;"><i class="fas fa-bars"></i></p> 
+        <p style="font-size:15px;color:black;"><i class="fas fa-bars"></i></p>
     </button>
 @endif
 
-                    
+
                     <!-- Navbar qui prend le reste de l'espace -->
                     <div class="navbar-links flex-grow-1">
-                        @include('layouts.navbars.auth.nav') 
+                        @include('layouts.navbars.auth.nav')
                     </div>
                 </nav>
                 <div class="container-fluid py-4">
@@ -70,7 +71,7 @@
                 </div>
             </main>
         @endif
-        
+
         @include('components.fixed-plugin')
     @endif
 
@@ -80,10 +81,10 @@
         document.getElementById("menuToggle").addEventListener("click", function() {
             // Basculer l'affichage de la sidebar
             document.getElementById("sidebar").classList.toggle("sidebar-open");
-            
+
             // Ajouter ou enlever l'overlay semi-transparent
             document.getElementById("overlay").classList.toggle("overlay-open");
-            
+
             // Ajuster le style du main-content pour qu'il prenne moins de place
             document.querySelector('.main-content').classList.toggle('sidebar-open');
         });
@@ -109,7 +110,7 @@
             background-color: #333; /* Fond de la sidebar */
             color: white;
             transition: all 0.3s ease-in-out; /* Effet de transition */
-             
+
         }
 
         /* Sidebar ouverte : elle occupe toute la largeur de l'écran */

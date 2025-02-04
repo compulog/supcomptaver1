@@ -106,6 +106,12 @@
     .text-warning {
         color: #ffc107;
     }
+    .hidden {
+    display: none;
+}
+#cloturer-button{
+    background-color: green;
+}
 </style>
 
 <!-- Navigation -->
@@ -121,12 +127,13 @@
 <div class="form-group" style="display: flex; align-items: center; margin-left: -500px;">
     <!-- Sélecteur de code journal -->
     <label for="journal-select" style="margin-right: 10px;">Code Journal :</label>
-    <select id="journal-select" style="width: 150px; height: 31px; margin-right: 20px;">
-        <option value="J001">J001</option>
-        <option value="J002">J002</option>
-        <option value="J003">J003</option>
-        <!-- Ajouter d'autres options ici -->
-    </select>
+<select id="journal-select" style="width: 150px; height: 31px; margin-right: 20px;">
+    @foreach ($journauxCaisse as $journal)
+        <option value="{{ $journal->code_journal }}">{{ $journal->code_journal }}</option>
+    @endforeach
+    <!-- Vous pouvez également ajouter d'autres options ici si nécessaire -->
+</select>
+
 
     <!-- Sélecteur de mois et d'année -->
     <label for="month-select" style="margin-right: 10px;">Période :</label>
@@ -147,7 +154,7 @@
 
     <input type="text" id="year-select" value="{{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}" readonly style="border-radius: 0 4px 4px 0; border-left: none; width: 70px; height: 31px;margin-left:-50px;">
     <i id="export-excel-icon" class="fas fa-file-excel" title="Exporter en Excel" style="cursor: pointer; font-size: 17px; color: green;margin-right:3px;"></i>
-    <i class="fa fa-share" aria-hidden="true"></i>
+    <i class="fa fa-share" aria-hidden="true" title="transférer"></i>
 
 </div>
 
@@ -166,71 +173,68 @@
 var soldesMensuels = @json($soldesMensuels);
 console.log(soldesMensuels);  // Vérifiez les données reçues
 
-// Fonction pour filtrer le solde initial en fonction du mois et de l'année
-function filterSoldeInitial(month, year) {
-    if (month === "01") {
-        var soldeJanvier = soldesMensuels.find(function(soldeMensuel) {
-            var moisComparaison = parseInt(soldeMensuel.mois).toString().padStart(2, '0');
-            var anneeComparaison = parseInt(soldeMensuel.annee).toString();
-            return moisComparaison === "01" && anneeComparaison === year;
-        });
-
-        if (soldeJanvier) {
-            document.getElementById('initial-balance').value = soldeJanvier.solde_initial;
-        } else {
-            document.getElementById('initial-balance').value = 0;
-        }
-
-        document.getElementById('initial-balance').readOnly = false;
-        return;
-    }
-
-    var previousMonth = (parseInt(month) - 1).toString().padStart(2, '0');
-    var solde = soldesMensuels.find(function(soldeMensuel) {
-        var moisComparaison = parseInt(soldeMensuel.mois).toString().padStart(2, '0');
-        var anneeComparaison = parseInt(soldeMensuel.annee).toString();
-        return moisComparaison === previousMonth && anneeComparaison === year;
+function filterSoldeInitial(month, year, journalCode) {
+    var soldeMensuel = soldesMensuels.find(function(solde) {
+        var moisComparaison = parseInt(solde.mois).toString().padStart(2, '0');
+        var anneeComparaison = parseInt(solde.annee).toString();
+        return moisComparaison === month && anneeComparaison === year && solde.code_journal === journalCode; // Filtrer par code journal
     });
 
-    if (solde) {
-        document.getElementById('initial-balance').value = solde.solde_final;
+    if (soldeMensuel) {
+        // Vérifiez si le solde est clôturé
+        if (soldeMensuel.cloturer === 1) {
+            Swal.fire({
+                title: 'Alerte',
+                text: 'Le solde pour ce mois est déjà clôturé.',
+                icon: 'warning',
+                confirmButtonText: 'OK'
+            });
+            // Désactiver le bouton "Clôturer"
+            document.getElementById('cloturer-button').disabled = true;
+        } else {
+            // Réactiver le bouton "Clôturer" si le mois n'est pas clôturé
+            document.getElementById('cloturer-button').disabled = false;
+        }
+
+        // Afficher le solde initial
+        document.getElementById('initial-balance').value = soldeMensuel.solde_initial;
     } else {
         document.getElementById('initial-balance').value = 0;
+        // Réactiver le bouton "Clôturer" si aucun solde n'est trouvé
+        document.getElementById('cloturer-button').disabled = false;
     }
+    updateShareIconVisibility();
 
     document.getElementById('initial-balance').readOnly = false;
 }
-
+// Écoutez le changement de sélection du mois
+ 
 document.getElementById('month-select').addEventListener('change', function() {
     var selectedMonth = this.value;
     var selectedYear = document.getElementById('year-select').value;
-    filterSoldeInitial(selectedMonth, selectedYear);
+    var selectedJournalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
+    filterSoldeInitial(selectedMonth, selectedYear, selectedJournalCode); // Appeler la fonction avec le code journal
 });
 
-document.addEventListener('DOMContentLoaded', function() {
-    var selectedMonth = document.getElementById('month-select').value;
-    var selectedYear = document.getElementById('year-select').value;
-    filterSoldeInitial(selectedMonth, selectedYear);
-});
+ 
 </script>
 <div id="example-table"></div>
-
+<input type="hidden" id="total-revenue" placeholder="Total recette">
+     <input type="hidden" id="total-expense" placeholder="Total dépense"> 
 <!-- Total recette, dépense et solde final -->
-<div class="total-container" >
-    <label for="total-revenue" >Total recette :</label>
-    <input type="number" id="total-revenue" placeholder="Total recette">
-    <label for="total-expense">Total dépense :</label>
-    <input type="number" id="total-expense" placeholder="Total dépense"> 
+<div style="margin-left:900px;">
+     
     <label for="final-balance">Solde final :</label>
-    <input type="number" id="final-balance" placeholder="Solde final">
+    <input type="number" id="final-balance" placeholder="Solde final" style="border-radius:4px;border:green;">
 </div>
 <button id="cloturer-button" class="btn btn-primary">Clôturer</button>
 <script>
-
 document.getElementById('cloturer-button').addEventListener('click', function() {
     var mois = $('#month-select').val();
     var annee = $('input[type="text"]').val();
-    var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
+    var journalCode = document.getElementById('journal-select').value;
+
+    console.log("Clôturer le solde pour :", { mois, annee, journalCode });
 
     $.ajax({
         url: '/cloturer-solde', 
@@ -242,8 +246,7 @@ document.getElementById('cloturer-button').addEventListener('click', function() 
             journal_code: journalCode
         },
         success: function(response) {
-            console.log(response.message);
-            // Vous pouvez ajouter une alerte ou un message de succès ici
+            console.log("Réponse du serveur :", response);
             alert('Le solde a été clôturé avec succès !');
         },
         error: function(xhr, status, error) {
@@ -259,43 +262,80 @@ document.getElementById('export-excel-icon').addEventListener('click', exportToE
 
     var transactions = @json($transactions);
  
-    function filterTransactions(month, year) {
-        return transactions.filter(function(transaction) {
-            var transactionDate = new Date(transaction.date);
-            return transactionDate.getMonth() + 1 === parseInt(month) && transactionDate.getFullYear() === parseInt(year);
-        });
-    }
-    
-    function updateTableData(month, year) {
-        var filteredTransactions = filterTransactions(month, year);
-        var tableData = filteredTransactions.map(function(transaction) {
-            return {
-                id: transaction.id,
-                day: new Date(transaction.date).getDate(),
-                ref: transaction.reference,
-                libelle: transaction.libelle,
-                recette: transaction.recette,
-                depense: transaction.depense
-            };
-        });
+    function filterTransactions(month, year, journalCode) {
+    return transactions.filter(function(transaction) {
+        var transactionDate = new Date(transaction.date);
+        return transactionDate.getMonth() + 1 === parseInt(month) &&
+               transactionDate.getFullYear() === parseInt(year) &&
+               transaction.code_journal === journalCode; // Filtrer par code journal
+    });
+}
 
+function updateTableData(month, year) {
+    var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
+    var filteredTransactions = filterTransactions(month, year, journalCode); // Passer le code journal
+    var tableData = filteredTransactions.map(function(transaction) {
+        return {
+            id: transaction.id,
+            day: new Date(transaction.date).getDate(),
+            ref: transaction.reference,
+            libelle: transaction.libelle,
+            recette: transaction.recette,
+            depense: transaction.depense
+        };
+    });
+
+    // Vérifiez si le mois est clôturé
+    if (!isMonthClosed(month, year, journalCode)) {
+        // Si le mois n'est pas clôturé, ajoutez une ligne vide
         var emptyRow = {day: "", ref: "", libelle: "", recette: "", depense: ""};
         tableData.push(emptyRow);
-
-        table.replaceData(tableData);
-        updateTotals(month, year);
     }
 
-    
-    var table = new Tabulator("#example-table", {
+    table.replaceData(tableData);
+    updateTotals(month, year);
+
+    // Vérifiez si le mois est clôturé
+    if (isMonthClosed(month, year, journalCode)) {
+        
+        // Désactiver l'édition des cellules
+        table.getColumns().forEach(function(column) {
+            column.getDefinition().editor = false; // Désactiver l'éditeur
+        });
+        table.setEditable(false); // Désactiver l'édition du tableau
+        alert('Le mois sélectionné est déjà clôturé. Vous ne pouvez pas modifier les données.');
+    } else {
+        // Réactiver l'édition si le mois n'est pas clôturé
+        table.getColumns().forEach(function(column) {
+            column.getDefinition().editor = "input"; // Réactiver l'éditeur
+        });
+        table.setEditable(true); // Réactiver l'édition du tableau
+    }
+}
+
+document.getElementById('journal-select').addEventListener('change', function() {
+    var selectedMonth = document.getElementById('month-select').value;
+    var selectedYear = document.getElementById('year-select').value;
+    var selectedJournalCode = this.value; // Récupérer le code journal sélectionné
+    filterSoldeInitial(selectedMonth, selectedYear, selectedJournalCode); // Appeler la fonction avec le code journal
+    updateTableData(selectedMonth, selectedYear); // Mettre à jour le tableau avec le nouveau code journal
+});
+document.addEventListener('DOMContentLoaded', function() {
+    var selectedMonth = document.getElementById('month-select').value;
+    var selectedYear = document.getElementById('year-select').value;
+    var selectedJournalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
+    filterSoldeInitial(selectedMonth, selectedYear, selectedJournalCode); // Appeler la fonction avec le code journal
+});
+
+var table = new Tabulator("#example-table", {
     height: 300,
     layout: "fitColumns",
     columns: [
         {title: "Jour", field: "day", editor: "input", editorPlaceholder: "Entrez le jour", width: 100},
         {title: "N° Référence", field: "ref", editor: "input", editorPlaceholder: "Entrez le N° Référence", width: 200},
         {title: "Libellé", field: "libelle", editor: "input", editorPlaceholder: "Entrez le libellé", width: 382},
-        {title: "Recette", field: "recette", editor: "input", editorPlaceholder: "Entrez la recette", width: 200, formatter: "money"},
-        {title: "Dépense", field: "depense", editor: "input", editorPlaceholder: "Entrez la dépense", width: 200, formatter: "money"},
+        {title: "Recette", field: "recette", editor: "input", editorPlaceholder: "Entrez la recette", width: 200, formatter: "money", bottomCalc: "sum"},
+        {title: "Dépense", field: "depense", editor: "input", editorPlaceholder: "Entrez la dépense", width: 200, formatter: "money", bottomCalc: "sum"},
         { 
             title: `
                 <i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="selectAllRows()"></i>
@@ -349,10 +389,9 @@ document.getElementById('export-excel-icon').addEventListener('click', exportToE
             }
         },
     ],
-    
     data: [],
     selectable: true,  // Permet la sélection de lignes
-    cellEdited: function(cell) {
+     cellEdited: function(cell) {
         updateTotals($('#month-select').val(), $('input[type="text"]').val());
         saveData();
     }
@@ -401,34 +440,47 @@ function selectAllRows() {
             }
         });
     });
-
     function deleteTransaction(transactionId) {
-        if (confirm("Êtes-vous sûr de vouloir supprimer cette transaction ?")) {
-            $.ajax({
-                url: '/delete-transaction',
-                type: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'),
-                    id: transactionId
-                },
-                success: function(response) {
-                    if (response.success) {
-                        console.log("Transaction supprimée avec succès");
-                        table.deleteRow(transactionId);
-                        updateTotals($('#month-select').val(), $('input[type="text"]').val());
-                    } else {
-                        console.error("Erreur lors de la suppression : " + response.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error("Erreur lors de la suppression :", error);
-                }
-            });
-        } else {
-            console.log("Suppression annulée.");
-        }
-        location.reload();
+    var mois = $('#month-select').val();
+    var annee = $('input[type="text"]').val();
+    var journalCode = document.getElementById('journal-select').value;
+
+    // Vérifiez si le mois est clôturé
+    if (isMonthClosed(mois, annee, journalCode)) {
+        Swal.fire({
+            title: 'Alerte',
+            text: 'Le mois est déjà clôturé. Vous ne pouvez pas supprimer des transactions.',
+            icon: 'warning',
+            confirmButtonText: 'OK'
+        });
+        return; // Sortir de la fonction si le mois est clôturé
     }
+
+    if (confirm("Êtes-vous sûr de vouloir supprimer cette transaction ?")) {
+        $.ajax({
+            url: '/delete-transaction',
+            type: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                id: transactionId
+            },
+            success: function(response) {
+                if (response.success) {
+                    console.log("Transaction supprimée avec succès");
+                    table.deleteRow(transactionId);
+                    updateTotals($('#month-select').val(), $('input[type="text"]').val());
+                } else {
+                    console.error("Erreur lors de la suppression : " + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Erreur lors de la suppression :", error);
+            }
+        });
+    } else {
+        console.log("Suppression annulée.");
+    }
+}
 
     // Fonction pour sélectionner ou désélectionner toutes les lignes
     function toggleSelectAll() {
@@ -534,36 +586,40 @@ function selectAllRows() {
             }
         });
     }
-
     function updateTotals(month, year) {
-        var totalRecette = 0;
-        var totalDepense = 0;
-        var filteredTransactions = filterTransactions(month, year);
+    var totalRecette = 0;
+    var totalDepense = 0;
+    var filteredTransactions = filterTransactions(month, year, document.getElementById('journal-select').value);
 
-        filteredTransactions.forEach(function(row) {
-            totalRecette += parseFloat(row.recette || 0);
-            totalDepense += parseFloat(row.depense || 0);
-        });
+    filteredTransactions.forEach(function(row) {
+        totalRecette += parseFloat(row.recette || 0);
+        totalDepense += parseFloat(row.depense || 0);
+    });
 
-        $('#total-revenue').val(totalRecette.toFixed(2));
-        $('#total-expense').val(totalDepense.toFixed(2));
+    console.log("Total Recette:", totalRecette); // Vérifiez le total des recettes
+    console.log("Total Dépense:", totalDepense); // Vérifiez le total des dépenses
 
-        var soldeInitial = parseFloat($('#initial-balance').val() || 0);
-        var soldeFinal = soldeInitial + totalRecette - totalDepense;
-        $('#final-balance').val(soldeFinal.toFixed(2));
+    // Mettre à jour les éléments du pied de page pour afficher les totaux
+    $('#total-revenue-footer').text(totalRecette.toFixed(2));
+    $('#total-expense-footer').text(totalDepense.toFixed(2));
 
-        if (soldeFinal < 0) {
-            $('#final-balance').css('background-color', 'red');
-        } else {
-            $('#final-balance').css('background-color', '#52b438');
-        }
+    // Mettre à jour les champs d'entrée pour les totaux
+    $('#total-revenue').val(totalRecette.toFixed(2));
+    $('#total-expense').val(totalDepense.toFixed(2));
 
-        if (soldeInitial < 0) {
-            $('#initial-balance').css('background-color', 'red');
-        } else {
-            $('#initial-balance').css('background-color', '#52b438');
-        }
+    var soldeInitial = parseFloat($('#initial-balance').val() || 0);
+    var soldeFinal = soldeInitial + totalRecette - totalDepense;
+    $('#final-balance').val(soldeFinal.toFixed(2));
+
+    console.log("Solde Final:", soldeFinal); // Vérifiez le solde final
+
+    // Changer la couleur de fond en fonction du solde final
+    if (soldeFinal < 0) {
+        $('#final-balance').css('background-color', 'red');
+    } else {
+        $('#final-balance').css('background-color', '#52b438');
     }
+}
 
     $('#initial-balance').on('input', function() {
         updateTotals($('#month-select').val(), $('input[type="text"]').val());
@@ -645,7 +701,10 @@ $('#example-table').on('keydown', function(e) {
 
             // Vérifier si userResponse est vide et le remplacer par 0
             var userResponseToSend = userResponse ? userResponse : 0;
-
+            if (isMonthClosed(selectedMonth, selectedYear, journalCode)) {
+        alert("Le mois est déjà clôturé. Vous ne pouvez pas modifier des transactions.");
+        return; // Sortir de la fonction si le mois est clôturé
+    }else{
             $.ajax({
                 url: '/save-transaction',
                 type: "POST",
@@ -661,16 +720,17 @@ $('#example-table').on('keydown', function(e) {
                 },
                 success: function(response) {
                     console.log("Données envoyées avec succès :", response);
-                    location.reload();
+                    // location.reload();
                 },
                 error: function(xhr, status, error) {
                     console.error("Erreur lors de l'envoi des données :", error);
                     console.log(xhr.responseText);
                 }
-            });
+            });}
         } else {
             console.log("Aucune ligne sélectionnée !");
         }
+        location.reload();
     }
 });
 
@@ -699,6 +759,39 @@ function exportToExcel() {
     // Exporter le fichier Excel
     XLSX.writeFile(wb, "etat_caisse_mensuelle.xlsx");
 }
-</script>
 
+
+
+
+
+function isMonthClosed(month, year, journalCode) {
+    var soldeMensuel = soldesMensuels.find(function(solde) {
+        var moisComparaison = parseInt(solde.mois).toString().padStart(2, '0');
+        var anneeComparaison = parseInt(solde.annee).toString();
+        return moisComparaison === month && anneeComparaison === year && solde.code_journal === journalCode; // Inclure le code journal
+    });
+    return soldeMensuel && soldeMensuel.cloturer === 1;
+}
+
+
+// Ajoutez cette fonction pour mettre à jour la visibilité de l'icône
+function updateShareIconVisibility() {
+    var cloturerButton = document.getElementById('cloturer-button');
+    var shareIcon = document.querySelector('.fa-share');  
+
+    if (cloturerButton.disabled) {
+        shareIcon.classList.remove('hidden'); 
+     } else {
+        shareIcon.classList.add('hidden');     }
+}
+
+// Appelez cette fonction chaque fois que vous modifiez l'état du bouton "Clôturer"
+document.getElementById('cloturer-button').addEventListener('click', function() {
+ 
+     updateShareIconVisibility();
+});
+ 
+ 
+</script>
+ 
 @endsection

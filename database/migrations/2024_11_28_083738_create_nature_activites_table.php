@@ -15,7 +15,7 @@ class CreateNatureActivitesTable extends Migration
     {
         Schema::create('nature_activites', function (Blueprint $table) {
             $table->id();
-            $table->string('numero');  // Champ pour le numéro de la nature de l'activité
+            $table->string('numero', 191)->unique();
             $table->text('description');  // Champ pour la description de la nature de l'activité
             $table->timestamps();  // Les champs created_at et updated_at
         });

@@ -41,7 +41,7 @@
 
     <style>
         body {
-            background-color: #f9f9f9; 
+            background-color: #f9f9f9;
             color: #333;
         }
         /* Cibler les inputs de filtre dans Tabulator */
@@ -66,7 +66,7 @@
         <div class="card mb-4 mx-4">
             <div class="card-header pb-0">
                 <div class="d-flex flex-row justify-content-between">
-                 
+
                     <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-2" id="open-modal-btn">+&nbsp; Nouvelle société</button>
 
                     <button id="import-societes" class="btn btn-outline-secondary d-flex align-items-center gap-2">Importer Sociétés</button>
@@ -134,13 +134,13 @@
                         </div>
                         <div class="col-md-6 mb-3">
     <label for="rc" class="form-label">RC</label>
-    <input type="text" class="form-control" name="rc" id="rc" required 
+    <input type="text" class="form-control" name="rc" id="rc" required
            oninput="this.value=this.value.replace(/[^0-9]/g, '')">
 </div>
 
                         <div class="col-md-6 mb-3">
                             <label for="centre_rc" class="form-label">Centre RC</label>
-                         
+
                         <select id="ctl00_ctl36_g_69b20002_9278_429e_be53_84b78f0af32b_ctl00_DropDownList_Ville" class="form-control" name="centre_rc" required>
 						<option value="AGADIR">AGADIR</option>
 						<option value="AL HOCEIMA">AL HOCEIMA</option>
@@ -247,12 +247,12 @@
                             <label for="nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
                             <input type="number" class="form-control" name="nombre_chiffre_compte" required>
                         </div>
-                     
+
 
                         <div class="col-md-6 mb-3">
                             <label for="nature_activite" class="form-label">Nature de l'Activité</label>
                             <select class="form-control" name="nature_activite">
-                                
+
                                 <option value="4.Vente de biens d'équipement">Vente de biens d'équipement</option>
                                 <option value="5.Vente de travaux">Vente de travaux</option>
                                 <option value="6.Vente de services">Vente de services</option>
@@ -276,7 +276,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="regime_declaration" class="form-label">Régime de Déclaration de TVA</label>
-                         
+
                             <select class="form-control" name="regime_declaration" required>
                                  <option value="Mensuel de droit commun">Mensuel de droit commun</option>
                                 <option value="Trimestriel de droit commun">Trimestriel de droit commun</option>
@@ -303,13 +303,13 @@
                             <label for="designation" class="form-label">Désignation</label>
                             <input type="text" class="form-control" name="designation" required>
                         </div>
-                  
+
                     </div>
                    <!-- Boutons -->
                    <div class="d-flex justify-content-end">
                             <!-- Bouton Réinitialiser avec une très grande marge droite -->
                             <button type="reset" class="btn btn-secondary me-12">
-                                <i class="fas fa-undo"></i> 
+                                <i class="fas fa-undo"></i>
                             </button>
                             <!-- Bouton Ajouter avec une très grande marge gauche -->
                             <button type="submit" class="btn btn-primary ms-12" id="ajouter-societe">
@@ -665,7 +665,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         });
     });
 </script>
-    
+
 
 <!-- Modal Modifier Société -->
 <div class="modal fade" id="modifierSocieteModal" tabindex="-1" aria-labelledby="modifierSocieteModalLabel" aria-hidden="true">
@@ -709,7 +709,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             <label for="mod_identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
                             <input type="text" class="form-control" id="mod_identifiant_fiscal" name="identifiant_fiscal" required>
                         </div>
-                     
+
 
                         <div class="col-md-6 mb-3">
                             <label for="mod_ice" class="form-label">ICE</label>
@@ -719,9 +719,9 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             <label for="mod_date_creation" class="form-label">Date de Création</label>
                             <input type="date" class="form-control" id="mod_date_creation" name="date_creation">
                         </div>
-                   
-                    
-                     
+
+
+
                         <div class="col-md-6 mb-3 d-flex">
                             <div class="me-2" style="flex: 1;">
                                 <label for="mod_exercice_social_debut" class="form-label">Exercice Social Début</label>
@@ -732,7 +732,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                                 <input type="date" class="form-control" id="mod_exercice_social_fin" name="exercice_social_fin">
                             </div>
                         </div>
-                       
+
                         <div class="col-md-6 mb-3">
                             <label for="mod_model_comptable" class="form-label">Modèle Comptable</label>
                             <input type="text" class="form-control" id="mod_model_comptable" name="modele_comptable" required>
@@ -741,7 +741,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             <label for="mod_nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
                             <input type="text" class="form-control" id="mod_nombre_chiffre_compte" name="nombre_chiffre_compte">
                         </div>
-                   
+
                         <div class="col-md-6 mb-3">
                             <label for="mod_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
                             <input type="text" class="form-control" id="mod_assujettie_partielle_tva" name="assujettie_partielle_tva">
@@ -768,9 +768,9 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                         </div>
                         <div class="col-md-6 mb-3">
                         <label for="editRubriqueTVA">Rubrique TVA</label>
-                               
+
                                <select class="form-control select2" id="editRubriqueTVA" name="rubrique_tva" required>
-                               
+
                                    <!-- Les options seront ajoutées par JavaScript -->
                                </select>
                               </div>
@@ -778,11 +778,11 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
                             <label for="mod_designation" class="form-label">Désignation</label>
                             <input type="text" class="form-control" id="mod_designation" name="designation">
                         </div>
-                       
+
                     </div>
                      <!-- Bouton Réinitialiser avec marge très grande à droite -->
                      <button type="reset" class="btn btn-secondary me-8">
-                            <i class="fas fa-undo"></i> 
+                            <i class="fas fa-undo"></i>
                         </button>
                     <button type="submit" class="btn btn-primary">Modifier</button>
                 </form>
@@ -795,7 +795,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 <script>
   $(document).ready(function() {
     remplirRubriquesTva('editRubriqueTVA');
-    
+
     // Variable pour empêcher l'exécution multiple
     var modalOpened = false;
 
@@ -803,7 +803,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
     function openModal(societeId) {
         // Requête AJAX pour obtenir les données de la société
         var url = '/societes/' + societeId; // URL pour récupérer les données de la société
-        
+
         $.get(url, function(data) {
             // Remplir le formulaire avec les données de la société
             $('#modification_id').val(data.id);
@@ -838,7 +838,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
     $('#modifierSocieteModal').on('show.bs.modal', function(event) {
         var button = $(event.relatedTarget); // bouton qui a déclenché le modal
         var societeId = button.data('id'); // récupère l'ID de la société
-        
+
         // Si le modal a déjà été ouvert, on ne continue pas
         if (modalOpened) {
             return;  // Si le modal est déjà ouvert, on arrête tout
@@ -895,7 +895,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         layout: "fitColumns", // Ajuster les colonnes à la largeur du tableau
         columns: [
             {
-                title: ` 
+                title: `
                     <i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="toggleSelectAll()"></i>
                     <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;" onclick="deleteSelectedRows()"></i>
                 `,
@@ -919,7 +919,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
             {
                 title: "Exercice en cours",
                 field: "exercice_social", // Nom du champ dans vos données
-              
+
                 formatter: function(cell) {
                     const rowData = cell.getRow().getData(); // Obtenir les données de la ligne
                     return `Du <input type="date" value="${rowData.exercice_social_debut}"> au <input type="date" value="${rowData.exercice_social_fin}">`; // Formater les dates
@@ -950,7 +950,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         rowFormatter: function(row) {
         // Récupérer les valeurs du compte et de l'intitulé de la ligne
         var ice = row.getData().ice;
-        
+
         // Vérifier si la valeur de 'compte' ou 'intitule' est égale à 0 ou null
         if (ice == 0 || ice == null) {
             row.getElement().style.backgroundColor = " rgba(233, 233, 13, 0.838)"; // Appliquer la couleur rouge à la ligne
@@ -958,7 +958,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
     }
     });
 
-    
+
     function toggleSelectAll() {
     var icon = document.getElementById('selectAllIcon');
 
@@ -1006,7 +1006,7 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
 })
 .then(data => {
     console.log("Réponse brute du serveur:", data);  // Afficher la réponse brute pour vérifier ce qui est renvoyé
-    
+
     try {
         const jsonData = JSON.parse(data);  // Essayer de parser la réponse en JSON
         if (jsonData.message) {
@@ -1042,11 +1042,11 @@ document.getElementById("societes-table").addEventListener("click", function(e) 
         deleteSelectedRows(); // Appelle la fonction de suppression pour les lignes sélectionnées
         // Recharger la page
 location.reload();
-      
+
     }
 });
 
-        
+
   // Ajouter un gestionnaire d'événements pour le double clic sur une ligne
 // table.on("rowDblClick", function(row) {
 //     var rowData = row.getData(); // Obtenir les données de la ligne
@@ -1074,7 +1074,7 @@ location.reload();
     document.getElementById('societes-table').addEventListener('click', function(e) {
     if (e.target.closest('.delete-icon')) {
         const id = e.target.closest('.delete-icon').getAttribute('data-id');
-        
+
         // Confirmer la suppression sans demander de mot de passe
         if (confirm("Êtes-vous sûr de vouloir supprimer cette société ?")) {
             // Envoyer la requête de suppression sans vérifier le mot de passe
@@ -1129,7 +1129,7 @@ document.getElementById('assujettie_partielle_tva').addEventListener('change', f
     }
 });
 
- 
+
 
     document.getElementById("identifiant_fiscal").addEventListener("input", function() {
     // Remplace tous les caractères non numériques par une chaîne vide
@@ -1181,7 +1181,7 @@ $(function() {
 });
 
 function openImportModal() {
-    // Code pour afficher le modal d'importation 
+    // Code pour afficher le modal d'importation
     $('#importModal').modal('show'); // Utiliser Bootstrap modal si vous l'avez
 }
 

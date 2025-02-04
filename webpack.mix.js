@@ -16,3 +16,6 @@ mix.js('resources/js/app.js', 'public/js')
         //
     ]).minify('public/assets/js/soft-ui-dashboard.js');
 mix.sass('public/assets/scss/soft-ui-dashboard.scss', 'public/assets/css');
+
+
+
