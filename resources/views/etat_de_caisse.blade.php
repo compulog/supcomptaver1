@@ -112,6 +112,8 @@
 #cloturer-button{
     background-color: green;
 }
+
+
 </style>
 
 <!-- Navigation -->
@@ -138,27 +140,28 @@
     <!-- Sélecteur de mois et d'année -->
     <label for="month-select" style="margin-right: 10px;">Période :</label>
     <select id="month-select" style="margin-right: 10px;">
-        <option value="01">Janvier</option>
-        <option value="02">Février</option>
-        <option value="03">Mars</option>
-        <option value="04">Avril</option>
-        <option value="05">Mai</option>
-        <option value="06">Juin</option>
-        <option value="07">Juillet</option>
-        <option value="08">Août</option>
-        <option value="09">Septembre</option>
-        <option value="10">Octobre</option>
-        <option value="11">Novembre</option>
-        <option value="12">Décembre</option>
+        <option value="01">Janvier {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
+        <option value="02">Février {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
+        <option value="03">Mars {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
+        <option value="04">Avril {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
+        <option value="05">Mai {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
+        <option value="06">Juin {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
+        <option value="07">Juillet {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
+        <option value="08">Août {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
+        <option value="09">Septembre {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
+        <option value="10">Octobre {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
+        <option value="11">Novembre {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
+        <option value="12">Décembre {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
     </select>
 
-    <input type="text" id="year-select" value="{{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}" readonly style="border-radius: 0 4px 4px 0; border-left: none; width: 70px; height: 31px;margin-left:-50px;">
+    <input type="text" id="year-select" value="{{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}" readonly  style="display: none;">
     <i id="export-excel-icon" class="fas fa-file-excel" title="Exporter en Excel" style="cursor: pointer; font-size: 17px; color: green;margin-right:3px;"></i>
-    <i class="fa fa-share" aria-hidden="true" title="transférer"></i>
+    <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;" onclick="deleteSelectedRows()"></i>
+    <i class="fa fa-share" aria-hidden="true" title="transférer" style="margin-left:3px;"></i>
 
 </div>
 
-
+<button id="cloturer-button" class="btn btn-primary" style="margin-left:89%;margin-top:-81px;height:31px;border-radius:4px;font-size:10px;">Clôturer</button>
 <!-- Solde initial à afficher en fonction du mois et de l'année choisis -->
 <div class="form-group" style="margin-left:850px;">
     <label for="initial-balance">Solde initial :</label>
@@ -206,6 +209,7 @@ function filterSoldeInitial(month, year, journalCode) {
     updateShareIconVisibility();
 
     document.getElementById('initial-balance').readOnly = false;
+    saveData();
 }
 // Écoutez le changement de sélection du mois
  
@@ -214,6 +218,11 @@ document.getElementById('month-select').addEventListener('change', function() {
     var selectedYear = document.getElementById('year-select').value;
     var selectedJournalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
     filterSoldeInitial(selectedMonth, selectedYear, selectedJournalCode); // Appeler la fonction avec le code journal
+    if (selectedMonth !== "01") { // Si le mois n'est pas janvier
+        document.getElementById('initial-balance').disabled = true; // Désactiver l'input
+    } else {
+        document.getElementById('initial-balance').disabled = false; // Activer l'input
+    }
 });
 
  
@@ -227,7 +236,7 @@ document.getElementById('month-select').addEventListener('change', function() {
     <label for="final-balance">Solde final :</label>
     <input type="number" id="final-balance" placeholder="Solde final" style="border-radius:4px;border:green;">
 </div>
-<button id="cloturer-button" class="btn btn-primary">Clôturer</button>
+
 <script>
 document.getElementById('cloturer-button').addEventListener('click', function() {
     var mois = $('#month-select').val();
@@ -325,6 +334,12 @@ document.addEventListener('DOMContentLoaded', function() {
     var selectedYear = document.getElementById('year-select').value;
     var selectedJournalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
     filterSoldeInitial(selectedMonth, selectedYear, selectedJournalCode); // Appeler la fonction avec le code journal
+// Mettre le focus sur le sélecteur de code journal au chargement de la page
+document.getElementById('journal-select').focus();
+
+
+
+
 });
 
 var table = new Tabulator("#example-table", {
@@ -334,12 +349,11 @@ var table = new Tabulator("#example-table", {
         {title: "Jour", field: "day", editor: "input", editorPlaceholder: "Entrez le jour", width: 100},
         {title: "N° Référence", field: "ref", editor: "input", editorPlaceholder: "Entrez le N° Référence", width: 200},
         {title: "Libellé", field: "libelle", editor: "input", editorPlaceholder: "Entrez le libellé", width: 382},
-        {title: "Recette", field: "recette", editor: "input", editorPlaceholder: "Entrez la recette", width: 200, formatter: "money", bottomCalc: "sum"},
-        {title: "Dépense", field: "depense", editor: "input", editorPlaceholder: "Entrez la dépense", width: 200, formatter: "money", bottomCalc: "sum"},
+        {title: "Recette", field: "recette", editor: "number", editorPlaceholder: "Entrez la recette", width: 200, formatter: "money", bottomCalc: "sum"},
+        {title: "Dépense", field: "depense", editor: "number", editorPlaceholder: "Entrez la dépense", width: 200, formatter: "money", bottomCalc: "sum"},
         { 
             title: `
                 <i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="selectAllRows()"></i>
-                <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;" onclick="deleteSelectedRows()"></i>
             `,
             field: "actions", 
             width: 100, 
@@ -372,15 +386,7 @@ var table = new Tabulator("#example-table", {
 
                 actionContainer.appendChild(checkbox);
 
-                // Icône de suppression
-                var deleteIcon = document.createElement("i");
-                deleteIcon.classList.add("fas", "fa-trash-alt");
-                deleteIcon.style.cursor = "pointer";
-                deleteIcon.onclick = function() {
-                    deleteTransaction(rowData.id);
-                };
-                actionContainer.appendChild(deleteIcon);
-
+              
                 onRendered(function() {
                     cell.getElement().appendChild(actionContainer);
                 });
@@ -395,6 +401,7 @@ var table = new Tabulator("#example-table", {
         updateTotals($('#month-select').val(), $('input[type="text"]').val());
         saveData();
     }
+    
 });
 
 // Fonction pour sélectionner toutes les lignes et cocher toutes les cases
@@ -440,6 +447,8 @@ function selectAllRows() {
             }
         });
     });
+
+
     function deleteTransaction(transactionId) {
     var mois = $('#month-select').val();
     var annee = $('input[type="text"]').val();
@@ -456,8 +465,7 @@ function selectAllRows() {
         return; // Sortir de la fonction si le mois est clôturé
     }
 
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette transaction ?")) {
-        $.ajax({
+      $.ajax({
             url: '/delete-transaction',
             type: 'POST',
             data: {
@@ -477,10 +485,10 @@ function selectAllRows() {
                 console.error("Erreur lors de la suppression :", error);
             }
         });
-    } else {
-        console.log("Suppression annulée.");
-    }
+    
 }
+
+
 
     // Fonction pour sélectionner ou désélectionner toutes les lignes
     function toggleSelectAll() {
@@ -556,10 +564,10 @@ function selectAllRows() {
 
     function saveData() {
         var mois = $('#month-select').val();
-        var soldeInitial = parseFloat($('#initial-balance').val() || 0);
-        var totalRecette = parseFloat($('#total-revenue').val() || 0);
-        var totalDepense = parseFloat($('#total-expense').val() || 0);
-        var soldeFinal = parseFloat($('#final-balance').val() || 0);
+        var soldeInitial = parseFloat($('#initial-balance').val() );
+        var totalRecette = parseFloat($('#total-revenue').val() );
+        var totalDepense = parseFloat($('#total-expense').val() );
+        var soldeFinal = parseFloat($('#final-balance').val() );
         var year = $('input[type="text"]').val();
         var date = new Date(year + '-' + mois + '-01');
         var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
@@ -653,7 +661,6 @@ function checkReferenceExists(reference, currentRowId) {
 }
 
 // Événement cellEdited pour vérifier la référence
-// Événement cellEdited pour vérifier la référence
 table.on("cellEdited", function(cell) {
     var field = cell.getField();
     var newValue = cell.getValue();
@@ -685,6 +692,9 @@ table.on("cellEdited", function(cell) {
         }
     }
 
+    // Sélectionner la ligne en cours après modification
+    table.deselectRow(); // Désélectionner toutes les lignes
+    cell.getRow().select(); // Sélectionner la ligne en cours
     // Mettre à jour les totaux après modification
     updateTotals($('#month-select').val(), $('input[type="text"]').val());
 });
@@ -701,39 +711,54 @@ $('#example-table').on('keydown', function(e) {
 
             // Vérifier si userResponse est vide et le remplacer par 0
             var userResponseToSend = userResponse ? userResponse : 0;
+
+            // Vérification des valeurs vides
+            if (!rowData.day) {
+                alert("Le jour ne peut pas être vide.");
+                return;
+            }
+            if (!rowData.depense && !rowData.recette) {
+                alert("Vous devez entrer soit une dépense soit une recette.");
+                return;
+            }
             if (isMonthClosed(selectedMonth, selectedYear, journalCode)) {
-        alert("Le mois est déjà clôturé. Vous ne pouvez pas modifier des transactions.");
-        return; // Sortir de la fonction si le mois est clôturé
-    }else{
-            $.ajax({
-                url: '/save-transaction',
-                type: "POST",
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'),
-                    date: formattedDate,
-                    ref: rowData.ref,
-                    libelle: rowData.libelle,
-                    recette: rowData.recette,
-                    depense: rowData.depense,
-                    journal_code: journalCode,
-                    user_response: userResponseToSend // Envoyer la réponse de l'utilisateur ou 0
-                },
-                success: function(response) {
-                    console.log("Données envoyées avec succès :", response);
-                    // location.reload();
-                },
-                error: function(xhr, status, error) {
-                    console.error("Erreur lors de l'envoi des données :", error);
-                    console.log(xhr.responseText);
-                }
-            });}
+                alert("Le mois est déjà clôturé. Vous ne pouvez pas modifier des transactions.");
+                return; // Sortir de la fonction si le mois est clôturé
+            } else {
+                $.ajax({
+                    url: '/save-transaction',
+                    type: "POST",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        date: formattedDate,
+                        ref: rowData.ref,
+                        libelle: rowData.libelle,
+                        recette: rowData.recette,
+                        depense: rowData.depense,
+                        journal_code: journalCode,
+                        user_response: userResponseToSend 
+                    },
+                    success: function(response) {
+                        updateTotals($('#month-select').val(), $('input[type="text"]').val());
+                        saveData();
+                     
+                        console.log("Données envoyées avec succès :", response);
+                        // location.reload();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Erreur lors de l'envoi des données :", error);
+                        console.log(xhr.responseText);
+                    }
+                });
+            }
         } else {
             console.log("Aucune ligne sélectionnée !");
         }
+      
         location.reload();
+      
     }
 });
-
 
 
 function exportToExcel() {
