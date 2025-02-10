@@ -27,329 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-/**********************************************/
-/* Fonctions Utilitaires Globales             */
-/**********************************************/
-
-// Fonction permettant de passer à la cellule éditable suivante
-function focusNextEditableCell(currentCell) {
-    const row = currentCell.getRow();
-    const cells = row.getCells();
-    const currentIndex = cells.findIndex(c => c === currentCell);
-
-    // Chercher dans la même ligne la prochaine cellule éditable
-    for (let i = currentIndex + 1; i < cells.length; i++) {
-        const colDef = cells[i].getColumn().getDefinition();
-        if (colDef.editor) {
-            cells[i].edit();
-            return;
-        }
-    }
-
-    // Sinon, passer à la première cellule éditable de la ligne suivante
-    const table = currentCell.getTable();
-    const rows = table.getRows();
-    const currentRowIndex = rows.findIndex(r => r.getIndex() === row.getIndex());
-    if (currentRowIndex < rows.length - 1) {
-        const nextRow = rows[currentRowIndex + 1];
-        for (let cell of nextRow.getCells()) {
-            if (cell.getColumn().getDefinition().editor) {
-                cell.edit();
-                return;
-            }
-        }
-    }
-}
-
-/**********************************************/
-/* Fonction de mise à jour du Libellé         */
-/**********************************************/
-
-function updateLibelle(row) {
-    const rowData = row.getData();
-    const numeroFacture = rowData.numero_facture || "Inconnu";
-    const compteFournisseur = rowData.compte;
-
-    if (!compteFournisseur) {
-        row.update({ libelle: "" });
-        return;
-    }
-
-    fetch(`/get-fournisseurs-avec-details?societe_id=${societeId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                console.error("Erreur lors de la récupération des détails :", data.error);
-                return;
-            }
-            const fournisseur = data.find(f => `${f.compte} - ${f.intitule}` === compteFournisseur);
-            if (fournisseur) {
-                row.update({
-                    libelle: `F° ${numeroFacture} ${fournisseur.intitule}`
-                });
-                // Utiliser un délai plus long pour être certain que l'update soit terminé
-                setTimeout(() => {
-                    const creditCell = row.getCell("credit");
-                    if (creditCell) {
-                        // Assurez-vous que la colonne "credit" possède un éditeur défini
-                        creditCell.edit();
-                    }
-                }, 300); // 300ms de délai
-            } else {
-                console.warn("Aucun fournisseur correspondant trouvé pour :", compteFournisseur);
-            }
-        })
-        .catch(error => {
-            console.error("Erreur réseau lors de la récupération des détails :", error);
-            alert("Une erreur est survenue lors de la récupération des détails du fournisseur.");
-        });
-}
-
-/**********************************************/
-/* Éditeurs Personnalisés                     */
-/**********************************************/
-
-// Éditeur générique pour les champs texte (utilisé pour "N° facture" et "Libellé")
-function genericTextEditor(cell, onRendered, success, cancel, editorParams) {
-    const input = document.createElement("input");
-    input.type = "text";
-    input.style.width = "100%";
-    input.value = cell.getValue() || "";
-
-    onRendered(() => {
-        input.focus();
-    });
-
-    input.addEventListener("blur", () => {
-        success(input.value);
-    });
-
-    input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            success(input.value);
-            setTimeout(() => {
-                focusNextEditableCell(cell);
-            }, 50);
-        }
-    });
-
-    return input;
-}
-// Éditeur personnalisé pour le champ "Libellé" qui, sur Enter, transfère le focus sur le champ "Compte"
-function genericTextEditorForLibelle(cell, onRendered, success, cancel, editorParams) {
-    const input = document.createElement("input");
-    input.type = "text";
-    input.style.width = "100%";
-    input.value = cell.getValue() || "";
-
-    onRendered(() => {
-        input.focus();
-    });
-
-    // Validation au blur
-    input.addEventListener("blur", () => {
-        success(input.value);
-    });
-
-    // Lorsqu'on appuie sur Enter, on valide et on place le focus sur la cellule "compte"
-    input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            success(input.value);
-            setTimeout(() => {
-                const creditCell = cell.getRow().getCell("credit");
-                if (creditCell) {
-                    creditCell.edit();  // Lance l'édition sur le champ "Compte"
-                }
-            }, 50);
-        }
-    });
-
-    return input;
-}
-
-
-// Éditeur personnalisé pour les listes (pour le champ "Compte")
-function customListEditor(cell, onRendered, success, cancel, editorParams) {
-    // Création d'un conteneur pour l'éditeur
-    const container = document.createElement("div");
-    container.style.position = "relative";
-    container.style.width = "100%";
-
-    // Création de l'élément <select>
-    const select = document.createElement("select");
-    select.style.width = "100%";
-    // Optionnel : définir un nombre de lignes visibles (ex. 5) pour afficher plusieurs options
-    // select.size = 5;
-
-    container.appendChild(select);
-
-    // Fonction utilitaire pour peupler le select avec des options
-    function populateOptions(vals) {
-        // Effacer les options existantes
-        select.innerHTML = "";
-        // Vous pouvez ajouter une option vide si nécessaire :
-        // let emptyOption = document.createElement("option");
-        // emptyOption.value = "";
-        // emptyOption.textContent = "";
-        // select.appendChild(emptyOption);
-        vals.forEach(val => {
-            const option = document.createElement("option");
-            option.value = val;
-            option.textContent = val;
-            select.appendChild(option);
-        });
-    }
-
-    // Chargement des valeurs statiques
-    if (editorParams && editorParams.values) {
-        const vals = Array.isArray(editorParams.values)
-            ? editorParams.values
-            : Object.values(editorParams.values);
-        populateOptions(vals);
-    }
-
-    // Chargement des valeurs via valuesLookup (fonction asynchrone) si définie
-    if (editorParams && editorParams.valuesLookup && typeof editorParams.valuesLookup === "function") {
-        editorParams.valuesLookup(cell).then(values => {
-            if (Array.isArray(values)) {
-                populateOptions(values);
-            }
-        }).catch(err => {
-            console.error("Erreur dans valuesLookup", err);
-        });
-    }
-
-    // Si une valeur existe déjà, on la sélectionne
-    if(cell.getValue()){
-        select.value = cell.getValue();
-    }
-
-    onRendered(() => {
-        select.focus();
-    });
-
-    // Lorsque le select perd le focus, on valide la sélection
-    select.addEventListener("blur", () => {
-        success(select.value);
-    });
-
-    // Gestion de la touche Entrée pour valider la sélection et passer à la cellule suivante
-    select.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            success(select.value);
-            setTimeout(() => {
-                focusNextEditableCell(cell);
-            }, 50);
-        }
-    });
-
-    return container;
-}
-
-function pieceEditor(cell, onRendered, success, cancel, editorParams) {
-    const input = document.createElement("input");
-    input.type = "text";
-    input.style.width = "100%";
-    input.value = cell.getValue() || "";
-
-    onRendered(() => {
-        input.focus();
-    });
-
-    // Fonction qui commit la valeur et sélectionne la ligne
-    function commit() {
-        success(input.value);
-        // Après un court délai pour que l'éditeur se ferme, sélectionne la ligne
-        setTimeout(() => {
-            cell.getRow().select();
-        }, 50);
-    }
-
-    input.addEventListener("blur", commit);
-
-    input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            commit();
-        }
-    });
-
-    return input;
-}
-
-
-/**
- * Ajoute la navigation par la touche Enter à l'élément d'édition.
- * @param {HTMLElement} editorElement - L'élément de l'éditeur (input, textarea, etc.).
- * @param {Object} cell - La cellule Tabulator en cours d'édition.
- * @param {Function} successCallback - La fonction à appeler pour valider la saisie.
- * @param {Function} cancelCallback - (Optionnel) La fonction à appeler en cas d'annulation.
- * @param {Function} getValueCallback - (Optionnel) Fonction pour récupérer la valeur courante de l'éditeur.
- */
-function addEnterNavigation(editorElement, cell, successCallback, cancelCallback, getValueCallback) {
-    editorElement.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            // Récupérer la valeur courante (pour un input, editorElement.value suffit)
-            const value = (getValueCallback && typeof getValueCallback === "function")
-                ? getValueCallback(editorElement)
-                : editorElement.value;
-            // Valider la saisie en appelant le callback success
-            successCallback(value);
-            // Passer à la cellule éditable suivante
-            setTimeout(() => {
-                focusNextEditableCell(cell);
-            }, 50);
-        }
-    });
-}
-
-
-function customNumberEditor(cell, onRendered, success, cancel) {
-    // Crée un input de type number
-    const input = document.createElement("input");
-    input.type = "number";
-    input.style.width = "100%";
-    // Initialiser la valeur avec la valeur actuelle de la cellule ou une chaîne vide
-    input.value = cell.getValue() || "";
-
-    // Focus sur l'input une fois rendu
-    onRendered(function() {
-        input.focus();
-        input.style.height = "100%";
-    });
-
-    // Fonction de validation : ici, nous validons simplement en retournant la valeur de l'input
-    function validateAndCommit() {
-        // Vous pouvez ajouter des validations supplémentaires si besoin
-        success(input.value);
-    }
-
-    // Lors du blur, valider la saisie
-    input.addEventListener("blur", function() {
-        validateAndCommit();
-    });
-
-    // Intercepter la touche Entrée pour valider et naviguer
-    input.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            validateAndCommit();
-            // Passer à la cellule éditable suivante
-            setTimeout(function() {
-                focusNextEditableCell(cell);
-            }, 50);
-        }
-    });
-
-    return input;
-}
-
-
-
 document.addEventListener("DOMContentLoaded", function () {
     // Liste des sections
     const sections = ["achats", "ventes", "Caisse", "Banque","operations-diverses"];
@@ -783,287 +460,275 @@ async function fetchComptesTva() {
                     headerFilter: "input",
                     sorter: "date",
                     editor: function (cell, onRendered, success, cancel) {
-                        // Création d'un conteneur pour l'éditeur
-                        const container = document.createElement("div");
-                        container.style.display = "flex";
-                        container.style.alignItems = "center";
+                      // Création d'un conteneur pour l'éditeur
+                      const container = document.createElement("div");
+                      container.style.display = "flex";
+                      container.style.alignItems = "center";
 
-                        // Création de l'input pour saisir la date (jour seulement, le mois et l'année étant gérés via des filtres externes)
-                        const input = document.createElement("input");
-                        input.type = "text";
-                        input.style.flex = "1";
-                        input.placeholder = "jj/";
+                      // Création de l'input pour saisir la date (jour seulement, le mois et l'année étant gérés via des filtres externes)
+                      const input = document.createElement("input");
+                      input.type = "text";
+                      input.style.flex = "1";
+                      input.placeholder = "jj/";
 
-                        // Si une date existe déjà, on l'affiche au format "dd/MM/yyyy"
-                        const currentValue = cell.getValue();
-                        if (currentValue) {
-                            let dt = luxon.DateTime.fromFormat(currentValue, "yyyy-MM-dd HH:mm:ss");
-                            if (!dt.isValid) {
-                                dt = luxon.DateTime.fromISO(currentValue);
+                      // Si une date existe déjà, on l'affiche au format "dd/MM/yyyy"
+                      const currentValue = cell.getValue();
+                      if (currentValue) {
+                        let dt = luxon.DateTime.fromFormat(currentValue, "yyyy-MM-dd HH:mm:ss");
+                        if (!dt.isValid) {
+                          dt = luxon.DateTime.fromISO(currentValue);
+                        }
+                        if (dt.isValid) {
+                          input.value = dt.toFormat("dd/MM/yyyy");
+                        }
+                      }
+
+                      input.addEventListener("blur", function () {
+                        // Récupération des filtres ou champs externes pour le mois, l'année et le code journal
+                        const moisSelect = document.getElementById("periode-achats");
+                        const anneeInput = document.getElementById("annee-achats");
+                        const codeJournalInput = document.getElementById("journal-achats");
+
+                        // Extraction des valeurs saisies
+                        const dayStr = input.value.slice(0, 2);
+                        const day = parseInt(dayStr, 10);
+                        const month = parseInt(moisSelect.value, 10);
+                        const year = parseInt(anneeInput.value, 10);
+                        const codeJournal = (codeJournalInput.value || "CJ").trim();
+
+                        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                          const dt = luxon.DateTime.local(year, month, day);
+                          if (dt.isValid) {
+                            // Récupération de la table et de ses lignes
+                            const table = cell.getTable();
+                            const rows = table.getRows();
+                            const currentRow = cell.getRow();
+                            const rowData = currentRow.getData();
+                            const numeroFacture = rowData.numero_facture;
+
+                            // Calculer les totaux débit et crédit pour toutes les lignes de la même facture
+                            let totalDebit = 0, totalCredit = 0;
+                            const lignesFacture = rows.filter(r => {
+                              const data = r.getData();
+                              return data.numero_facture === numeroFacture;
+                            });
+                            lignesFacture.forEach(r => {
+                              const data = r.getData();
+                              totalDebit += parseFloat(data.debit) || 0;
+                              totalCredit += parseFloat(data.credit) || 0;
+                            });
+
+                            // Si la facture est équilibrée (et non nulle)
+                            if (totalDebit === totalCredit && totalDebit !== 0) {
+                              const moisFormatted = dt.toFormat("MM");
+                              const prefix = `P${moisFormatted}${codeJournal}`;
+
+                              // Rechercher dans l'ensemble des lignes les numéros déjà attribués pour ce mois et ce code journal
+                              const existingNumbers = [];
+                              rows.forEach(r => {
+                                const data = r.getData();
+                                if (data.piece_justificative && data.piece_justificative.startsWith(prefix)) {
+                                  const numStr = data.piece_justificative.substring(prefix.length);
+                                  const num = parseInt(numStr, 10);
+                                  if (!isNaN(num)) {
+                                    existingNumbers.push(num);
+                                  }
+                                }
+                              });
+                              existingNumbers.sort((a, b) => a - b);
+                              const newIncrement = existingNumbers.length > 0 ? existingNumbers[existingNumbers.length - 1] + 1 : 1;
+                              const numeroFormate = String(newIncrement).padStart(4, "0");
+                              const pieceJustificative = `P${moisFormatted}${codeJournal}${numeroFormate}`;
+
+                              // Mettre à jour la pièce justificative pour la ligne en cours
+                              currentRow.update({ piece_justificative: pieceJustificative });
+                              console.log("Nouvelle pièce générée :", pieceJustificative);
                             }
-                            if (dt.isValid) {
-                                input.value = dt.toFormat("dd/MM/yyyy");
-                            }
+
+                            // Retourner la date au format stocké (par exemple "yyyy-MM-dd HH:mm:ss")
+                            success(dt.toFormat("yyyy-MM-dd HH:mm:ss"));
+                            return;
+                          }
                         }
 
-                        // Fonction de validation et de commit de la valeur saisie
-                        function validateAndCommit() {
-                            // Récupération des filtres ou champs externes pour le mois, l'année et le code journal
-                            const moisSelect = document.getElementById("periode-achats");
-                            const anneeInput = document.getElementById("annee-achats");
-                            const codeJournalInput = document.getElementById("journal-achats");
+                        // En cas de saisie invalide, on annule la modification
+                        alert("Veuillez saisir une date valide (jour, et vérifier les filtres pour le mois et l'année).");
+                        cancel();
+                      });
 
-                            // Extraction des valeurs saisies
-                            const dayStr = input.value.slice(0, 2);
-                            const day = parseInt(dayStr, 10);
-                            const month = parseInt(moisSelect.value, 10);
-                            const year = parseInt(anneeInput.value, 10);
-                            const codeJournal = (codeJournalInput.value || "CJ").trim();
-
-                            if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-                                const dt = luxon.DateTime.local(year, month, day);
-                                if (dt.isValid) {
-                                    // Récupération de la table et de ses lignes
-                                    const table = cell.getTable();
-                                    const rows = table.getRows();
-                                    const currentRow = cell.getRow();
-                                    const rowData = currentRow.getData();
-                                    const numeroFacture = rowData.numero_facture;
-
-                                    // Calculer les totaux débit et crédit pour toutes les lignes de la même facture
-                                    let totalDebit = 0, totalCredit = 0;
-                                    const lignesFacture = rows.filter(r => {
-                                        const data = r.getData();
-                                        return data.numero_facture === numeroFacture;
-                                    });
-                                    lignesFacture.forEach(r => {
-                                        const data = r.getData();
-                                        totalDebit += parseFloat(data.debit) || 0;
-                                        totalCredit += parseFloat(data.credit) || 0;
-                                    });
-
-                                    // Si la facture est équilibrée (et non nulle)
-                                    if (totalDebit === totalCredit && totalDebit !== 0) {
-                                        const moisFormatted = dt.toFormat("MM");
-                                        const prefix = `P${moisFormatted}${codeJournal}`;
-
-                                        // Rechercher les numéros déjà attribués pour ce mois et ce code journal
-                                        const existingNumbers = [];
-                                        rows.forEach(r => {
-                                            const data = r.getData();
-                                            if (data.piece_justificative && data.piece_justificative.startsWith(prefix)) {
-                                                const numStr = data.piece_justificative.substring(prefix.length);
-                                                const num = parseInt(numStr, 10);
-                                                if (!isNaN(num)) {
-                                                    existingNumbers.push(num);
-                                                }
-                                            }
-                                        });
-                                        existingNumbers.sort((a, b) => a - b);
-                                        const newIncrement = existingNumbers.length > 0 ? existingNumbers[existingNumbers.length - 1] + 1 : 1;
-                                        const numeroFormate = String(newIncrement).padStart(4, "0");
-                                        const pieceJustificative = `P${moisFormatted}${codeJournal}${numeroFormate}`;
-
-                                        // Mettre à jour la pièce justificative pour la ligne en cours
-                                        currentRow.update({ piece_justificative: pieceJustificative });
-                                        console.log("Nouvelle pièce générée :", pieceJustificative);
-                                    }
-
-                                    // Retourner la date au format stocké (par exemple "yyyy-MM-dd HH:mm:ss")
-                                    success(dt.toFormat("yyyy-MM-dd HH:mm:ss"));
-                                    return true;
-                                }
-                            }
-
-                            // En cas de saisie invalide, annuler la modification
-                            alert("Veuillez saisir une date valide.");
-                            cancel();
-                            return false;
-                        }
-
-                        // Validation lors du blur (perte de focus)
-                        input.addEventListener("blur", validateAndCommit);
-
-                        // Gestion de la touche Entrée pour valider et passer à la cellule suivante
-                        input.addEventListener("keydown", function (e) {
-                            if (e.key === "Enter") {
-                                e.preventDefault();
-                                if (validateAndCommit()) {
-                                    // Après validation, passer à la cellule éditable suivante
-                                    setTimeout(() => {
-                                        focusNextEditableCell(cell);
-                                    }, 50);
-                                }
-                            }
-                        });
-
-                        container.appendChild(input);
-                        onRendered(() => input.focus());
-                        return container;
+                      container.appendChild(input);
+                      onRendered(() => input.focus());
+                      return container;
                     },
                     formatter: function (cell) {
-                        const dateValue = cell.getValue();
-                        if (dateValue) {
-                            let dt = luxon.DateTime.fromFormat(dateValue, "yyyy-MM-dd HH:mm:ss");
-                            if (!dt.isValid) {
-                                dt = luxon.DateTime.fromISO(dateValue);
-                            }
-                            return dt.isValid ? dt.toFormat("dd/MM/yyyy") : dateValue;
+                      const dateValue = cell.getValue();
+                      if (dateValue) {
+                        let dt = luxon.DateTime.fromFormat(dateValue, "yyyy-MM-dd HH:mm:ss");
+                        if (!dt.isValid) {
+                          dt = luxon.DateTime.fromISO(dateValue);
                         }
-                        return "";
+                        return dt.isValid ? dt.toFormat("dd/MM/yyyy") : dateValue;
+                      }
+                      return "";
                     },
-                },
+                  },
 
 
-                    {
-                        title: "N° facture",
-                        field: "numero_facture",
-                        headerFilter: "input",
-                        editor: genericTextEditor
-                    },
 
-                    {
-                        title: "Compte",
-                        field: "compte",
-                        headerFilter: "input",
-                        editor: customListEditor, // Utilise notre éditeur personnalisé pour liste
-                        editorParams: {
-                            autocomplete: true,
-                            listOnEmpty: true,
-                            values: comptesFournisseurs  // Par exemple : ["001 - Fournisseur A", "002 - Fournisseur B", ...]
-                        },
-                        cellEdited: function (cell) {
+           { title: "N° facture", field: "numero_facture",headerFilter: "input",
 
-
-                            const compteFournisseur = cell.getValue();
-                            const row = cell.getRow();
-
-                            // Vérifier que la valeur est renseignée
-                            if (!compteFournisseur) return;
-
-                            // Appel pour récupérer les détails du fournisseur
-                            fetch(`/get-fournisseurs-avec-details?societe_id=${societeId}`)
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.error) {
-                                        console.error("Erreur lors de la récupération des détails :", data.error);
-                                        return;
-                                    }
-                                    // Recherche d'un fournisseur correspondant à la valeur sélectionnée
-                                    const fournisseur = data.find(f => `${f.compte} - ${f.intitule}` === compteFournisseur);
-                                    if (fournisseur) {
-                                        const tauxTVA = parseFloat(fournisseur.taux_tva) || 0;
-                                        const rubriqueTVA = fournisseur.rubrique_tva || "";
-                                        const contrePartie = fournisseur.contre_partie || "";
-                                        // Récupérer le numéro de facture depuis la cellule correspondante
-                                        const numeroFacture = row.getCell("numero_facture").getValue() || "Inconnu";
-
-                                        // Générer le libellé à partir du numéro de facture et du fournisseur choisi
-                                        row.update({
-                                            contre_partie: contrePartie,
-                                            rubrique_tva: rubriqueTVA,
-                                            taux_tva: tauxTVA,
-                                            libelle: `F° ${numeroFacture} ${fournisseur.intitule}`,
-                                            compte_tva: (comptesVentes.length > 0)
-                                                ? `${comptesVentes[0].compte} - ${comptesVentes[0].intitule}`
-                                                : ""
-                                        });
-
-                                        // Optionnel : passer à l'édition du champ "Libellé"
-                                        const libelleCell = row.getCell("libelle");
-                                        if (libelleCell) {
-                                            libelleCell.edit();
-                                        }
-                                    } else {
-                                        console.warn("Aucun fournisseur correspondant trouvé pour :", compteFournisseur);
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error("Erreur réseau :", error);
-                                    alert("Une erreur est survenue lors de la récupération des détails du fournisseur.");
-                                });
-
-                        }
-                    },
-                    {
-    title: "Libellé",
-    field: "libelle",
+           editor: "input" },
+           {
+    title: "Compte",
+    field: "compte",
     headerFilter: "input",
-    editor: genericTextEditorForLibelle
+
+    editor: "list",
+    editorParams: {
+        autocomplete: true,
+        listOnEmpty: true,
+        values: comptesFournisseurs // Liste des comptes fournisseurs
+    },
+
+    cellEdited: function (cell) {
+        const compteFournisseur = cell.getValue();
+        const row = cell.getRow();
+
+        fetch(`/get-fournisseurs-avec-details?societe_id=${societeId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error("Erreur lors de la récupération des détails :", data.error);
+                    return;
+                }
+
+                const fournisseur = data.find(f => `${f.compte} - ${f.intitule}` === compteFournisseur);
+                if (fournisseur) {
+                    const tauxTVA = parseFloat(fournisseur.taux_tva) || 0;
+                    const rubriqueTVA = fournisseur.rubrique_tva || "";
+                    const contrePartie = fournisseur.contre_partie || "";
+                    const numeroFacture = row.getCell("numero_facture").getValue() || "Inconnu";
+
+                    row.update({
+                        contre_partie: contrePartie,
+                        rubrique_tva: rubriqueTVA,
+                        taux_tva: tauxTVA,
+                        libelle: `F° ${numeroFacture} ${fournisseur.intitule}`,
+                        compte_tva: comptesVentes.length > 0
+                            ? `${comptesVentes[0].compte} - ${comptesVentes[0].intitule}`
+                            : "",
+                    });
+
+                    const rowData = row.getData();
+
+
+                    row.update({
+                        debit: rowData.debit
+                    });
+
+                    const creditCell = row.getCell("credit");
+                    if (creditCell) {
+                        creditCell.getElement().focus();
+                    }
+                } else {
+                    console.warn("Aucun fournisseur correspondant trouvé pour :", compteFournisseur);
+                }
+            })
+            .catch(error => {
+                console.error("Erreur réseau :", error);
+                alert("Une erreur est survenue lors de la récupération des détails du fournisseur.");
+            });
+    }
 },
 
+
                 {
-                    title: "Débit",
-                    field: "debit",
+                    title: "Libellé",
+                    field: "libelle",
                     headerFilter: "input",
-                    editor: customNumberEditor, // Utilisation de notre éditeur personnalisé
-                    bottomCalc: "sum",
-                    formatter: function(cell) {
-                        const value = cell.getValue();
-                        return value ? parseFloat(value).toFixed(2) : "0.00";
-                    },
+                    editor: "input"
                 },
                 {
-                    title: "Crédit",
-                    field: "credit",
-                    headerFilter: "input",
-                    editor: customNumberEditor, // Utilisation de l'éditeur personnalisé
-                    bottomCalc: "sum",
-                    formatter: function(cell) {
-                        const value = cell.getValue();
-                        return value ? parseFloat(value).toFixed(2) : "0.00";
-                    },
-                    mutatorEdit: function(value) {
-                        return value || "0.00";
-                    },
-                    cellEdited: function(cell) {
-                        console.log("Valeur Crédit mise à jour :", cell.getValue());
-                    }
-                },
+    title: "Débit",
+    field: "debit",
+    headerFilter: "input",
+    editor: "number", // Permet l'édition en tant que nombre
+    bottomCalc: "sum", // Calcul du total dans le bas de la colonne
+    formatter: function(cell) {
+        // Formater pour afficher 0.00 si la cellule est vide ou nulle
+        const value = cell.getValue();
+        return value ? parseFloat(value).toFixed(2) : "0.00";
+    },
+
+},
+
+{
+    title: "Crédit",
+    field: "credit",
+    headerFilter: "input",
+    editor: "number",
+    bottomCalc: "sum",
+    formatter: function (cell) {
+        const value = cell.getValue();
+        return value ? parseFloat(value).toFixed(2) : "0.00";
+    },
+    mutatorEdit: function (value) {
+        return value || "0.00";
+    },
+    cellEdited: function (cell) {
+        // Simple log de la valeur éditée (aucune autre condition ou traitement)
+        console.log("Valeur Crédit mise à jour :", cell.getValue());
+    }
+},
 
 
 
-                {
-                    title: "Contre-Partie",
-                    field: "contre_partie",
-                    headerFilter: "input",
-                    editor: customListEditor, // Utilisation de l'éditeur personnalisé
-                    editorParams: {
-                        autocomplete: true,
-                        listOnEmpty: true,
-                        valuesLookup: async function (cell) {
-                            if (!selectedCodeJournal) {
-                                alert("Veuillez sélectionner un code journal avant de modifier la Contre-Partie.");
-                                return []; // Retourne une liste vide si aucun code journal n'est sélectionné
-                            }
-                            try {
-                                const response = await fetch(`/get-contre-parties?code_journal=${selectedCodeJournal}`);
-                                if (!response.ok) {
-                                    throw new Error("Erreur réseau ou code journal non valide.");
-                                }
-                                const data = await response.json();
-                                if (data.error) {
-                                    console.error("Erreur serveur :", data.error);
-                                    return [];
-                                }
-                                console.log("Contre-Parties récupérées :", data);
-                                return data; // Retourne les valeurs récupérées
-                            } catch (error) {
-                                console.error("Erreur réseau :", error);
-                                alert("Impossible de récupérer les contre-parties.");
-                                return [];
-                            }
-                        }
-                    },
-                    cellEdited: function (cell) {
-                        console.log("Contre-Partie mise à jour :", cell.getValue());
-                    }
-                },
+{
+    title: "Contre-Partie",
+    field: "contre_partie",
+    headerFilter: "input",
+    editor: "list",
+    editorParams: {
+        autocomplete: true,
+        listOnEmpty: true,
+        valuesLookup: async function (cell) {
+            if (!selectedCodeJournal) {
+                alert("Veuillez sélectionner un code journal avant de modifier la Contre-Partie.");
+                return []; // Retourner une liste vide si aucun code journal n'est sélectionné
+            }
+
+            try {
+                const response = await fetch(`/get-contre-parties?code_journal=${selectedCodeJournal}`);
+                if (!response.ok) {
+                    throw new Error("Erreur réseau ou code journal non valide.");
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error("Erreur serveur :", data.error);
+                    return [];
+                }
+
+                console.log("Contre-Parties récupérées :", data);
+                return data; // Retourner les valeurs récupérées
+            } catch (error) {
+                console.error("Erreur réseau :", error);
+                alert("Impossible de récupérer les contre-parties.");
+                return [];
+            }
+        },
+    },
+    cellEdited: function (cell) {
+        console.log("Contre-Partie mise à jour :", cell.getValue());
+    },
+},
+
                 {
                     title: "Rubrique TVA",
                     field: "rubrique_tva",
                     headerFilter: "input",
-                    editor: customListEditor,
+                    editor: "list",
                     editorParams: {
                         autocomplete: true,
                         listOnEmpty: true,
@@ -1074,61 +739,65 @@ async function fetchComptesTva() {
                     title: "Compte TVA",
                     field: "compte_tva",
                     headerFilter: "input",
-                    editor: customListEditor,
+                    editor: "list",
+
                     editorParams: {
                         autocomplete: true,
                         listOnEmpty: true,
+
                         values: comptesVentes.map(compte => `${compte.compte} - ${compte.intitule}`)
                     }
                 },
                 {
-                    title: "Prorat de deduction",
-                    field: "prorat_de_deduction",
-                    headerFilter: "input",
-                    editor: customListEditor,
-                    editorParams: {
-                        autocomplete: true,
-                        listOnEmpty: true,
-                        values: ["Oui", "Non"]
-                    }
-                },
-                {
-                    title: "Solde Cumulé",
-                    field: "value", // Ce champ contient le solde cumulé calculé
-                    headerFilter: "input",
-                    formatter: function(cell, formatterParams, onRendered) {
-                        let val = cell.getValue();
-                        if(val !== "" && !isNaN(val)) {
-                            return parseFloat(val).toFixed(2);
-                        }
-                        return val;
-                    }
-                },
-                {
-                    title: "Pièce",
-                    field: "piece_justificative",
-                    headerFilter: "input",
-                    editor: pieceEditor // Utilisation de l'éditeur personnalisé
+    title: "Prorat de deduction",
+    field: "prorat_de_deduction",
+    headerFilter: "input",
+    editor: "list",  // Utilisation de l'éditeur de type 'list' pour une datalist
+    editorParams: {
+        autocomplete: true,  // Active l'autocomplétion
+        listOnEmpty: true,   // Affiche la liste même si la cellule est vide
+        values: ["Oui", "Non"]  // Valeurs possibles dans la datalist
+    }
+},
 
-                },
-                {
-                    title: "Sélectionner",
-                    headerSort: false,
-                    resizable: true,
-                    frozen: true,
-                    width: 50,
-                    minWidth: 40,
-                    headerHozAlign: "center",
-                    hozAlign: "center",
-                    formatter: "rowSelection",
-                    titleFormatter: "rowSelection",
-                    cellClick: function(e, cell){
-                        // N'exécute le toggle que si l'événement est bien un clic de souris
-                        if(e.type === "click"){
-                            cell.getRow().toggleSelect();
-                        }
-                    },
-                },
+{
+    title: "Solde Cumulé",
+    field: "value", // Ce champ contient le solde cumulé calculé (issu de ton mapping: value: ligne.solde_cumule)
+    // editor: "input", // Permet l'édition manuelle si besoin (tu peux le supprimer si le solde doit être uniquement calculé)
+    headerFilter: "input",
+    formatter: function(cell, formatterParams, onRendered) {
+      // Formatage en nombre avec 2 décimales (si la valeur est numérique)
+      let val = cell.getValue();
+      if(val !== "" && !isNaN(val)) {
+        return parseFloat(val).toFixed(2);
+      }
+      return val;
+    }
+  },
+
+{
+    title: "Pièce",
+field: "piece_justificative",
+editor: "input", // Éditeur pour permettre la modification manuelle
+headerFilter: "input",
+
+},
+
+{
+            title: "Sélectionner",
+            headerSort: false,
+            resizable: true,
+            frozen: true,
+            width: 50,
+            minWidth: 40,
+            headerHozAlign: "center",
+            hozAlign: "center",
+            formatter: "rowSelection",
+            titleFormatter: "rowSelection",
+            cellClick: function(e, cell){
+                cell.getRow().toggleSelect();
+            }
+        },
 
   { title: "Code_journal", field: "type_Journal", visible: false },
   { title: "categorie", field: "categorie", visible: false },
@@ -1293,56 +962,9 @@ document.getElementById("download-pdf").addEventListener("click", function () {
 
 
 });
-// Fonction pour mettre le focus sur la cellule "date" du Tabulator
-function focusTabulatorDate() {
-    const rows = tableAch.getRows();
-    if (rows.length > 0) {
-        const firstRow = rows[0];
-        const dateCell = firstRow.getCell("date");
-        if (dateCell) {
-            dateCell.edit();  // Lance le mode édition sur la cellule "date"
-        }
-    }
-}
-
-// Tableau des sélecteurs dans l'ordre de navigation
-const controlSelectors = [
-    "#journal-achats",
-    "#periode-achats",
-    "#filter-intitule-achats"
-    // Ajoutez ici d'autres sélecteurs si nécessaire
-];
-
-// Attache un écouteur "keydown" sur chaque contrôle pour la navigation avec la touche Entrée
-controlSelectors.forEach((selector, index) => {
-    const element = document.querySelector(selector);
-    if (element) {
-        element.addEventListener("keydown", function(e) {
-            if(e.key === "Enter") {
-                e.preventDefault();
-                // Si le contrôle actuel est "periode-achats", passer directement au champ "date" du Tabulator
-                if(selector === "#periode-achats") {
-                    focusTabulatorDate();
-                } else {
-                    // Sinon, passer au contrôle suivant dans le tableau (en boucle si besoin)
-                    const nextIndex = (index + 1) % controlSelectors.length;
-                    const nextElement = document.querySelector(controlSelectors[nextIndex]);
-                    if (nextElement) {
-                        nextElement.focus();
-                    }
-                }
-            }
-        });
-    }
-});
 
 
 
-let selectedCodeJournal2 = "";
-document.querySelector("#journal-ventes").addEventListener("change", function() {
-    selectedCodeJournal2 = this.value ? this.value.trim() : "";
-    console.log("Code journal sélectionné (Ventes):", selectedCodeJournal2);
-});
 
 
 // Table des ventes
@@ -1401,13 +1023,13 @@ var tableVentes = new Tabulator("#table-ventes", {
                 container.style.display = "flex";
                 container.style.alignItems = "center";
 
-                // Création de l'input pour saisir la date
+                // Création de l'input pour saisir la date (jour uniquement, le mois et l'année étant définis par des filtres externes)
                 const input = document.createElement("input");
                 input.type = "text";
                 input.style.flex = "1";
                 input.placeholder = "jj/";
 
-                // Pré-remplissage de l'input si une date existe déjà
+                // Si une date existe déjà, on l'affiche au format "dd/MM/yyyy"
                 const currentValue = cell.getValue();
                 if (currentValue) {
                     let dt = luxon.DateTime.fromFormat(currentValue, "yyyy-MM-dd HH:mm:ss");
@@ -1419,43 +1041,74 @@ var tableVentes = new Tabulator("#table-ventes", {
                     }
                 }
 
-                // Fonction de validation commune pour l'input
-                function validateAndCommit() {
+                input.addEventListener("blur", function() {
+                    // Récupération des filtres externes pour le mois, l'année et le code journal
                     const moisSelect = document.getElementById("periode-ventes");
                     const anneeInput = document.getElementById("annee-ventes");
                     const codeJournalInput = document.getElementById("journal-ventes");
 
-                    const day = parseInt(input.value.slice(0, 2), 10);
+                    // Extraction des valeurs
+                    const dayStr = input.value.slice(0, 2);
+                    const day = parseInt(dayStr, 10);
                     const month = parseInt(moisSelect.value, 10);
                     const year = parseInt(anneeInput.value, 10);
+                    const codeJournal = (codeJournalInput.value || "CJ").trim();
 
                     if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
                         const dt = luxon.DateTime.local(year, month, day);
                         if (dt.isValid) {
-                            // Validation de la cellule avec le format souhaité
+                            // Récupération de la table et de ses lignes
+                            const table = cell.getTable();
+                            const rows = table.getRows();
+                            const currentRow = cell.getRow();
+                            const rowData = currentRow.getData();
+                            const numeroFacture = rowData.numero_facture;
+
+                            // Calculer les totaux débit et crédit pour toutes les lignes de la même facture
+                            let totalDebit = 0, totalCredit = 0;
+                            const lignesFacture = rows.filter(r => {
+                                const data = r.getData();
+                                return data.numero_facture === numeroFacture;
+                            });
+                            lignesFacture.forEach(r => {
+                                const data = r.getData();
+                                totalDebit += parseFloat(data.debit) || 0;
+                                totalCredit += parseFloat(data.credit) || 0;
+                            });
+
+                            // Si la facture est équilibrée (et non nulle)
+                            if (totalDebit === totalCredit && totalDebit !== 0) {
+                                const moisFormatted = dt.toFormat("MM");
+                                const prefix = `P${moisFormatted}${codeJournal}`;
+                                const existingNumbers = [];
+                                rows.forEach(r => {
+                                    const data = r.getData();
+                                    if (data.piece_justificative && data.piece_justificative.startsWith(prefix)) {
+                                        const numStr = data.piece_justificative.substring(prefix.length);
+                                        const num = parseInt(numStr, 10);
+                                        if (!isNaN(num)) {
+                                            existingNumbers.push(num);
+                                        }
+                                    }
+                                });
+                                existingNumbers.sort((a, b) => a - b);
+                                const newIncrement = existingNumbers.length > 0 ? existingNumbers[existingNumbers.length - 1] + 1 : 1;
+                                const numeroFormate = String(newIncrement).padStart(4, "0");
+                                const pieceJustificative = `P${moisFormatted}${codeJournal}${numeroFormate}`;
+                                // Mettre à jour la pièce justificative pour la ligne en cours
+                                currentRow.update({ piece_justificative: pieceJustificative });
+                                console.log("Nouvelle pièce générée (ventes) :", pieceJustificative);
+                            }
+
+                            // Retourner la date au format "yyyy-MM-dd HH:mm:ss"
                             success(dt.toFormat("yyyy-MM-dd HH:mm:ss"));
-                            return true;
+                            return;
                         }
                     }
+
+                    // En cas de saisie invalide
                     alert("Veuillez saisir une date valide (jour, et vérifier les filtres pour le mois et l'année).");
                     cancel();
-                    return false;
-                }
-
-                // Validation sur blur
-                input.addEventListener("blur", validateAndCommit);
-
-                // Intercepter la touche Entrée
-                input.addEventListener("keydown", function(e) {
-                    if (e.key === "Enter") {
-                        e.preventDefault(); // Empêcher le comportement par défaut
-                        if (validateAndCommit()) {
-                            // Après validation, passer à la cellule éditable suivante
-                            setTimeout(() => {
-                                focusNextEditableCell(cell);
-                            }, 50);
-                        }
-                    }
                 });
 
                 container.appendChild(input);
@@ -1554,44 +1207,38 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
     editorParams: {
         autocomplete: true,
         listOnEmpty: true,
-        verticalNavigation: "editor", // Ouvre la liste au focus
-        // Fonction pour récupérer la liste des contre-parties depuis le backend pour Ventes
         valuesLookup: async function (cell) {
-            if (!selectedCodeJournal2 || selectedCodeJournal2.trim() === "") {
-                // Retourne une liste vide si aucun code journal n'est sélectionné
-                return [];
+            if (!selectedCodeJournal) {
+                alert("Veuillez sélectionner un code journal avant de modifier la Contre-Partie.");
+                return []; // Retourner une liste vide si aucun code journal n'est sélectionné
             }
+
             try {
-                const response = await fetch(`/get-contre-parties-ventes?code_journal=${selectedCodeJournal2}`);
+                const response = await fetch(`/get-contre-parties?code_journal=${selectedCodeJournal}`);
                 if (!response.ok) {
                     throw new Error("Erreur réseau ou code journal non valide.");
                 }
+
                 const datav = await response.json();
+
                 if (datav.error) {
                     console.error("Erreur serveur :", datav.error);
                     return [];
                 }
+
                 console.log("Contre-Parties récupérées :", datav);
-                return datav; // Retourne la liste des valeurs récupérées
+                return datav; // Retourner les valeurs récupérées
             } catch (error) {
                 console.error("Erreur réseau :", error);
                 alert("Impossible de récupérer les contre-parties.");
                 return [];
             }
         },
-        // Une fois l'éditeur rendu, si la cellule est vide, on sélectionne automatiquement la première valeur
-        onRendered: function (editor, cell) {
-            if (!cell.getValue() && editor.options && editor.options.length > 0) {
-                // Affecte la première valeur comme valeur par défaut
-                editor.value = editor.options[0].value;
-            }
-        }
     },
     cellEdited: function (cell) {
         console.log("Contre-Partie mise à jour :", cell.getValue());
     },
 },
-
         {
             title: "Compte TVA",
             field: "compte_tva",
@@ -1956,6 +1603,7 @@ function updatePieceJustificative(data) {
     // Regrouper les lignes par numéro de facture
     const factures = {};
     data.forEach(row => {
+        // S'assurer que le numéro de facture existe et le normaliser
         const nf = row.numero_facture && row.numero_facture.trim();
         if (nf) {
             if (!factures[nf]) {
@@ -1974,58 +1622,51 @@ function updatePieceJustificative(data) {
             totalCredit += parseFloat(row.credit) || 0;
         });
 
-        // On génère toujours la pièce justificative pour la facture,
-        // puis on ajuste l'incrément si la facture est équilibrée et non nulle.
-        let dt = luxon.DateTime.fromFormat(rows[0].date, "yyyy-MM-dd HH:mm:ss");
-        if (!dt.isValid) {
-            dt = luxon.DateTime.fromISO(rows[0].date);
-        }
-        if (!dt.isValid) {
-            console.warn("Date invalide pour la facture " + nf);
-            return;
-        }
-        const moisFormatted = dt.toFormat("MM");
+        // Seulement si la facture est équilibrée et non nulle
+        if (totalDebit === totalCredit && totalDebit !== 0) {
+            // On prend la date de la première ligne pour extraire le mois
+            let dt = luxon.DateTime.fromFormat(rows[0].date, "yyyy-MM-dd HH:mm:ss");
+            if (!dt.isValid) {
+                dt = luxon.DateTime.fromISO(rows[0].date);
+            }
+            if (!dt.isValid) {
+                console.warn("Date invalide pour la facture " + nf);
+                return;
+            }
+            const moisFormatted = dt.toFormat("MM");
 
-        // Récupérer le code journal depuis la ligne ou via la fonction utilitaire
-        const codeJournal = rows[0].type_journal || getSelectedCodeJournal();
+            // Récupérer le code journal à partir de la ligne ou via l'un des sélecteurs
+            const codeJournal = rows[0].type_journal || getSelectedCodeJournal();
 
-        // Rechercher dans toutes les données les numéros de pièces existants pour ce mois et ce code journal
-        let existingNumbers = [];
-        data.forEach(row => {
-            if (row.piece_justificative) {
-                // Format attendu : P{MM}{codeJournal}{NNNN}
-                const prefix = `P${moisFormatted}${codeJournal}`;
-                if (row.piece_justificative.startsWith(prefix)) {
-                    const numStr = row.piece_justificative.substring(prefix.length);
-                    const num = parseInt(numStr, 10);
-                    if (!isNaN(num)) {
-                        existingNumbers.push(num);
+            // Rechercher dans l'ensemble des données les pièces existantes pour ce mois et ce code journal
+            let existingNumbers = [];
+            data.forEach(row => {
+                if (row.piece_justificative) {
+                    // Format attendu : P{MM}{codeJournal}{NNNN}
+                    const prefix = `P${moisFormatted}${codeJournal}`;
+                    if (row.piece_justificative.startsWith(prefix)) {
+                        const numStr = row.piece_justificative.substring(prefix.length);
+                        const num = parseInt(numStr, 10);
+                        if (!isNaN(num)) {
+                            existingNumbers.push(num);
+                        }
                     }
                 }
-            }
-        });
-        existingNumbers.sort((a, b) => a - b);
+            });
+            existingNumbers.sort((a, b) => a - b);
+            const newIncrement = existingNumbers.length > 0 ? existingNumbers[existingNumbers.length - 1] + 1 : 1;
+            const numeroFormate = String(newIncrement).padStart(4, "0");
+            const newPiece = `P${moisFormatted}${codeJournal}${numeroFormate}`;
 
-        // Par défaut, on génère la pièce avec l'incrément 1.
-        let newIncrement = 1;
-        // On n'incrémente (i.e. on prend le dernier numéro + 1) que si la facture est équilibrée et non nulle.
-        // Pour Achats et Ventes, la condition est la même puisque si totalDebit === totalCredit,
-        // alors vérifier l'un ou l'autre revient au même.
-        if (totalDebit === totalCredit && totalDebit !== 0) {
-            newIncrement = existingNumbers.length > 0 ? existingNumbers[existingNumbers.length - 1] + 1 : 1;
+            // Mettre à jour le champ piece_justificative pour toutes les lignes de cette facture
+            rows.forEach(row => {
+                row.piece_justificative = newPiece;
+            });
         }
-        const numeroFormate = String(newIncrement).padStart(4, "0");
-        const newPiece = `P${moisFormatted}${codeJournal}${numeroFormate}`;
-
-        // Mettre à jour le champ piece_justificative pour toutes les lignes de cette facture
-        rows.forEach(row => {
-            row.piece_justificative = newPiece;
-        });
     });
 
     return data;
 }
-
 
 // =====================================================================
 // Fonction pour enregistrer les lignes
@@ -2308,30 +1949,13 @@ updateTabulatorDataAchats();
 
 
 //////////////////gestion ventes//////////////////////////////////////////////////////////////////////////////////////
-function supprimerDoublonsLignes(lignes) {
-    const lignesUniquement = []; // Tableau pour stocker les lignes sans doublons
-    const idsDejaAjoutes = new Set(); // Un Set pour suivre les IDs déjà rencontrés
-
-    lignes.forEach(ligne => {
-        if (!idsDejaAjoutes.has(ligne.id)) {
-            lignesUniquement.push(ligne);
-            idsDejaAjoutes.add(ligne.id);
-        }
-    });
-
-    return lignesUniquement;
-}
-
-const lignesSansDoublons = supprimerDoublonsLignes(tableVentes.getData());
-console.log("Lignes après suppression des doublons (Ventes):", lignesSansDoublons);
-
 async function ajouterLigneVentes(table, preRemplir = false, ligneActive = null) {
-    let nouvellesLignes = [];
-    let idCounter = table.getData().length + 1;
+    let nouvellesLignes = []; // Tableau pour stocker les nouvelles lignes
+    let idCounter = table.getData().length + 1; // Générer un ID unique pour chaque ligne ajoutée
 
-    // Récupérer les valeurs spécifiques aux ventes
+    // Récupération des valeurs spécifiques aux ventes
     let codeJournal = document.querySelector("#journal-ventes").value;
-    let moisActuel = new Date().getMonth() + 1;
+    let moisActuel = new Date().getMonth() + 1; // Mois courant (1-12)
     let filterVentes = document.querySelector('input[name="filter-ventes"]:checked')?.value;
     if (!filterVentes) {
         alert("Veuillez sélectionner un filtre.");
@@ -2339,13 +1963,16 @@ async function ajouterLigneVentes(table, preRemplir = false, ligneActive = null)
     }
 
     if (preRemplir && ligneActive) {
+        // Appel de la fonction pour ajouter une ligne pré-remplie pour les ventes
         nouvellesLignes = await ajouterLignePreRemplieVentes(idCounter, ligneActive, codeJournal, moisActuel, filterVentes);
         console.log("Lignes pré-remplies générées (Ventes):", nouvellesLignes);
     } else {
+        // On suppose que la fonction ajouterLigneVide existe pour créer une ligne vide
         let ligneVide = ajouterLigneVide(idCounter, ligneActive, codeJournal, moisActuel);
         nouvellesLignes.push(ligneVide);
     }
 
+    // Ajout des nouvelles lignes dans le Tabulator
     if (Array.isArray(nouvellesLignes)) {
         nouvellesLignes.forEach(ligne => {
             table.addRow(ligne, false);
@@ -2356,13 +1983,12 @@ async function ajouterLigneVentes(table, preRemplir = false, ligneActive = null)
 
     console.log("Toutes les lignes du tableau Ventes après ajout:", table.getData());
 
-    // Supprimer les doublons si nécessaire (si vous souhaitez utiliser la même fonction pour Achats et Ventes)
+    // Optionnel : suppression des doublons
     const lignesSansDoublons = supprimerDoublonsLignes(table.getData());
     console.log("Lignes après suppression des doublons (Ventes):", lignesSansDoublons);
 
     return nouvellesLignes;
 }
-
 async function ajouterLignePreRemplieVentes(idCounter, ligneActive, codeJournal, moisActuel, filterVentes) {
     let lignes = [];
     let ligne1 = { ...ligneActive, id: idCounter++ };
@@ -2370,17 +1996,19 @@ async function ajouterLignePreRemplieVentes(idCounter, ligneActive, codeJournal,
 
     console.log("Ajout des lignes pré-remplies avec filterVentes:", filterVentes);
 
-    // Pour les ventes, on considère le montant net saisi dans le champ 'debit'
+    // Pour les ventes, nous utilisons le montant net saisi dans le champ 'debit'
     const netAmount = parseFloat(ligneActive.debit) || 0;
     console.log("Montant net de vente :", netAmount);
 
     if (filterVentes === 'contre-partie') {
-        // Création de deux lignes pré-remplies
+        // Pour le filtre "contre-partie", créer deux lignes pré-remplies
+
         // Ligne 1
-        ligne1.compte = ligneActive.contre_partie || '';
+        // Vous pouvez personnaliser la répartition des valeurs selon vos besoins.
+        ligne1.compte = ligneActive.contre_partie || '';  // Par exemple, utiliser le champ 'contre_partie'
         ligne1.contre_partie = ligneActive.compte || '';
-        ligne1.debit = 0;
-        ligne1.credit = 0;
+        ligne1.debit = 0;  // Forcé à 0 pour les ventes
+        ligne1.credit = 0; // Initialement à 0, sera calculé
         ligne1.piece = ligneActive.piece;
         ligne1.type_journal = codeJournal || '';
         lignes.push(ligne1);
@@ -2394,7 +2022,7 @@ async function ajouterLignePreRemplieVentes(idCounter, ligneActive, codeJournal,
         ligne2.type_journal = codeJournal || '';
         lignes.push(ligne2);
     } else if (filterVentes === 'libre') {
-        // Création d'une seule ligne vide pré-remplie
+        // Pour le filtre "libre", créer une seule ligne vide pré-remplie
         ligne1.compte = '';
         ligne1.contre_partie = '';
         ligne1.debit = 0;
@@ -2406,8 +2034,8 @@ async function ajouterLignePreRemplieVentes(idCounter, ligneActive, codeJournal,
 
     console.log("Lignes pré-remplies générées (Ventes):", lignes);
 
-    // Calcul du crédit pour chaque ligne pré-remplie
     if (Array.isArray(lignes)) {
+        // Pour chaque ligne, calculer le crédit à partir du montant net (netAmount)
         for (let i = 0; i < lignes.length; i++) {
             const typeLigne = (i === 0) ? "ligne1" : "ligne2";
             console.log(`Calcul du crédit pour ${typeLigne} (Ventes):`, lignes[i]);
@@ -2422,15 +2050,8 @@ async function ajouterLignePreRemplieVentes(idCounter, ligneActive, codeJournal,
 }
 
 async function calculerCredit(rowData, typeLigne, debit) {
-    // Extraire le taux de TVA depuis le champ rubrique_tva
-    let tauxTVA = 0;
-    if (rowData.rubrique_tva) {
-        // Cette regex recherche une valeur numérique (avec éventuellement un point décimal) entre parenthèses suivie de '%'
-        const match = rowData.rubrique_tva.match(/\(([\d\.]+)%\)/);
-        if (match && match[1]) {
-            tauxTVA = parseFloat(match[1]) / 100;
-        }
-    }
+    // Ici, "debit" représente le montant net de vente saisi (base hors TVA)
+    const tauxTVA = parseFloat(rowData.taux_tva || 0) / 100;
     console.log(`Calcul du crédit pour ${typeLigne}: Débit = ${debit}, Taux TVA = ${tauxTVA}`);
 
     if (isNaN(debit) || isNaN(tauxTVA)) {
@@ -2443,26 +2064,27 @@ async function calculerCredit(rowData, typeLigne, debit) {
     rowData.debit = 0;
 
     let credit = 0;
+    // Sans prise en compte du prorata, on applique une formule simple :
     if (typeLigne === "ligne1") {
-        // Ligne 1 : montant net + TVA
+        // Ligne 1 (montant de base + TVA) : on suppose que le montant net est multiplié par (1 + tauxTVA)
         credit = debit * (1 + tauxTVA);
     } else if (typeLigne === "ligne2") {
-        // Ligne 2 : TVA seule
+        // Ligne 2 (TVA uniquement) : on calcule uniquement la TVA sur le montant net
         credit = debit * tauxTVA;
     }
 
-    // Arrondir le résultat à deux décimales
+    // On arrondit le résultat à deux décimales
     rowData.credit = parseFloat(credit.toFixed(2));
     console.log(`Crédit final pour ${typeLigne}: ${rowData.credit}`);
 }
 
 async function enregistrerLignesVentes() {
     try {
-        // Récupérer les données actuelles du tableau Ventes
+        // Récupérer les données actuelles du tableau
         let lignes = tableVentes.getData();
-        console.log("📌 Données récupérées du tableau Ventes :", lignes);
+        console.log("📌 Données récupérées du tableau :", lignes);
 
-        // Récupérer l'élément select et extraire le code du journal ainsi que la catégorie
+        // Récupérer l'élément select et extraire le code du journal ainsi que le type (catégorie)
         const journalSelect = document.querySelector("#journal-ventes");
         const codeJournal = journalSelect.value;
         if (!codeJournal) {
@@ -2471,22 +2093,21 @@ async function enregistrerLignesVentes() {
         }
         const selectedOption = journalSelect.options[journalSelect.selectedIndex];
         const categorie = selectedOption ? selectedOption.getAttribute("data-type") : "";
-        console.log("Catégorie extraite (Ventes) :", categorie);
+        console.log("Catégorie extraite :", categorie);  // Vérification de la valeur extraite
 
         const selectedFilter = document.querySelector('input[name="filter-ventes"]:checked')?.value || null;
 
         // Mettre à jour le champ piece_justificative pour chaque facture
         lignes = updatePieceJustificative(lignes);
 
-        // Filtrer les lignes valides à envoyer :
-        // Pour Ventes, on n'exige pas que "compte" soit non vide, on envoie toutes les lignes qui ont un montant positif
-        const lignesAEnvoyer = lignes.filter(ligne => (ligne.debit > 0 || ligne.credit > 0))
+        // Filtrer les lignes valides à envoyer
+        const lignesAEnvoyer = lignes
+            .filter(ligne => ligne.compte && (ligne.debit > 0 || ligne.credit > 0))
             .map(ligne => ({
                 id: ligne.id || null,
                 date: ligne.date || new Date().toISOString().slice(0, 10),
-                numero_dossier: ligne.numero_dossier || 'N/A',
-
                 numero_facture: ligne.numero_facture || 'N/A',
+                numero_dossier: ligne.numero_dossier || 'N/A',
 
                 compte: ligne.compte || '',
                 debit: ligne.debit ? parseFloat(ligne.debit) : 0,
@@ -2496,13 +2117,14 @@ async function enregistrerLignesVentes() {
                 compte_tva: ligne.compte_tva || '',
                 type_journal: codeJournal,
                 categorie: categorie, // Ajout du champ catégorie
+                prorat_de_deduction: ligne.prorat_de_deduction || '',
                 piece_justificative: ligne.piece_justificative || '',
                 libelle: ligne.libelle || '',
                 filtre_selectionne: selectedFilter,
                 value: typeof ligne.solde_cumule !== "undefined" ? ligne.solde_cumule : ""
             }));
 
-        console.log("📤 Données envoyées (Ventes) :", lignesAEnvoyer);
+        console.log("📤 Données envoyées :", lignesAEnvoyer);
 
         if (lignesAEnvoyer.length === 0) {
             alert("⚠️ Aucune ligne valide à enregistrer.");
@@ -2521,31 +2143,34 @@ async function enregistrerLignesVentes() {
         });
 
         if (!response.ok) {
-            console.error("❌ Erreur serveur (Ventes) :", response.status, response.statusText);
-            alert(`Erreur lors de l'enregistrement (Ventes) : ${response.statusText}`);
+            console.error("❌ Erreur serveur :", response.status, response.statusText);
+            alert(`Erreur lors de l'enregistrement : ${response.statusText}`);
             return;
         }
 
         const result = await response.json();
-        console.log("📥 Réponse du serveur (Ventes) :", result);
+        console.log("📥 Réponse du serveur :", result);
 
+        // Vérification du format de la réponse et mise à jour du tableau
         if (Array.isArray(result)) {
             tableVentes.setData(result);
-            console.log("✅ Tableau Ventes mis à jour avec les nouvelles données.");
+            console.log("✅ Tableau mis à jour avec les nouvelles données.");
         } else if (result && Array.isArray(result.data)) {
             tableVentes.setData(result.data);
-            console.log("✅ Tableau Ventes mis à jour avec les nouvelles données.");
+            console.log("✅ Tableau mis à jour avec les nouvelles données.");
         } else {
-            console.warn("⚠️ Format inattendu de la réponse (Ventes) :", result);
-            alert("Aucune donnée valide reçue du serveur (Ventes).");
+            console.warn("⚠️ Format inattendu de la réponse :", result);
+            alert("Aucune donnée valide reçue du serveur.");
             return;
         }
 
+        // Recalculer le solde cumulé après la mise à jour des données
         calculerSoldeCumuleVentes();
 
-        // Ajouter une ligne vide si nécessaire
+        // Vérifier si la dernière ligne est vide avant d'ajouter une nouvelle
         const dataActuelle = tableVentes.getData();
         const derniereLigne = dataActuelle[dataActuelle.length - 1];
+
         if (!derniereLigne || derniereLigne.compte !== '') {
             tableVentes.addRow({
                 id: null,
@@ -2558,14 +2183,16 @@ async function enregistrerLignesVentes() {
                 libelle: '',
                 rubrique_tva: '',
                 type_journal: codeJournal,
-                value: ""
+                value: "" // On peut laisser vide ici ou calculer un solde si nécessaire.
             });
         }
+
     } catch (error) {
-        console.error("🚨 Erreur lors de l'enregistrement (Ventes) :", error);
-        alert("❌ Une erreur s'est produite lors de l'enregistrement (Ventes). Vérifiez la console pour plus de détails.");
+        console.error("🚨 Erreur lors de l'enregistrement :", error);
+        alert("❌ Une erreur s'est produite. Vérifiez la console pour plus de détails.");
     }
 }
+
 
 async function ecouterEntrerVentes(table) {
     table.element.addEventListener("keydown", async function (event) {
@@ -2587,14 +2214,14 @@ async function ecouterEntrerVentes(table) {
 
             console.log("Lignes ajoutées (Ventes) :", nouvellesLignes);
 
-            // Récupérer les données actuelles du tableau Ventes
-            let dataActuelle = table.getData();
-            // Pour Ventes, nous ne filtrons pas sur le champ "compte" afin de conserver
-            // les lignes pré-remplies même si le champ compte est renseigné.
-            table.setData(dataActuelle);
-
-            // Vérifier si la dernière ligne est vide ; si ce n'est pas le cas, ajouter une ligne vide
+            // Récupérer les données actuelles du tableau
+            const dataActuelle = table.getData();
             const derniereLigne = dataActuelle[dataActuelle.length - 1];
+
+            // Nettoyer : supprimer les lignes dont le champ "compte" est non vide (sauf la ligne vide)
+            table.setData(dataActuelle.filter(ligne => ligne.compte !== ""));
+
+            // Ajouter une ligne vide si nécessaire
             if (!derniereLigne || derniereLigne.compte !== '') {
                 const nouvelleLigneVide = {
                     id: dataActuelle.length + 1,
@@ -2617,7 +2244,6 @@ async function ecouterEntrerVentes(table) {
         }
     });
 }
-
 
 
 
@@ -2657,7 +2283,7 @@ function updateTabulatorDataVentes() {
             // Remplacer les données du tableau Ventes
             tableVentes.replaceData(data).then(() => {
                 // Après remplacement, recalculer immédiatement le solde cumulé
-                calculerSoldeCumuleVentes();
+                calculerSoldeCumule();
             });
         })
         .catch(error => {

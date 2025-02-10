@@ -29,7 +29,14 @@ class OperationCourante extends Model
         'prorat_de_deduction',
         'piece_justificative',
         'type_journal',
+        'categorie',
+        'filtre_selectionne',
         'societe_id',
+        'fact_lettrer',
+        'taux_ras_tva',
+        'nature_op',
+        'date_lettrage',
+        'mode_pay',
     ];
 
     // Définir la relation avec la société
