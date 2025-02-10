@@ -1,16 +1,19 @@
 
+@extends('layouts.user_type.auth')
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
+@section('content')
+
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="societe_id" content="{{ session('societeId') }}">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Opérations Courantes</title>
     <!-- SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
 
     <link href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
      <!-- jQuery et Luxon -->
@@ -23,6 +26,7 @@
 <script type="text/javascript" src="https://oss.sheetjs.com/sheetjs/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         /* Style personnalisé pour réduire la taille de l'alerte */
 .small-alert-popup {
@@ -111,11 +115,90 @@
 .tabulator-print-header, tabulator-print-footer{
     text-align:center;
 }
-    </style>
-</head>
-@extends('layouts.user_type.auth')
 
-@section('content')
+/* Mauvais */
+.element {
+    left: 50px;
+    top: 20px;
+}
+
+/* Bon */
+.element {
+    transform: translate(50px, 20px);
+}
+/* Suppression du style de base des boutons radio */
+.formR  {
+    top:2px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 14px; /* Taille réduite du bouton radio */
+    height: 14px; /* Taille réduite du bouton radio */
+    border-radius: 50%;
+    border: 2px solid #007bff;
+    background-color: #fff;
+    position: relative;
+    display: inline-block;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+/* Le point central du bouton radio quand il est coché */
+.formR:checked::before {
+    content: "";
+    position: absolute;
+    top: 3px; /* Ajusté pour un meilleur centrage */
+    left: 3px; /* Ajusté pour un meilleur centrage */
+    width: 6px; /* Taille réduite du point */
+    height: 6px; /* Taille réduite du point */
+    border-radius: 50%;
+    background-color: #007bff;
+}
+
+/* Changement de couleur au survol */
+.formR:hover {
+    border-color: #0056b3;
+}
+
+/* Changer la couleur du point central au survol */
+.formR:hover:checked::before {
+    background-color: #0056b3;
+}
+
+/* Lorsqu'il est coché, le cercle devient plus foncé */
+.formR:checked {
+    border-color: #0056b3;
+}
+
+
+
+/* Ajouter un focus pour le bouton radio lorsque sélectionné */
+.formR:focus {
+    outline: none;
+    box-shadow: 0 0 3px rgba(0, 123, 255, 0.5); /* Légère ombre bleue lors du focus */
+}
+
+/*
+.clignotant-jaune {
+    animation: clignote 1s infinite;
+} */
+/* Effet de surbrillance clignotante */
+.highlight-error {
+    animation: highlight 1s infinite;
+    background-color: yellow;
+}
+
+@keyframes highlight {
+    0% { background-color: yellow; }
+    50% { background-color: transparent; }
+    100% { background-color: yellow; }
+}
+
+
+
+
+    </style>
+
 <body>
         <div class="tabs" style="display: flex; gap: 5px; margin-bottom: 10px; border-bottom: 2px solid #ccc;">
             <!-- Onglet Achats -->
@@ -157,350 +240,346 @@
 
 
 <!-- Onglet Achats -->
-<div id="achats" class="tab-content active" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 9px; color: #333;">
-    <div class="filter-container">
-        <!-- Tous les filtres organisés -->
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
-            <!-- Code et Journal -->
-            <label for="journal-achats"  style="font-size: 8px;">Code :</label>
-         <select id="journal-achats" style="padding: 2px; width: 90px; border: 1px solid #ccc; border-radius: 3px; font-size: 9px;"></select>
+<div id="achats" class="tab-content active" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 10px; color: #333; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+    <div class="filter-container" style="display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
 
-            <input type="text" id="filter-intitule-achats" readonly placeholder="Journal" style="padding: 2px; width: 90px; border: 1px solid #ccc; border-radius: 3px; font-size: 9px;" />
+        <!-- Code et Journal -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label for="journal-achats" style="font-size: 11px; font-weight: bold;">Code :</label>
+            <select id="journal-achats" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
+            <input type="text" id="filter-intitule-achats" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
+        </div>
 
-          <!-- Saisie par -->
-<label style="font-size: 8px;">Saisie par :</label>
-<div style="display: flex; align-items: center; gap: 5px;">
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-period-achats" value="mois" id="filter-mois-achats" checked style="margin-right: 2px; transform: scale(0.8);" /> Mois
-    </label>
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-period-achats" value="exercice" id="filter-exercice-achats" style="margin-right: 2px; transform: scale(0.8);" /> Exercice entier
-    </label>
-</div>
-
-<!-- Période ou Année -->
-<div id="periode-container" style="display: flex; align-items: center; gap: 8px;">
-    <label for="periode" style="font-size: 8px;">Période :</label>
-    <select id="periode-achats" style="padding: 2px; width: 120px; border: 1px solid #ccc; border-radius: 3px; font-size: 8px;">
-        <!-- Les options seront ajoutées dynamiquement par JavaScript -->
-        <option value="selectionner un mois">selectionner un mois</option>
-    </select>
-    <label for="annee" style="font-size: 8px;"></label>
-
-    <input type="text" id="annee-achats" readonly style="padding: 2px; width: 50px; border: 1px solid #ccc; border-radius: 3px; font-size: 8px;" />
-</div>
-
-           <!-- Filtres -->
-<div style="display: flex; align-items: center; gap: 5px;">
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-achats" id="filter-libre-achats" value="libre" style="margin-right: 2px; transform: scale(0.8);" /> Libre
-    </label>
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-achats" id="filter-contre-partie-achats" value="contre-partie" style="margin-right: 2px; transform: scale(0.8);" /> CP Auto
-    </label>
-</div>
-
-            <!-- Boutons avec icônes -->
-            <div style="display: flex; gap: 8px;">
-                <button class="icon-button" id="import-achats" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-import" style="font-size: 14px; color: #28a745;" title="Importer"></i>
-                </button>
-                <button class="icon-button" id="download-xlsx" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-excel" style="font-size: 14px; color: #007bff;" title="Exporter Excel"></i>
-                </button>
-                <button class="icon-button" id="download-pdf" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-pdf" style="font-size: 14px; color: #dc3545;" title="Exporter PDF"></i>
-
-                </button>
-                <button class="icon-button" id="delete-row-btn" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-trash-alt" style="font-size: 14px; color: #dc3545;" title="Supprimer"></i>
-                </button>
-                <!-- Icône pour imprimer -->
-                <a id="print-table" href="#" title="Imprimer la table" style="text-decoration: none;">
-                    <i class="fa fa-print" style="font-size: 24px; color: #333; transition: color 0.3s;"></i>
-                </a>
-
-
-
+        <!-- Saisie par -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label for="filter-achats" style="font-size: 11px; font-weight: bold;">Saisie par :</label>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-achats" id="filter-contre-partie-achats" value="contre-partie" checked>
+                <label class="form-check-label" for="filter-contre-partie-achats" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Contre Partie Auto</label>
             </div>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-achats" id="filter-libre-achats" value="libre">
+                <label class="form-check-label" for="filter-libre-achats" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Libre</label>
+            </div>
+
+        </div>
+
+        <!-- Période -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label for="periode-achats" style="font-size: 11px; font-weight: bold;">Période :</label>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR " type="radio" name="filter-period-achats" id="filter-mois-achats" value="mois" checked>
+                <label class="form-check-label" for="filter-mois-achats" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
+            </div>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-period-achats" id="filter-exercice-achats" value="exercice">
+                <label class="form-check-label" for="filter-exercice-achats" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
+            </div>
+
+            <select id="periode-achats" style="font-size: 10px; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
+                <option value="selectionner un mois">Sélectionner un mois</option>
+            </select>
+            <input type="text" id="annee-achats" readonly style="font-size: 10px; width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;" />
+        </div>
+
+        <!-- Boutons avec icônes -->
+        <div style="display: flex; align-items: center; gap: 12px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <button class="icon-button border-0 bg-transparent" id="import-achats" title="Importer">
+                <i class="fas fa-file-import text-success" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="download-xlsx" title="Exporter Excel">
+                <i class="fas fa-file-excel text-primary" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="download-pdf" title="Exporter PDF">
+                <i class="fas fa-file-pdf text-danger" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="delete-row-btn" title="Supprimer">
+                <i class="fas fa-trash-alt text-danger" style="font-size: 14px;"></i>
+            </button>
+            <a id="print-table" href="#" title="Imprimer la table" class="text-dark">
+                <i class="fa fa-print" style="font-size: 16px;"></i>
+            </a>
         </div>
     </div>
 
     <!-- Table des achats -->
-    {{-- <button id="save-button" class="btn btn-primary mt-3">Enregistrer les lignes</button> --}}
-
-    <div id="table-achats" style="border: 1px solid #ddd; padding: 8px; border-radius: 5px; margin-top: 10px; background-color: #fff;">
+    <div id="table-achats" class="border rounded p-3 mt-2 bg-white shadow-sm">
         <!-- Contenu de la table -->
     </div>
-
 </div>
+
+
+
 
 <!-- Ajouter le lien vers la bibliothèque Font Awesome -->
 
 
-
-
 <!-- Onglet Ventes -->
-<div id="ventes" class="tab-content" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 9px; color: #333;">
-    <div class="filter-container">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
-            <!-- Code et Journal -->
-            <label for="journal-ventes" style="font-weight: 600;">Code :</label>
-            <select id="journal-ventes" style="padding: 2px; width: 90px; border: 1px solid #ccc; border-radius: 3px; font-size: 9px;"></select>
-            <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
+<div id="ventes" class="tab-content" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 10px; color: #333; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+    <div class="filter-container" style="display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
+        <!-- Code et Journal -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label for="journal-ventes" style="font-size: 11px; font-weight: bold;">Code :</label>
+            <select id="journal-ventes" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
+            <input type="text" id="filter-intitule-ventes" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
+        </div>
 
-            <input type="text" id="filter-intitule-ventes" readonly placeholder="Journal" style="padding: 2px; width: 90px; border: 1px solid #ccc; border-radius: 3px; font-size: 9px;" />
-
-            <!-- Saisie par -->
-            <label style="font-weight: 600;">Saisie par :</label>
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="display: flex; align-items: center;">
-                    <input type="radio" name="filter-period-ventes" value="mois" id="filter-mois-ventes" checked style="margin-right: 2px; transform: scale(0.8);" /> Mois
-                </label>
-                <label style="display: flex; align-items: center;">
-                    <input type="radio" name="filter-period-ventes" value="exercice" id="filter-exercice-ventes" style="margin-right: 2px; transform: scale(0.8);" /> Exercice entier
-                </label>
+        <!-- Saisie par -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label style="font-size: 11px; font-weight: bold;">Saisie par :</label>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-ventes" id="filter-contre-partie-ventes" value="contre-partie" checked>
+                <label class="form-check-label" for="filter-contre-partie-ventes" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Contre Partie Auto</label>
+            </div>
+        </div>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-ventes" id="filter-libre-ventes" value="libre">
+                <label class="form-check-label" for="filter-libre-ventes" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Libre</label>
             </div>
 
-            <div id="periode-container-ventes" style="display: flex; align-items: center; gap: 8px;">
-                <label for="periode-ventes" style="font-size: 8px;">Période :</label>
-                <select id="periode-ventes" style="padding: 2px; width: 120px; border: 1px solid #ccc; border-radius: 3px; font-size: 8px;">
-                    <!-- Les options seront ajoutées dynamiquement par JavaScript -->
+
+        <!-- Période -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label for="filter-period-ventes" style="font-size: 11px; font-weight: bold;">Période :</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <div class="form-check form-check-inline" style="font-size: 9px;">
+                    <input class="formR" type="radio" name="filter-period-ventes" id="filter-mois-ventes" value="mois" checked>
+                    <label class="form-check-label" for="filter-mois-ventes" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
+                </div>
+                <div class="form-check form-check-inline" style="font-size: 9px;">
+                    <input class="formR" type="radio" name="filter-period-ventes" id="filter-exercice-ventes" value="exercice">
+                    <label class="form-check-label" for="filter-exercice-ventes" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
+                </div>
+                <!-- Mois Sélection -->
+                <select id="periode-ventes" style="font-size: 10px; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
+                    <option value="selectionner un mois">Sélectionner un mois</option>
                 </select>
-                <label for="annee-ventes" style="font-size: 8px;"></label>
-                <input type="text" id="annee-ventes" readonly style="padding: 2px; width: 50px; border: 1px solid #ccc; border-radius: 3px; font-size: 8px;" />
             </div>
-                 <!-- Filtres -->
-<div style="display: flex; align-items: center; gap: 5px;">
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-ventes" id="filter-libre-ventes" value="libre" style="margin-right: 2px; transform: scale(0.8);" /> Libre
-    </label>
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-ventes" id="filter-contre-partie-ventes" value="contre-partie" style="margin-right: 2px; transform: scale(0.8);" /> CP Auto
-    </label>
-</div>
+            <input type="text" id="annee-ventes" readonly style="font-size: 10px; width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;" />
+        </div>
 
-            <!-- Boutons avec icônes -->
-            <div style="display: flex; gap: 8px;">
-                <button class="icon-button" id="import-ventes" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-import" style="font-size: 14px; color: #28a745;" title="Importer"></i>
-                </button>
-                <button class="icon-button" id="export-ventesExcel" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-excel" style="font-size: 14px; color: #007bff;" title="Exporter Excel"></i>
-                </button>
-                <button class="icon-button" id="export-ventesPDF" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-pdf" style="font-size: 14px; color: #dc3545;" title="Exporter PDF"></i>
-                </button>
-                <button class="icon-button" id="delete-row-btn" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-trash-alt" style="font-size: 14px; color: #dc3545;" title="Supprimer"></i>
-                </button>
-                 <!-- Icône pour imprimer -->
-                 <a id="print-tableV" href="#" title="Imprimer la table" style="text-decoration: none;">
-                    <i class="fa fa-print" style="font-size: 24px; color: #333; transition: color 0.3s;"></i>
-                </a>
-            </div>
+        <!-- Boutons avec icônes -->
+        <div style="display: flex; align-items: center; gap: 12px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <button class="icon-button border-0 bg-transparent" id="import-ventes" title="Importer">
+                <i class="fas fa-file-import text-success" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="export-ventesExcel" title="Exporter Excel">
+                <i class="fas fa-file-excel text-primary" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="export-ventesPDF" title="Exporter PDF">
+                <i class="fas fa-file-pdf text-danger" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="delete-row-btn" title="Supprimer">
+                <i class="fas fa-trash-alt text-danger" style="font-size: 14px;"></i>
+            </button>
+            <a id="print-tableV" href="#" title="Imprimer la table" class="text-dark">
+                <i class="fa fa-print" style="font-size: 16px;"></i>
+            </a>
         </div>
     </div>
 
     <!-- Table des ventes -->
-    <div id="table-ventes" style="border: 1px solid #ddd; padding: 8px; border-radius: 5px; margin-top: 10px; background-color: #fff;">
+    <div id="table-ventes" class="border rounded p-3 mt-2 bg-white shadow-sm">
         <!-- Contenu de la table -->
     </div>
 </div>
-
 
 
 
 <!-- Onglet caisse -->
-<div id="Caisse" class="tab-content" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 9px; color: #333;">
-    <div class="filter-container">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
-            <!-- Code et Journal -->
-            <label for="journal-Caisse" style="font-weight: 600;">Code :</label>
-            <select id="journal-Caisse" style="padding: 2px; width: 90px; border: 1px solid #ccc; border-radius: 3px; font-size: 9px;"></select>
+<div id="Caisse" class="tab-content" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 10px; color: #333; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+    <div class="filter-container" style="display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
+
+        <!-- Code et Journal -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label for="journal-Caisse" style="font-size: 11px; font-weight: bold;">Code :</label>
+            <select id="journal-Caisse" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
             <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
 
-            <input type="text" id="filter-intitule-Caisse" readonly placeholder="Journal" style="padding: 2px; width: 90px; border: 1px solid #ccc; border-radius: 3px; font-size: 9px;" />
+            <input type="text" id="filter-intitule-Caisse" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
+        </div>
 
-            <!-- Saisie par -->
-            <label style="font-weight: 600;">Saisie par :</label>
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="display: flex; align-items: center;">
-                    <input type="radio" name="filter-period-Caisse" value="mois" id="filter-mois-Caisse" checked style="margin-right: 2px; transform: scale(0.8);" /> Mois
-                </label>
-                <label style="display: flex; align-items: center;">
-                    <input type="radio" name="filter-period-Caisse" value="exercice" id="filter-exercice-Caisse" style="margin-right: 2px; transform: scale(0.8);" /> Exercice entier
-                </label>
+        <!-- Saisie par -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label style="font-size: 11px; font-weight: bold;">Saisie par :</label>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-Caisse" id="filter-contre-partie-Caisse" value="contre-partie" checked>
+                <label class="form-check-label" for="filter-contre-partie-Caisse" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Contre Partie Auto</label>
+            </div>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-Caisse" id="filter-libre-Caisse" value="libre">
+                <label class="form-check-label" for="filter-libre-Caisse" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Libre</label>
             </div>
 
-            <!-- Période ou Année pour Trésorerie -->
-<div id="periode-container-Caisse" style="display: flex; align-items: center; gap: 8px;">
-    <label for="periode-Caisse" style="font-size: 8px;">Période :</label>
-    <select id="periode-Caisse" style="padding: 2px; width: 120px; border: 1px solid #ccc; border-radius: 3px; font-size: 8px;">
-        <!-- Les options seront ajoutées dynamiquement par JavaScript -->
-    </select>
-    <label for="annee-Caisse" style="font-size: 8px;"></label>
-    <input type="text" id="annee-Caisse" readonly style="padding: 2px; width: 50px; border: 1px solid #ccc; border-radius: 3px; font-size: 8px;" />
-</div>
-                  <!-- Filtres -->
-<div style="display: flex; align-items: center; gap: 5px;">
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-Caisse" id="filter-libre-Caisse" value="libre" style="margin-right: 2px; transform: scale(0.8);" /> Libre
-    </label>
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-Caisse" id="filter-contre-partie-Caisse" value="contre-partie" style="margin-right: 2px; transform: scale(0.8);" /> CP Auto
-    </label>
-</div>
-            <!-- Boutons avec icônes -->
-            <div style="display: flex; gap: 8px;">
-                <button class="icon-button" id="import-Caisse" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-import" style="font-size: 14px; color: #28a745;" title="Importer"></i>
-                </button>
-                <button class="icon-button" id="export-CaisseExcel" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-excel" style="font-size: 14px; color: #007bff;" title="Exporter Excel"></i>
-                </button>
-                <button class="icon-button" id="export-CaissePDF" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-pdf" style="font-size: 14px; color: #dc3545;" title="Exporter PDF"></i>
-                </button>
-                <button class="icon-button" id="delete-row-btn" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-trash-alt" style="font-size: 14px; color: #dc3545;" title="Supprimer"></i>
-                </button>
+        </div>
+
+        <!-- Période -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label for="periode-Caisse" style="font-size: 11px; font-weight: bold;">Période :</label>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-period-Caisse" id="filter-mois-Caisse" value="mois" checked>
+                <label class="form-check-label" for="filter-mois-Caisse" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
             </div>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-period-Caisse" id="filter-exercice-Caisse" value="exercice">
+                <label class="form-check-label" for="filter-exercice-Caisse" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
+            </div>
+
+            <select id="periode-Caisse" style="font-size: 10px; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
+                <option value="selectionner un mois">Sélectionner un mois</option>
+            </select>
+            <input type="text" id="annee-Caisse" readonly style="font-size: 10px; width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;" />
+        </div>
+
+        <!-- Boutons avec icônes -->
+        <div style="display: flex; align-items: center; gap: 12px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <button class="icon-button border-0 bg-transparent" id="import-Caisse" title="Importer">
+                <i class="fas fa-file-import text-success" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="export-CaisseExcel" title="Exporter Excel">
+                <i class="fas fa-file-excel text-primary" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="export-CaissePDF" title="Exporter PDF">
+                <i class="fas fa-file-pdf text-danger" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="delete-row-btn" title="Supprimer">
+                <i class="fas fa-trash-alt text-danger" style="font-size: 14px;"></i>
+            </button>
         </div>
     </div>
 
     <!-- Table de la caisse -->
-    <div id="table-Caisse" style="border: 1px solid #ddd; padding: 8px; border-radius: 5px; margin-top: 10px; background-color: #fff;">
+    <div id="table-Caisse" class="border rounded p-3 mt-2 bg-white shadow-sm">
         <!-- Contenu de la table -->
     </div>
 </div>
 
+
 <!-- Onglet Banque -->
-<div id="Banque" class="tab-content" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 9px; color: #333;">
-    <div class="filter-container">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
-            <!-- Code et Journal -->
-            <label for="journal-Banque" style="font-weight: 600;">Code :</label>
-            <select id="journal-Banque" style="padding: 2px; width: 90px; border: 1px solid #ccc; border-radius: 3px; font-size: 9px;"></select>
+<div id="Banque" class="tab-content" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 10px; color: #333; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+    <div class="filter-container" style="display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
+
+        <!-- Code et Journal -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label for="journal-Banque" style="font-size: 11px; font-weight: bold;">Code :</label>
+            <select id="journal-Banque" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
             <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
 
-            <input type="text" id="filter-intitule-Banque" readonly placeholder="Journal" style="padding: 2px; width: 90px; border: 1px solid #ccc; border-radius: 3px; font-size: 9px;" />
+            <input type="text" id="filter-intitule-Banque" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
+        </div>
 
-            <!-- Saisie par -->
-            <label style="font-weight: 600;">Saisie par :</label>
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="display: flex; align-items: center;">
-                    <input type="radio" name="filter-period-Banque" value="mois" id="filter-mois-Banque" checked style="margin-right: 2px; transform: scale(0.8);" /> Mois
-                </label>
-                <label style="display: flex; align-items: center;">
-                    <input type="radio" name="filter-period-Banque" value="exercice" id="filter-exercice-Banque" style="margin-right: 2px; transform: scale(0.8);" /> Exercice entier
-                </label>
+        <!-- Saisie par -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label style="font-size: 11px; font-weight: bold;">Saisie par :</label>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-period-Banque" id="filter-mois-Banque" value="mois" checked>
+                <label class="form-check-label" for="filter-mois-Banque" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
             </div>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-period-Banque" id="filter-exercice-Banque" value="exercice">
+                <label class="form-check-label" for="filter-exercice-Banque" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
+            </div>
+        </div>
 
-            <!-- Période ou Année pour banque -->
-<div id="periode-container-Banque" style="display: flex; align-items: center; gap: 8px;">
-    <label for="periode-Banque" style="font-size: 8px;">Période :</label>
-    <select id="periode-Banque" style="padding: 2px; width: 120px; border: 1px solid #ccc; border-radius: 3px; font-size: 8px;">
-        <!-- Les options seront ajoutées dynamiquement par JavaScript -->
-    </select>
-    <label for="annee-Banque" style="font-size: 8px;"></label>
-    <input type="text" id="annee-Banque" readonly style="padding: 2px; width: 50px; border: 1px solid #ccc; border-radius: 3px; font-size: 8px;" />
-</div>
-                  <!-- Filtres -->
-<div style="display: flex; align-items: center; gap: 5px;">
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-Banque" id="filter-libre-Banque" value="libre" style="margin-right: 2px; transform: scale(0.8);" /> Libre
-    </label>
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-Banque" id="filter-contre-partie-Banque" value="contre-partie" style="margin-right: 2px; transform: scale(0.8);" /> CP Auto
-    </label>
-</div>
-            <!-- Boutons avec icônes -->
-            <div style="display: flex; gap: 8px;">
-                <button class="icon-button" id="import-Banque" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-import" style="font-size: 14px; color: #28a745;" title="Importer"></i>
-                </button>
-                <button class="icon-button" id="export-BanqueExcel" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-excel" style="font-size: 14px; color: #007bff;" title="Exporter Excel"></i>
-                </button>
-                <button class="icon-button" id="export-BanquePDF" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-pdf" style="font-size: 14px; color: #dc3545;" title="Exporter PDF"></i>
-                </button>
-                <button class="icon-button" id="delete-row-btn" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-trash-alt" style="font-size: 14px; color: #dc3545;" title="Supprimer"></i>
-                </button>
-            </div>
+        <!-- Période -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label for="periode-Banque" style="font-size: 11px; font-weight: bold;">Période :</label>
+            <select id="periode-Banque" style="font-size: 10px; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
+                <option value="selectionner un mois">Sélectionner un mois</option>
+            </select>
+            <input type="text" id="annee-Banque" readonly style="font-size: 10px; width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;" />
+        </div>
+
+        <!-- Boutons avec icônes -->
+        <div style="display: flex; align-items: center; gap: 12px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <button class="icon-button border-0 bg-transparent" id="import-Banque" title="Importer">
+                <i class="fas fa-file-import text-success" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="export-BanqueExcel" title="Exporter Excel">
+                <i class="fas fa-file-excel text-primary" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="export-BanquePDF" title="Exporter PDF">
+                <i class="fas fa-file-pdf text-danger" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="delete-row-btn" title="Supprimer">
+                <i class="fas fa-trash-alt text-danger" style="font-size: 14px;"></i>
+            </button>
         </div>
     </div>
 
     <!-- Table de la banque -->
-    <div id="table-Banque" style="border: 1px solid #ddd; padding: 8px; border-radius: 5px; margin-top: 10px; background-color: #fff;">
+    <div id="table-Banque" class="border rounded p-3 mt-2 bg-white shadow-sm">
         <!-- Contenu de la table -->
     </div>
 </div>
 
+
 <!-- Onglet Opérations Diverses -->
-<div id="operations-diverses" class="tab-content" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 9px; color: #333;">
-    <div class="filter-container">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
-            <!-- Code et Journal -->
-            <label for="journal-operations-diverses" style="font-weight: 600;">Code :</label>
-            <select id="journal-operations-diverses" style="padding: 2px; width: 90px; border: 1px solid #ccc; border-radius: 3px; font-size: 9px;"></select>
+<div id="operations-diverses" class="tab-content" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 10px; color: #333; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+    <div class="filter-container" style="display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
+        <!-- Code et Journal -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label for="journal-operations-diverses" style="font-size: 11px; font-weight: bold;">Code :</label>
+            <select id="journal-operations-diverses" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
             <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
+            <input type="text" id="filter-intitule-operations-diverses" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
+        </div>
 
-            <input type="text" id="filter-intitule-operations-diverses" readonly placeholder="Journal" style="padding: 2px; width: 90px; border: 1px solid #ccc; border-radius: 3px; font-size: 9px;" />
+        <!-- Saisie par -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label style="font-size: 11px; font-weight: bold;">Saisie par :</label>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-period-operations-diverses" value="mois" id="filter-mois-operations-diverses" checked>
+                <label class="form-check-label" for="filter-mois-operations-diverses" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
+            </div>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-period-operations-diverses" value="exercice" id="filter-exercice-operations-diverses">
+                <label class="form-check-label" for="filter-exercice-operations-diverses" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
+            </div>
+        </div>
 
-            <!-- Saisie par -->
-            <label style="font-weight: 600;">Saisie par :</label>
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="display: flex; align-items: center;">
-                    <input type="radio" name="filter-period-operations-diverses" value="mois" id="filter-mois-operations-diverses" checked style="margin-right: 2px; transform: scale(0.8);" /> Mois
-                </label>
-                <label style="display: flex; align-items: center;">
-                    <input type="radio" name="filter-period-operations-diverses" value="exercice" id="filter-exercice-operations-diverses" style="margin-right: 2px; transform: scale(0.8);" /> Exercice entier
-                </label>
+        <!-- Période ou Année pour Opérations Diverses -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <label for="periode-operations-diverses" style="font-size: 11px; font-weight: bold;">Période :</label>
+            <select id="periode-operations-diverses" style="padding: 5px; width: 150px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;">
+                <option value="selectionner un mois">Sélectionner un mois</option>
+            </select>
+            <input type="text" id="annee-operations-diverses" readonly style="font-size: 10px; width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;" />
+        </div>
+
+        <!-- Filtres -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-operations-diverses" value="contre-partie" id="filter-contre-partie-operations-diverses" checked>
+                <label class="form-check-label" for="filter-contre-partie-operations-diverses" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Contre Partie Auto</label>
+            </div>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-operations-diverses" value="libre" id="filter-libre-operations-diverses">
+                <label class="form-check-label" for="filter-libre-operations-diverses" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Libre</label>
             </div>
 
-            <!-- Période ou Année pour Opérations Diverses -->
-<div id="periode-container-operations" style="display: flex; align-items: center; gap: 8px;">
-    <label for="periode-operations-diverses" style="font-size: 8px;">Période Opérations Diverses :</label>
-    <select id="periode-operations-diverses" style="padding: 2px; width: 120px; border: 1px solid #ccc; border-radius: 3px; font-size: 8px;">
-        <!-- Les options seront ajoutées dynamiquement par JavaScript -->
-    </select>
-    <label for="annee-operations" style="font-size: 8px;"></label>
-    <input type="text" id="annee-operations-diverses" readonly style="padding: 2px; width: 50px; border: 1px solid #ccc; border-radius: 3px; font-size: 8px;" />
-</div>
+        </div>
 
-                  <!-- Filtres -->
-<div style="display: flex; align-items: center; gap: 5px;">
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-operations-diverses" id="filter-libre-operations-diverses" value="libre" style="margin-right: 2px; transform: scale(0.8);" /> Libre
-    </label>
-    <label style="display: flex; align-items: center;">
-        <input type="radio" name="filter-operations-diverses" id="filter-contre-partie-operations-diverses" value="contre-partie" style="margin-right: 2px; transform: scale(0.8);" /> CP Auto
-    </label>
-</div>
-
-            <!-- Boutons avec icônes -->
-            <div style="display: flex; gap: 8px;">
-                <button class="icon-button" id="import-operations-diverses" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-import" style="font-size: 14px; color: #28a745;" title="Importer"></i>
-                </button>
-                <button class="icon-button" id="export-operations-diversesExcel" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-excel" style="font-size: 14px; color: #007bff;" title="Exporter Excel"></i>
-                </button>
-                <button class="icon-button" id="export-operations-diversesPDF" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-file-pdf" style="font-size: 14px; color: #dc3545;" title="Exporter PDF"></i>
-                </button>
-                <button class="icon-button" id="delete-row-btn" style="padding: 2px; border: none; background: none; cursor: pointer;">
-                    <i class="fas fa-trash-alt" style="font-size: 14px; color: #dc3545;" title="Supprimer"></i>
-                </button>
-            </div>
+        <!-- Boutons avec icônes -->
+        <div style="display: flex; align-items: center; gap: 12px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+            <button class="icon-button border-0 bg-transparent" id="import-operations-diverses" title="Importer">
+                <i class="fas fa-file-import text-success" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="export-operations-diversesExcel" title="Exporter Excel">
+                <i class="fas fa-file-excel text-primary" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="export-operations-diversesPDF" title="Exporter PDF">
+                <i class="fas fa-file-pdf text-danger" style="font-size: 14px;"></i>
+            </button>
+            <button class="icon-button border-0 bg-transparent" id="delete-row-btn" title="Supprimer">
+                <i class="fas fa-trash-alt text-danger" style="font-size: 14px;"></i>
+            </button>
         </div>
     </div>
 
     <!-- Table des opérations diverses -->
-    <div id="table-operations-diverses" style="border: 1px solid #ddd; padding: 8px; border-radius: 5px; margin-top: 10px; background-color: #fff;">
+    <div id="table-operations-diverses" class="border rounded p-3 mt-2 bg-white shadow-sm">
         <!-- Contenu de la table -->
     </div>
 </div>
@@ -509,11 +588,8 @@
 </body>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
-    <script>
 
-    </script>
+
     <script type="text/javascript" src="{{URL::asset('js/Operation_Courante.js')}}"></script>
 
-
-</html>
 @endsection
