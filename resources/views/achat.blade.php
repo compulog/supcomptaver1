@@ -9,7 +9,7 @@
 <div class="container mt-4">
 <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau De Board</a>
     ➢Achat</h6>
-    <div class="row"  style="margin-left:400px">
+    <div class="row"  style="margin-left:630px">
         <div class="d-flex align-items-center mb-3">
                 <!-- Formulaire de téléchargement -->
                 <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">

@@ -70,18 +70,20 @@ class EtatDeCaisseController extends Controller
             ]);
 
             return response()->json(['success' => true, 'message' => 'Transaction créée avec succès.']);
-        } elseif ($request->input('user_response') === 'update' && $transaction) {
-            // Si la réponse est "update" et que la transaction existe, on la met à jour
-            $transaction->update([
-                'date' => $request->input('date'),
-                'libelle' => $request->input('libelle'),
-                'recette' => $request->input('recette', 0),
-                'depense' => $request->input('depense', 0),
-                'code_journal' => $request->input('journal_code'), // Mettre à jour le code journal
-            ]);
+        }
+        //  elseif ($request->input('user_response') === 'update' && $transaction) {
+        //     // Si la réponse est "update" et que la transaction existe, on la met à jour
+        //     $transaction->update([
+        //         'date' => $request->input('date'),
+        //         'libelle' => $request->input('libelle'),
+        //         'recette' => $request->input('recette', 0),
+        //         'depense' => $request->input('depense', 0),
+        //         'code_journal' => $request->input('journal_code'), // Mettre à jour le code journal
+        //     ]);
 
-            return response()->json(['success' => true, 'message' => 'Transaction mise à jour avec succès.']);
-        } elseif ($request->input('user_response') === '0') {
+        //     return response()->json(['success' => true, 'message' => 'Transaction mise à jour avec succès.']);
+        // } 
+        elseif ($request->input('user_response') === '0') {
             // Si la réponse est "0", vérifier si la transaction existe
             if ($transaction) {
                 // Mettre à jour la transaction existante

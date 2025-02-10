@@ -87,7 +87,7 @@
 </script>
 
 
-    <div class="row"   style="margin-left:450px">
+    <div class="row"   style="margin-left:630px">
 
         <!-- Conteneur flexible pour aligner les éléments sur la même ligne -->
         <div class="d-flex align-items-center mb-3">
