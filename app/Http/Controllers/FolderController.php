@@ -132,8 +132,7 @@ class FolderController extends Controller
             }
 
             // Retourner la vue avec les fichiers, dossiers et notifications
-            return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications'));
-            return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications'));
+             return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications'));
         } else {
             // Rediriger si aucune société n'est trouvée dans la session
             return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
@@ -234,8 +233,8 @@ class FolderController extends Controller
         ]);
 
         // Rediriger avec un message de succès
-        return redirect()->route('achat.view')->with('success', 'Dossier créé avec succès');
-    }
+    //     return redirect()->route('achat.view')->with('success', 'Dossier créé avec succès');
+    // }
 
 
 
