@@ -91,7 +91,7 @@
 
 
 
-    <div class="row"   style="margin-left:450px">
+    <div class="row"   style="margin-left:630px">
 
         <!-- Conteneur flexible pour aligner les éléments sur la même ligne -->
         <div class="d-flex align-items-center mb-3">
@@ -154,11 +154,11 @@
         <div class="card shadow-sm" style="width: 10rem; height: 100px; cursor: pointer;">
             <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem; background-color:#007bff; border-radius:17px; position: relative;">
                 <!-- Icône du Dossier -->
-                @foreach ($folderNotifications as $folderNotification)
+                <!-- @foreach ($folderNotifications as $folderNotification)
                  <span class="badge bg-danger" style="font-size: 0.5rem; position: absolute; left: 10px; top: 80px;">
                  {{ $folderNotification }}
                     </span>
-                    @endforeach       
+                    @endforeach        -->
 
                 <i class="fas fa-folder fa-2x mb-1" style="color:rgb(227, 231, 235);"></i>
                 <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold; color:rgb(227, 231, 235);">
@@ -327,51 +327,7 @@
 @endif
 </div>
 
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Ajout des événements de double-clic pour toutes les sections
-    document.getElementById('achat-div').addEventListener('dblclick', function () {
-        window.location.href = '{{ route("achat.view") }}';
-    });
-});
-
-function handleFileSelect(event, type) {
-    const fileInput = document.getElementById(`file-${type.toLowerCase()}`);
-    const formId = `form-${type.toLowerCase()}`;
-    
-    if (!fileInput.files.length) {
-        alert("Veuillez sélectionner un fichier.");
-        return;
-    }
-
-    document.getElementById(formId).submit();
-}
-
-function openCreateFolderForm() {
-    var myModal = new bootstrap.Modal(document.getElementById('createFolderModal'));
-    myModal.show();
-}
-
-function openFile(folderId) {
-    window.location.href = '/folder/' + folderId;
-}
-
-function downloadFile(fileId) {
-    window.location.href = '/file/download/' + fileId;
-}
-
-function viewFile(fileId) {
-   
-        window.location.href = '/achat/view/' + fileId ;
-}
-
-// function viewFile(fileId,folderId) {
-//     alert(folderId);
-//         window.location.href = '/achat/view/' + folderId + fileId;
-// }
-
-</script>
+<script src="{{ asset('js/folders.js') }}"></script>
 
 @endsection
 

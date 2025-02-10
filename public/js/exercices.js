@@ -1,38 +1,57 @@
 
 
-      document.addEventListener('DOMContentLoaded', function () {
-        // Ajout des événements de double-clic pour toutes les sections
-        document.getElementById('achat-div').addEventListener('dblclick', function () {
-            window.location.href = '{{ route("achat.view") }}';
-        });
-
-        document.getElementById('vente-div').addEventListener('dblclick', function () {
-            window.location.href = '{{ route("vente.view") }}';
-        });
-
-        document.getElementById('banque-div').addEventListener('dblclick', function () {
-            window.location.href = '{{ route("banque.view") }}';
-        });
-
-        document.getElementById('caisse-div').addEventListener('dblclick', function () {
-            window.location.href = '{{ route("caisse.view") }}';
-        });
-
-        document.getElementById('impot-div').addEventListener('dblclick', function () {
-            window.location.href = '{{ route("impot.view") }}';
-        });
-
-        document.getElementById('paie-div').addEventListener('dblclick', function () {
-            window.location.href = '{{ route("paie.view") }}';
-        });
-        document.getElementById('Dossier_permanant-div').addEventListener('dblclick', function () {
-            window.location.href = '{{ route("Dossier_permanant.view") }}';
-        });
-    });
-    function handleFileSelect(event, type) {
-    const fileInput = document.getElementById(`file-${type.toLowerCase()}`);
-    const formId = `form-${type.toLowerCase()}`;  // Générer l'ID du formulaire
+ 
+function openEditFolderModal(dossierId, dossierName) {
+    // Mettre à jour le champ du formulaire avec le nom du dossier
+    document.getElementById('folderName').value = dossierName;
     
+    // Mettre à jour l'ID du dossier dans le formulaire
+    document.getElementById('dossier_id').value = dossierId;
+
+    // Mettre à jour l'action du formulaire pour qu'il pointe vers la bonne URL (route pour PUT)
+    document.getElementById('edit-folder-form').action = `/dossier/${dossierId}`;
+
+    // Afficher le modal de modification
+    var myModal = new bootstrap.Modal(document.getElementById('editFolderModal'));
+    myModal.show();
+}
+
+ 
+
+
+
+
+
+
+
+
+    // Fonction pour générer une couleur hexadécimale aléatoire
+    function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    // Appliquer la couleur aléatoire à chaque "dossier-box" et bouton à l'intérieur
+    document.querySelectorAll('.dossier-box').forEach(function(div) {
+        const color = getRandomColor();
+        div.style.backgroundColor = color;
+
+        // Appliquer la même couleur au bouton
+        const button = div.querySelector('.dossier-button');
+        if (button) {
+            button.style.backgroundColor = color;  
+            
+        }
+    });
+
+    function handleFileSelect(event, dossierId) {
+    const fileInput = document.getElementById(`file-${dossierId}`);
+    const formId = `form-${dossierId}`;  // Générer l'ID du formulaire
+
     if (!fileInput.files.length) {
         alert("Veuillez sélectionner un fichier.");
         return;
@@ -43,23 +62,4 @@
 }
 
 
-function openCreateFolderForm() {
-    var myModal = new bootstrap.Modal(document.getElementById('createFolderModal'));
-    myModal.show();
-}
 
-document.addEventListener('DOMContentLoaded', function () {
-    // Ajout des événements de double-clic pour chaque dossier dynamique
-    document.querySelectorAll('.dossier-box').forEach(function(div) {
-        div.addEventListener('dblclick', function () {
-            // On récupère l'ID du dossier à partir de l'attribut data-id
-            const dossierId = div.getAttribute('data-id');
-            
-            // On redirige vers la route avec l'ID du dossier
-            window.location.href = `/Douvrir/${dossierId}`;  // Assurez-vous que la route correspond bien à celle définie dans les routes Laravel
-        });
-    });
-});
-
-
- 

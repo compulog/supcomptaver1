@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\SoldeMensuel; // Assurez-vous d'importer votre modèle
+use App\Models\SoldeMensuel; 
 
 class SoldeMensuelController extends Controller
 {

@@ -9,7 +9,7 @@
 <div class="container mt-4">
 <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau De Board</a>
 ➢{{ $dossier->name }}</h6>
-    <div class="row"  style="margin-left:400px">
+    <div class="row"  style="margin-left:630px">
         <div class="d-flex align-items-center mb-3">
                 <!-- Formulaire de téléchargement -->
                 <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: left; align-items: center; height: auto;">
@@ -19,7 +19,7 @@
      <input type="hidden" name="folder_type" value="{{ $dossier->name }}"> 
 
      <input type="file" name="file" id="file-{{ $dossier->id }}" style="display: none;" onchange="handleFileSelect(event, {{ $dossier->id }})">
-     <button type="button" class="btn btn-light btn-sm dossier-button" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
+     <button type="button" class="btn btn-primary btn-sm" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
      <button type="submit" style="display: none;" id="submit-{{ $dossier->id }}">Envoyer</button>
 </form>
             </div>
