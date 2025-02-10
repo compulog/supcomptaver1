@@ -78,14 +78,7 @@
       <li class="nav-item mt-2">
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">paramétres</h6>
       </li>
-      <li class="nav-item">
-        <a class="nav-link {{ (Request::is('utilisateurs') ? 'active' : '') }}" href="{{ url('utilisateurs') }}">
-          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-
-          </div>
-          <span class="nav-link-text ms-1">Gestions des utilisateurs </span>
-        </a>
-      </li>
+    
       <li class="nav-item pb-2">
         <a class="nav-link {{ (Request::is('gestion-des-journaux') ? 'active' : '') }}" href="{{ url('gestion-des-journaux') }}">
             <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">

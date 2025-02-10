@@ -9,6 +9,6 @@ class Transaction extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    protected $fillable = ['date', 'reference', 'libelle', 'recette', 'depense', 'societe_id',];
+    protected $fillable = ['date', 'reference', 'libelle', 'recette', 'depense', 'societe_id', 'code_journal'];
 }
 

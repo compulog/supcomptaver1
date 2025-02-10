@@ -106,6 +106,7 @@ class JournalController extends Controller
         // Stocker un nouveau journal
         public function store(Request $request)
         {
+    
             // Récupérer l'ID de la société depuis la session
             $societeId = session('societeId');
 

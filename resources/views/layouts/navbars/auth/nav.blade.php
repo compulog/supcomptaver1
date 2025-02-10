@@ -90,16 +90,7 @@
 <!-- Exercice -->
 <div class="exercice">
   <span>Exercice:</span>
-
-                    <button type="button" class="btn btn-light">
-                <div class="arrow-left"></div>
-</button>
-
-Du <input type="date" value="{{ $societe->exercice_social_debut }}">
-au <input type="date" value="{{ $societe->exercice_social_fin }}">
-
-<button type="button" class="btn btn-light">
-
+ 
   <button type="button" class="btn-arrow left">
     <div class="arrow-left"></div>
   </button>

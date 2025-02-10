@@ -157,7 +157,6 @@ Route::get('empty-row', [OperationCouranteController::class, 'getEmptyRow']);
 // Route pour charger les journaux
 Route::get('/journaux', [OperationCouranteController::class, 'getJournaux'])->name('journaux.get');
 Route::post('/lignes', [OperationCouranteController::class, 'store']);
-Route::post('/verifier-lignes-existantes', [OperationCouranteController::class, 'verifierLignesExistantes']);
 
 // Route pour charger les périodes
 Route::get('/periodes', [OperationCouranteController::class, 'getPeriodes'])->name('periodes.get');
@@ -207,8 +206,8 @@ Route::get('/journaux-achats', [OperationCouranteController::class, 'getJournaux
 Route::get('/journaux-ventes', [OperationCouranteController::class, 'getJournauxVTE']);
 Route::get('/journaux-Banque', [OperationCouranteController::class, 'getJournauxBanque']);
 Route::get('/journaux-Caisse', [OperationCouranteController::class, 'getJournauxCaisse']);
+
 Route::get('/journaux-operations-diverses', [OperationCouranteController::class, 'getJournauxOPE']);
-Route::get('/get-contre-parties-ventes', [OperationCouranteController::class, 'getContrePartiesVentes']);
 
 Route::get('operationcourante/getFournisseurs', [OperationCouranteController::class, 'getFournisseurs'])->name('operationcourante.getFournisseurs');
 Route::get('operationcourante/fournisseurs/details', [OperationCouranteController::class, 'getFournisseursAvecDetails'])->name('operationcourante.getFournisseursAvecDetails');
