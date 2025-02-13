@@ -87,14 +87,13 @@ function updateLibelle(row) {
                 row.update({
                     libelle: `F° ${numeroFacture} ${fournisseur.intitule}`
                 });
-                // Utiliser un délai plus long pour être certain que l'update soit terminé
+                // Après mise à jour, on met le focus sur le champ "credit"
                 setTimeout(() => {
                     const creditCell = row.getCell("credit");
                     if (creditCell) {
-                        // Assurez-vous que la colonne "credit" possède un éditeur défini
                         creditCell.edit();
                     }
-                }, 300); // 300ms de délai
+                }, 300); // délai de 300ms (ajustez si nécessaire)
             } else {
                 console.warn("Aucun fournisseur correspondant trouvé pour :", compteFournisseur);
             }
@@ -104,6 +103,7 @@ function updateLibelle(row) {
             alert("Une erreur est survenue lors de la récupération des détails du fournisseur.");
         });
 }
+
 
 /**********************************************/
 /* Éditeurs Personnalisés                     */
@@ -984,6 +984,7 @@ async function fetchComptesTva() {
                                 });
 
                         }
+                        
                     },
                     {
     title: "Libellé",
@@ -1121,7 +1122,9 @@ async function fetchComptesTva() {
                     headerHozAlign: "center",
                     hozAlign: "center",
                     formatter: "rowSelection",
+
                     titleFormatter: "rowSelection",
+
                     cellClick: function(e, cell){
                         // N'exécute le toggle que si l'événement est bien un clic de souris
                         if(e.type === "click"){
