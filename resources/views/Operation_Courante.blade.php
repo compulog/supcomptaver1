@@ -9,13 +9,18 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Opérations Courantes</title>
-    <!-- SweetAlert2 CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 
-    <link href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
+     <link href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
+    {{-- <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.4/dist/css/tabulator.min.css"> --}}
+
      <!-- jQuery et Luxon -->
 <!-- Luxon -->
 <script src="https://cdn.jsdelivr.net/npm/luxon@3.1.0/build/global/luxon.min.js"></script>
@@ -25,9 +30,43 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script type="text/javascript" src="https://oss.sheetjs.com/sheetjs/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
+{{-- <script src="https://unpkg.com/tabulator-tables@6.3.4/dist/js/tabulator.min.js"></script> --}}
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <style>
+         .custom-datalist-editor-container {
+      position: relative;
+      width: 100%;
+      display: flex;
+      flex-direction: column-reverse;
+    }
+    /* Le conteneur principal de l'éditeur est en position relative */
+    .custom-list-editor-container {
+      position: relative;
+    }
+    /* Le conteneur de la liste est en position absolue et placé au-dessus de l'input */
+    .list-container {
+      position: absolute;
+      bottom: 100%;  /* Affiche la liste au-dessus de l'input */
+      left: 0;
+      width: 100%;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      max-height: 150px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .list-container li {
+      padding: 5px;
+      cursor: pointer;
+      list-style: none;
+    }
+    .list-container li:hover {
+      background-color: #ddd;
+    }
         /* Style personnalisé pour réduire la taille de l'alerte */
 .small-alert-popup {
     width: 200px; /* Réduit la largeur de l'alerte */

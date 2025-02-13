@@ -25,7 +25,115 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+function remplirContrePartie(selectId, selectedValue = null) {
+    $.ajax({
+        url: '/comptes',
+        type: 'GET',
+        success: function (data) {
+            var select = $("#" + selectId);
+            if (select.hasClass("select2-hidden-accessible")) {
+                select.select2("destroy");
+            }
+            select.empty();
+            select.append(new Option("Sélectionnez une contre partie", ""));
+            data.sort((a, b) => a.compte.localeCompare(b.compte));
+            data.forEach(function (compte) {
+                let option = new Option(`${compte.compte} - ${compte.intitule}`, compte.compte);
+                select.append(option);
+            });
+            select.select2({
+                width: '100%',
+                minimumResultsForSearch: 0,
+                dropdownAutoWidth: true
+            });
+            if (selectedValue) {
+                select.val(selectedValue).trigger('change');
+            }
+        }
+    });
+}
+function remplirRubriquesTva(selectId, selectedValue = null) {
+    $.ajax({
+        url: '/get-rubriques-tva',
+        type: 'GET',
+        success: function (data) {
+            var select = $("#" + selectId);
 
+            // Réinitialisation de Select2 s'il est déjà initialisé
+            if (select.hasClass("select2-hidden-accessible")) {
+                select.select2("destroy");
+            }
+            select.empty();
+            select.append(new Option("Sélectionnez une Rubrique", ""));
+
+            let categoriesArray = [];
+            $.each(data.rubriques, function (categorie, rubriques) {
+                let categories = categorie.split('/').map(cat => cat.trim());
+                let mainCategory = categories[0];
+                let subCategory = categories[1] ? categories[1].trim() : '';
+                categoriesArray.push({
+                    mainCategory: mainCategory,
+                    subCategory: subCategory,
+                    rubriques: rubriques.rubriques
+                });
+            });
+
+            categoriesArray.sort((a, b) => a.mainCategory.localeCompare(b.mainCategory));
+            let categoryCounter = 1;
+            const excludedNumRacines = [147, 151, 152, 148, 144];
+
+            $.each(categoriesArray, function (index, categoryObj) {
+                let mainCategoryOption = new Option(`${categoryCounter}. ${categoryObj.mainCategory}`, '', true, true);
+                mainCategoryOption.className = 'category';
+                mainCategoryOption.disabled = true;
+                select.append(mainCategoryOption);
+                categoryCounter++;
+
+                if (categoryObj.subCategory) {
+                    let subCategoryOption = new Option(` ${categoryObj.subCategory}`, '', true, true);
+                    subCategoryOption.className = 'subcategory';
+                    subCategoryOption.disabled = true;
+                    select.append(subCategoryOption);
+                }
+
+                categoryObj.rubriques.forEach(function (rubrique) {
+                    if (!excludedNumRacines.includes(rubrique.Num_racines)) {
+                        let option = new Option(`${rubrique.Num_racines}: ${rubrique.Nom_racines} : ${Math.round(rubrique.Taux)}%`, rubrique.Num_racines);
+                        option.setAttribute('data-search-text', `${rubrique.Num_racines} ${rubrique.Nom_racines} ${categoryObj.mainCategory}`);
+                        select.append(option);
+                    }
+                });
+            });
+
+            select.select2({
+                width: '100%',
+                minimumResultsForSearch: 0,
+                dropdownAutoWidth: true,
+                templateResult: function (data) {
+                    if (!data.id) return data.text;
+                    if ($(data.element).hasClass('category')) {
+                        return $('<span style="font-weight: bold;">' + data.text + '</span>');
+                    } else if ($(data.element).hasClass('subcategory')) {
+                        return $('<span style="font-weight: bold; padding-left: 10px;">' + data.text + '</span>');
+                    }
+                    return $('<span>' + data.text + '</span>');
+                },
+                matcher: function (params, data) {
+                    if ($.trim(params.term) === '') return data;
+                    var searchText = $(data.element).data('search-text');
+                    return searchText && searchText.toLowerCase().includes(params.term.toLowerCase()) ? data : null;
+                }
+            });
+
+            if (selectedValue) {
+                select.val(selectedValue).trigger('change');
+            }
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            console.error('Erreur lors de la récupération des rubriques :', textStatus, errorThrown);
+        }
+    });
+}
 
 /**********************************************/
 /* Fonctions Utilitaires Globales             */
@@ -168,88 +276,253 @@ function genericTextEditorForLibelle(cell, onRendered, success, cancel, editorPa
 
     return input;
 }
-
-
-// Éditeur personnalisé pour les listes (pour le champ "Compte")
+// Éditeur personnalisé générique pour les listes (sans traitement fournisseur)
 function customListEditor(cell, onRendered, success, cancel, editorParams) {
-    // Création d'un conteneur pour l'éditeur
-    const container = document.createElement("div");
+    // Création du container principal pour l'éditeur
+    var container = document.createElement("div");
+    container.className = "custom-list-editor-container";
     container.style.position = "relative";
-    container.style.width = "100%";
 
-    // Création de l'élément <select>
-    const select = document.createElement("select");
-    select.style.width = "100%";
-    // Optionnel : définir un nombre de lignes visibles (ex. 5) pour afficher plusieurs options
-    // select.size = 5;
+    // Création de l'input
+    var input = document.createElement("input");
+    input.type = "text";
+    input.style.width = "100%";
+    input.style.boxSizing = "border-box";
+    input.placeholder = "Rechercher...";
+    input.value = cell.getValue() || "";
+    container.appendChild(input);
 
-    container.appendChild(select);
-
-    // Fonction utilitaire pour peupler le select avec des options
-    function populateOptions(vals) {
-        // Effacer les options existantes
-        select.innerHTML = "";
-        // Vous pouvez ajouter une option vide si nécessaire :
-        // let emptyOption = document.createElement("option");
-        // emptyOption.value = "";
-        // emptyOption.textContent = "";
-        // select.appendChild(emptyOption);
-        vals.forEach(val => {
-            const option = document.createElement("option");
-            option.value = val;
-            option.textContent = val;
-            select.appendChild(option);
-        });
-    }
-
-    // Chargement des valeurs statiques
+    // Récupération des options depuis editorParams.values
+    var options = [];
     if (editorParams && editorParams.values) {
-        const vals = Array.isArray(editorParams.values)
-            ? editorParams.values
-            : Object.values(editorParams.values);
-        populateOptions(vals);
+      options = Array.isArray(editorParams.values)
+        ? editorParams.values
+        : Object.values(editorParams.values);
     }
 
-    // Chargement des valeurs via valuesLookup (fonction asynchrone) si définie
-    if (editorParams && editorParams.valuesLookup && typeof editorParams.valuesLookup === "function") {
-        editorParams.valuesLookup(cell).then(values => {
-            if (Array.isArray(values)) {
-                populateOptions(values);
-            }
-        }).catch(err => {
-            console.error("Erreur dans valuesLookup", err);
+    // Création du dropdown personnalisé (placé dans le body pour éviter les problèmes d'overflow)
+    var dropdown = document.createElement("div");
+    dropdown.className = "custom-dropdown";
+    dropdown.style.position = "absolute";
+    dropdown.style.background = "#fff";
+    dropdown.style.border = "1px solid #ccc";
+    dropdown.style.maxHeight = "200px";
+    dropdown.style.overflowY = "auto";
+    dropdown.style.zIndex = "10000";
+    dropdown.style.display = "none";
+    document.body.appendChild(dropdown);
+
+    // Fonction pour positionner le dropdown sous l'input
+    function positionDropdown() {
+      var rect = input.getBoundingClientRect();
+      dropdown.style.top = (rect.bottom + window.scrollY) + "px";
+      dropdown.style.left = (rect.left + window.scrollX) + "px";
+      dropdown.style.width = rect.width + "px";
+    }
+
+    // Fonction pour mettre à jour le contenu du dropdown en fonction de la saisie
+    function updateDropdown() {
+      dropdown.innerHTML = "";
+      var search = input.value.trim().toLowerCase();
+      var filtered = options.filter(function(opt) {
+        return opt.toLowerCase().indexOf(search) !== -1;
+      });
+
+      filtered.forEach(function(opt) {
+        var item = document.createElement("div");
+        item.textContent = opt;
+        item.style.padding = "5px";
+        item.style.cursor = "pointer";
+        item.style.borderBottom = "1px solid #eee";
+        item.addEventListener("mousedown", function(e) {
+          e.preventDefault();
+          input.value = opt;
+          dropdown.style.display = "none";
+          success(opt);
         });
+        dropdown.appendChild(item);
+      });
+
+      if (filtered.length > 0) {
+        positionDropdown();
+        dropdown.style.display = "block";
+      } else {
+        dropdown.style.display = "none";
+      }
     }
 
-    // Si une valeur existe déjà, on la sélectionne
-    if(cell.getValue()){
-        select.value = cell.getValue();
-    }
-
-    onRendered(() => {
-        select.focus();
+    // Actualise le dropdown lors de la saisie ou du focus
+    input.addEventListener("input", function() {
+      updateDropdown();
+    });
+    input.addEventListener("focus", function() {
+      updateDropdown();
     });
 
-    // Lorsque le select perd le focus, on valide la sélection
-    select.addEventListener("blur", () => {
-        success(select.value);
-    });
-
-    // Gestion de la touche Entrée pour valider la sélection et passer à la cellule suivante
-    select.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            success(select.value);
-            setTimeout(() => {
-                focusNextEditableCell(cell);
-            }, 50);
+    // Masque le dropdown au blur après un léger délai (pour permettre le clic)
+    input.addEventListener("blur", function() {
+      setTimeout(function() {
+        dropdown.style.display = "none";
+        // Validation : si la valeur existe dans les options, on valide
+        if (options.indexOf(input.value) !== -1) {
+          success(input.value);
         }
+      }, 150);
+    });
+
+    // Au rendu, donner le focus à l'input et afficher le dropdown
+    onRendered(function() {
+      input.focus();
+      updateDropdown();
+    });
+
+    return container;
+  }
+
+
+// Éditeur personnalisé pour le champ "Compte" (Fournisseurs)
+function customListEditorFrs(cell, onRendered, success, cancel, editorParams) {
+    // Création du container principal pour l'éditeur
+    var container = document.createElement("div");
+    container.className = "custom-list-editor-container";
+    container.style.position = "relative"; // Pour une bonne gestion du focus
+
+    // Création de l'input
+    var input = document.createElement("input");
+    input.type = "text";
+    input.style.width = "100%";
+    input.style.boxSizing = "border-box";
+    input.placeholder = "Rechercher...";
+    input.value = cell.getValue() || "";
+    container.appendChild(input);
+
+    // Préparez le tableau d'options à partir des paramètres
+    var options = [];
+    if (editorParams && editorParams.values) {
+      options = Array.isArray(editorParams.values)
+        ? editorParams.values
+        : Object.values(editorParams.values);
+    }
+
+    // Création du dropdown personnalisé (placé dans le body pour éviter qu'il ne soit caché)
+    var dropdown = document.createElement("div");
+    dropdown.className = "custom-dropdown";
+    dropdown.style.position = "absolute";
+    dropdown.style.background = "#fff";
+    dropdown.style.border = "1px solid #ccc";
+    dropdown.style.maxHeight = "200px";
+    dropdown.style.overflowY = "auto";
+    dropdown.style.zIndex = "10000"; // Pour qu'il apparaisse au-dessus
+    dropdown.style.display = "none"; // Caché par défaut
+    document.body.appendChild(dropdown);
+
+    // Positionne le dropdown sous l'input
+    function positionDropdown() {
+      var rect = input.getBoundingClientRect();
+      dropdown.style.top = (rect.bottom + window.scrollY) + "px";
+      dropdown.style.left = (rect.left + window.scrollX) + "px";
+      dropdown.style.width = rect.width + "px";
+    }
+
+    // Met à jour le contenu du dropdown en fonction de la saisie
+    function updateDropdown() {
+      dropdown.innerHTML = "";
+      var search = input.value.trim().toLowerCase();
+      var filtered = options.filter(function(opt) {
+        return opt.toLowerCase().indexOf(search) !== -1;
+      });
+
+      if (filtered.length > 0) {
+        filtered.forEach(function(opt) {
+          var item = document.createElement("div");
+          item.textContent = opt;
+          item.style.padding = "5px";
+          item.style.cursor = "pointer";
+          item.style.borderBottom = "1px solid #eee";
+          item.addEventListener("mousedown", function(e) {
+            e.preventDefault();
+            input.value = opt;
+            dropdown.style.display = "none";
+            success(opt);
+          });
+          dropdown.appendChild(item);
+        });
+      } else {
+        // Aucun résultat : afficher un message et le bouton +
+        var item = document.createElement("div");
+        item.style.display = "flex";
+        item.style.justifyContent = "space-between";
+        item.style.alignItems = "center";
+        item.style.padding = "5px";
+        item.style.borderBottom = "1px solid #eee";
+
+        var message = document.createElement("span");
+        message.textContent = "Fournisseur non trouvé";
+        message.style.color = "red";
+        item.appendChild(message);
+
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.innerHTML = '<i class="fas fa-plus-circle" style="color:green;"></i>';
+        btn.style.border = "none";
+        btn.style.background = "none";
+        btn.style.cursor = "pointer";
+        btn.addEventListener("mousedown", function(e) {
+          e.preventDefault();
+          // Confirmation avant d'ouvrir la pop-up d'ajout
+          Swal.fire({
+            title: "Fournisseur non trouvé",
+            text: "Voulez-vous ajouter ce fournisseur ?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Oui, ajouter",
+            cancelButtonText: "Non"
+          }).then((result) => {
+            if (result.isConfirmed) {
+              ouvrirPopupFournisseur(input.value, cell.getRow(), cell, 0);
+            } else {
+              input.focus();
+            }
+          });
+        });
+        item.appendChild(btn);
+        dropdown.appendChild(item);
+      }
+      positionDropdown();
+      dropdown.style.display = "block";
+    }
+
+    // Déclenche l'update du dropdown lors de la saisie ou du focus
+    input.addEventListener("input", function() {
+      updateDropdown();
+    });
+    input.addEventListener("focus", function() {
+      updateDropdown();
+    });
+
+    // Masquer le dropdown lors du blur avec un léger délai pour permettre le clic
+    input.addEventListener("blur", function() {
+      setTimeout(function(){
+        dropdown.style.display = "none";
+        // Si la valeur correspond à une option existante, on valide
+        if (options.indexOf(input.value) !== -1) {
+          success(input.value);
+        }
+      }, 150);
+    });
+
+    // Au rendu, donner le focus à l'input et afficher le dropdown
+    onRendered(function() {
+      input.focus();
+      updateDropdown();
     });
 
     return container;
 }
 
-function pieceEditor(cell, onRendered, success, cancel, editorParams) {
+
+
+  function pieceEditor(cell, onRendered, success, cancel, editorParams) {
     const input = document.createElement("input");
     input.type = "text";
     input.style.width = "100%";
@@ -259,12 +532,17 @@ function pieceEditor(cell, onRendered, success, cancel, editorParams) {
         input.focus();
     });
 
-    // Fonction qui commit la valeur et sélectionne la ligne
+    // Fonction commit : valider la saisie, sélectionner la ligne et déplacer le focus sur la cellule "Sélectionner"
     function commit() {
-        success(input.value);
-        // Après un court délai pour que l'éditeur se ferme, sélectionne la ligne
+        success(input.value);               // Enregistre la nouvelle valeur dans Tabulator
+        cell.getRow().select();             // Sélectionne la ligne correspondante
         setTimeout(() => {
-            cell.getRow().select();
+            // Tente de déplacer le focus vers la cellule de la colonne "Sélectionner"
+            let selectCell = cell.getRow().getCell("select");
+            if (selectCell) {
+                // On force le focus sur l'élément de la cellule
+                selectCell.getElement().focus();
+            }
         }, 50);
     }
 
@@ -278,7 +556,7 @@ function pieceEditor(cell, onRendered, success, cancel, editorParams) {
     });
 
     return input;
-}
+  }
 
 
 /**
@@ -348,6 +626,156 @@ function customNumberEditor(cell, onRendered, success, cancel) {
     return input;
 }
 
+
+window.tauxTVAGlobal = 0;
+// On suppose que ces variables sont définies au chargement de la page
+var societeId = $('#societe_id').val(); // ID de la société
+var nombreChiffresCompte = parseInt($('#nombre_chiffre_compte').val()); // Nombre de chiffres du compte
+// Déclaration globale de la liste des comptes fournisseurs
+var comptesFournisseurs = []; // ou avec des valeurs initiales si vous en avez
+var comptesVentes = [];
+
+// Fonction d'auto-incrémentation pour le compte fournisseur dans la pop-up
+function genererCompteAutoForPopup() {
+    $.ajax({
+        url: `/get-next-compte/${societeId}?nombre=${nombreChiffresCompte}`,
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                // Remplit le champ "swal-compte" dans la pop-up avec le compte généré
+                $('#swal-compte').val(response.nextCompte);
+            } else {
+                alert('Erreur lors de la génération du compte.');
+            }
+        },
+        error: function() {
+            alert('Erreur lors de la génération du compte.');
+        }
+    });
+}
+
+
+// -------------------------------------------------------------------
+// Fonction d'ouverture de la pop-up pour ajouter un fournisseur
+// -------------------------------------------------------------------
+function ouvrirPopupFournisseur(compteFournisseur, row, cell, tauxTVA) {
+    Swal.fire({
+      title: 'Ajouter un nouveau fournisseur',
+      width: '800px',
+      html: `
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+           <div style="flex: 1 1 45%;">
+             <input id="swal-compte" class="swal2-input" placeholder="Compte" value="">
+           </div>
+           <div style="flex: 1 1 45%;">
+             <input id="swal-intitule" class="swal2-input" placeholder="Intitulé" required value="${compteFournisseur}">
+           </div>
+           <div style="flex: 1 1 45%;">
+             <input id="swal-identifiant" class="swal2-input" placeholder="Identifiant Fiscal">
+           </div>
+           <div style="flex: 1 1 45%;">
+             <input id="swal-ICE" class="swal2-input" placeholder="ICE">
+           </div>
+           <div style="flex: 1 1 45%;">
+             <select id="swal-rubrique" class="swal2-input"></select>
+           </div>
+           <div style="flex: 1 1 45%;">
+             <select id="swal-contre-partie" class="swal2-input"></select>
+           </div>
+           <div style="flex: 1 1 45%;">
+             <label for="swal-nature_operation" style="font-size: 0.85rem; margin-bottom: 3px; display:block;">Nature de l'opération</label>
+             <select id="swal-nature_operation" class="swal2-input form-select form-select-sm shadow-sm">
+               <option value="">Sélectionner une option</option>
+               <option value="1-Achat de biens d'équipement">1-Achat de biens d'équipement</option>
+               <option value="2-Achat de travaux">2-Achat de travaux</option>
+               <option value="3-Achat de services">3-Achat de services</option>
+             </select>
+           </div>
+           <div style="flex: 1 1 45%;">
+             <label for="swal-designation" style="font-size: 0.85rem; margin-bottom: 3px; display:block;">Désignation</label>
+             <input id="swal-designation" class="swal2-input" placeholder="Désignation">
+           </div>
+        </div>
+      `,
+      didOpen: () => {
+        // Auto-incrémente le compte dans le champ "swal-compte"
+        genererCompteAutoForPopup();
+        if (typeof remplirRubriquesTva === "function") {
+           remplirRubriquesTva('swal-rubrique');
+        }
+        if (typeof remplirContrePartie === "function") {
+           remplirContrePartie('swal-contre-partie');
+        }
+      },
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Ajouter',
+      preConfirm: () => {
+        return {
+          compte: document.getElementById('swal-compte').value,
+          intitule: document.getElementById('swal-intitule').value,
+          identifiant_fiscal: document.getElementById('swal-identifiant').value,
+          ICE: document.getElementById('swal-ICE').value,
+          rubrique_tva: document.getElementById('swal-rubrique').options[document.getElementById('swal-rubrique').selectedIndex].text,
+          contre_partie: document.getElementById('swal-contre-partie').value,
+          nature_operation: document.getElementById('swal-nature_operation').value,
+          designation: document.getElementById('swal-designation').value,
+          societe_id: societeId
+        };
+      }
+    }).then((result) => {
+      if(result.isConfirmed && result.value) {
+        fetch('/fournisseurs', {
+          method: 'POST',
+          headers: {
+             'Content-Type': 'application/json',
+             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify(result.value)
+        })
+        .then(response => response.json())
+        .then(newFournisseur => {
+           if(newFournisseur.error) {
+             Swal.fire('Erreur', newFournisseur.error, 'error');
+           } else {
+             const fournisseurCree = newFournisseur.fournisseur;
+             let newTauxTVA = 0;
+             if (fournisseurCree.rubrique_tva) {
+               let match = fournisseurCree.rubrique_tva.match(/\(([\d\.]+)%\)/) || fournisseurCree.rubrique_tva.match(/([\d\.]+)%\s*$/);
+               if (match && match[1]) {
+                 let valeurExtraite = parseFloat(match[1]);
+                 newTauxTVA = (valeurExtraite < 1) ? valeurExtraite : valeurExtraite / 100;
+               }
+             }
+             window.tauxTVAGlobal = newTauxTVA;
+             const newValue = `${fournisseurCree.compte} - ${fournisseurCree.intitule}`;
+             comptesFournisseurs.push(newValue);
+             cell.setValue(newValue);
+             const numeroFacture = row.getCell("numero_facture").getValue() || "Inconnu";
+             row.update({
+               contre_partie: fournisseurCree.contre_partie,
+               rubrique_tva: fournisseurCree.rubrique_tva,
+               taux_tva: newTauxTVA,
+               libelle: `F° ${numeroFacture} ${fournisseurCree.intitule}`,
+               compte_tva: (comptesVentes.length > 0)
+                 ? `${comptesVentes[0].compte} - ${comptesVentes[0].intitule}`
+                 : ""
+             });
+             Swal.fire('Succès', 'Fournisseur ajouté avec succès', 'success').then(() => {
+               const creditCell = row.getCell("credit");
+               if (creditCell) {
+                 setTimeout(() => { creditCell.edit(); }, 200);
+               }
+             });
+           }
+        })
+        .catch(error => {
+           console.error('Erreur lors de l’ajout du fournisseur:', error);
+           Swal.fire('Erreur', 'Une erreur est survenue lors de l’ajout du fournisseur.', 'error');
+        });
+      }
+    });
+  }
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -729,6 +1157,7 @@ async function fetchComptesTva() {
                     console.log("Code journal sélectionné :", selectedCodeJournal);
                 });
 
+
         // Table des achats
         var tableAch = new Tabulator("#table-achats", {
             height: "500px",
@@ -781,6 +1210,11 @@ async function fetchComptesTva() {
                     field: "date",
                     hozAlign: "center",
                     headerFilter: "input",
+                    headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                        }
+                    },
                     sorter: "date",
                     editor: function (cell, onRendered, success, cancel) {
                         // Création d'un conteneur pour l'éditeur
@@ -919,77 +1353,122 @@ async function fetchComptesTva() {
                         title: "N° facture",
                         field: "numero_facture",
                         headerFilter: "input",
+                        headerFilterParams: {
+                            elementAttributes: {
+                                style: "width: 90px; height: 20px;" // 80 pixels de large
+                            }
+                        },
                         editor: genericTextEditor
                     },
+ // Colonne "Compte" avec gestion de la vérification du fournisseur
+ {
+    title: "Compte",
+    field: "compte",
+    headerFilter: "input",
+    headerFilterParams: {
+      elementAttributes: { style: "width: 90px; height: 20px;" }
+    },
+    editor: customListEditorFrs, // Utilise l'éditeur personnalisé pour fournisseurs
+    editorParams: {
+      autocomplete: true,
+      listOnEmpty: true,
+      values: comptesFournisseurs // Ex : ["001 - Fournisseur A", "002 - Fournisseur B", ...]
+    },
+    cellEdited: function(cell) {
+      const compteFournisseur = cell.getValue();
+      const row = cell.getRow();
+      if (!compteFournisseur) return;
 
-                    {
-                        title: "Compte",
-                        field: "compte",
-                        headerFilter: "input",
-                        editor: customListEditor, // Utilise notre éditeur personnalisé pour liste
-                        editorParams: {
-                            autocomplete: true,
-                            listOnEmpty: true,
-                            values: comptesFournisseurs  // Par exemple : ["001 - Fournisseur A", "002 - Fournisseur B", ...]
-                        },
-                        cellEdited: function (cell) {
+      // Récupération et initialisation du taux TVA global
+      window.tauxTVAGlobal = window.tauxTVAGlobal || 0;
+      let tauxTVA = window.tauxTVAGlobal;
+
+      // Vérifier l'existence du fournisseur via fetch
+      fetch(`/get-fournisseurs-avec-details?societe_id=${societeId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            console.error("Erreur lors de la récupération :", data.error);
+            return;
+          }
+          // Recherche dans le format "compte - intitule"
+          const fournisseur = data.find(f => `${f.compte} - ${f.intitule}` === compteFournisseur);
+          if (fournisseur) {
+            // Utilisation directe du taux TVA fourni par le fournisseur
+            tauxTVA = parseFloat(fournisseur.taux_tva) || 0;
+            window.tauxTVAGlobal = tauxTVA;
+            const rubriqueTVA = fournisseur.rubrique_tva || "";
+            const contrePartie = fournisseur.contre_partie || "";
+            const numeroFacture = row.getCell("numero_facture").getValue() || "Inconnu";
+
+            row.update({
+              contre_partie: contrePartie,
+              rubrique_tva: rubriqueTVA,
+              taux_tva: tauxTVA,
+              libelle: `F° ${numeroFacture} ${fournisseur.intitule}`,
+              compte_tva: (comptesVentes.length > 0)
+                ? `${comptesVentes[0].compte} - ${comptesVentes[0].intitule}`
+                : ""
+            });
+            // Le fournisseur étant trouvé, l'éditeur se ferme naturellement.
+          } else {
+            // Fournisseur non trouvé :
+            let editorEl = cell.getElement();
+            if (!editorEl.querySelector('.btn-ajouter-fournisseur')) {
+              editorEl.innerHTML = `
+                <div style="display: flex; flex-direction: column; padding: 5px;">
+                  <span style="color:red; font-size:0.9em;">Fournisseur non trouvé</span>
+                  <div style="display: flex; align-items: center; margin-top: 3px;">
+                    <span>${compteFournisseur}</span>
+                    <button type="button" class="btn-ajouter-fournisseur" title="Ajouter fournisseur"
+                      style="margin-left:5px; padding:0 5px; border:none; background:none; cursor:pointer;">
+                      <i class="fas fa-plus-circle" style="color:green;"></i>
+                    </button>
+                  </div>
+                </div>
+              `;
+              editorEl.querySelector('.btn-ajouter-fournisseur').addEventListener('click', () => {
+                Swal.fire({
+                  title: 'Fournisseur non trouvé',
+                  text: "Voulez-vous ajouter ce fournisseur ?",
+                  icon: 'question',
+                  showCancelButton: true,
+                  confirmButtonText: 'Oui, ajouter',
+                  cancelButtonText: 'Non'
+                }).then((resultConfirmation) => {
+                  if (resultConfirmation.isConfirmed) {
+                    ouvrirPopupFournisseur(compteFournisseur, row, cell, tauxTVA);
+                  } else {
+                    cell.edit();
+                  }
+                });
+              });
+            }
+            if (!cell._reopened) {
+              cell._reopened = true;
+              setTimeout(() => { cell.edit(); }, 100);
+            }
+          }
+        })
+        .catch(error => {
+          console.error("Erreur réseau :", error);
+          alert("Une erreur est survenue lors de la récupération du fournisseur.");
+        });
+    }
+  },
 
 
-                            const compteFournisseur = cell.getValue();
-                            const row = cell.getRow();
 
-                            // Vérifier que la valeur est renseignée
-                            if (!compteFournisseur) return;
 
-                            // Appel pour récupérer les détails du fournisseur
-                            fetch(`/get-fournisseurs-avec-details?societe_id=${societeId}`)
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.error) {
-                                        console.error("Erreur lors de la récupération des détails :", data.error);
-                                        return;
-                                    }
-                                    // Recherche d'un fournisseur correspondant à la valeur sélectionnée
-                                    const fournisseur = data.find(f => `${f.compte} - ${f.intitule}` === compteFournisseur);
-                                    if (fournisseur) {
-                                        const tauxTVA = parseFloat(fournisseur.taux_tva) || 0;
-                                        const rubriqueTVA = fournisseur.rubrique_tva || "";
-                                        const contrePartie = fournisseur.contre_partie || "";
-                                        // Récupérer le numéro de facture depuis la cellule correspondante
-                                        const numeroFacture = row.getCell("numero_facture").getValue() || "Inconnu";
-
-                                        // Générer le libellé à partir du numéro de facture et du fournisseur choisi
-                                        row.update({
-                                            contre_partie: contrePartie,
-                                            rubrique_tva: rubriqueTVA,
-                                            taux_tva: tauxTVA,
-                                            libelle: `F° ${numeroFacture} ${fournisseur.intitule}`,
-                                            compte_tva: (comptesVentes.length > 0)
-                                                ? `${comptesVentes[0].compte} - ${comptesVentes[0].intitule}`
-                                                : ""
-                                        });
-
-                                        // Optionnel : passer à l'édition du champ "Libellé"
-                                        const libelleCell = row.getCell("libelle");
-                                        if (libelleCell) {
-                                            libelleCell.edit();
-                                        }
-                                    } else {
-                                        console.warn("Aucun fournisseur correspondant trouvé pour :", compteFournisseur);
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error("Erreur réseau :", error);
-                                    alert("Une erreur est survenue lors de la récupération des détails du fournisseur.");
-                                });
-
-                        }
-                        
-                    },
                     {
     title: "Libellé",
     field: "libelle",
     headerFilter: "input",
+    headerFilterParams: {
+        elementAttributes: {
+            style: "width: 90px; height: 20px;" // 80 pixels de large
+        }
+    },
     editor: genericTextEditorForLibelle
 },
 
@@ -997,6 +1476,11 @@ async function fetchComptesTva() {
                     title: "Débit",
                     field: "debit",
                     headerFilter: "input",
+                    headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                        }
+                    },
                     editor: customNumberEditor, // Utilisation de notre éditeur personnalisé
                     bottomCalc: "sum",
                     formatter: function(cell) {
@@ -1008,6 +1492,11 @@ async function fetchComptesTva() {
                     title: "Crédit",
                     field: "credit",
                     headerFilter: "input",
+                    headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                        }
+                    },
                     editor: customNumberEditor, // Utilisation de l'éditeur personnalisé
                     bottomCalc: "sum",
                     formatter: function(cell) {
@@ -1021,36 +1510,58 @@ async function fetchComptesTva() {
                         console.log("Valeur Crédit mise à jour :", cell.getValue());
                     }
                 },
-
-
-
                 {
                     title: "Contre-Partie",
                     field: "contre_partie",
                     headerFilter: "input",
-                    editor: customListEditor, // Utilisation de l'éditeur personnalisé
+                    headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                        }
+                    },
+                    editor: "list",
                     editorParams: {
                         autocomplete: true,
                         listOnEmpty: true,
                         valuesLookup: async function (cell) {
-                            if (!selectedCodeJournal) {
-                                alert("Veuillez sélectionner un code journal avant de modifier la Contre-Partie.");
-                                return []; // Retourne une liste vide si aucun code journal n'est sélectionné
+                            const societeId = $('#societe_id').val();
+
+                            if (!societeId) {
+                                alert("Veuillez sélectionner une société avant de modifier la Contre-Partie.");
+                                return [];
                             }
+
                             try {
-                                const response = await fetch(`/get-contre-parties?code_journal=${selectedCodeJournal}`);
-                                if (!response.ok) {
-                                    throw new Error("Erreur réseau ou code journal non valide.");
+                                let fournisseurData = [];
+                                let codeJournalData = [];
+
+                                // Récupération des contre-parties des fournisseurs
+                                const fournisseurResponse = await fetch(`/get-all-contre-parties?societe_id=${societeId}`);
+                                if (fournisseurResponse.ok) {
+                                    const data = await fournisseurResponse.json();
+                                    fournisseurData = data.map(item => item.contre_partie);  // 🔹 Retourner un tableau de valeurs
+                                } else {
+                                    console.error("Erreur lors de la récupération des contre-parties des fournisseurs.");
                                 }
-                                const data = await response.json();
-                                if (data.error) {
-                                    console.error("Erreur serveur :", data.error);
-                                    return [];
+
+                                // Récupération des contre-parties via le code journal uniquement si défini
+                                if (selectedCodeJournal) {
+                                    const codeJournalResponse = await fetch(`/get-contre-parties?code_journal=${selectedCodeJournal}`);
+                                    if (codeJournalResponse.ok) {
+                                        const data = await codeJournalResponse.json();
+                                        codeJournalData = data.map(item => item.contre_partie);  // 🔹 Même correction ici
+                                    } else {
+                                        console.error("Erreur lors de la récupération des contre-parties du code journal.");
+                                    }
                                 }
-                                console.log("Contre-Parties récupérées :", data);
-                                return data; // Retourne les valeurs récupérées
+
+                                // Fusion des données sans doublons
+                                const mergedData = [...new Set([...fournisseurData, ...codeJournalData])];
+
+                                console.log("Contre-Parties fusionnées :", mergedData);
+                                return mergedData;  // 🔹 Retourner un tableau simple avec les valeurs
                             } catch (error) {
-                                console.error("Erreur réseau :", error);
+                                console.error("Erreur lors de la récupération des contre-parties :", error);
                                 alert("Impossible de récupérer les contre-parties.");
                                 return [];
                             }
@@ -1060,11 +1571,19 @@ async function fetchComptesTva() {
                         console.log("Contre-Partie mise à jour :", cell.getValue());
                     }
                 },
+
+
+
                 {
                     title: "Rubrique TVA",
                     field: "rubrique_tva",
                     headerFilter: "input",
                     editor: customListEditor,
+                    headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                        }
+                    },
                     editorParams: {
                         autocomplete: true,
                         listOnEmpty: true,
@@ -1076,6 +1595,11 @@ async function fetchComptesTva() {
                     field: "compte_tva",
                     headerFilter: "input",
                     editor: customListEditor,
+                    headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                        }
+                    },
                     editorParams: {
                         autocomplete: true,
                         listOnEmpty: true,
@@ -1087,6 +1611,11 @@ async function fetchComptesTva() {
                     field: "prorat_de_deduction",
                     headerFilter: "input",
                     editor: customListEditor,
+                    headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                        }
+                    },
                     editorParams: {
                         autocomplete: true,
                         listOnEmpty: true,
@@ -1097,9 +1626,14 @@ async function fetchComptesTva() {
                     title: "Solde Cumulé",
                     field: "value", // Ce champ contient le solde cumulé calculé
                     headerFilter: "input",
+                    headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                        }
+                    },
                     formatter: function(cell, formatterParams, onRendered) {
                         let val = cell.getValue();
-                        if(val !== "" && !isNaN(val)) {
+                        if (val !== "" && !isNaN(val)) {
                             return parseFloat(val).toFixed(2);
                         }
                         return val;
@@ -1109,11 +1643,17 @@ async function fetchComptesTva() {
                     title: "Pièce",
                     field: "piece_justificative",
                     headerFilter: "input",
+                    headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                        }
+                    },
                     editor: pieceEditor // Utilisation de l'éditeur personnalisé
-
                 },
+
                 {
                     title: "Sélectionner",
+                    field: "select",  // Champ ajouté pour pouvoir cibler cette colonne
                     headerSort: false,
                     resizable: true,
                     frozen: true,
@@ -1122,16 +1662,20 @@ async function fetchComptesTva() {
                     headerHozAlign: "center",
                     hozAlign: "center",
                     formatter: "rowSelection",
-
                     titleFormatter: "rowSelection",
-
-                    cellClick: function(e, cell){
-                        // N'exécute le toggle que si l'événement est bien un clic de souris
-                        if(e.type === "click"){
-                            cell.getRow().toggleSelect();
-                        }
-                    },
-                },
+                    // Rendre la cellule focusable et ajouter un écouteur keydown pour détecter "Enter"
+                    cellRendered: function(cell) {
+                        let el = cell.getElement();
+                        el.setAttribute("tabindex", "0"); // Permet de focaliser cette cellule
+                        el.addEventListener("keydown", function(e) {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                // Basculer la sélection de la ligne (toggle)
+                                cell.getRow().toggleSelect();
+                            }
+                        });
+                    }
+                  },
 
   { title: "Code_journal", field: "type_Journal", visible: false },
   { title: "categorie", field: "categorie", visible: false },
@@ -1139,9 +1683,6 @@ async function fetchComptesTva() {
 
                 ],
 
-                // initialSort: [
-                //     { column: "ordre", dir: "asc" }
-                //   ],
 
                 rowFormatter: function(row) {
     let debitTotal = 0;
@@ -1397,6 +1938,11 @@ var tableVentes = new Tabulator("#table-ventes", {
             field: "date",
             hozAlign: "center",
             headerFilter: "input",
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 20px;" // 80 pixels de large
+                }
+            },
             sorter: "date",
             editor: function(cell, onRendered, success, cancel) {
                 // Création d'un conteneur pour l'éditeur de date
@@ -1479,13 +2025,26 @@ var tableVentes = new Tabulator("#table-ventes", {
         },
 
 
-        { title: "N° dossier", field: "numero_dossier",headerFilter: "input", editor: "input" },
-        { title: "N° Facture", field: "numero_facture",headerFilter: "input", editor: "input" },
+        { title: "N° dossier", field: "numero_dossier",headerFilter: "input",headerFilterParams: {
+            elementAttributes: {
+                style: "width: 90px; height: 20px;" // 80 pixels de large
+            }
+        }, editor: "input" },
+        { title: "N° Facture", field: "numero_facture",headerFilter: "input",headerFilterParams: {
+            elementAttributes: {
+                style: "width: 90px; height: 20px;" // 80 pixels de large
+            }
+        }, editor: "input" },
 
 {
     title: "Compte",
     field: "compte",
     headerFilter: "input",
+    headerFilterParams: {
+        elementAttributes: {
+            style: "width: 90px; height: 20px;" // 80 pixels de large
+        }
+    },
     editor: "list",
     editorParams: {
         autocomplete: true,
@@ -1525,6 +2084,11 @@ var tableVentes = new Tabulator("#table-ventes", {
     title: "Libellé",
     field: "libelle",
     headerFilter: "input",
+    headerFilterParams: {
+        elementAttributes: {
+            style: "width: 90px; height: 20px;" // 80 pixels de large
+        }
+    },
     editor: "input", // Optionnel, si modification manuelle est permise
     editable: false, // Non éditable automatiquement
 },
@@ -1532,6 +2096,11 @@ var tableVentes = new Tabulator("#table-ventes", {
 title: "Débit",
 field: "debit",
 headerFilter: "input",
+headerFilterParams: {
+    elementAttributes: {
+        style: "width: 90px; height: 20px;" // 80 pixels de large
+    }
+},
 editor: "number", // Permet l'édition en tant que nombre
 bottomCalc: "sum", // Calcul du total dans le bas de la colonne
 formatter: function(cell) {
@@ -1541,7 +2110,12 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
 },
 
 },
-{ title: "Crédit", field: "credit", headerFilter: "input", editor: "number", // Permet l'édition en tant que nombre
+{ title: "Crédit", field: "credit", headerFilter: "input", headerFilterParams: {
+    elementAttributes: {
+        style: "width: 90px; height: 20px;" // 80 pixels de large
+    }
+},
+ editor: "number", // Permet l'édition en tant que nombre
 bottomCalc: "sum", // Calcul du total dans le bas de la colonne
 formatter: function(cell) {
 // Formater pour afficher 0.00 si la cellule est vide ou nulle
@@ -1553,6 +2127,11 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
     title: "Contre-Partie",
     field: "contre_partie",
     headerFilter: "input",
+    headerFilterParams: {
+        elementAttributes: {
+            style: "width: 90px; height: 20px;" // 80 pixels de large
+        }
+    },
     editor: "list",
     editorParams: {
         autocomplete: true,
@@ -1599,6 +2178,11 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
             title: "Compte TVA",
             field: "compte_tva",
             headerFilter: "input",
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 20px;" // 80 pixels de large
+                }
+            },
             editor: "list",
             editorParams: {
                 autocomplete: true,
@@ -1610,19 +2194,84 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
             title: "Rubrique TVA",
             field: "rubrique_tva",
             headerFilter: "input",
-            editor: "list",
-            editorParams: {
-                autocomplete: true,
-                listOnEmpty: true,
-                values: rubriquesVentes
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 20px;"
+                }
+            },
+            // Éditeur personnalisé qui va remplir l'input via une requête AJAX
+            editor: function(cell, onRendered, success, cancel, editorParams) {
+                // Création de l'élément input
+                var input = document.createElement("input");
+                input.type = "text";
+                input.style.width = "100%";
+                input.style.boxSizing = "border-box";
+
+                // Affecte la valeur actuelle de la cellule (si présente)
+                input.value = cell.getValue();
+
+                // Requête AJAX pour récupérer la rubrique et les informations associées
+                $.ajax({
+                    url: '/getRubriqueSociete', // Assurez-vous que cette URL correspond bien à votre route
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        // Vérifier que la réponse contient la clé "rubrique"
+                        if (response && response.rubrique) {
+                            // Formater la valeur sous la forme "103-Nom_racine (taux)"
+                            var formattedValue = response.rubrique + '-' + response.nom_racines + ' (' + response.taux +'%)';
+                            input.value = formattedValue;
+
+                            // Optionnel : mettre à jour d'autres colonnes de la ligne
+                            cell.getRow().update({
+                                nom_racines: response.nom_racines,
+                                taux: response.taux
+                            });
+                        }
+                        // Une fois l'input rendu, lui donner le focus
+                        onRendered(function(){
+                            input.focus();
+                            input.style.height = "100%";
+                        });
+                    },
+                    error: function() {
+                        onRendered(function(){
+                            input.focus();
+                            input.style.height = "100%";
+                        });
+                    }
+                });
+
+                // Validation lors de la perte de focus
+                input.addEventListener("blur", function(){
+                    success(input.value);
+                });
+                // Gestion des touches Entrée (pour valider) et Échap (pour annuler)
+                input.addEventListener("keydown", function(e){
+                    if (e.keyCode === 13) {
+                        success(input.value);
+                    }
+                    if (e.keyCode === 27) {
+                        cancel();
+                    }
+                });
+
+                return input;
             }
         },
+
+
 
         {
             title: "Solde Cumulé",
             field: "value", // Ce champ contient le solde cumulé calculé (issu de ton mapping: value: ligne.solde_cumule)
             // editor: "input", // Permet l'édition manuelle si besoin (tu peux le supprimer si le solde doit être uniquement calculé)
             headerFilter: "input",
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 20px;" // 80 pixels de large
+                }
+            },
             formatter: function(cell, formatterParams, onRendered) {
               // Formatage en nombre avec 2 décimales (si la valeur est numérique)
               let val = cell.getValue();
@@ -1638,6 +2287,11 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
         field: "piece_justificative",
         editor: "input", // Éditeur pour permettre la modification manuelle
         headerFilter: "input",
+        headerFilterParams: {
+            elementAttributes: {
+                style: "width: 90px; height: 20px;" // 80 pixels de large
+            }
+        },
 
         },
         {
@@ -2199,6 +2853,7 @@ async function ecouterEntrer(table) {
         }
     });
 }
+ecouterEntrer(tableAch);
 // Fonction pour calculer le solde cumulé et appliquer la vérification
 function calculerSoldeCumule() {
     const rows = tableAch.getRows();
@@ -2445,13 +3100,16 @@ async function calculerCredit(rowData, typeLigne, debit) {
     // Pour les opérations de vente, on force le débit à 0
     rowData.debit = 0;
 
+    // Calcul du montant net (crédit de la ligne1)
+    const montantNet = debit / (1 + tauxTVA);
+
     let credit = 0;
     if (typeLigne === "ligne1") {
-        // Ligne 1 : montant net + TVA
-        credit = debit * (1 + tauxTVA);
+        // Ligne 1 : montant net
+        credit = montantNet;
     } else if (typeLigne === "ligne2") {
-        // Ligne 2 : TVA seule
-        credit = debit * tauxTVA;
+        // Ligne 2 : crédit de la ligne1 * tauxTVA (soit la TVA seule)
+        credit = montantNet * tauxTVA;
     }
 
     // Arrondir le résultat à deux décimales

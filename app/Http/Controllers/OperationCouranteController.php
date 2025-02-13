@@ -512,6 +512,52 @@ public function getJournauxOPE()
         'exercice_social_debut' => $societe->exercice_social_debut,
     ]);
 }
+// public function getRubriqueSociete()
+// {
+//     $societeId = session('societeId');
+//     $societe = Societe::find($societeId);
+
+//     if (!$societe) {
+//         return response()->json(['error' => 'Société introuvable'], 400);
+//     }
+
+//     // Retourne la rubrique sous forme de chaîne ou, si besoin, sous forme de tableau
+//     return response()->json([
+//         'rubriques' => $societe->rubrique_tva, // Par exemple "103"
+//     ]);
+// }
+
+
+public function getRubriqueSociete()
+{
+    // Récupération de l'ID de la société depuis la session
+    $societeId = session('societeId');
+    $societe = Societe::find($societeId);
+
+    if (!$societe) {
+        return response()->json(['error' => 'Société introuvable'], 400);
+    }
+
+    // La valeur de la rubrique dans la société (par exemple "103")
+    $rubrique = $societe->rubrique_tva;
+
+    // Jointure avec la table "racines" pour récupérer la ligne où num_racines = rubrique
+    $racine = DB::table('racines')
+        ->select('num_racines', 'nom_racines', 'taux')
+        ->where('num_racines', $rubrique)
+        ->first();
+
+    if (!$racine) {
+        return response()->json(['error' => 'Aucune correspondance dans la table racine'], 400);
+    }
+
+    return response()->json([
+        'rubrique'    => $rubrique,            // Par exemple "103"
+        'nom_racines' => $racine->nom_racines,   // Le nom récupéré dans la table racines
+        'taux'        => $racine->taux,          // Le taux récupéré dans la table racines
+    ]);
+}
+
 public function getSocieteDetails()
 {
     $societeId = session('societeId');
@@ -595,21 +641,42 @@ public function getTva(Request $request)
 
     // Récupère les comptes de la société depuis le plan comptable
     public function getComptesjrx(Request $request)
+    {
+        $societeId = $request->input('societe_id');
+        $codeJournal = $request->input('code_journal'); // Vous pouvez utiliser cette variable si nécessaire
+
+        if (!$societeId) {
+            return response()->json(['error' => 'Aucune société sélectionnée'], 400);
+        }
+
+        // Récupérer les fournisseurs pour la société qui possèdent une contre-partie renseignée
+        $comptes = Fournisseur::where('societe_id', $societeId)
+            ->whereNotNull('contre_partie')
+            ->get(['contre_partie', 'intitule']);
+
+        return response()->json($comptes);
+    }
+
+    public function getAllContreParties(Request $request)
 {
     $societeId = $request->input('societe_id');
-    $codeJournal = $request->input('code_journal'); // Récupérer le code_journal
 
     if (!$societeId) {
         return response()->json(['error' => 'Aucune société sélectionnée'], 400);
     }
 
-    // Récupérer les comptes liés à cette société et au code_journal
-    $comptes = Fournisseur::where('societe_id', $societeId) // Filtrer par société
-        ->where('contre_partie')
-        ->get(['contre_partie', 'intitule']); // Récupérer uniquement les champs nécessaires
+    // Récupérer toutes les contre-parties uniques des fournisseurs d'une société donnée
+    $contreParties = Fournisseur::where('societe_id', $societeId)
+        ->whereNotNull('contre_partie')
+        ->distinct()
+        ->pluck('contre_partie')
+        ->map(function ($contrePartie) {
+            return ['contre_partie' => $contrePartie]; // Transformer en format objet
+        });
 
-    return response()->json($comptes);
+    return response()->json($contreParties);
 }
+
 
 public function getDetailsParCompte(Request $request)
 {

@@ -211,7 +211,9 @@ Route::get('/journaux-Banque', [OperationCouranteController::class, 'getJournaux
 Route::get('/journaux-Caisse', [OperationCouranteController::class, 'getJournauxCaisse']);
 Route::get('/journaux-operations-diverses', [OperationCouranteController::class, 'getJournauxOPE']);
 Route::get('/get-contre-parties-ventes', [OperationCouranteController::class, 'getContrePartiesVentes']);
-
+Route::get('/get-all-contre-parties', [OperationCouranteController::class, 'getAllContreParties']);
+Route::get('/getRubriqueSociete', [OperationCouranteController::class, 'getRubriqueSociete'])
+    ->name('getRubriqueSociete');
 Route::get('operationcourante/getFournisseurs', [OperationCouranteController::class, 'getFournisseurs'])->name('operationcourante.getFournisseurs');
 Route::get('operationcourante/fournisseurs/details', [OperationCouranteController::class, 'getFournisseursAvecDetails'])->name('operationcourante.getFournisseursAvecDetails');
 Route::get('/get-journaux-by-societe', [OperationCouranteController::class, 'getJournauxBySociete'])
