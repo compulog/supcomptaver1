@@ -21,7 +21,9 @@ class EtatDeCaisseController extends Controller
         }
     
         // Récupérer toutes les transactions pour la société
-        $transactions = Transaction::where('societe_id', $societeId)->get();
+        $transactions = Transaction::where('societe_id', $societeId)
+        ->orderBy('created_at', 'asc') // Remplacez 'created_at' par le champ de tri souhaité
+        ->get();
     
         // Récupérer tous les soldes mensuels pour la société
         $soldesMensuels = SoldeMensuel::where('societe_id', $societeId)->get();

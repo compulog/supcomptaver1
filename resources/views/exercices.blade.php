@@ -11,14 +11,14 @@
 <div class="container mt-4">
     <h6>Tableau De Board</h6>
     <div class="row">
-    <div class="col">
-    <div class="card shadow-sm" style="border-radius: 15px; font-size: 0.75rem; height: 130px;" onclick="openCreateFolderForm()">
-        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="height: 100%; background-color: #f8f9fa; border-radius: 15px;">
-            <i class="fas fa-plus fa-2x text-primary"></i>
-            <p class="mt-1" style="font-size: 0.8rem;">Ajouter un Dossier</p>
+            <div class="col-md-3 mb-3">
+            <div class="card shadow-sm" style="border-radius: 15px; font-size: 0.75rem; height: 130px;" onclick="openCreateFolderForm()">
+                <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="height: 100%; background-color: #f8f9fa; border-radius: 15px;">
+                    <i class="fas fa-plus fa-2x " style="color:#007bff;"></i>
+                    <p class="mt-1" style="font-size: 0.8rem;">Ajouter un Dossier</p>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
         <!-- Achat -->
         <div class="col-md-3 mb-3" id="achat-div">
             <div class="p-2 text-white" style="background-color: #007bff; border-radius: 15px; font-size: 0.75rem; height: 130px;">
@@ -84,7 +84,7 @@
             </div>
         </div>
 
-    
+</div>
 
     <!-- Deuxième ligne avec 2 divs -->
     <div class="row">
@@ -180,37 +180,7 @@
         
     </div>
 
-
-
-</div>
- 
-<!-- Modal pour créer un dossier -->
-<div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="createFolderModalLabel">Créer un Nouveau Dossier</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-            <form action="{{ route('dossier.store') }}" method="POST">
-    @csrf
-    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-
-    <div class="mb-3">
-        <label for="folderName" class="form-label">Nom du Dossier</label>
-        <input type="text" class="form-control" id="folderName" name="name" required>
-    </div>
-    <button type="submit" class="btn btn-primary">Créer Dossier</button>
-    </form>
-
-
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
+    <div class="row">
     @foreach($dossiers as $dossier)
         <div class="col-md-3 mb-3">
             <div class="p-2 text-white dossier-box" style="border-radius: 15px; font-size: 0.75rem; height: 130px;" data-id="{{ $dossier->id }}">
@@ -264,6 +234,35 @@
     @endforeach
 </div>
 
+</div>
+ 
+<!-- Modal pour créer un dossier -->
+<div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createFolderModalLabel">Créer un Nouveau Dossier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            <form action="{{ route('dossier.store') }}" method="POST">
+    @csrf
+    <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
+
+    <div class="mb-3">
+        <label for="folderName" class="form-label">Nom du Dossier</label>
+        <input type="text" class="form-control" id="folderName" name="name" required>
+    </div>
+    <button type="submit" class="btn" style="background-color:#007bff; color: white;">Créer Dossier</button>    </form>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+ 
 <!-- Modal pour modifier un dossier -->
 <div class="modal fade" id="editFolderModal" tabindex="-1" aria-labelledby="editFolderModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -282,7 +281,7 @@
         <label for="folderName" class="form-label">Nom du Dossier</label>
 
         <input type="text" class="form-control" id="folderName" name="name" placeholder="{{ $dossier->name ?? 'Nom du dossier' }}" required>    </div>
-    <button type="submit" class="btn btn-primary">Renommer Dossier</button>
+    <button type="submit" class="btn " style="background-color:#007bff; color: white;">Renommer Dossier</button>
 </form>
 
             </div>

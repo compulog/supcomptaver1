@@ -208,9 +208,12 @@
 
     // Fonction pour ouvrir le modal directement sans demander de mot de passe
     function openModal(societeId) {
+        // Réinitialiser le formulaire
+        $('#societe-modification-form')[0].reset(); // Réinitialiser le formulaire
+    
         // Requête AJAX pour obtenir les données de la société
         var url = '/societes/' + societeId; // URL pour récupérer les données de la société
-
+    
         $.get(url, function(data) {
             // Remplir le formulaire avec les données de la société
             $('#modification_id').val(data.id);
@@ -225,7 +228,11 @@
             $('#mod_exercice_social_debut').val(data.exercice_social_debut);
             $('#mod_exercice_social_fin').val(data.exercice_social_fin);
             $('#mod_date_creation').val(data.date_creation);
-            $('#mod_assujettie_partielle_tva').val(data.assujettie_partielle_tva);
+            if (data.assujettie_partielle_tva == 1) {
+                $('#mod_assujettie_partielle_tva').val('Oui');
+            } else {
+                $('#mod_assujettie_partielle_tva').val('Non');
+            };
             $('#mod_prorata_de_deduction').val(data.prorata_de_deduction);
             $('#mod_nature_activite').val(data.nature_activite);
             $('#mod_activite').val(data.activite);
@@ -235,7 +242,7 @@
             $('#mod_designation').val(data.designation);
             $('#mod_nombre_chiffre_compte').val(data.nombre_chiffre_compte);
             $('#mod_model_comptable').val(data.modele_comptable);
-
+    
             // Ouvrir le modal après avoir rempli les données
             $('#modifierSocieteModal').modal('show');
         });
@@ -252,7 +259,7 @@
         }
 
         // Marquer le modal comme ouvert pour éviter les appels multiples
-        modalOpened = true;
+        modalOpened = false;
 
         // Appeler la fonction pour ouvrir le modal directement sans mot de passe
         openModal(societeId);

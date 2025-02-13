@@ -12,6 +12,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script><!-- Styles personnalisés -->
 <style>
+    
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background-color: #e9ecef;
@@ -112,7 +113,11 @@
 #cloturer-button{
     background-color: green;
 }
-
+#cloturer-button:disabled {
+    background-color: red;  
+    color: white; 
+    cursor: not-allowed;  
+}
 
 </style>
 
@@ -161,9 +166,8 @@
 
 </div>
 
-<button id="cloturer-button" class="btn btn-primary" style="margin-left:89%;margin-top:-81px;height:31px;border-radius:4px;font-size:10px;">Clôturer</button>
 <!-- Solde initial à afficher en fonction du mois et de l'année choisis -->
-<div class="form-group" style="margin-left:850px;">
+<div class="form-group" style="margin-left:850px;margin-top:-30px;">
     <label for="initial-balance">Solde initial :</label>
     <input type="number" id="initial-balance" readonly>
 </div>
@@ -178,6 +182,7 @@
     <input type="number" id="final-balance" placeholder="Solde final" style="border-radius:4px;border:green;">
 </div>
  
+<button id="cloturer-button" class="btn btn-primary" style="margin-left:90%;height:31px;border-radius:4px;font-size:10px;">Clôturer</button>
 
 <!-- <i class="fa fa-trash" id="delete-selected"></i> -->
 

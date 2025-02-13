@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;  // Pour loguer les erreurs
 use Illuminate\Support\Facades\DB;
 use App\Models\User;    
+use App\Models\DroitDaccesUser;   
 class SocieteController extends Controller
 {
     public function __construct()
@@ -210,7 +211,10 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
     // Lier l'utilisateur à la société (si nécessaire)
     $societe->user_id = $userId;
     $societe->save();
-    
+    DroitDaccesUser ::create([
+        'user_id' => $userId,
+        'droit_dacces_id' => 4, // ID du droit d'accès que vous souhaitez attribuer
+    ]);
     // Rediriger avec un message de succès
     return redirect()->route('societes.index');
 }

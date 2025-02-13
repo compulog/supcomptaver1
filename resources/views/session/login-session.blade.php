@@ -1,6 +1,15 @@
 @extends('layouts.user_type.guest')
 
 @section('content')
+
+<div id="loader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: white; display: flex; justify-content: center; align-items: center; z-index: 9999;">
+    <video autoplay muted loop style="max-width: 100%; max-height: 100%; object-fit: contain;">
+        <source src="{{ asset('vidio/SupcomptaAnimation.mp4') }}" type="video/mp4">
+        Votre navigateur ne prend pas en charge la vidéo.
+    </video>
+</div>
+
+
   <main class="main-content mt-0">
     <section>
       <div class="page-header min-vh-75">
@@ -73,7 +82,15 @@
     </section>
   </main>
 @endsection
-
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Attendre 3 secondes (3000 ms) avant de masquer l'animation et afficher la page de login
+    setTimeout(function() {
+      document.getElementById('loader').style.display = 'none';  // Cacher l'animation
+      document.getElementById('loginPage').style.display = 'block';  // Afficher la page de login
+    }, 3000);  // Délai de 3 secondes
+  });
+</script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const nameInput = document.getElementById('name');

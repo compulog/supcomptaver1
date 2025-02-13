@@ -67,8 +67,7 @@
             <div class="card-header pb-0">
                 <div class="d-flex flex-row justify-content-between">
 
-                    <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-2" id="open-modal-btn">+&nbsp; Nouvelle société</button>
-
+                <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-2" id="open-modal-btn" style="color: #007bff; border-color: #007bff;">+&nbsp; Nouvelle société</button>
                     <button id="import-societes" class="btn btn-outline-secondary d-flex align-items-center gap-2">Importer Sociétés</button>
 
                     <button id="export-button" class="btn btn-outline-success d-flex align-items-center gap-2">Liste Des Dossiers    </button>
@@ -307,7 +306,7 @@
                                 <i class="fas fa-undo"></i>
                             </button>
                             <!-- Bouton Ajouter avec une très grande marge gauche -->
-                            <button type="submit" class="btn btn-primary ms-12" id="ajouter-societe">
+                            <button type="submit" class="btn" style="background-color:#007bff;color:white;" id="ajouter-societe">
                                 <i class="fas fa-check"></i> Ajouter
                             </button>
                         </div>
@@ -581,7 +580,7 @@
                      <button type="reset" class="btn btn-secondary me-8">
                             <i class="fas fa-undo"></i>
                         </button>
-                    <button type="submit" class="btn btn-primary">Modifier</button>
+                    <button type="submit" class="btn " style="background-color:#007bff;color:white;">Modifier</button>
                 </form>
             </div>
         </div>

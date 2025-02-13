@@ -16,7 +16,7 @@ class CreateJournauxTable extends Migration
         // Créer la table 'journaux' avec les champs spécifiés
         Schema::connection('supcompta')->create('journaux', function (Blueprint $table) {
             $table->id();                              // Champ auto-incrémenté pour l'identifiant
-            $table->string('code_journal', 100)->unique(); // Code journal (doit être unique)
+            $table->string('code_journal', 100); // Code journal (doit être unique)
             $table->string('intitule')->nullable();                // Intitulé du journal
             $table->string('type_journal')->nullable();             // Type du journal
             $table->string('contre_partie')->nullable();

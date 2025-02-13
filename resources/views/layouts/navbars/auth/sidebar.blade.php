@@ -82,7 +82,7 @@
       <li class="nav-item pb-2">
         <a class="nav-link {{ (Request::is('gestion-des-journaux') ? 'active' : '') }}" href="{{ url('gestion-des-journaux') }}">
             <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                <i style="font-size: 1rem;" class="fas fa-lg fa-list-ul ps-2 pe-2 text-center text-dark {{ (Request::is('gestion-des-journaux') ? 'text-white' : 'text-dark') }} " aria-hidden="true"></i>
+            <i style="font-size: 1rem;" class="fas fa-newspaper fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('gestion-des-journaux') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
             </div>
             <span class="nav-link-text ms-1">Gestion Des Journaux</span>
         </a>
@@ -111,7 +111,7 @@
       <li class="nav-item pb-2">
         <a class="nav-link {{ (Request::is('Grand_livre') ? 'active' : '') }}" href="{{ url('Grand_livre') }}">
             <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                <i style="font-size: 1rem;" class="fas fa-lg fa-list-ul ps-2 pe-2 text-center text-dark {{ (Request::is('Grand_livre') ? 'text-white' : 'text-dark') }} " aria-hidden="true"></i>
+            <i style="font-size: 1rem;" class="fas fa-book-open fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('gestion-des-journaux') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
             </div>
             <span class="nav-link-text ms-1">Grand_livre</span>
         </a>
@@ -120,7 +120,7 @@
       <li class="nav-item pb-2">
         <a class="nav-link {{ (Request::is('plancomptable') ? 'active' : '') }}" href="{{ url('plancomptable') }}">
             <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                <i style="font-size: 1rem;" class="fas fa-lg fa-list-ul ps-2 pe-2 text-center text-dark {{ (Request::is('plancomptable') ? 'text-white' : 'text-dark') }} " aria-hidden="true"></i>
+            <i style="font-size: 1rem;" class="fas fa-calculator fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('gestion-du-plan-comptable') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
             </div>
             <span class="nav-link-text ms-1">Gestion Plan Comptable</span>
         </a>
@@ -130,7 +130,7 @@
       <li class="nav-item pb-2">
         <a class="nav-link {{ (Request::is('Fournisseurs') ? 'active' : '') }}" href="{{ url('Fournisseurs') }}">
             <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                <i style="font-size: 1rem;" class="fas fa-lg fa-list-ul ps-2 pe-2 text-center text-dark {{ (Request::is('Fournisseurs') ? 'text-white' : 'text-dark') }} " aria-hidden="true"></i>
+            <i style="font-size: 1rem;" class="fas fa-truck fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('gestion-des-fournisseurs') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
             </div>
             <span class="nav-link-text ms-1">Fournisseurs</span>
         </a>
@@ -138,7 +138,9 @@
       <li class="nav-item">
       <a class="nav-link {{ (Request::is('clients') ? 'active' : '') }}" href="{{ url('clients') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-          </div>
+          <i style="font-size: 1rem;" class="fas fa-user fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('gestion-des-clients') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
+ 
+        </div>
       <span class="nav-link-text ms-1">Clients</span>
         </a>
       </li>
@@ -146,7 +148,9 @@
       <li class="nav-item">
       <a class="nav-link {{ (Request::is('Operation_Courante') ? 'active' : '') }}" href="{{ url('Operation_Courante') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-          </div>
+          <i style="font-size: 1rem;" class="fas fa-exchange-alt fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('operations-courantes') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
+  
+        </div>
       <span class="nav-link-text ms-1">Opérations Courantes</span>
         </a>
       </li>

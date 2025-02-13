@@ -87,6 +87,8 @@
                          <!-- {{ $societe->forme_juridique }} -->
                     </li>
                 </ol>
+@if(Auth::user()->type === 'interlocuteurs')
+
 <!-- Exercice -->
 <div class="exercice">
   <span>Exercice:</span>
@@ -100,12 +102,29 @@
     au <input type="date" value="{{ $societe->exercice_social_fin }}">
   </div>
 
+
+</div>
+@else
+
+<!-- Exercice -->
+<div class="exercice">
+  <span>Exercice:</span>
+ 
+  <button type="button" class="btn-arrow left">
+    <div class="arrow-left"></div>
+  </button>
+
+  <div class="date-range">
+    Du <input type="date" value="{{ $societe->exercice_social_debut }}">
+    au <input type="date" value="{{ $societe->exercice_social_fin }}">
+  </div>
+
+ 
   <button type="button" class="btn-arrow right">
     <div class="arrow-right"></div>
   </button>
 </div>
-
-
+@endif
 <style>
   /* Style global de l'exercice */
 .exercice {
