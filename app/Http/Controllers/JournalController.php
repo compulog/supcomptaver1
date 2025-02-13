@@ -106,15 +106,12 @@ class JournalController extends Controller
         // Stocker un nouveau journal
         public function store(Request $request)
         {
-    
             // Récupérer l'ID de la société depuis la session
             $societeId = session('societeId');
-
             // Vérifier si l'ID de la société existe dans la session
             if (!$societeId) {
                 return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
             }
-
             // Validation des données
             $validatedData = $request->validate([
                 'code_journal' => 'required|string|max:255',
@@ -123,15 +120,18 @@ class JournalController extends Controller
                 'contre_partie' => 'nullable|string|max:255',
                 'if' => 'nullable|digits:8',
                 'ice' => 'nullable|digits:15',
-
             ]);
-
+            // Vérifier si le journal avec ce code existe déjà pour la même société
+            $existingJournal = Journal::where('societe_id', $societeId)
+                                      ->where('code_journal', $validatedData['code_journal'])
+                                      ->first();
+            if ($existingJournal) {
+                return response()->json(['error' => 'Un journal avec ce code existe déjà pour cette société'], 400);
+            }
             // Ajouter l'ID de la société au journal
             $validatedData['societe_id'] = $societeId;
-
             // Créer un nouveau journal
             Journal::create($validatedData);
-
             // Retourner une réponse JSON avec un message de succès
             return response()->json(['message' => 'Journal ajouté avec succès.']);
         }

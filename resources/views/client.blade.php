@@ -43,9 +43,9 @@
 
         <div class="mb-3 d-flex align-items-center gap-2 flex-wrap-nowrap">
     <!-- Bouton Créer -->
-    <button type="button" id="create-button" class="btn btn-outline-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel">
+    <button type="button" id="create-button" class="btn btn-outline-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel" style="color:#007bff; border-color: #007bff;">
         Créer
-    </button>
+    </button> 
 
     <!-- Bouton Importer -->
     <button type="button" id="import-button" class="btn btn-outline-secondary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modal-import-excel">
@@ -148,7 +148,7 @@
                             <i class="fas fa-undo"></i>
                         </button>
                         <!-- Bouton Valider avec marge très grande à gauche -->
-                        <button type="submit" class="btn btn-primary ms-8">
+                        <button type="submit" class="btn btn-primary ms-8" style="background-color:#007bff;">
                             <i class="fas fa-check"></i> Valider
                         </button>
                     </div>

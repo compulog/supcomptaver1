@@ -96,32 +96,47 @@ document.getElementById('month-select').addEventListener('change', function() {
 });
 
 
-
 document.getElementById('cloturer-button').addEventListener('click', function() {
     var mois = $('#month-select').val();
     var annee = $('input[type="text"]').val();
     var journalCode = document.getElementById('journal-select').value;
 
-    console.log("Clôturer le solde pour :", { mois, annee, journalCode });
+    // Créer un message de confirmation
+    Swal.fire({
+        title: 'Êtes-vous sûr de vouloir clôturer cet état de caisse pour la période ' + mois + '/' + annee + ' ?',
+        text: "Attention, cette action est irréversible.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'OUI',
+        cancelButtonText: 'NON'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Si l'utilisateur confirme, procéder à la clôture
+            console.log("Clôturer le solde pour :", { mois, annee, journalCode });
 
-    $.ajax({
-        url: '/cloturer-solde',
-        type: 'POST',
-        data: {
-            _token: $('meta[name="csrf-token"]').attr('content'),
-            mois: mois,
-            annee: annee,
-            journal_code: journalCode
-        },
-        success: function(response) {
-            console.log("Réponse du serveur :", response);
-            alert('Le solde a été clôturé avec succès !');
-            saveData();
-location.reload();
-        },
-        error: function(xhr, status, error) {
-            console.error("Erreur lors de la clôture :", error);
-            alert('Erreur lors de la clôture du solde.');
+            $.ajax({
+                url: '/cloturer-solde',
+                type: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    mois: mois,
+                    annee: annee,
+                    journal_code: journalCode
+                },
+                success: function(response) {
+                    console.log("Réponse du serveur :", response);
+                    alert('Le solde a été clôturé avec succès !');
+                    saveData();
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Erreur lors de la clôture :", error);
+                    alert('Erreur lors de la clôture du solde.');
+                }
+            });
+        } else {
+            // Si l'utilisateur annule, ne rien faire
+            console.log("Clôture annulée.");
         }
     });
 });
@@ -206,17 +221,38 @@ document.getElementById('journal-select').focus();
 });
 
 var table = new Tabulator("#example-table", {
-    height: 300,
+    height: 500,
     layout: "fitColumns",
     columns: [
-        {title: "Jour", field: "day", editor: "input", editorPlaceholder: "Entrez le jour", width: 100},
-        {title: "N° Référence", field: "ref", editor: "input", editorPlaceholder: "Entrez le N° Référence", width: 200},
-        {title: "Libellé", field: "libelle", editor: "input", editorPlaceholder: "Entrez le libellé", width: 382},
-        {title: "Recette", field: "recette", editor: "number", editorPlaceholder: "Entrez la recette", width: 200, formatter: "money", bottomCalc: "sum"},
-        {title: "Dépense", field: "depense", editor: "number", editorPlaceholder: "Entrez la dépense", width: 200, formatter: "money", bottomCalc: "sum"},
+        {title: "Jour", field: "day", editor: customNumberEditor1 , editorPlaceholder: "jj", width: 65, headerFilter: "input", headerFilterParams: {
+            elementAttributes: {
+                style: "width: 55px; height: 20px;"
+            }
+        }
+    },
+        {title: "N° Référence", field: "ref",  editor: genericTextEditor , editorPlaceholder: "Entrez le N° Référence", width: 200, headerFilter: "input", headerFilterParams: {
+            elementAttributes: {
+                style: "width: 190px; height: 20px;"
+            }
+        }},
+        {title: "Libellé", field: "libelle",   editor: genericTextEditor , editorPlaceholder: "Entrez le libellé", width: 417, headerFilter: "input", headerFilterParams: {
+            elementAttributes: {
+                style: "width: 400px; height: 20px;"
+            }
+        }},
+        {title: "Recette", field: "recette", editor: customNumberEditor, editorPlaceholder: "Entrez la recette", width: 200, formatter: "money", bottomCalc: "sum", headerFilter: "input", headerFilterParams: {
+            elementAttributes: {
+                style: "width: 180px; height: 20px;"
+            }
+        }},
+        {title: "Dépense", field: "depense", editor: customNumberEditor, editorPlaceholder: "Entrez la dépense", width: 200, formatter: "money", bottomCalc: "sum", headerFilter: "input", headerFilterParams: {
+            elementAttributes: {
+                style: "width: 180px; height: 20px;"
+            }
+        }},
         {
             title: `
-                <i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="selectAllRows()"></i>
+        <input type="checkbox" id="selectAllCheckbox" title="Sélectionner tout" style="cursor: pointer;" onclick="selectAllRows()">
             `,
             field: "actions",
             width: 100,
@@ -267,19 +303,216 @@ var table = new Tabulator("#example-table", {
 
 });
 
-// Fonction pour sélectionner toutes les lignes et cocher toutes les cases
-function selectAllRows() {
-    // Sélectionner toutes les lignes
-    table.selectRow();
+function focusNextEditableCell(currentCell) {
+    const row = currentCell.getRow();
+    const cells = row.getCells();
+    const currentIndex = cells.findIndex(c => c === currentCell);
 
-    // Cocher toutes les cases à cocher
-    table.getRows().forEach(function(row) {
-        var checkbox = row.getCell("actions").getElement().querySelector("input[type='checkbox']");
-        if (checkbox) {
-            checkbox.checked = true;
+    // Chercher dans la même ligne la prochaine cellule éditable
+    for (let i = currentIndex + 1; i < cells.length; i++) {
+        const colDef = cells[i].getColumn().getDefinition();
+        if (colDef.editor) {
+            cells[i].edit();
+            return;
+        }
+    }
+
+    // Sinon, passer à la première cellule éditable de la ligne suivante
+    const table = currentCell.getTable();
+    const rows = table.getRows();
+    const currentRowIndex = rows.findIndex(r => r.getIndex() === row.getIndex());
+    if (currentRowIndex < rows.length - 1) {
+        const nextRow = rows[currentRowIndex + 1];
+        for (let cell of nextRow.getCells()) {
+            if (cell.getColumn().getDefinition().editor) {
+                cell.edit();
+                return;
+            }
+        }
+    }
+}
+function genericTextEditor(cell, onRendered, success, cancel, editorParams) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.style.width = "100%";
+    input.value = cell.getValue() || "";
+
+    onRendered(() => {
+        input.focus();
+    });
+
+    input.addEventListener("blur", () => {
+        success(input.value);
+    });
+
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            success(input.value);
+            setTimeout(() => {
+                focusNextEditableCell(cell);
+            }, 50);
+        }
+    });
+
+    return input;
+}
+
+
+/**
+ * Ajoute la navigation par la touche Enter à l'élément d'édition.
+ * @param {HTMLElement} editorElement - L'élément de l'éditeur (input, textarea, etc.).
+ * @param {Object} cell - La cellule Tabulator en cours d'édition.
+ * @param {Function} successCallback - La fonction à appeler pour valider la saisie.
+ * @param {Function} cancelCallback - (Optionnel) La fonction à appeler en cas d'annulation.
+ * @param {Function} getValueCallback - (Optionnel) Fonction pour récupérer la valeur courante de l'éditeur.
+ */
+function addEnterNavigation(editorElement, cell, successCallback, cancelCallback, getValueCallback) {
+    editorElement.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            // Récupérer la valeur courante (pour un input, editorElement.value suffit)
+            const value = (getValueCallback && typeof getValueCallback === "function")
+                ? getValueCallback(editorElement)
+                : editorElement.value;
+            // Valider la saisie en appelant le callback success
+            successCallback(value);
+            // Passer à la cellule éditable suivante
+            setTimeout(() => {
+                focusNextEditableCell(cell);
+            }, 50);
         }
     });
 }
+
+function customNumberEditor1(cell, onRendered, success, cancel) {
+    const input = document.createElement("input");
+    input.type = "number";
+    input.style.width = "100%";
+    input.placeholder = "jj";
+
+    input.value = cell.getValue() || "";
+
+    onRendered(function() {
+        input.focus();
+        input.style.height = "100%";
+    });
+
+    let isValidating = false; // Drapeau pour éviter les appels multiples
+
+    function validateAndCommit() {
+        if (isValidating) return; // Éviter les appels multiples
+        isValidating = true; // Définir le drapeau
+
+        const value = parseInt(input.value, 10); // Convertir la valeur en entier
+
+        // Vérifier si la valeur est un nombre valide et entre 1 et 31
+        if (isNaN(value) || value < 1 || value > 31) {
+            alert("La valeur doit être un nombre entre 1 et 31.");
+            isValidating = true; // Réinitialiser le drapeau
+            return;
+        }
+
+        // Vérifier la longueur de la valeur
+        if (input.value.length > 2) {
+            alert("La valeur ne peut pas dépasser 2 chiffres.");
+            isValidating = true; // Réinitialiser le drapeau
+            return;
+        }
+
+        success(input.value);
+        isValidating = false; // Réinitialiser le drapeau
+    }
+
+    input.addEventListener("blur", function() {
+        validateAndCommit();
+    });
+
+    input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            validateAndCommit();
+            setTimeout(function() {
+                // Vérifiez si la cellule suivante est différente avant de la focaliser
+                const nextCell = focusNextEditableCell(cell);
+                if (nextCell && nextCell !== cell) {
+                    nextCell.focus(); // Focaliser la cellule suivante
+                }
+            }, 50);
+        }
+    });
+
+    return input;
+}
+function customNumberEditor(cell, onRendered, success, cancel) {
+    // Crée un input de type number
+    const input = document.createElement("input");
+    input.type = "number";
+    input.style.width = "100%";
+    // Initialiser la valeur avec la valeur actuelle de la cellule ou une chaîne vide
+    input.value = cell.getValue() || "";
+
+    // Focus sur l'input une fois rendu
+    onRendered(function() {
+        input.focus();
+        input.style.height = "100%";
+    });
+
+    // Fonction de validation : ici, nous validons simplement en retournant la valeur de l'input
+    function validateAndCommit() {
+        // Vous pouvez ajouter des validations supplémentaires si besoin
+        success(input.value);
+    }
+
+    // Lors du blur, valider la saisie
+    input.addEventListener("blur", function() {
+        validateAndCommit();
+    });
+
+    // Intercepter la touche Entrée pour valider et naviguer
+    input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            validateAndCommit();
+            // Passer à la cellule éditable suivante
+            setTimeout(function() {
+                focusNextEditableCell(cell);
+            }, 50);
+        }
+    });
+
+    return input;
+}
+
+
+// Fonction pour sélectionner toutes les lignes et cocher toutes les cases
+function selectAllRows() {
+    // Vérifier si toutes les lignes sont déjà sélectionnées
+    var allRowsSelected = table.getRows().every(function(row) {
+        return row.isSelected();
+    });
+
+    // Si toutes les lignes sont sélectionnées, les désélectionner
+    if (allRowsSelected) {
+        table.deselectRow(); // Désélectionner toutes les lignes
+        table.getRows().forEach(function(row) {
+            var checkbox = row.getCell("actions").getElement().querySelector("input[type='checkbox']");
+            if (checkbox) {
+                checkbox.checked = false; // Décocher toutes les cases
+            }
+        });
+    } else {
+        // Si ce n'est pas le cas, sélectionner toutes les lignes
+        table.selectRow(); // Sélectionner toutes les lignes
+        table.getRows().forEach(function(row) {
+            var checkbox = row.getCell("actions").getElement().querySelector("input[type='checkbox']");
+            if (checkbox) {
+                checkbox.checked = true; // Cocher toutes les cases
+            }
+        });
+    }
+}
+
 
 
     function deleteTransaction(transactionId) {
@@ -325,16 +558,16 @@ function selectAllRows() {
 
 
     // Fonction pour sélectionner ou désélectionner toutes les lignes
-    function toggleSelectAll() {
-        var allRows = table.getRows();
-        var allSelected = allRows.every(row => row.getSelected());
+    // function toggleSelectAll() {
+    //     var allRows = table.getRows();
+    //     var allSelected = allRows.every(row => row.getSelected());
 
-        if (allSelected) {
-            table.deselectRow();
-        } else {
-            table.selectRow();
-        }
-    }
+    //     if (allSelected) {
+    //         table.deselectRow();
+    //     } else {
+    //         table.selectRow();
+    //     }
+    // }
 
     // Fonction pour supprimer les lignes sélectionnées
     function deleteSelectedRows() {
@@ -556,17 +789,20 @@ $('#example-table').on('keydown', function(e) {
             // Vérifier si userResponse est vide et le remplacer par 0
             var userResponseToSend = userResponse ? userResponse : 0;
 
+            // Effacer les messages d'erreur précédents
+            $('#error-message').text('');
+
             // Vérification des valeurs vides
             if (!rowData.day) {
-                alert("Le jour ne peut pas être vide.");
+                $('#error-message').text("Le jour ne peut pas être vide.");
                 return;
             }
             if (!rowData.depense && !rowData.recette) {
-                alert("Vous devez entrer soit une dépense soit une recette.");
+                $('#error-message').text("Vous devez entrer soit une dépense soit une recette.");
                 return;
             }
             if (isMonthClosed(selectedMonth, selectedYear, journalCode)) {
-                alert("Le mois est déjà clôturé. Vous ne pouvez pas modifier des transactions.");
+                $('#error-message').text("Le mois est déjà clôturé. Vous ne pouvez pas modifier des transactions.");
                 return; // Sortir de la fonction si le mois est clôturé
             } else {
                 $.ajax({
@@ -583,11 +819,34 @@ $('#example-table').on('keydown', function(e) {
                         user_response: userResponseToSend
                     },
                     success: function(response) {
+                        // Mettre à jour les totaux
                         updateTotals($('#month-select').val(), $('input[type="text"]').val());
+
+                        // Ajouter la nouvelle transaction au tableau
+                        table.addData([{
+                            id: response.id, // Assurez-vous que l'ID est renvoyé par le serveur
+                            day: rowData.day,
+                            ref: rowData.ref,
+                            libelle: rowData.libelle,
+                            recette: rowData.recette,
+                            depense: rowData.depense
+                        }], true); // Le deuxième paramètre 'true' permet d'ajouter les données en haut du tableau
+
+                        // Réinitialiser les champs d'entrée
+                        selectedRows[0].update({
+                            day: '',
+                            ref: '',
+                            libelle: '',
+                            recette: '',
+                            depense: ''
+                        });
+
+                        // Enregistrer les données
                         saveData();
 
-                        console.log("Données envoyées avec succès :", response);
-                         location.reload();
+                        // Mettre le focus sur le premier champ d'entrée de la nouvelle ligne
+                        // Remplacez '#first-input-field' par le sélecteur approprié pour votre champ
+                        $('#first-input-field').focus();
                     },
                     error: function(xhr, status, error) {
                         console.error("Erreur lors de l'envoi des données :", error);
@@ -598,11 +857,7 @@ $('#example-table').on('keydown', function(e) {
         } else {
             console.log("Aucune ligne sélectionnée !");
         }
-
-        // location.reload();
-
     }
-
 });
 
 
