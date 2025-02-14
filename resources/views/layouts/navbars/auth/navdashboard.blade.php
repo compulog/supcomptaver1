@@ -166,78 +166,7 @@
         <i class="fas fa-user-circle" style="font-size:22px;color:black;"></i>  
     </a>
 
-    <!-- Vérification du type d'utilisateur et affichage du menu approprié -->
-    @if(Auth::user()->type === 'SuperAdmin')
-    <div class="dropdown-list" id="dropdownList">
-       
-
-        <!-- Utilisateurs link with icon -->
-        <a class="nav-link {{ (Request::is('utilisateurs') ? 'active' : '') }}" href="{{ url('utilisateurs') }}">
-            <i class="fas fa-users"></i> <!-- Users icon -->
-            <span class="nav-link-text ms-1">Utilisateurs</span>  
-        </a>
-
-     
-
-        <!-- Mon Profil link with icon -->
-        <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
-            <i class="fas fa-user"></i> <!-- Profile icon -->
-            <span class="nav-link-text ms-1">Mon Profil</span> 
-        </a>
-
-        <!-- Sign Out link with icon -->
-        <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
-        </a>
-    </div>
-    
-    @elseif(Auth::user()->type === 'admin')
-    <div class="dropdown-list" id="dropdownList">
-      <!-- Admin link with icon -->
-      <a class="nav-link {{ (Request::is('Admin') ? 'active' : '') }}" href="{{ url('Admin') }}">
-            <i class="fas fa-cogs"></i> <!-- Admin icon -->
-            <span class="nav-link-text ms-1">Admin</span>  
-        </a>
-     <!-- interlocuteurs link with icon -->
-     <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
-            <i class="fas fa-cogs"></i> <!-- interlocuteurs icon -->
-            <span class="nav-link-text ms-1">interlocuteurs</span>  
-        </a>
-        <!-- Mon Profil link with icon -->
-        <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
-            <i class="fas fa-user"></i> <!-- Profile icon -->
-            <span class="nav-link-text ms-1">Mon Profil</span> 
-        </a>
-
-        <!-- Sign Out link with icon -->
-        <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
-        </a>
-    </div>
-    @elseif(Auth::user()->type === 'utilisateur')
-    <div class="dropdown-list" id="dropdownList">
-      <!-- interlocuteurs link with icon -->
-      <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
-            <i class="fas fa-cogs"></i> <!-- interlocuteurs icon -->
-            <span class="nav-link-text ms-1">interlocuteurs</span>  
-        </a>
-
-        <!-- Mon Profil link with icon -->
-        <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
-            <i class="fas fa-user"></i> <!-- Profile icon -->
-            <span class="nav-link-text ms-1">Mon Profil</span> 
-        </a>
-
-        <!-- Sign Out link with icon -->
-        <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
-        </a>
-    </div>
-
-    @else
+ 
     <div class="dropdown-list" id="dropdownList">
         <!-- Mon Profil link with icon (visible pour tous les utilisateurs) -->
         <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
@@ -251,7 +180,7 @@
             <span class="d-sm-inline d-none">Sign Out</span>
         </a>
     </div>
-    @endif
+    
 </li>
     </div>
  

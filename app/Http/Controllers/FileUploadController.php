@@ -28,7 +28,7 @@ class FileUploadController extends Controller
        
     //     // Récupérer le nombre de fichiers par type
     //     $achatCount = File::where('type', 'Achat')->count();
-    //     $venteCount = File::where('type', 'Vente')->count();
+    //     $venteCount = File::where('type', 'Vente')->();
     //     $banqueCount = File::where('type', 'Banque')->count();
     //     $caisseCount = File::where('type', 'Caisse')->count();
     //     $impotCount = File::where('type', 'Impot')->count();
