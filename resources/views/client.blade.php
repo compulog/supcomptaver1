@@ -60,7 +60,7 @@
     </form>
 
     <!-- Formulaire pour exporter en PDF -->
-    <form action="{{ route('export.clients.pdf') }}" method="POST" class="d-inline">
+    <form action="/export-clients-pdf" method="POST" class="d-inline">
         @csrf
         <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
         <button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-2">Exporter en PDF</button>

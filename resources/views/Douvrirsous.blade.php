@@ -130,6 +130,7 @@ document.getElementById('folderMenuWrapper').style.transition = "all 0.3s ease-i
 </div>
 
 <div class="container mt-5">
+<h5>Dossiers</h5>
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
         <!-- Ajouter un Dossier -->
         <div class="col">
@@ -201,6 +202,8 @@ document.getElementById('folderMenuWrapper').style.transition = "all 0.3s ease-i
 
    <!-- Gestion des fichiers de type achat -->
 <div class="container mt-4">
+<h5>fichiers</h5>
+
 @if ($achatFiles->isEmpty())
     <p>Aucun fichier trouvé pour cette société.</p>
 @else

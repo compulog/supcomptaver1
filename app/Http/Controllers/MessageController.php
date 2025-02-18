@@ -11,17 +11,16 @@ class MessageController extends Controller
 
     public function markAsRead($messageId)
     {
-        // Trouver le message par son ID
-        $message = Message::findOrFail($messageId);
-
-        // Mettre à jour l'état 'is_read' du message
-        $message->update(['is_read' => true]);
-
-        // Retourner une réponse indiquant que l'opération a réussi
-        return response()->json([
-            'success' => true,
-            'message' => 'Le message a été marqué comme lu.',
-        ]);
+        $message = Message::find($messageId);
+    
+        if ($message) {
+            $message->is_read = true; // Marque le message comme lu
+            $message->save();
+    
+            return response()->json(['success' => true, 'message' => 'Message marked as read']);
+        }
+    
+        return response()->json(['success' => false, 'message' => 'Message not found'], 404);
     }
     // MessageController.php
 public function updateStatus(Request $request, $messageId)
@@ -68,8 +67,7 @@ public function updateStatus(Request $request, $messageId)
         // Récupérer les messages associés à ce fichier avec le nom de l'utilisateur, où is_read est 0
         $messages = Message::with('user', 'replies.user') // Charger les réponses et l'utilisateur
                             ->where('file_id', $fileId)
-                            ->where('is_read', 0) // Filtrer les messages non lus
-                            ->whereNull('parent_id') // Charger uniquement les messages sans parent (ceux qui sont originaux)
+                             ->whereNull('parent_id') // Charger uniquement les messages sans parent (ceux qui sont originaux)
                             ->get();
     
         // Retourner les messages avec le nom de l'utilisateur, leurs réponses, ainsi que la date et l'heure

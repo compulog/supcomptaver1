@@ -162,8 +162,11 @@
     <input type="text" id="year-select" value="{{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}" readonly  style="display: none;">
     <i id="export-excel-icon" class="fas fa-file-excel" title="Exporter en Excel" style="cursor: pointer; font-size: 17px; color: green;margin-left:10px;"></i>
     <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;" onclick="deleteSelectedRows()"></i>
-    <i class="fa fa-share" aria-hidden="true" title="transférer" style="margin-left:3px;"></i>
 
+<!-- Bouton de transfert conditionnel -->
+@if(auth()->user()->type !== 'interlocuteurs')
+    <i class="fa fa-share" aria-hidden="true" title="transférer" style="margin-left:3px;"></i>
+@endif
 </div>
 
 <!-- Solde initial à afficher en fonction du mois et de l'année choisis -->

@@ -43,6 +43,7 @@
                 </a>
 
                 <!-- Nom de la société -->
+                @if(isset($societe))
                 <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
                     <li class="breadcrumb-item text-sm active text-capitalize" aria-current="page">
                         {{ $societe->raison_sociale }}
@@ -50,8 +51,10 @@
                     </li>
                 </ol>
 
+                @endif
+              
         <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar"> 
-            <div class="nav-link">
+            <div class="nav-link" style="margin-left: 750px;">
                 <span class="nav-link-text ms-1"> {{ Auth::user()->name }}</span>
             </div>
 
