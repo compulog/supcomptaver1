@@ -192,30 +192,28 @@ return response()->json($fournisseur);
 
 
 
-public function getRubriquesTva()
-{
- // Récupérer les rubriques TVA avec type = 'Achat', groupées par 'categorie'
-$rubriques = Racine::select('categorie', 'Nom_racines', 'Taux', 'Num_racines')
-->where('type', 'Achat') // Assurez-vous que 'type' est bien le nom de la colonne
-->having('Taux', '>', 0) // Ne garder que les rubriques avec Taux supérieur à 0
-->get();
+ // Récupère les rubriques TVA pour un type d'opération 'Achat'
+ public function getRubriquesTva()
+ {
+     // Liste des numéros de racines à exclure
+     $exclusions = ['190', '182', '200', '201', '205'];
 
-// Organiser les rubriques par catégorie
-$rubriquesParCategorie = [];
-foreach ($rubriques as $rubrique) {
-$rubriquesParCategorie[$rubrique->categorie]['rubriques'][] = [
-    'Nom_racines' => $rubrique->Nom_racines,
-    'Num_racines' => $rubrique->Num_racines,
-    'Taux' => $rubrique->Taux,
-];
-}
+     $rubriques = Racine::select('Num_racines','categorie', 'Nom_racines', 'Taux' )
+         ->where('type', 'Achat')
+         ->whereNotIn('Num_racines', $exclusions)  // Exclure les numéros de racines spécifiés
+         ->get();
 
-// Passer les rubriques organisées à votre vue ou à votre réponse AJAX
-return response()->json(['rubriques' => $rubriquesParCategorie]);
+     $rubriquesParCategorie = [];
+     foreach ($rubriques as $rubrique) {
+         $rubriquesParCategorie[$rubrique->categorie]['rubriques'][] = [
+             'Nom_racines' => $rubrique->Nom_racines,
+             'Num_racines' => $rubrique->Num_racines,
+             'Taux' => $rubrique->Taux,
+         ];
+     }
 
-
-
-}
+     return response()->json(['rubriques' => $rubriquesParCategorie]);
+ }
 
 
   /**

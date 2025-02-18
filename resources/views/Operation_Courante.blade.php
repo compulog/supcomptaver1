@@ -33,9 +33,15 @@
 {{-- <script src="https://unpkg.com/tabulator-tables@6.3.4/dist/js/tabulator.min.js"></script> --}}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <style>
+
+
+
+.select2-container--open {
+  z-index: 10700 !important; /* Ajustez la valeur si besoin */
+}
+
          .custom-datalist-editor-container {
       position: relative;
       width: 100%;
@@ -625,8 +631,19 @@
 
 
 </body>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
+    <script>
+        window.comptesClients = window.comptesClients || [];
+
+        </script>
+        <script>
+            window.nombreChiffresCompte = {{ $societe->nombre_chiffre_compte }};
+          </script>
+
 
 
     <script type="text/javascript" src="{{URL::asset('js/Operation_Courante.js')}}"></script>

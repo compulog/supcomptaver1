@@ -7,7 +7,7 @@
 <!-- Votre script personnalisé -->
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
- 
+
 <div class="container mt-4">
     <h6>Tableau De Board</h6>
     <div class="row">
@@ -25,7 +25,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 style="color: white;">Achat</h5>
 
-                    
+
                     <form id="form-achat" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="type" value="achat">
@@ -36,9 +36,9 @@
                         <button type="submit" style="display: none;" id="submit-achat">Envoyer</button>
                     </form>
 
-                     
+
                 </div>
-                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Achat'] ?? 0 }}</p>     
+                <p style="font-size: 0.7rem; line-height: 0.3;">total pièces : {{ $fileCounts['Achat'] ?? 0 }}</p>
                            <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : </p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : </p>
             </div>
@@ -107,7 +107,7 @@
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces suspendues : </p>
             </div>
         </div>
-    
+
         <!-- Impôt -->
         <div class="col-md-3 mb-3" id="impot-div">
             <div class="p-2 text-white" style="background-color: #6f42c1; border-radius: 15px; font-size: 0.75rem; height: 130px;">
@@ -158,7 +158,7 @@
                     <input type="hidden" name="type" value="dossier_permanant">
                     <input type="file" name="file" id="file-dossier_permanant" style="display: none;" onchange="handleFileSelect(event, 'dossier_permanant')">
                     <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-                    
+
                     <input type="hidden" name="folders_id" value="0">
 
                     <!-- Charger Button -->
@@ -173,11 +173,11 @@
                 <p style="font-size: 0.7rem; line-height: 0.3;">pièces traitées : </p>
             </div>
 
-        
+
         </div>
 
 
-        
+
     </div>
 
     <div class="row">
@@ -215,7 +215,7 @@
                     <form id="form-{{ $dossier->id }}" action="{{ route('Douvrir.upload') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-                        <input type="hidden" name="folder_type" value="{{ $dossier->name }}"> 
+                        <input type="hidden" name="folder_type" value="{{ $dossier->name }}">
 
                         <input type="file" name="file" id="file-{{ $dossier->id }}" style="display: none;" onchange="handleFileSelect(event, {{ $dossier->id }})">
                         <button type="button" class="btn btn-light btn-sm dossier-button" style="border: 1px solid white; border-radius: 10px; color: white; width:100px;" onclick="document.getElementById('file-{{ $dossier->id }}').click()">Charger</button>
@@ -224,9 +224,9 @@
 
                 </div>
 
- 
+
                 <!-- Affichage du nombre de fichiers dans le dossier -->
-                <p style="font-size: 0.7rem; line-height: 0.3;">Total fichiers : {{ $dossierFileCounts[$dossier->id] ?? 0 }}</p>  
+                <p style="font-size: 0.7rem; line-height: 0.3;">Total fichiers : {{ $dossierFileCounts[$dossier->id] ?? 0 }}</p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">Pièces traitées : </p>
                 <p style="font-size: 0.7rem; line-height: 0.3;">Pièces suspendues : </p>
             </div>
@@ -235,7 +235,7 @@
 </div>
 
 </div>
- 
+
 <!-- Modal pour créer un dossier -->
 <div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -262,7 +262,7 @@
 </div>
 
 
- 
+
 <!-- Modal pour modifier un dossier -->
 <div class="modal fade" id="editFolderModal" tabindex="-1" aria-labelledby="editFolderModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -293,7 +293,7 @@
 
 
 </div>
- 
+
 <script>
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -350,7 +350,7 @@ document.querySelectorAll('.dossier-box').forEach(function(div) {
   div.addEventListener('dblclick', function () {
       // On récupère l'ID du dossier à partir de l'attribut data-id
       const dossierId = div.getAttribute('data-id');
-      
+
       // On redirige vers la route avec l'ID du dossier
       window.location.href = `/Douvrir/${dossierId}`;  // Assurez-vous que la route correspond bien à celle définie dans les routes Laravel
   });
