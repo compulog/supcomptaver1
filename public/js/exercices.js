@@ -1,10 +1,10 @@
 
 
- 
+
 function openEditFolderModal(dossierId, dossierName) {
     // Mettre à jour le champ du formulaire avec le nom du dossier
     document.getElementById('folderName').value = dossierName;
-    
+
     // Mettre à jour l'ID du dossier dans le formulaire
     document.getElementById('dossier_id').value = dossierId;
 
@@ -16,7 +16,7 @@ function openEditFolderModal(dossierId, dossierName) {
     myModal.show();
 }
 
- 
+
 
 
 
@@ -43,8 +43,8 @@ function openEditFolderModal(dossierId, dossierName) {
         // Appliquer la même couleur au bouton
         const button = div.querySelector('.dossier-button');
         if (button) {
-            button.style.backgroundColor = color;  
-            
+            button.style.backgroundColor = color;
+
         }
     });
 

@@ -276,6 +276,273 @@ function genericTextEditorForLibelle(cell, onRendered, success, cancel, editorPa
 
     return input;
 }
+
+var societeId = $('#societe_id').val(); // ID de la société
+var nombreChiffresCompte = parseInt($('#nombre_chiffre_compte').val()); // Nombre de chiffres du compte
+// Déclaration globale de la liste des comptes fournisseurs
+var comptesFournisseurs = []; // ou avec des valeurs initiales si vous en avez
+function genererCompteAutoForPopupClt() {
+    $.ajax({
+        url: `/get-next-compte-client/${societeId}?nombre=${nombreChiffresCompte}`,
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                $('#swal-compte').val(response.nextCompte);
+            } else {
+                alert('Erreur lors de la génération du compte client.');
+            }
+        },
+        error: function() {
+            alert('Erreur lors de la génération du compte client.');
+        }
+    });
+}
+
+  function ouvrirPopupClient(compteClient, row, cell) {
+    // Récupérer l'id de la société depuis la balise meta
+    const societeId = document.querySelector('meta[name="societe_id"]').getAttribute("content");
+
+    Swal.fire({
+      title: 'Ajouter un nouveau client',
+      width: '800px',
+      html: `
+        <div class="container">
+          <!-- Ligne 1 : Compte et Intitulé -->
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+            <div style="flex: 1 1 45%;">
+              <input id="swal-compte" class="swal2-input" placeholder="Compte" value="">
+            </div>
+            <div style="flex: 1 1 45%;">
+              <input id="swal-intitule" class="swal2-input" placeholder="Intitulé" required value="${compteClient}">
+            </div>
+          </div>
+          <!-- Ligne 2 : Identifiant Fiscal et ICE côte à côte -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="swal-identifiant" class="form-label">Identifiant Fiscal</label>
+              <input type="text" id="swal-identifiant" class="swal2-input form-control" placeholder="Identifiant Fiscal"
+                     pattern="^\\d{7,8}$" maxlength="8" title="L'identifiant fiscal doit comporter 7 ou 8 chiffres"
+                     oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            </div>
+            <div class="col-md-6">
+              <label for="swal-ICE" class="form-label">ICE</label>
+              <input type="text" id="swal-ICE" class="swal2-input form-control" placeholder="ICE"
+                     pattern="^\\d{15}$" maxlength="15" title="L'ICE doit comporter exactement 15 chiffres"
+                     oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            </div>
+          </div>
+          <!-- Ligne 3 : Type Client (occupant toute la largeur) -->
+          <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <div style="flex: 1 1 45%;">
+              <label for="swal-type_client" class="form-label">Type Client</label>
+              <select id="swal-type_client" class="swal2-input">
+                <option value="">Choisir une option</option>
+                <option value="5.Entreprise de droit privé">5.Entreprise de droit privé</option>
+                <option value="1.État">1.État</option>
+                <option value="2.Collectivités territoriales">2.Collectivités territoriales</option>
+                <option value="3.Entreprise publique">3.Entreprise publique</option>
+                <option value="4.Autre organisme public">4.Autre organisme public</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      `,
+      didOpen: () => {
+        // Appel de la fonction d'auto-incrément pour générer le compte
+        if (typeof genererCompteAutoForPopupClt === "function") {
+          genererCompteAutoForPopupClt();
+        }
+      },
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Ajouter',
+      preConfirm: () => {
+        return {
+          compte: document.getElementById('swal-compte').value,
+          intitule: document.getElementById('swal-intitule').value,
+          identifiant_fiscal: document.getElementById('swal-identifiant').value,
+          ICE: document.getElementById('swal-ICE').value,
+          type_client: document.getElementById('swal-type_client').value,
+          societe_id: societeId
+        };
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        fetch("/clients", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify(result.value)
+        })
+        .then(response => response.json())
+        .then(newClient => {
+          if (newClient.error) {
+            Swal.fire('Erreur', newClient.error, 'error');
+          } else {
+            const clientCree = newClient.client;
+            const newValue = `${clientCree.compte} - ${clientCree.intitule}`;
+            // Mettez à jour la liste globale si elle existe
+            if (typeof window.comptesClients !== "undefined") {
+              window.comptesClients.push(clientCree);
+            }
+            cell.setValue(newValue);
+            const numeroDossier = row.getCell("numero_dossier").getValue() || "";
+            const numeroFacture = row.getCell("numero_facture").getValue() || "";
+            row.update({
+              libelle: `F°${numeroFacture} D°${numeroDossier} ${clientCree.intitule}`
+            });
+            Swal.fire('Succès', 'Client ajouté avec succès', 'success').then(() => {
+              const debitCell = row.getCell("debit");
+              if (debitCell) {
+                setTimeout(() => { debitCell.edit(); }, 200);
+              }
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Erreur lors de l’ajout du client:', error);
+          Swal.fire('Erreur', 'Une erreur est survenue lors de l’ajout du client.', 'error');
+        });
+      }
+    });
+  }
+
+
+function customListEditorClt(cell, onRendered, success, cancel, editorParams) {
+    // Création du container principal pour l'éditeur
+    const container = document.createElement("div");
+    container.className = "custom-list-editor-container";
+    container.style.position = "relative"; // Pour une bonne gestion du focus
+
+    // Création de l'input
+    const input = document.createElement("input");
+    input.type = "text";
+    input.style.width = "100%";
+    input.style.boxSizing = "border-box";
+    input.placeholder = "Rechercher un client...";
+    input.value = cell.getValue() || "";
+    container.appendChild(input);
+
+    // Préparation du tableau d'options à partir des paramètres
+    let options = [];
+    if (editorParams && editorParams.values) {
+      options = Array.isArray(editorParams.values)
+        ? editorParams.values
+        : Object.values(editorParams.values);
+    }
+
+    // Création du dropdown personnalisé (ajouté dans le body pour éviter qu'il ne soit caché)
+    const dropdown = document.createElement("div");
+    dropdown.className = "custom-dropdown";
+    dropdown.style.position = "absolute";
+    dropdown.style.background = "#fff";
+    dropdown.style.border = "1px solid #ccc";
+    dropdown.style.maxHeight = "200px";
+    dropdown.style.overflowY = "auto";
+    dropdown.style.zIndex = "10000"; // Pour qu'il apparaisse au-dessus
+    dropdown.style.display = "none"; // Caché par défaut
+    document.body.appendChild(dropdown);
+
+    // Fonction pour positionner le dropdown sous l'input
+    function positionDropdown() {
+      const rect = input.getBoundingClientRect();
+      dropdown.style.top = (rect.bottom + window.scrollY) + "px";
+      dropdown.style.left = (rect.left + window.scrollX) + "px";
+      dropdown.style.width = rect.width + "px";
+    }
+
+    // Mise à jour du contenu du dropdown en fonction de la saisie
+    function updateDropdown() {
+      dropdown.innerHTML = "";
+      const search = input.value.trim().toLowerCase();
+      const filtered = options.filter(opt => opt.toLowerCase().indexOf(search) !== -1);
+
+      if (filtered.length > 0) {
+        filtered.forEach(opt => {
+          const item = document.createElement("div");
+          item.textContent = opt;
+          item.style.padding = "5px";
+          item.style.cursor = "pointer";
+          item.style.borderBottom = "1px solid #eee";
+          item.addEventListener("mousedown", function(e) {
+            e.preventDefault();
+            input.value = opt;
+            dropdown.style.display = "none";
+            success(opt);
+          });
+          dropdown.appendChild(item);
+        });
+      } else {
+        // Aucun résultat : afficher un message et un bouton d'ajout de client
+        const item = document.createElement("div");
+        item.style.display = "flex";
+        item.style.justifyContent = "space-between";
+        item.style.alignItems = "center";
+        item.style.padding = "5px";
+        item.style.borderBottom = "1px solid #eee";
+
+        const message = document.createElement("span");
+        message.textContent = "Client non trouvé";
+        message.style.color = "red";
+        item.appendChild(message);
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.innerHTML = '<i class="fas fa-plus-circle" style="color:green;"></i>';
+        btn.style.border = "none";
+        btn.style.background = "none";
+        btn.style.cursor = "pointer";
+        btn.addEventListener("mousedown", function(e) {
+          e.preventDefault();
+          Swal.fire({
+            title: "Client non trouvé",
+            text: "Voulez-vous ajouter ce client ?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Oui, ajouter",
+            cancelButtonText: "Non"
+          }).then(result => {
+            if (result.isConfirmed) {
+              // Appel à une fonction pour ouvrir la pop-up d'ajout de client
+              ouvrirPopupClient(input.value, cell.getRow(), cell);
+            } else {
+              input.focus();
+            }
+          });
+        });
+        item.appendChild(btn);
+        dropdown.appendChild(item);
+      }
+      positionDropdown();
+      dropdown.style.display = "block";
+    }
+
+    // Déclenche la mise à jour du dropdown lors de la saisie et du focus
+    input.addEventListener("input", updateDropdown);
+    input.addEventListener("focus", updateDropdown);
+
+    // Masquer le dropdown lors du blur avec un léger délai pour permettre le clic
+    input.addEventListener("blur", function() {
+      setTimeout(() => {
+        dropdown.style.display = "none";
+        // Si la valeur correspond à une option existante, on valide
+        if (options.indexOf(input.value) !== -1) {
+          success(input.value);
+        }
+      }, 150);
+    });
+
+    // Au rendu, on met le focus sur l'input et on affiche le dropdown
+    onRendered(function() {
+      input.focus();
+      updateDropdown();
+    });
+
+    return container;
+  }
+
 // Éditeur personnalisé générique pour les listes (sans traitement fournisseur)
 function customListEditor(cell, onRendered, success, cancel, editorParams) {
     // Création du container principal pour l'éditeur
@@ -659,123 +926,178 @@ function genererCompteAutoForPopup() {
 // Fonction d'ouverture de la pop-up pour ajouter un fournisseur
 // -------------------------------------------------------------------
 function ouvrirPopupFournisseur(compteFournisseur, row, cell, tauxTVA) {
+    // Assurez-vous que "societeId" est défini (par exemple via une balise meta)
+    const societeId = document.querySelector('meta[name="societe_id"]').getAttribute("content");
+
     Swal.fire({
       title: 'Ajouter un nouveau fournisseur',
       width: '800px',
       html: `
         <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-           <div style="flex: 1 1 45%;">
-             <input id="swal-compte" class="swal2-input" placeholder="Compte" value="">
-           </div>
-           <div style="flex: 1 1 45%;">
-             <input id="swal-intitule" class="swal2-input" placeholder="Intitulé" required value="${compteFournisseur}">
-           </div>
-           <div style="flex: 1 1 45%;">
-             <input id="swal-identifiant" class="swal2-input" placeholder="Identifiant Fiscal">
-           </div>
-           <div style="flex: 1 1 45%;">
-             <input id="swal-ICE" class="swal2-input" placeholder="ICE">
-           </div>
-           <div style="flex: 1 1 45%;">
-             <select id="swal-rubrique" class="swal2-input"></select>
-           </div>
-           <div style="flex: 1 1 45%;">
-             <select id="swal-contre-partie" class="swal2-input"></select>
-           </div>
-           <div style="flex: 1 1 45%;">
-             <label for="swal-nature_operation" style="font-size: 0.85rem; margin-bottom: 3px; display:block;">Nature de l'opération</label>
-             <select id="swal-nature_operation" class="swal2-input form-select form-select-sm shadow-sm">
-               <option value="">Sélectionner une option</option>
-               <option value="1-Achat de biens d'équipement">1-Achat de biens d'équipement</option>
-               <option value="2-Achat de travaux">2-Achat de travaux</option>
-               <option value="3-Achat de services">3-Achat de services</option>
-             </select>
-           </div>
-           <div style="flex: 1 1 45%;">
-             <label for="swal-designation" style="font-size: 0.85rem; margin-bottom: 3px; display:block;">Désignation</label>
-             <input id="swal-designation" class="swal2-input" placeholder="Désignation">
-           </div>
+          <!-- Ligne 1 : Compte et Intitulé -->
+          <div style="flex: 1 1 45%;">
+            <input id="swal-compte" class="swal2-input" placeholder="Compte" value="">
+          </div>
+          <div style="flex: 1 1 45%;">
+            <input id="swal-intitule" class="swal2-input" placeholder="Intitulé" required value="${compteFournisseur}">
+          </div>
+          <!-- Ligne 2 : Identifiant Fiscal et ICE -->
+          <div style="flex: 1 1 45%;">
+            <input id="swal-identifiant" class="swal2-input" placeholder="Identifiant Fiscal"
+                   pattern="^\\d{7,8}$" maxlength="8" title="L'identifiant fiscal doit comporter 7 ou 8 chiffres"
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+          </div>
+          <div style="flex: 1 1 45%;">
+            <input id="swal-ICE" class="swal2-input" placeholder="ICE"
+                   pattern="^\\d{15}$" maxlength="15" title="L'ICE doit comporter exactement 15 chiffres"
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+          </div>
+          <!-- Ligne 3 : Rubrique et Contre-partie sur une seule ligne -->
+          <div style="display: flex; flex-wrap: nowrap; gap: 10px; width: 100%;">
+            <div style="flex: 1;">
+              <select id="swal-rubrique" class="swal2-input"></select>
+            </div>
+            <div style="flex: 1;">
+              <select id="swal-contre-partie" class="swal2-input"></select>
+            </div>
+          </div>
+          <!-- Ligne 4 : Nature de l'opération et Désignation sur une seule ligne -->
+          <div style="display: flex; flex-wrap: nowrap; gap: 10px; width: 100%;">
+            <div style="flex: 1;">
+              <label for="swal-nature_operation" style="font-size: 0.85rem; margin-bottom: 3px; display:block;">
+                Nature de l'opération
+              </label>
+              <select id="swal-nature_operation" class="swal2-input form-select form-select-sm shadow-sm">
+                <option value="">Sélectionner une option</option>
+                <option value="1-Achat de biens d'équipement">1-Achat de biens d'équipement</option>
+                <option value="2-Achat de travaux">2-Achat de travaux</option>
+                <option value="3-Achat de services">3-Achat de services</option>
+              </select>
+            </div>
+       <div style="flex: 1;">
+    <label for="swal-designation" style="font-size: 0.85rem; margin-bottom: 2px; display:block;">
+      Désignation
+    </label>
+    <input id="swal-designation" class="swal2-input" placeholder="">
+  </div>
+
+
+          </div>
         </div>
       `,
       didOpen: () => {
         // Auto-incrémente le compte dans le champ "swal-compte"
-        genererCompteAutoForPopup();
+        if (typeof genererCompteAutoForPopup === "function") {
+          genererCompteAutoForPopup();
+        }
+
+        // Remplir les listes si les fonctions correspondantes existent
         if (typeof remplirRubriquesTva === "function") {
-           remplirRubriquesTva('swal-rubrique');
+          remplirRubriquesTva('swal-rubrique');
         }
         if (typeof remplirContrePartie === "function") {
-           remplirContrePartie('swal-contre-partie');
+          remplirContrePartie('swal-contre-partie');
         }
+
+        // Initialiser Select2 sur les éléments <select> en forçant le dropdown à rester dans la pop-up
+        var dropdownParent = $('.swal2-container');
+
+        var selectRubrique = $('#swal-rubrique');
+        if (selectRubrique.length) {
+          selectRubrique.select2({ dropdownParent: dropdownParent });
+        }
+
+        var selectContrePartie = $('#swal-contre-partie');
+        if (selectContrePartie.length) {
+          selectContrePartie.select2({ dropdownParent: dropdownParent });
+        }
+
+       // Initialisation de Select2 pour le select concerné (par exemple, pour "swal-nature_operation")
+var selectNature = $('#swal-nature_operation');
+if (selectNature.length) {
+  selectNature.select2({
+    dropdownParent: $('.swal2-container'),
+    width: '100%'
+  });
+}
+
       },
       focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: 'Ajouter',
       preConfirm: () => {
         return {
-          compte: document.getElementById('swal-compte').value,
-          intitule: document.getElementById('swal-intitule').value,
-          identifiant_fiscal: document.getElementById('swal-identifiant').value,
-          ICE: document.getElementById('swal-ICE').value,
-          rubrique_tva: document.getElementById('swal-rubrique').options[document.getElementById('swal-rubrique').selectedIndex].text,
-          contre_partie: document.getElementById('swal-contre-partie').value,
-          nature_operation: document.getElementById('swal-nature_operation').value,
-          designation: document.getElementById('swal-designation').value,
+          compte: $('#swal-compte').val(),
+          intitule: $('#swal-intitule').val(),
+          identifiant_fiscal: $('#swal-identifiant').val(),
+          ICE: $('#swal-ICE').val(),
+          // Pour rubrique_tva, on récupère le texte de l'option sélectionnée
+          rubrique_tva: $('#swal-rubrique option:selected').text(),
+          contre_partie: $('#swal-contre-partie').val(),
+          nature_operation: $('#swal-nature_operation').val(),
+          designation: $('#swal-designation').val(),
           societe_id: societeId
         };
       }
     }).then((result) => {
-      if(result.isConfirmed && result.value) {
+      if (result.isConfirmed && result.value) {
         fetch('/fournisseurs', {
           method: 'POST',
           headers: {
-             'Content-Type': 'application/json',
-             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
           },
           body: JSON.stringify(result.value)
         })
         .then(response => response.json())
         .then(newFournisseur => {
-           if(newFournisseur.error) {
-             Swal.fire('Erreur', newFournisseur.error, 'error');
-           } else {
-             const fournisseurCree = newFournisseur.fournisseur;
-             let newTauxTVA = 0;
-             if (fournisseurCree.rubrique_tva) {
-               let match = fournisseurCree.rubrique_tva.match(/\(([\d\.]+)%\)/) || fournisseurCree.rubrique_tva.match(/([\d\.]+)%\s*$/);
-               if (match && match[1]) {
-                 let valeurExtraite = parseFloat(match[1]);
-                 newTauxTVA = (valeurExtraite < 1) ? valeurExtraite : valeurExtraite / 100;
-               }
-             }
-             window.tauxTVAGlobal = newTauxTVA;
-             const newValue = `${fournisseurCree.compte} - ${fournisseurCree.intitule}`;
-             comptesFournisseurs.push(newValue);
-             cell.setValue(newValue);
-             const numeroFacture = row.getCell("numero_facture").getValue() || "Inconnu";
-             row.update({
-               contre_partie: fournisseurCree.contre_partie,
-               rubrique_tva: fournisseurCree.rubrique_tva,
-               taux_tva: newTauxTVA,
-               libelle: `F° ${numeroFacture} ${fournisseurCree.intitule}`,
-               compte_tva: (comptesVentes.length > 0)
-                 ? `${comptesVentes[0].compte} - ${comptesVentes[0].intitule}`
-                 : ""
-             });
-             Swal.fire('Succès', 'Fournisseur ajouté avec succès', 'success').then(() => {
-               const creditCell = row.getCell("credit");
-               if (creditCell) {
-                 setTimeout(() => { creditCell.edit(); }, 200);
-               }
-             });
-           }
+          if (newFournisseur.error) {
+            Swal.fire('Erreur', newFournisseur.error, 'error');
+          } else {
+            const fournisseurCree = newFournisseur.fournisseur;
+            let newTauxTVA = 0;
+            if (fournisseurCree.rubrique_tva) {
+              let match = fournisseurCree.rubrique_tva.match(/\(([\d\.]+)%\)/) ||
+                          fournisseurCree.rubrique_tva.match(/([\d\.]+)%\s*$/);
+              if (match && match[1]) {
+                let valeurExtraite = parseFloat(match[1]);
+                newTauxTVA = (valeurExtraite < 1) ? valeurExtraite : valeurExtraite / 100;
+              }
+            }
+            window.tauxTVAGlobal = newTauxTVA;
+            const newValue = `${fournisseurCree.compte} - ${fournisseurCree.intitule}`;
+            // Ajout à la liste globale des fournisseurs
+            if (typeof window.comptesFournisseurs !== "undefined") {
+              window.comptesFournisseurs.push(newValue);
+            }
+            cell.setValue(newValue);
+            const numeroFacture = row.getCell("numero_facture").getValue() || "Inconnu";
+            row.update({
+              contre_partie: fournisseurCree.contre_partie,
+              rubrique_tva: fournisseurCree.rubrique_tva,
+              taux_tva: newTauxTVA,
+              libelle: `F° ${numeroFacture} ${fournisseurCree.intitule}`,
+              compte_tva: (window.comptesVentes && window.comptesVentes.length > 0)
+                ? `${window.comptesVentes[0].compte} - ${window.comptesVentes[0].intitule}`
+                : ""
+            });
+            Swal.fire('Succès', 'Fournisseur ajouté avec succès', 'success').then(() => {
+              const creditCell = row.getCell("credit");
+              if (creditCell) {
+                setTimeout(() => { creditCell.edit(); }, 200);
+              }
+            });
+          }
         })
         .catch(error => {
-           console.error('Erreur lors de l’ajout du fournisseur:', error);
-           Swal.fire('Erreur', 'Une erreur est survenue lors de l’ajout du fournisseur.', 'error');
+          console.error('Erreur lors de l’ajout du fournisseur:', error);
+          Swal.fire('Erreur', 'Une erreur est survenue lors de l’ajout du fournisseur.', 'error');
         });
       }
     });
   }
+
+
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1093,8 +1415,6 @@ const tabulatorManager = new TabulatorManager(journalSelectors);
 
 
 
-
-
 const { DateTime } = luxon;
 
 let societeId = $('#societe_id').val();
@@ -1366,7 +1686,7 @@ async function fetchComptesTva() {
     field: "compte",
     headerFilter: "input",
     headerFilterParams: {
-      elementAttributes: { style: "width: 90px; height: 20px;" }
+      elementAttributes: { style: "width: 120px; height: 20px;" }
     },
     editor: customListEditorFrs, // Utilise l'éditeur personnalisé pour fournisseurs
     editorParams: {
@@ -1519,7 +1839,7 @@ async function fetchComptesTva() {
                             style: "width: 90px; height: 20px;" // 80 pixels de large
                         }
                     },
-                    editor: "list",
+                    editor: customListEditor,
                     editorParams: {
                         autocomplete: true,
                         listOnEmpty: true,
@@ -1852,8 +2172,12 @@ function focusTabulatorDate() {
 // Tableau des sélecteurs dans l'ordre de navigation
 const controlSelectors = [
     "#journal-achats",
-    "#periode-achats",
-    "#filter-intitule-achats"
+    "#filter-intitule-achats",
+    "#filter-contre-partie-achats",
+    "#filter-libre-achats",
+    "#filter-exercice-achats",
+    "#periode-achats"
+
     // Ajoutez ici d'autres sélecteurs si nécessaire
 ];
 
@@ -2029,55 +2353,92 @@ var tableVentes = new Tabulator("#table-ventes", {
             elementAttributes: {
                 style: "width: 90px; height: 20px;" // 80 pixels de large
             }
-        }, editor: "input" },
+        },
+        editor: "input"
+     },
         { title: "N° Facture", field: "numero_facture",headerFilter: "input",headerFilterParams: {
             elementAttributes: {
                 style: "width: 90px; height: 20px;" // 80 pixels de large
             }
         }, editor: "input" },
 
-{
-    title: "Compte",
-    field: "compte",
-    headerFilter: "input",
-    headerFilterParams: {
-        elementAttributes: {
-            style: "width: 90px; height: 20px;" // 80 pixels de large
-        }
-    },
-    editor: "list",
-    editorParams: {
-        autocomplete: true,
-        listOnEmpty: true,
-        values: comptesClients, // Liste des comptes clients déjà définie
-    },
-    cellEdited: function (cell) {
-        // Récupérer la ligne associée
-        const row = cell.getRow();
+       {
+  title: "Compte",
+  field: "compte",
+  headerFilter: "input",
+  headerFilterParams: {
+    elementAttributes: { style: "width: 90px; height: 20px;" }
+  },
+  // Utilisation de l'éditeur personnalisé pour les clients
+  editor: customListEditorClt,
+  editorParams: {
+    autocomplete: true,
+    listOnEmpty: true,
+    values: comptesClients // Exemple : ["001 - Client A", "002 - Client B", …]
+  },
+  cellEdited: function(cell) {
+    const compteClient = cell.getValue();
+    const row = cell.getRow();
+    if (!compteClient) return;
 
-        // Valeur sélectionnée dans la liste
-        const compteSelectionne = cell.getValue();
+    // Recherche du client dans votre tableau de clients
+    const client = clients.find(c => `${c.compte} - ${c.intitule}` === compteClient);
+    const numeroDossier = row.getCell("numero_dossier").getValue() || "";
+    const numeroFacture = row.getCell("numero_facture").getValue() || "";
 
-        // Récupérer les autres champs de la ligne
-        const numeroDossier = row.getCell("numero_dossier").getValue() || "";
-        const numeroFacture = row.getCell("numero_facture").getValue() || "";
-
-        // Recherche de l'intitulé dans comptesClients
-        const client = clients.find(c => `${c.compte} - ${c.intitule}` === compteSelectionne);
-        const intituleClient = client ? client.intitule : compteSelectionne.split(" - ")[1] || "Inconnu";
-
-        // Mise à jour du champ "Libellé" au format souhaité
-        row.update({
-            libelle: `F°${numeroFacture} D°${numeroDossier} ${intituleClient}`,
+    if (client) {
+      // Mise à jour du libellé si le client est trouvé
+      row.update({
+        libelle: `F°${numeroFacture} D°${numeroDossier} ${client.intitule}`
+      });
+    } else {
+      // Cas où le client n'est pas trouvé : on affiche un message et un bouton pour l'ajouter
+      let editorEl = cell.getElement();
+      if (!editorEl.querySelector('.btn-ajouter-client')) {
+        editorEl.innerHTML = `
+          <div style="display: flex; flex-direction: column; padding: 5px;">
+            <span style="color:red; font-size:0.9em;">Client non trouvé</span>
+            <div style="display: flex; align-items: center; margin-top: 3px;">
+              <span>${compteClient}</span>
+              <button type="button" class="btn-ajouter-client" title="Ajouter client"
+                style="margin-left:5px; padding:0 5px; border:none; background:none; cursor:pointer;">
+                <i class="fas fa-plus-circle" style="color:green;"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        editorEl.querySelector('.btn-ajouter-client').addEventListener('click', () => {
+          Swal.fire({
+            title: 'Client non trouvé',
+            text: "Voulez-vous ajouter ce client ?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, ajouter',
+            cancelButtonText: 'Non'
+          }).then((resultConfirmation) => {
+            if (resultConfirmation.isConfirmed) {
+              // Appel de la fonction d'ouverture de la pop-up pour ajouter un client
+              ouvrirPopupClient(compteClient, row, cell);
+            } else {
+              cell.edit();
+            }
+          });
         });
+      }
+      if (!cell._reopened) {
+        cell._reopened = true;
+        setTimeout(() => { cell.edit(); }, 100);
+      }
+    }
 
-        // Appliquer le focus sur la cellule "Débit" après modification du "Compte"
-        const debitCell = row.getCell("debit");
-        if (debitCell) {
-            debitCell.getElement().focus();
-        }
-    },
+    // Mise au focus sur la cellule "Débit"
+    const debitCell = row.getCell("debit");
+    if (debitCell) {
+      debitCell.getElement().focus();
+    }
+  }
 },
+
 
 
 {
@@ -2132,7 +2493,7 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
             style: "width: 90px; height: 20px;" // 80 pixels de large
         }
     },
-    editor: "list",
+    editor: customListEditor,
     editorParams: {
         autocomplete: true,
         listOnEmpty: true,
@@ -2183,7 +2544,7 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
                     style: "width: 90px; height: 20px;" // 80 pixels de large
                 }
             },
-            editor: "list",
+            editor: customListEditor,
             editorParams: {
                 autocomplete: true,
                 listOnEmpty: true,

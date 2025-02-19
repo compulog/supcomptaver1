@@ -12,8 +12,10 @@
    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
    <!-- Select2 CSS -->
-   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-   <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+   {{-- <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+   <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" /> --}}
+   <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
 
    <!-- Tabulator CSS -->
    <link href="https://unpkg.com/tabulator-tables@5.0.7/dist/css/tabulator.min.css" rel="stylesheet">
@@ -43,7 +45,8 @@
 
 <body>
  <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
     <!-- Bootstrap JS -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -258,9 +261,9 @@
                                 <label for="compte">Compte</label>
                                 <div class="d-flex">
                                     <input type="text" class="form-control form-control-sm shadow-sm " id="compte" name="compte" placeholder="4411XXXX" required>
-                                    <button type="button" class="btn btn-secondary btn-sm" id="autoIncrementBtn" >
-                                        Auto
-                                    </button>
+                                    {{-- <button type="button" class="btn btn-secondary btn-sm" id="autoIncrementBtn" >
+                                       auto
+                                    </button> --}}
                                 </div>
                             </div>
                         </div>
@@ -753,12 +756,12 @@ function envoyerDonnees() {
 // Remplir les rubriques TVA
 function remplirRubriquesTva(selectId, selectedValue = null) {
     $.ajax({
-        url: '/rubriques-tva?type=Achat',
+        url: '/get-rubriques-tva',
         type: 'GET',
         success: function (data) {
             var select = $("#" + selectId);
 
-            // Réinitialisation de Select2
+            // Réinitialisation de Select2 s'il est déjà initialisé
             if (select.hasClass("select2-hidden-accessible")) {
                 select.select2("destroy");
             }
@@ -833,7 +836,6 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
         }
     });
 }
-
 
     // edit
 // Gestion du formulaire de modification
@@ -997,59 +999,87 @@ $(document).ready(function () {
 
     // Remplir les rubriques TVA
     function remplirRubriquesTva(selectId, selectedValue = null) {
-        $.ajax({
-            url: '/rubriques-tva?type=Achat',
-            type: 'GET',
-            success: function (data) {
-                var select = $("#" + selectId);
-                if (select.hasClass("select2-hidden-accessible")) {
-                    select.select2("destroy");
-                }
-                select.empty();
-                select.append(new Option("Sélectionnez une Rubrique", ""));
-                let categoriesArray = [];
-                $.each(data.rubriques, function (categorie, rubriques) {
-                    let categories = categorie.split('/').map(cat => cat.trim());
-                    let mainCategory = categories[0];
-                    let subCategory = categories[1] ? categories[1].trim() : '';
-                    categoriesArray.push({
-                        mainCategory: mainCategory,
-                        subCategory: subCategory,
-                        rubriques: rubriques.rubriques
-                    });
+    $.ajax({
+        url: '/get-rubriques-tva',
+        type: 'GET',
+        success: function (data) {
+            var select = $("#" + selectId);
+
+            // Réinitialisation de Select2 s'il est déjà initialisé
+            if (select.hasClass("select2-hidden-accessible")) {
+                select.select2("destroy");
+            }
+            select.empty();
+            select.append(new Option("Sélectionnez une Rubrique", ""));
+
+            let categoriesArray = [];
+            $.each(data.rubriques, function (categorie, rubriques) {
+                let categories = categorie.split('/').map(cat => cat.trim());
+                let mainCategory = categories[0];
+                let subCategory = categories[1] ? categories[1].trim() : '';
+                categoriesArray.push({
+                    mainCategory: mainCategory,
+                    subCategory: subCategory,
+                    rubriques: rubriques.rubriques
                 });
-                categoriesArray.sort((a, b) => a.mainCategory.localeCompare(b.mainCategory));
-                let categoryCounter = 1;
-                $.each(categoriesArray, function (index, categoryObj) {
-                    let mainCategoryOption = new Option(`${categoryCounter}. ${categoryObj.mainCategory}`, '', true, true);
-                    mainCategoryOption.className = 'category';
-                    mainCategoryOption.disabled = true;
-                    select.append(mainCategoryOption);
-                    categoryCounter++;
-                    if (categoryObj.subCategory) {
-                        let subCategoryOption = new Option(` ${categoryObj.subCategory}`, '', true, true);
-                        subCategoryOption.className = 'subcategory';
-                        subCategoryOption.disabled = true;
-                        select.append(subCategoryOption);
-                    }
-                    categoryObj.rubriques.forEach(function (rubrique) {
+            });
+
+            categoriesArray.sort((a, b) => a.mainCategory.localeCompare(b.mainCategory));
+            let categoryCounter = 1;
+            const excludedNumRacines = [147, 151, 152, 148, 144];
+
+            $.each(categoriesArray, function (index, categoryObj) {
+                let mainCategoryOption = new Option(`${categoryCounter}. ${categoryObj.mainCategory}`, '', true, true);
+                mainCategoryOption.className = 'category';
+                mainCategoryOption.disabled = true;
+                select.append(mainCategoryOption);
+                categoryCounter++;
+
+                if (categoryObj.subCategory) {
+                    let subCategoryOption = new Option(` ${categoryObj.subCategory}`, '', true, true);
+                    subCategoryOption.className = 'subcategory';
+                    subCategoryOption.disabled = true;
+                    select.append(subCategoryOption);
+                }
+
+                categoryObj.rubriques.forEach(function (rubrique) {
+                    if (!excludedNumRacines.includes(rubrique.Num_racines)) {
                         let option = new Option(`${rubrique.Num_racines}: ${rubrique.Nom_racines} : ${Math.round(rubrique.Taux)}%`, rubrique.Num_racines);
                         option.setAttribute('data-search-text', `${rubrique.Num_racines} ${rubrique.Nom_racines} ${categoryObj.mainCategory}`);
                         select.append(option);
-                    });
+                    }
                 });
-                select.select2({
-                    width: '100%',
-                    minimumResultsForSearch: 0,
-                    dropdownAutoWidth: true
-                });
+            });
 
-                if (selectedValue) {
-                    select.val(selectedValue).trigger('change');
+            select.select2({
+                width: '100%',
+                minimumResultsForSearch: 0,
+                dropdownAutoWidth: true,
+                templateResult: function (data) {
+                    if (!data.id) return data.text;
+                    if ($(data.element).hasClass('category')) {
+                        return $('<span style="font-weight: bold;">' + data.text + '</span>');
+                    } else if ($(data.element).hasClass('subcategory')) {
+                        return $('<span style="font-weight: bold; padding-left: 10px;">' + data.text + '</span>');
+                    }
+                    return $('<span>' + data.text + '</span>');
+                },
+                matcher: function (params, data) {
+                    if ($.trim(params.term) === '') return data;
+                    var searchText = $(data.element).data('search-text');
+                    return searchText && searchText.toLowerCase().includes(params.term.toLowerCase()) ? data : null;
                 }
+            });
+
+            if (selectedValue) {
+                select.val(selectedValue).trigger('change');
             }
-        });
-    }
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            console.error('Erreur lors de la récupération des rubriques :', textStatus, errorThrown);
+        }
+    });
+}
 
     // Remplir les options de contrepartie
     function remplirContrePartie(selectId, selectedValue = null) {

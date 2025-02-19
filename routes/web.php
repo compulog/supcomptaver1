@@ -70,7 +70,9 @@ use App\Http\Middleware\SetSocieteId;
 
 Route::group(['middleware' => 'auth'], function () {
 
-
+    Route::get('/get-next-compte-client/{societeId}', [ClientController::class, 'getNextCompteForClient'])
+    ->name('client.getNextCompte');
+    Route::get('/rubriques-tva', [FournisseurController::class, 'getRubriquesTva'])->name('rubriques.tva');
         Route::post('/messages/read/{id}', [MessageController::class, 'markAsRead'])->name('messages.read');
         Route::get('/comptes-achats', [JournalController::class, 'getComptesAchats']);
         Route::get('/comptes-ventes', [JournalController::class, 'getComptesVentes']);
@@ -132,13 +134,11 @@ Route::group(['middleware' => 'auth'], function () {
         Route::post('/delete-rows', [OperationCouranteController::class, 'deleteRows']);
         Route::put('/operations/{id}', [OperationCouranteController::class, 'updateField']);
         Route::put('/plancomptable/{id}', [PlanComptableController::class, 'edit']);
-        Route::get('/plancomptable/data', [PlanComptableController::class, 'getData']);
-        Route::post('/plancomptable', [PlanComptableController::class, 'store']);
+         Route::post('/plancomptable', [PlanComptableController::class, 'store']);
         Route::delete('/plancomptable/{id}', [PlanComptableController::class, 'destroy']);
         Route::put('/plancomptable/{id}', [PlanComptableController::class, 'update']);
-        Route::post('/plancomptable/import', [PlanComptableController::class, 'import'])->name('plancomptable.import');
-        Route::get('/plancomptable/data', [PlanComptableController::class, 'index'])->name('plancomptable.index');
-        Route::post('/plancomptable/deleteSelected', [PlanComptableController::class, 'deleteSelected']);
+        // Route::post('/plancomptable/import', [PlanComptableController::class, 'import'])->name('plancomptable.import');
+         Route::post('/plancomptable/deleteSelected', [PlanComptableController::class, 'deleteSelected']);
         Route::get('/plan-comptable/import', [PlanComptableController::class, 'showImportForm'])->name('plancomptable.importForm');
         Route::get('/', [HomeController::class, 'home']);
         Route::get('profile', function () {
@@ -234,7 +234,6 @@ Route::group(['middleware' => 'auth'], function () {
         Route::post('/utilisateurs', [UserController::class, 'store'])->name('utilisateurs.store');
         Route::post('/select-database', [SessionsController::class, 'selectDatabase'])->name('your_action_here');
         Route::get('import', [SocieteController::class, 'showImportForm'])->name('import.form');
-   
         // Route::post('import', [SocieteController::class, 'import'])->name('societes.import');
         Route::get('/foldersVente1/{id}', [FoldersVente1Controller::class, 'index'])->name('foldersVente1');
         Route::post('/folderVente/create', [FoldersVente1Controller::class, 'create'])->name('folderVente.create');

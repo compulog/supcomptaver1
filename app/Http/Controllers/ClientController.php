@@ -5,6 +5,8 @@ use App\Imports\ClientsImport;
 
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Client;
+use App\Models\Societe;
+
 use Illuminate\Http\Request;
 use App\Exports\ClientsExport;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +21,7 @@ class ClientController extends Controller
         $this->middleware(function ($request, $next) {
             // Récupérer le nom de la base de données depuis la session.
             $dbName = session('database');
-    
+
             if ($dbName) {
                 // Définir la connexion à la base de données dynamiquement.
                 config(['database.connections.supcompta.database' => $dbName]);
@@ -54,9 +56,9 @@ class ClientController extends Controller
     }
 }
 
-    
-    
- 
+
+
+
     public function export(Request $request)
     {
         // Récupère l'ID de la société à partir du champ caché
@@ -73,7 +75,7 @@ class ClientController extends Controller
     // }
 
     // Enregistrer un nouveau client
-    
+
     // Enregistrer un nouveau client
     public function store(Request $request)
     {
@@ -106,28 +108,28 @@ class ClientController extends Controller
         return response()->json(['success' => false, 'error' => $e->getMessage()]);
     }
     }
-    
-    
+
+
     public function index()
     {
         $societeId = session('societeId'); // Récupérer l'ID de la société de la session
         $clients = Client::where('societe_id', $societeId)->get(); // Récupérer les clients de la société
-        
+
         return view('client', compact('clients', 'societeId'));
     }
-    
-    
-    
+
+
+
    // Dans ClientController.php
    public function edit($id)
    {
        $client = Client::findOrFail($id);
        return response()->json($client);
    }
-   
-   
 
-  
+
+
+
 
 public function update(Request $request, $id)
 {
@@ -149,11 +151,73 @@ public function update(Request $request, $id)
     return response()->json(['success' => true, 'client' => $client]);
 }
 
+public function getNextCompteForClient($societeId)
+{
+    // Récupérer la société
+    $societe = Societe::find($societeId);
+    if (!$societe) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Société introuvable'
+        ], 404);
+    }
+
+    $nombreChiffres = $societe->nombre_chiffre_compte; // Nombre de chiffres pour le compte
+    $prefix = '3421'; // Préfixe des comptes clients
+
+    // Vérifier que le nombre total de chiffres est suffisant
+    if ($nombreChiffres < strlen($prefix) + 1) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Le nombre de chiffres du compte est trop court.'
+        ], 400);
+    }
+
+    // Récupérer tous les comptes clients pour cette société triés par ordre croissant
+    $comptesExistants = Client::where('societe_id', $societeId)
+        ->where('compte', 'like', $prefix . '%')
+        ->orderBy('compte', 'asc')
+        ->pluck('compte')
+        ->toArray();
+
+    // Calculer le nombre de chiffres à générer après le préfixe
+    $chiffresRestants = $nombreChiffres - strlen($prefix);
+
+    // Si aucun compte n'existe, retourner le premier compte
+    if (empty($comptesExistants)) {
+        $firstCompte = $prefix . str_pad('1', $chiffresRestants, '0', STR_PAD_LEFT);
+        return response()->json(['success' => true, 'nextCompte' => $firstCompte]);
+    }
+
+    // Extraire les séquences numériques des comptes existants
+    $sequences = array_map(function ($compte) use ($prefix) {
+        return (int) substr($compte, strlen($prefix));
+    }, $comptesExistants);
+
+    // Rechercher un trou dans la séquence
+    $nextSequence = null;
+    for ($i = 1; $i <= max($sequences); $i++) {
+        if (!in_array($i, $sequences)) {
+            $nextSequence = $i;
+            break;
+        }
+    }
+
+    // Si aucun trou n'est trouvé, prendre le numéro suivant après le plus grand
+    if ($nextSequence === null) {
+        $nextSequence = max($sequences) + 1;
+    }
+
+    // Générer le prochain compte avec le préfixe et le format approprié
+    $nextCompte = $prefix . str_pad($nextSequence, $chiffresRestants, '0', STR_PAD_LEFT);
+
+    return response()->json(['success' => true, 'nextCompte' => $nextCompte]);
+}
 
 
-    
-    
-    
+
+
+
 public function destroy($id)
 {
     // Trouver le client par son ID
@@ -169,15 +233,15 @@ public function destroy($id)
     return response()->json(['success' => false, 'message' => 'Client non trouvé.'], 404);
 }
 
-    
+
 
     // public function import(Request $request)
     // {
-    //     // Validation   
+    //     // Validation
     //     $request->validate([
     //         'excel-file' => 'required|mimes:xlsx,xls,csv|max:2048',
     //     ]);
-    
+
     //     try {
     //         Excel::import(new ClientsImport, $request->file('excel-file'));
     //         return response()->json(['success' => true, 'message' => 'Importation réussie !']);
@@ -186,7 +250,7 @@ public function destroy($id)
     //         return response()->json(['success' => false, 'message' => 'Une erreur est survenue lors de l\'importation.']);
     //     }
     // }
-    
+
     public function importClients(Request $request)
     {
         $request->validate([
