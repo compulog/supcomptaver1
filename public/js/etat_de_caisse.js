@@ -95,7 +95,6 @@ document.getElementById('month-select').addEventListener('change', function() {
     saveData();
 });
 
-
 document.getElementById('cloturer-button').addEventListener('click', function() {
     var mois = $('#month-select').val();
     var annee = $('input[type="text"]').val();
@@ -126,8 +125,25 @@ document.getElementById('cloturer-button').addEventListener('click', function() 
                 success: function(response) {
                     console.log("Réponse du serveur :", response);
                     alert('Le solde a été clôturé avec succès !');
-                    saveData();
-                    location.reload();
+
+                    // Mettez à jour l'interface utilisateur
+                    document.getElementById('initial-balance').disabled = true; // Désactiver le champ de solde initial
+                    document.getElementById('cloturer-button').disabled = true; // Désactiver le bouton de clôture
+
+                    // Mettez à jour le tableau pour refléter que le mois est clôturé
+                    updateTableData(mois, annee); // Mettre à jour les données du tableau
+                    updateTotals(mois, annee); // Mettre à jour les totaux
+
+                    // Mettre à jour la valeur cloturer dans soldesMensuels
+                    var soldeMensuel = soldesMensuels.find(function(solde) {
+                        return parseInt(solde.mois) === parseInt(mois) &&
+                               parseInt(solde.annee) === parseInt(annee) &&
+                               solde.code_journal === journalCode;
+                    });
+
+                    if (soldeMensuel) {
+                        soldeMensuel.cloturer = 1; // Mettre à jour la valeur cloturer
+                    }
                 },
                 error: function(xhr, status, error) {
                     console.error("Erreur lors de la clôture :", error);
@@ -140,7 +156,6 @@ document.getElementById('cloturer-button').addEventListener('click', function() 
         }
     });
 });
-
 
 document.getElementById('export-excel-icon').addEventListener('click', exportToExcel);
 
@@ -916,3 +931,44 @@ document.getElementById('cloturer-button').addEventListener('click', function() 
      updateShareIconVisibility();
 });
 
+// Écoutez l'événement keydown pour le champ "Code Journal"
+// Écoutez l'événement keydown pour le champ "Code Journal"
+document.getElementById('journal-select').addEventListener('keydown', function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault(); // Empêche le comportement par défaut
+        document.getElementById('month-select').focus(); // Focaliser le champ "Période"
+    }
+});
+
+// Écoutez l'événement keydown pour le champ "Période"
+document.getElementById('month-select').addEventListener('keydown', function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault(); // Empêche le comportement par défaut
+        var selectedMonth = this.value; // Récupérer le mois sélectionné
+        if (selectedMonth !== "01") {
+            // Si le mois n'est pas janvier, passer directement au tableau
+            const firstRow = table.getRows()[0];
+            if (firstRow) {
+                const firstCell = firstRow.getCells()[0];
+                firstCell.edit(); // Éditer la première cellule
+            }
+        } else {
+            // Si c'est janvier, focaliser le champ "Solde initial"
+            document.getElementById('initial-balance').focus(); // Focaliser le champ "Solde initial"
+        }
+    }
+});
+
+
+// Écoutez l'événement keydown pour le champ "Solde initial"
+document.getElementById('initial-balance').addEventListener('keydown', function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault(); // Empêche le comportement par défaut
+        // Focaliser la première cellule du tableau
+        const firstRow = table.getRows()[0];
+        if (firstRow) {
+            const firstCell = firstRow.getCells()[0];
+            firstCell.edit(); // Éditer la première cellule
+        }
+    }
+});

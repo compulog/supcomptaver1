@@ -51,6 +51,14 @@
             font-size: 12px; /* Réduire la taille de la police */
             padding: 5px; /* Ajuster les marges internes */
         }
+/* Personnaliser la largeur des options dans le dropdown */
+/* .select2-dropdown.custom-dropdown {
+    width: 400px !important;   
+}
+
+ .select2-results__option {
+    width: 50% !important;  
+} */
 
     </style>
 </head>
@@ -106,7 +114,8 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="forme_juridique" class="form-label">Forme Juridique</label>
-                            <select class="form-control" name="forme_juridique">
+                            <select class="form-control" name="forme_juridique" required>
+                            <option value="">choisir une option</option>
                                 <option value="SARL">SARL</option>
                                 <option value="SARL-AU">SARL-AU</option>
                                 <option value="SA">SA</option>
@@ -136,7 +145,9 @@
                             <label for="centre_rc" class="form-label">Centre RC</label>
 
                         <select id="ctl00_ctl36_g_69b20002_9278_429e_be53_84b78f0af32b_ctl00_DropDownList_Ville" class="form-control" name="centre_rc" required>
-						<option value="AGADIR">AGADIR</option>
+						
+                        <option value="">choisir une option</option>    
+                        <option value="AGADIR">AGADIR</option>
 						<option value="AL HOCEIMA">AL HOCEIMA</option>
 						<option value="AZILAL">AZILAL</option>
 						<option value="AZROU">AZROU</option>
@@ -219,20 +230,21 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="date_creation" class="form-label">Date de Création</label>
-                            <input type="date" class="form-control" name="date_creation" required>
+                            <input type="date" class="form-control" name="date_creation" >
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label for="exercice_social_debut" class="form-label">Exercice Social Début</label>
+                            <label for="exercice_social_debut" class="form-label">Exercice comptable début</label>
                             <input type="date" name="exercice_social_debut" class="form-control" required>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label for="exercice_social_fin" class="form-label">Exercice Social Fin</label>
+                            <label for="exercice_social_fin" class="form-label">Exercice comptable fin</label>
                             <input type="date" name="exercice_social_fin" class="form-control" required>
                         </div>
                         <div class="col-md-6 mb-3">
                     <label for="modele_comptable" class="form-label">Modèle Comptable</label>
                     <select class="form-control" name="modele_comptable" id="modele_comptable" required>
-                        <option value="Normal">Normal</option>
+                    <option value="">choisir une option</option>    
+                    <option value="Normal">Normal</option>
                         <option value="Simplifié">Simplifié</option>
                     </select>
                 </div>
@@ -246,56 +258,61 @@
                         <div class="col-md-6 mb-3">
                             <label for="nature_activite" class="form-label">Nature de l'Activité</label>
                             <select class="form-control" name="nature_activite">
+                            <option value="">choisir une option</option>    
 
-                                <option value="4.Vente de biens d'équipement">Vente de biens d'équipement</option>
-                                <option value="5.Vente de travaux">Vente de travaux</option>
-                                <option value="6.Vente de services">Vente de services</option>
+                                <option value="4.Vente de biens d'équipement">4.Vente de biens d'équipement</option>
+                                <option value="5.Vente de travaux">5.Vente de travaux</option>
+                                <option value="6.Vente de services">6.Vente de services</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="activite" class="form-label">Activité</label>
-                            <input type="text" class="form-control" name="activite" required>
+                            <input type="text" class="form-control" name="activite" >
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
-                            <select class="form-control" name="assujettie_partielle_tva" id="assujettie_partielle_tva" required>
-                            <option value="Null">choisir un option</option>
-                                <option value="1">Oui</option>
-                                <option value="0">Non</option>
+                            <select class="form-control" name="assujettie_partielle_tva" id="assujettie_partielle_tva" >
+                            <option value="0">Non</option>
+                            <option value="1">Oui</option>
+                               
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="prorata_de_deduction" class="form-label">Prorata de Déduction</label>
-                            <input type="text" class="form-control" name="prorata_de_deduction" id="prorata_de_deduction" required>
+                            <input type="text" class="form-control" name="prorata_de_deduction" id="prorata_de_deduction" >
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="regime_declaration" class="form-label">Régime de Déclaration de TVA</label>
 
-                            <select class="form-control" name="regime_declaration" required>
-                                 <option value="Mensuel de droit commun">Mensuel de droit commun</option>
-                                <option value="Trimestriel de droit commun">Trimestriel de droit commun</option>
-                                <option value="Mensuel de la marge">Mensuel de la marge</option>
-                                <option value="Trimestriel de la marge">Trimestriel de la marge</option>
+                            <select class="form-control" name="regime_declaration" >
+                            <option value="">choisir une option</option>    
+    
+                            <option value="1.Mensuel">1.Mensuel </option>
+                                <option value="2.Trimestriel">2.Trimestriel</option>
+                              
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="fait_generateur" class="form-label">Fait Générateur</label>
-                            <select class="form-control" name="fait_generateur" required>
-                                 <option value="Encaissement">Encaissement</option>
-                                <option value="Débit">Débit</option>
+                            <select class="form-control" name="fait_generateur" >
+                            <option value="">choisir une option</option>    
+
+                                 <option value="Encaissement">1.Encaissement</option>
+                                <option value="Débit">2.Débit</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <div class="form-group">
                                 <label for="rubrique_tva">Rubrique TVA</label>
-                                <select class="form-control" id="rubrique_tva"  name="rubrique_tva">
-                                    <!-- Les options seront ajoutées par JavaScript -->
+                                <select class="form-control" id="rubrique_tva"  name="rubrique_tva" >
+                                   
+                                 <!-- Les options seront ajoutées par JavaScript -->
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="designation" class="form-label">Désignation</label>
-                            <input type="text" class="form-control" name="designation" required>
+                            <input type="text" class="form-control" name="designation" >
                         </div>
 
                     </div>
@@ -389,12 +406,12 @@
                         <!-- Emplacement pour Exercice Social Début -->
                         <div class="col-md-6 mb-3 d-flex">
                             <div class="me-2" style="flex: 1;">
-                                <label for="import_exercice_social_debut" class="form-label">Emplacement Exercice Social Début</label>
+                                <label for="import_exercice_social_debut" class="form-label">Emplacement Exercice comptable début</label>
                                 <input type="number" class="form-control" id="import_exercice_social_debut" name="exercice_social_debut">
                             </div>
                             <!-- Emplacement pour Exercice Social Fin -->
                             <div style="flex: 1;">
-                                <label for="import_exercice_social_fin" class="form-label">Emplacement Exercice Social Fin</label>
+                                <label for="import_exercice_social_fin" class="form-label">Emplacement Exercice comptable fin</label>
                                 <input type="number" class="form-control" id="import_exercice_social_fin" name="exercice_social_fin">
                             </div>
                         </div>
@@ -483,15 +500,25 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_forme_juridique" class="form-label">Forme Juridique</label>
-                            <input type="text" class="form-control" id="mod_forme_juridique" name="forme_juridique">
+                            <select class="form-control" id="mod_forme_juridique" name="forme_juridique" required>
+                                <option value="SARL">SARL</option>
+                                <option value="SARL-AU">SARL-AU</option>
+                                <option value="SA">SA</option>
+                                <option value="SAS">SAS</option>
+                                <option value="SNC">SNC</option>
+                                <option value="SCS">SCS</option>
+                                <option value="SCI">SCI</option>
+                                <option value="SEP">SEP</option>
+                                <option value="GIE">GIE</option>
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_siège_social" class="form-label">Siège Social</label>
-                            <input type="text" class="form-control" id="mod_siège_social" name="siege_social">
+                            <input type="text" class="form-control" id="mod_siège_social" required name="siege_social">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_patente" class="form-label">Patente</label>
-                            <input type="text" class="form-control" id="mod_patente" name="patente">
+                            <input type="text" class="form-control" id="mod_patente" required name="patente">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_rc" class="form-label">RC</label>
@@ -499,89 +526,170 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_centre_rc" class="form-label">Centre RC</label>
-                            <input type="text" class="form-control" id="mod_centre_rc" name="centre_rc">
+                            <select class="form-control" id="mod_centre_rc" name="centre_rc" required>
+ 						<option value="AGADIR">AGADIR</option>
+						<option value="AL HOCEIMA">AL HOCEIMA</option>
+						<option value="AZILAL">AZILAL</option>
+						<option value="AZROU">AZROU</option>
+						<option value="BEN AHMED">BEN AHMED</option>
+						<option value="BEN GUERIR">BEN GUERIR</option>
+						<option value="BENI MELLAL">BENI MELLAL</option>
+						<option value="BENSLIMANE">BENSLIMANE</option>
+						<option value="BERKANE">BERKANE</option>
+						<option value="BERRECHID">BERRECHID</option>
+						<option value="BOUARFA">BOUARFA</option>
+						<option value="BOUJAAD">BOUJAAD</option>
+						<option value="BOULEMANE">BOULEMANE</option>
+						<option value="CASABLANCA">CASABLANCA</option>
+						<option value="CHEFCHAOUEN">CHEFCHAOUEN</option>
+						<option value="CHICHAOUA">CHICHAOUA</option>
+						<option value="DAKHLA">DAKHLA</option>
+						<option value="EL JADIDA">EL JADIDA</option>
+						<option value="EL KALAA SRAGHNA">EL KALAA SRAGHNA</option>
+						<option value="ERRACHIDIA">ERRACHIDIA</option>
+						<option value="ES SMARA">ES SMARA</option>
+						<option value="ESSAOUIRA">ESSAOUIRA</option>
+						<option value="FES">FES</option>
+						<option value="FIGUIG">FIGUIG</option>
+						<option value="FKIH BEN SALEH">FKIH BEN SALEH</option>
+						<option value="GUELMIM">GUELMIM</option>
+						<option value="GUERCIF">GUERCIF</option>
+						<option value="IMINTANOUTE">IMINTANOUTE</option>
+						<option value="INZEGANE">INZEGANE</option>
+						<option value="KASBA TADLA">KASBA TADLA</option>
+						<option value="KENITRA">KENITRA</option>
+						<option value="KHEMISSET">KHEMISSET</option>
+						<option value="KHENIFRA">KHENIFRA</option>
+						<option value="KHOURIBGA">KHOURIBGA</option>
+						<option value="KSAR EL KEBIR">KSAR EL KEBIR</option>
+						<option value="LAAYOUNE">LAAYOUNE</option>
+						<option value="LARACHE">LARACHE</option>
+						<option value="MARRAKECH">MARRAKECH</option>
+						<option value="MEKNES">MEKNES</option>
+						<option value="MIDELT">MIDELT</option>
+						<option value="MOHAMMEDIA">MOHAMMEDIA</option>
+						<option value="NADOR">NADOR</option>
+						<option value="OUARZAZATE">OUARZAZATE</option>
+						<option value="Oued Ed-Dahab">Oued Ed-Dahab</option>
+						<option value="OUED ZEM">OUED ZEM</option>
+						<option value="OUEZZANE">OUEZZANE</option>
+						<option value="OUJDA">OUJDA</option>
+						<option value="RABAT">RABAT</option>
+						<option value="SAFI">SAFI</option>
+						<option value="SALE">SALE</option>
+						<option value="SEFROU">SEFROU</option>
+						<option value="SETTAT">SETTAT</option>
+						<option value="SIDI BENNOUR">SIDI BENNOUR</option>
+						<option value="SIDI KACEM">SIDI KACEM</option>
+						<option value="SIDI SLIMANE">SIDI SLIMANE</option>
+						<option value="SOUK LARBAA">SOUK LARBAA</option>
+						<option value="TAN TAN">TAN TAN</option>
+						<option value="TANGER">TANGER</option>
+						<option value="TAOUNATE">TAOUNATE</option>
+						<option value="TAOURIRT">TAOURIRT</option>
+						<option value="TAROUDANT">TAROUDANT</option>
+						<option value="TATA">TATA</option>
+						<option value="TAZA">TAZA</option>
+						<option value="TEMARA">TEMARA</option>
+						<option value="TETOUAN">TETOUAN</option>
+						<option value="TIFELT">TIFELT</option>
+						<option value="TINGHIR">TINGHIR</option>
+						<option value="TIZNIT">TIZNIT</option>
+						<option value="YOUSSOUFIA">YOUSSOUFIA</option>
+						<option value="ZAGORA">ZAGORA</option>
+
+					</select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
                             <input type="text" class="form-control" id="mod_identifiant_fiscal" name="identifiant_fiscal" required>
                         </div>
-
-
                         <div class="col-md-6 mb-3">
                             <label for="mod_ice" class="form-label">ICE</label>
-                            <input type="text" class="form-control" id="mod_ice" name="ice" required maxlength="15" title="Veuillez entrer uniquement des chiffres (max 15 chiffres)">
+                            <input type="text" class="form-control" id="mod_ice" name="ice" required maxlength="15">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_date_creation" class="form-label">Date de Création</label>
-                            <input type="date" class="form-control" id="mod_date_creation" name="date_creation">
+                            <input type="date" class="form-control" id="mod_date_creation" name="date_creation">                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="mod_exercice_social_debut" class="form-label">Exercice comptable début</label>
+                            <input type="date" class="form-control" id="mod_exercice_social_debut" required name="exercice_social_debut">
                         </div>
-
-
-
-                        <div class="col-md-6 mb-3 d-flex">
-                            <div class="me-2" style="flex: 1;">
-                                <label for="mod_exercice_social_debut" class="form-label">Exercice Social Début</label>
-                                <input type="date" class="form-control" id="mod_exercice_social_debut" name="exercice_social_debut">
-                            </div>
-                            <div style="flex: 1;">
-                                <label for="mod_exercice_social_fin" class="form-label">Exercice Social Fin</label>
-                                <input type="date" class="form-control" id="mod_exercice_social_fin" name="exercice_social_fin">
-                            </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="mod_exercice_social_fin" class="form-label">Exercice comptable fin</label>
+                            <input type="date" class="form-control" id="mod_exercice_social_fin" required name="exercice_social_fin">
                         </div>
-
                         <div class="col-md-6 mb-3">
-                            <label for="mod_model_comptable" class="form-label">Modèle Comptable</label>
-                            <input type="text" class="form-control" id="mod_model_comptable" name="modele_comptable" required>
+                            <label for="mod_modele_comptable" class="form-label">Modèle Comptable</label>
+                            <select class="form-control" id="mod_modele_comptable" name="modele_comptable" required>
+                               
+                             <option value="Normal">Normal</option>
+                                <option value="Simplifié">Simplifié</option>
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_nombre_chiffre_compte" class="form-label">Nombre caractères Compte</label>
                             <input type="text" class="form-control" id="mod_nombre_chiffre_compte" name="nombre_chiffre_compte">
                         </div>
-
                         <div class="col-md-6 mb-3">
-                            <label for="mod_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
-                            <input type="text" class="form-control" id="mod_assujettie_partielle_tva" name="assujettie_partielle_tva">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="mod_prorata_de_deduction" class="form-label">Prorata de Déduction</label>
-                            <input type="text" class="form-control" id="mod_prorata_de_deduction" name="prorata_de_deduction">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="mod_nature_activite" class="form-label">Nature d'Activité</label>
-                            <input type="text" class="form-control" id="mod_nature_activite" name="nature_activite">
+                            <label for="mod_nature_activite" class="form-label">Nature de l'Activité</label>
+                            <select class="form-control" id="mod_nature_activite" name="nature_activite">
+                                <option value="4.Vente de biens d'équipement"> 4.Vente de biens d'équipement</option>
+                                <option value="5.Vente de travaux">5.Vente de travaux</option>
+                                <option value="6.Vente de services">6Vente de services</option>
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_activite" class="form-label">Activité</label>
                             <input type="text" class="form-control" id="mod_activite" name="activite">
                         </div>
                         <div class="col-md-6 mb-3">
+                            <label for="mod_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
+                            <select class="form-control" id="mod_assujettie_partielle_tva" name="assujettie_partielle_tva">
+                                <option value="Null">Choisir une option</option>
+                                <option value="1">Oui</option>
+                                <option value="0">Non</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mod_prorata_de_deduction" class="form-label">Prorata de Déduction</label>
+                            <input type="text" class="form-control" id="mod_prorata_de_deduction" name="prorata_de_deduction">
+                        </div>
+                        <div class="col-md-6 mb-3">
                             <label for="mod_regime_declaration" class="form-label">Régime de Déclaration de TVA</label>
-                            <input type="text" class="form-control" id="mod_regime_declaration" name="regime_declaration">
+                            <select class="form-control" id="mod_regime_declaration" name="regime_declaration">
+    <option value="1.Mensuel">1.Mensuel</option>
+    <option value="2.Trimestriel">2.Trimestriel</option>
+</select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_fait_generateur" class="form-label">Fait Générateur</label>
-                            <input type="text" class="form-control" id="mod_fait_generateur" name="fait_generateur">
+                            <select class="form-control" id="mod_fait_generateur" name="fait_generateur">
+                                <option value="Encaissement">1.Encaissement</option>
+                                <option value="Débit">2.Débit</option>
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
                         <label for="editRubriqueTVA">Rubrique TVA</label>
 
-                               <select class="form-control select2" id="editRubriqueTVA" name="rubrique_tva" required>
+<select class="form-control select2" id="editRubriqueTVA" name="rubrique_tva">
 
-                                   <!-- Les options seront ajoutées par JavaScript -->
-                               </select>
-                              </div>
+    <!-- Les options seront ajoutées par JavaScript -->
+</select>
+ 
+                        </div>
                         <div class="col-md-6 mb-3">
                             <label for="mod_designation" class="form-label">Désignation</label>
-                            <input type="text" class="form-control" id="mod_designation" name="designation">
+                            <input type="text" class="form-control" id="mod_designation" name=" designation">
                         </div>
-
                     </div>
-                     <!-- Bouton Réinitialiser avec marge très grande à droite -->
-                     <button type="reset" class="btn btn-secondary me-8">
-                            <i class="fas fa-undo"></i>
-                        </button>
-                    <button type="submit" class="btn " style="background-color:#007bff;color:white;">Modifier</button>
+                    <!-- Bouton Réinitialiser avec marge très grande à droite -->
+                    <button type="reset" class="btn btn-secondary me-8">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                    <button type="submit" class="btn" style="background-color:#007bff;color:white;">Modifier</button>
                 </form>
+                       
             </div>
         </div>
     </div>

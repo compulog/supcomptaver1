@@ -133,6 +133,7 @@
     </div>
 </div>
 <div class="container mt-5">
+<h5>Dossiers</h5>
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
         <!-- Ajouter un Dossier -->
         <div class="col">
@@ -203,7 +204,8 @@
 
 <!-- Modal pour créer un dossier -->
 <div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+  
+<div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="createFolderModalLabel">Créer un Nouveau Dossier</h5>
@@ -232,6 +234,8 @@
 
 <!-- Gestion des fichiers de type achat -->
 <div class="container mt-4">
+<h5>fichiers</h5>
+
 @if ($venteFiles->isEmpty())
     <p>Aucun fichier trouvé pour cette société.</p>
 @else

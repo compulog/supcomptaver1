@@ -7,7 +7,7 @@ use App\Models\Societe;
 use Illuminate\Http\Request;
 
 use App\Imports\SocietesImport;
-use App\Models\Racine; // Assurez-vous que le modèle Racine est importé
+use App\Models\racine; // Assurez-vous que le modèle Racine est importé
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;  // Pour loguer les erreurs
@@ -89,9 +89,17 @@ class SocieteController extends Controller
    public function getRubriquesTVA()
    {
        // Récupération des rubriques TVA
+<<<<<<< HEAD
        $rubriques = racine::select('categorie', 'Nom_racines','Taux','Num_racines')
    ->where('type','vente')
    ->having('Taux' , '>=' , 0)
+=======
+     
+   $rubriques = racine::select('categorie', 'Nom_racines', 'Taux', 'Num_racines')
+   ->where('type', 'vente')
+   ->where('Taux', '>=', 0)  // Utilisation de WHERE pour filtrer avant l'agrégation
+   ->orderby('Num_racines')
+>>>>>>> a7a31b310253d19148986c798b4ae57d007db03f
    ->get();
        // Vérifiez ce que retourne la requête
        // dd($rubriques); // Décommentez pour déboguer
@@ -156,17 +164,17 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
         'centre_rc' => 'required|string|max:255',
         'identifiant_fiscal' => 'required|string|max:8',
         'ice' => 'required|string|max:15',
-        'date_creation' => 'required|date',
+        'date_creation' => 'nullable|date',
         'exercice_social_debut' => 'required|date',
         'exercice_social_fin' => 'required|date',
-        'nature_activite' => 'required|string',
-        'activite' => 'required|string|max:255',
+        'nature_activite' => 'nullable|string',
+        'activite' => 'nullable|string|max:255',
         'assujettie_partielle_tva' => 'nullable|boolean',
         'prorata_de_deduction' => 'nullable|string|max:255',
-        'regime_declaration' => 'required|string|max:255',
-        'fait_generateur' => 'required|string',
-        'rubrique_tva' => 'required|string',
-        'designation' => 'required|string|max:255',
+        'regime_declaration' => 'nullable|string|max:255',
+        'fait_generateur' => 'nullable|string',
+        'rubrique_tva' => 'nullable|string',
+        'designation' => 'nullable|string|max:255',
         'nombre_chiffre_compte' => 'required|integer',
         'modele_comptable' => 'required|string|max:255',
     ]);
