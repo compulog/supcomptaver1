@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes; // Pour utiliser le soft delete
 
-class Racine extends Model
+class racine extends Model
 {
     use HasFactory, SoftDeletes; // Ajoutez SoftDeletes pour gérer le champ deleted_at
     protected $connection = 'supcompta';

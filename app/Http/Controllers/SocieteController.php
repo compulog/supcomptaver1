@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;  // Pour loguer les erreurs
 use Illuminate\Support\Facades\DB;
-use App\Models\User;    
-use App\Models\DroitDaccesUser;   
+use App\Models\User;
+use App\Models\DroitDaccesUser;
 class SocieteController extends Controller
 {
     public function __construct()
@@ -21,7 +21,7 @@ class SocieteController extends Controller
         $this->middleware(function ($request, $next) {
             // Récupérer le nom de la base de données depuis la session.
             $dbName = session('database');
-    
+
             if ($dbName) {
                 // Définir la connexion à la base de données dynamiquement.
                 config(['database.connections.supcompta.database' => $dbName]);
@@ -30,12 +30,12 @@ class SocieteController extends Controller
             return $next($request);
         });
     }
- 
+
   public function deleteSelected(Request $request)
 {
     try {
         $ids = $request->input('ids'); // Récupère les IDs des sociétés à supprimer
-        
+
         // Vérifier si des IDs ont été envoyés
         if (empty($ids)) {
             return response()->json(['error' => 'Aucun ID fourni pour la suppression.'], 400);
@@ -51,8 +51,8 @@ class SocieteController extends Controller
     }
 }
 
-    
-    
+
+
   // Vérification du mot de passe de l'utilisateur
   public function checkPassword(Request $request)
   {
@@ -78,24 +78,24 @@ class SocieteController extends Controller
 // public function dashboard()
 // {
 //     // Récupérer toutes les entrées de la table racines
-//     $racines = Racine::all();
+//     $racines = racine::all();
 
 
 //     // Passer la variable à la vue
-//     return view('dashboard', ['racines' => $racines]); 
+//     return view('dashboard', ['racines' => $racines]);
 // }
 
- 
+
    public function getRubriquesTVA()
    {
        // Récupération des rubriques TVA
-       $rubriques = Racine::select('categorie', 'Nom_racines','Taux','Num_racines')
+       $rubriques = racine::select('categorie', 'Nom_racines','Taux','Num_racines')
    ->where('type','vente')
    ->having('Taux' , '>=' , 0)
    ->get();
        // Vérifiez ce que retourne la requête
        // dd($rubriques); // Décommentez pour déboguer
-   
+
         // Organiser les rubriques par catégorie
         $rubriquesParCategorie = [];
         foreach ($rubriques as $rubrique) {
@@ -109,17 +109,17 @@ class SocieteController extends Controller
 // Passer les rubriques organisées à votre vue ou à votre réponse AJAX
 return response()->json(['rubriques' => $rubriquesParCategorie]);
    }
-   
-   
+
+
 
     public function index()
     {
-       
-        $societes = Societe::all(); 
+
+        $societes = Societe::all();
 
         return view('dashboard', ['societes' => $societes->toJson()]);
     }
-   
+
 
     // public function index()
     // {
@@ -131,7 +131,7 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
     //         // Si l'utilisateur n'est pas un SuperAdmin, récupérer les sociétés créées par l'utilisateur connecté
     //         $societes = Societe::where('created_by_user_id', auth()->id())->get();
     //     }
-    
+
     //     // Retourner la vue avec les sociétés
     //     return view('dashboard', ['societes' => $societes->toJson()]);
     // }
@@ -172,42 +172,42 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
     ]);
 
     $dbName = session('database');
-    
+
     // Ajouter l'ID de l'utilisateur connecté à l'array de données validées
     $validatedData['created_by_user_id'] = auth()->id(); // L'ID de l'utilisateur connecté
 
     // Créer la société dans la base de données
     $societe = Societe::create($validatedData);
-    
+
     // Créer un nouvel utilisateur
     $user = new User();
-    
+
     // Récupérer le nom de la société pour l'utilisateur
     $user->name = $societe->raison_sociale . " " . $dbName; // Nom de l'utilisateur
-    
+
     // Générer un mot de passe à partir du nom de la société + un nombre aléatoire
     $password = $societe->raison_sociale . rand(1000, 9999); // Mot de passe
     $user->password = Hash::make($password); // Hacher le mot de passe
     $user->raw_password = $password; // Mot de passe non haché
-    
+
     // Créer l'email de l'utilisateur avec le nom de la société suivi de @gmail.com
     $user->email = strtolower($societe->raison_sociale) . '@gmail.com'; // Email de l'utilisateur
-    
+
     // Remplir d'autres champs si nécessaire
     $user->phone = $request->phone;
     $user->location = $request->location;
     $user->about_me = $request->about_me;
     $user->type = 'interlocuteurs';  // Type de l'utilisateur est "interlocuteur"
     $user->baseName = $dbName; // Enregistrez le nom de la base dans baseName
-    
+
     // **Ajout du societe_id** (Association de l'utilisateur à la société)
     $user->societe_id = $societe->id;  // Ajouter l'ID de la société
-    
+
     $user->save(); // Enregistrer l'utilisateur
-    
+
     // Récupérer l'ID de l'utilisateur créé
     $userId = $user->id;
-    
+
     // Lier l'utilisateur à la société (si nécessaire)
     $societe->user_id = $userId;
     $societe->save();
@@ -220,9 +220,9 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
 }
 
   // Mettre à jour une société
-  
 
- 
+
+
 public function update(Request $request, $id)
 {
     // Validation des données
@@ -255,19 +255,19 @@ public function update(Request $request, $id)
 
      // Mettre à jour la société
      $societe->update($request->all());
- 
+
      // Retourner une réponse JSON
      return response()->json(['message' => 'Société modifiée avec succès.', 'societe' => $societe]);
 }
 
 
-  
+
 
 public function destroy($id)
 {
     $societe = Societe::findOrFail($id);
     $societe->delete();
-    
+
     // Retourner une réponse JSON pour indiquer que la suppression a réussi
     return response()->json(['success' => true, 'message' => 'Société supprimée avec succès.']);
 }
@@ -279,7 +279,7 @@ public function destroy($id)
   }
 
   // Fonction pour gérer l'importation du fichier
- 
+
   public function import(Request $request)
     {
         // Valider le fichier importé
@@ -288,7 +288,7 @@ public function destroy($id)
         ]);
 
         $file = $request->file('file');
-        
+
         // Création d'un tableau de correspondances basé sur l'entrée de l'utilisateur
         $mappings = [
             'raison_sociale' => $request->input('raison_sociale'),
@@ -313,13 +313,13 @@ public function destroy($id)
             'rubrique_tva' => $request->input('rubrique_tva'),
             'designation' => $request->input('designation'),
         ];
-        
+
         // Traitement avec une classe d'importation personnalisée
         $import = new SocietesImport($mappings);
-        
+
         // Importer les données
         Excel::import($import, $file);
-        
+
         return redirect()->back()->with('success', 'Sociétés importées avec succès');
     }
 
@@ -330,11 +330,11 @@ public function destroy($id)
     public function show($id)
     {
         $societe = Societe::find($id);
-    
+
         if (!$societe) {
             return response()->json(['error' => 'Société non trouvée'], 404);
         }
-    
+
         return response()->json($societe);
     }
 

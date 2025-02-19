@@ -3,16 +3,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Racine;
+use App\Models\racine;
 use Illuminate\Http\Request;
 
-class RacineController extends Controller
+class racineController extends Controller
 {
     // Afficher toutes les racines
     public function index()
     {
-        $racines = Racine::all();
-        
+        $racines = racine::all();
+
         return view('racines.index', compact('racines'));
     }
 
@@ -20,7 +20,7 @@ class RacineController extends Controller
     public function create()
     {
         return view('racines.create');
-        
+
     }
 
     // Ajouter une nouvelle racine
@@ -35,7 +35,7 @@ class RacineController extends Controller
         ]);
 
         // Créer un nouvel enregistrement dans la table racines
-        Racine::create([
+        racine::create([
             'type' => $request->type,
             'categorie' => $request->categorie,
             'Num_racines' => $request->Num_racines,
@@ -79,10 +79,10 @@ class RacineController extends Controller
     // Supprimer une racine
     public function destroy($id)
     {
-        $racine = Racine::findOrFail($id);
+        $racine = racine::findOrFail($id);
         $racine->delete();
 
         return redirect()->route('racines.index')->with('success', 'Racine supprimée avec succès');
     }
-   
+
 }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\OperationCourante;
-use App\Models\Racine;
+use App\Models\racine;
 use App\Models\Societe;
 use App\Models\PlanComptable;
 use App\Models\Fournisseur;
@@ -425,7 +425,7 @@ public function getRubriquesTVAVente() {
     // $numRacinesAutorises = ['120', '121', '122', '123', '124', '125', '126', '127', '128', '129'];
 
     // Récupérer les rubriques TVA pour les ventes, incluant les num_racines spécifiques
-    $rubriques = Racine::select('Num_racines','categorie', 'Nom_racines', 'Taux' )
+    $rubriques = racine::select('Num_racines','categorie', 'Nom_racines', 'Taux' )
         ->where('type', 'vente')
         // ->whereIn('Num_racines')  // Ajouter la condition pour les num_racines autorisés
 
@@ -451,7 +451,7 @@ public function getRubriquesTVAVente() {
     // Liste des numéros de racines à exclure
     $exclusions = ['190', '182', '200', '201', '205'];
 
-    $rubriques = Racine::select('Num_racines','categorie', 'Nom_racines', 'Taux' )
+    $rubriques = racine::select('Num_racines','categorie', 'Nom_racines', 'Taux' )
         ->where('type', 'Achat')
         ->whereNotIn('Num_racines', $exclusions)  // Exclure les numéros de racines spécifiés
         ->get();
@@ -649,7 +649,7 @@ public function getTypeJournal(Request $request)
                 $rubriqueTva = $fournisseur->rubrique_tva;
 
                 // Récupère le taux de TVA depuis la table Racine
-                $racine = Racine::where('num_racines', $rubriqueTva)->first();
+                $racine = racine::where('num_racines', $rubriqueTva)->first();
                 $tauxTva = $racine ? $racine->Taux : 0;
 
                 // Ajout des détails supplémentaires

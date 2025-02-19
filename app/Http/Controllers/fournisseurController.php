@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 use App\Imports\FournisseurImport;
 use App\Imports\FournisseursImport;
 use App\Models\Fournisseur;
-use App\Models\Racine;
+use App\Models\racine;
 use App\Models\PlanComptable;
 use App\Models\societe;
 use Illuminate\Support\Facades\DB;

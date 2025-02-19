@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\OperationCourante;
-use App\Models\Racine;
+use App\Models\racine;
 use App\Models\Societe;
 use App\Models\PlanComptable;
 use App\Models\Fournisseur;

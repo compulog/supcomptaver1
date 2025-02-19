@@ -261,9 +261,9 @@
                                 <label for="compte">Compte</label>
                                 <div class="d-flex">
                                     <input type="text" class="form-control form-control-sm shadow-sm " id="compte" name="compte" placeholder="4411XXXX" required>
-                                    {{-- <button type="button" class="btn btn-secondary btn-sm" id="autoIncrementBtn" >
+                                   <!-- {{-- <button type="button" class="btn btn-secondary btn-sm" id="autoIncrementBtn" >
                                        auto
-                                    </button> --}}
+                                    </button> --}}-->
                                 </div>
                             </div>
                         </div>

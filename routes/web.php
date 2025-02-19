@@ -56,7 +56,7 @@ use App\Http\Controllers\PlanComptableController;
 use App\Http\Controllers\JournalController;
 use App\Http\Controllers\ExportController;
 use App\Exports\FournisseursExport;
-use App\Http\Controllers\RacineController;
+use App\Http\Controllers\racineController;
 use App\Http\Controllers\OperationCouranteController;
 use App\Http\Middleware\SetSocieteId;
 
@@ -170,7 +170,6 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/plancomptable/data', [PlanComptableController::class, 'index'])->name('plancomptable.index');
     Route::get('/plan-comptable/import', [PlanComptableController::class, 'showImportForm'])->name('plancomptable.importForm');
     Route::post('/plan-comptable/import', [PlanComptableController::class, 'import'])->name('plancomptable.import');
-
     // Route pour exporter le plan comptable au format PDF pour une société spécifique
     Route::get('export-plan-comptable', [ExportController::class, 'export'])->name('export.plan_comptable');
 
