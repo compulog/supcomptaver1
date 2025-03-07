@@ -33,6 +33,7 @@ class SocieteController extends Controller
 
   public function deleteSelected(Request $request)
 {
+  
     try {
         $ids = $request->input('ids'); // Récupère les IDs des sociétés à supprimer
 
@@ -89,17 +90,11 @@ class SocieteController extends Controller
    public function getRubriquesTVA()
    {
        // Récupération des rubriques TVA
-<<<<<<< HEAD
-       $rubriques = racine::select('categorie', 'Nom_racines','Taux','Num_racines')
-   ->where('type','vente')
-   ->having('Taux' , '>=' , 0)
-=======
      
    $rubriques = racine::select('categorie', 'Nom_racines', 'Taux', 'Num_racines')
    ->where('type', 'vente')
    ->where('Taux', '>=', 0)  // Utilisation de WHERE pour filtrer avant l'agrégation
    ->orderby('Num_racines')
->>>>>>> a7a31b310253d19148986c798b4ae57d007db03f
    ->get();
        // Vérifiez ce que retourne la requête
        // dd($rubriques); // Décommentez pour déboguer
@@ -154,14 +149,16 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
     // }
     public function store(Request $request)
 {
+    //   dd($request);
     // Valider les données du formulaire de la société
     $validatedData = $request->validate([
+      
         'raison_sociale' => 'required|string|max:255',
         'forme_juridique' => 'required|string',
         'siege_social' => 'required|string|max:255',
         'patente' => 'required|string|max:255',
         'rc' => 'required|string|max:255',
-        'centre_rc' => 'required|string|max:255',
+        'centre_rc' => 'nullable|string|max:255',
         'identifiant_fiscal' => 'required|string|max:8',
         'ice' => 'required|string|max:15',
         'date_creation' => 'nullable|date',
@@ -177,6 +174,8 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
         'designation' => 'nullable|string|max:255',
         'nombre_chiffre_compte' => 'required|integer',
         'modele_comptable' => 'required|string|max:255',
+        'code_societe' => 'required|string|max:255',
+        'cnss' => 'nullable|string|max:255',
     ]);
 
     $dbName = session('database');
@@ -202,6 +201,7 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
     $user->email = strtolower($societe->raison_sociale) . '@gmail.com'; // Email de l'utilisateur
 
     // Remplir d'autres champs si nécessaire
+    
     $user->phone = $request->phone;
     $user->location = $request->location;
     $user->about_me = $request->about_me;
@@ -233,6 +233,8 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
 
 public function update(Request $request, $id)
 {
+    
+    
     // Validation des données
     $request->validate([
         'raison_sociale' => 'required|string|max:255',
@@ -241,7 +243,6 @@ public function update(Request $request, $id)
         'rc' => 'required|string|max:255',
         'identifiant_fiscal' => 'required|string|max:255',
         'patente' => 'nullable|string|max:255',
-        'centre_rc' => 'nullable|string|max:255',
         'forme_juridique' => 'nullable|string|max:255',
         'exercice_social_debut' => 'nullable|date',
         'exercice_social_fin' => 'nullable|date',
@@ -256,6 +257,9 @@ public function update(Request $request, $id)
         'designation' => 'nullable|string|max:255',
         'nombre_chiffre_compte' => 'nullable|integer',
         'modele_comptable' => 'required|string|max:255',
+        'code-societe' =>'nullable|varchar|max:255',
+        'cnss' =>'nullable|varchar|max:255',
+
     ]);
 
      // Trouver la société par ID
@@ -273,12 +277,30 @@ public function update(Request $request, $id)
 
 public function destroy($id)
 {
+    // Chercher la société par son ID
     $societe = Societe::findOrFail($id);
+
+    // Chercher les utilisateurs associés à cette société et ayant le type 'interlocuteurs'
+    $users = User::where('societe_id', $id)
+                 ->where('type', 'interlocuteurs')
+                 ->get();
+
+    // Si des utilisateurs sont trouvés, vous pouvez choisir de les supprimer ou de les traiter
+    // Exemple: Supprimer les utilisateurs trouvés (attention : cette étape est potentiellement dangereuse)
+    foreach ($users as $user) {
+        $user->delete(); // Supprime l'utilisateur
+    }
+
+    // Supprimer la société
     $societe->delete();
 
     // Retourner une réponse JSON pour indiquer que la suppression a réussi
-    return response()->json(['success' => true, 'message' => 'Société supprimée avec succès.']);
+    return response()->json([
+        'success' => true, 
+        'message' => 'Société et les interlocuteurs associés ont été supprimés avec succès.'
+    ]);
 }
+
 
   // Fonction pour afficher le formulaire
   public function showImportForm()
@@ -299,6 +321,8 @@ public function destroy($id)
 
         // Création d'un tableau de correspondances basé sur l'entrée de l'utilisateur
         $mappings = [
+            'code_societe' => $request->input('code_societe'),
+
             'raison_sociale' => $request->input('raison_sociale'),
             'forme_juridique' => $request->input('forme_juridique'),
             'siege_social' => $request->input('siege_social'),
@@ -320,7 +344,11 @@ public function destroy($id)
             'fait_generateur' => $request->input('fait_generateur'),
             'rubrique_tva' => $request->input('rubrique_tva'),
             'designation' => $request->input('designation'),
+            'cnss' => $request->input('cnss'),
+
+            // 'code_societe' => $request->input('import_code-societe'),
         ];
+        $validatedData['created_by_user_id'] = auth()->id(); // L'ID de l'utilisateur connecté
 
         // Traitement avec une classe d'importation personnalisée
         $import = new SocietesImport($mappings);

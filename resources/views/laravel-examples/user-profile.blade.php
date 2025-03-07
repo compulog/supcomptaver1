@@ -1,4 +1,4 @@
-@extends('layouts.user_type.authss')
+@extends('layouts.user_type.authsss')
 
 @section('content')
 
@@ -144,6 +144,8 @@
 
                     <div class="d-flex justify-content-end">
                         <button type="submit" class="btn bg-gradient-dark btn-md mt-4 mb-4">{{ 'Modifier' }}</button>
+                        <a href="{{ route('exercices.show', ['societe_id' => $societeId]) }}" class="btn btn-secondary btn-md mt-4 mb-4 ms-2">Retourner</a>
+
                     </div>
                 </form>
             </div>

@@ -3,16 +3,33 @@
 namespace App\Imports;
 
 use App\Models\Fournisseur;
-use App\Models\Societe;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas; // <-- Ajout de cette interface
 use Illuminate\Support\Facades\Log;
 
-class FournisseurImport implements ToCollection, WithHeadingRow
+class FournisseurImport implements ToCollection, WithCalculatedFormulas
 {
+    protected $societe_id;
+    protected $nombre_chiffre_compte;
+    protected $mapping;
+
     /**
-     * Convertit les valeurs scientifiques en texte si nécessaire
+     * Constructeur pour recevoir les paramètres d'import.
+     *
+     * @param int   $societe_id
+     * @param int   $nombre_chiffre_compte
+     * @param array $mapping
+     */
+    public function __construct($societe_id, $nombre_chiffre_compte, array $mapping)
+    {
+        $this->societe_id = $societe_id;
+        $this->nombre_chiffre_compte = $nombre_chiffre_compte;
+        $this->mapping = $mapping;
+    }
+
+    /**
+     * Optionnel : Convertit les valeurs scientifiques en texte si nécessaire.
      *
      * @param mixed $value
      * @return string|null
@@ -20,27 +37,54 @@ class FournisseurImport implements ToCollection, WithHeadingRow
     private function sanitizeIce($value)
     {
         if (is_numeric($value)) {
-            return number_format($value, 0, '', ''); // Supprime la notation scientifique
+            return number_format($value, 0, '', '');
         }
         return $value;
     }
 
+    /**
+     * Traite chaque ligne du fichier.
+     *
+     * @param Collection $rows
+     */
     public function collection(Collection $rows)
     {
-        $societe_id = session('societeId');
-        $societe = Societe::find($societe_id);
-        $nombre_chiffre_compte = $societe->nombre_chiffre_compte;
         $processedAccounts = [];
 
-        foreach ($rows as $row) {
-            Log::info('Ligne importée:', ['row' => $row]);
+        foreach ($rows as $index => $row) {
+            // Ignorer la première ligne (l'en-tête)
+            if ($index === 0) {
+                continue;
+            }
 
-            $compte = isset($row['compte']) ? trim($row['compte']) : null;
-            $intitule = isset($row['intitule']) ? trim($row['intitule']) : null;
-            $ice = isset($row['ICE']) ? $this->sanitizeIce($row['ICE']) : null;
-            $natureOperation = isset($row['nature_operation']) ? trim($row['nature_operation']) : null;
+            // Récupérer les valeurs en fonction du mapping (les indices commencent à 0)
+            $compteIndex = $this->mapping['colonne_compte'] - 1;
+            $intituleIndex = $this->mapping['colonne_intitule'] - 1;
 
-            // Détection des champs manquants
+            $compte = isset($row[$compteIndex]) ? trim($row[$compteIndex]) : null;
+            $intitule = isset($row[$intituleIndex]) ? trim($row[$intituleIndex]) : null;
+
+            // Les autres colonnes optionnelles
+            $identifiant_fiscal = (isset($this->mapping['colonne_identifiant_fiscal']) && $this->mapping['colonne_identifiant_fiscal'] !== null)
+                ? trim($row[$this->mapping['colonne_identifiant_fiscal'] - 1] ?? '')
+                : null;
+            $ice = (isset($this->mapping['colonne_ICE']) && $this->mapping['colonne_ICE'] !== null)
+                ? $this->sanitizeIce(trim($row[$this->mapping['colonne_ICE'] - 1] ?? ''))
+                : null;
+            $natureOperation = (isset($this->mapping['colonne_nature_operation']) && $this->mapping['colonne_nature_operation'] !== null)
+                ? trim($row[$this->mapping['colonne_nature_operation'] - 1] ?? '')
+                : null;
+            $rubrique_tva = (isset($this->mapping['colonne_rubrique_tva']) && $this->mapping['colonne_rubrique_tva'] !== null)
+                ? trim($row[$this->mapping['colonne_rubrique_tva'] - 1] ?? '')
+                : null;
+            $designation = (isset($this->mapping['colonne_designation']) && $this->mapping['colonne_designation'] !== null)
+                ? trim($row[$this->mapping['colonne_designation'] - 1] ?? '')
+                : null;
+            $contre_partie = (isset($this->mapping['colonne_contre_partie']) && $this->mapping['colonne_contre_partie'] !== null)
+                ? trim($row[$this->mapping['colonne_contre_partie'] - 1] ?? '')
+                : null;
+
+            // Vérifier la présence des champs obligatoires
             $missingFields = [];
             if (empty($compte)) {
                 $missingFields[] = 'compte';
@@ -48,43 +92,43 @@ class FournisseurImport implements ToCollection, WithHeadingRow
             if (empty($intitule)) {
                 $missingFields[] = 'intitule';
             }
-
             $highlight = !empty($missingFields) ? 'highlight-yellow' : null;
 
+            // Pour éviter les doublons si le même compte apparaît plusieurs fois
             if (!in_array($compte, $processedAccounts)) {
                 $processedAccounts[] = $compte;
 
                 $compteLength = strlen($compte ?? '');
-                $isInvalid = $compteLength !== (int) $nombre_chiffre_compte;
+                $isInvalid = $compteLength !== (int) $this->nombre_chiffre_compte;
 
+                // Vérifier si le fournisseur existe déjà pour cette société
                 $fournisseur = Fournisseur::where('compte', $compte)
-                    ->where('societe_id', $societe_id)
+                    ->where('societe_id', $this->societe_id)
                     ->first();
 
                 $dataToUpdate = [
-                    'intitule' => $intitule ?? $fournisseur->intitule ?? null,
-                    'identifiant_fiscal' => $row['identifiant_fiscal'] ?? $fournisseur->identifiant_fiscal ?? null,
-                    'ICE' => $ice ?? $fournisseur->ICE ?? null,
-                    'nature_operation' => $natureOperation ?? $fournisseur->nature_operation ?? null,
-                    'rubrique_tva' => $row['rubrique_tva'] ?? $fournisseur->rubrique_tva ?? null,
-                    'designation' => $row['designation'] ?? $fournisseur->designation ?? null,
-                    'contre_partie' => $row['contre_partie'] ?? $fournisseur->contre_partie ?? null,
-                    'invalid' => $isInvalid ? 1 : 0,  // Indique si le compte est invalide
+                    'intitule' => $intitule ?? ($fournisseur->intitule ?? null),
+                    'identifiant_fiscal' => $identifiant_fiscal ?? ($fournisseur->identifiant_fiscal ?? null),
+                    'ICE' => $ice ?? ($fournisseur->ICE ?? null),
+                    'nature_operation' => $natureOperation ?? ($fournisseur->nature_operation ?? null),
+                    'rubrique_tva' => $rubrique_tva ?? ($fournisseur->rubrique_tva ?? null),
+                    'designation' => $designation ?? ($fournisseur->designation ?? null),
+                    'contre_partie' => $contre_partie ?? ($fournisseur->contre_partie ?? null),
+                    'invalid' => $isInvalid ? 1 : 0,
                     'highlight' => $highlight,
                 ];
-
-                Log::info("Données mises à jour pour le compte $compte :", $dataToUpdate);
+                Log::info("Traitement de la ligne $index pour le compte $compte", $dataToUpdate);
 
                 try {
                     Fournisseur::updateOrCreate(
                         [
                             'compte' => $compte,
-                            'societe_id' => $societe_id,
+                            'societe_id' => $this->societe_id,
                         ],
                         $dataToUpdate
                     );
                 } catch (\Exception $e) {
-                    Log::error("Erreur lors de l'importation pour le compte : $compte", [
+                    Log::error("Erreur lors de l'import pour le compte $compte", [
                         'message' => $e->getMessage(),
                         'row' => $row,
                     ]);

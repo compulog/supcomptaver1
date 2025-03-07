@@ -26,8 +26,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <!-- Chargement de Bootstrap JS -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<link href="/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 
 
 
@@ -48,6 +47,7 @@
 }
 
 </style>
+<meta name="societe-id" content="{{ session('societeId') }}">
 
 </head>
 
@@ -56,19 +56,47 @@
 @section('content')
 <body>
 
-    <div class="container my-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 text-primary">Gestion des Journaux</h1>
-            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#ajouterJournalModal">
-                <i class="fas fa-plus me-2"></i> Ajouter un Journal
-            </button>
+    <div class="container my-3">
+        <!-- Ligne de titre et action -->
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h1 class="h3 text-secondary mb-0">Gestion des Journaux</h1>
+          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                  data-bs-toggle="modal" data-bs-target="#ajouterJournalModal"
+                  data-bs-toggle="tooltip" data-bs-placement="top" title="Ajouter un Journal">
+            <i class="fas fa-plus icon-3d"></i>
+            <span>Ajouter un Journal</span>
+          </button>
         </div>
-    </div>
+      </div>
 
+      <!-- Tableau des journaux -->
+      <div id="journal-table" class="border rounded shadow-sm bg-white p-3"></div>
 
-        <!-- Tableau des journaux -->
-        <div id="journal-table" class="border rounded shadow-sm bg-white p-3"></div>
-    </div>
+      <!-- Styles pour l'effet 3D sur les icônes -->
+      <style>
+        .icon-3d {
+          font-size: 1.2rem;
+          transition: transform 0.2s, box-shadow 0.2s;
+          box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        .icon-3d:hover {
+          transform: translateY(-2px);
+          box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4);
+        }
+      </style>
+
+      <!-- Initialisation des tooltips Bootstrap -->
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+          tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+          });
+        });
+      </script>
+
+<small id="error-message" class="text-danger" style="display:none;"></small>
+<small id="success-message" class="text-success" style="display:none;"></small>
 
 
 <!-- Modal Ajout -->
@@ -117,26 +145,28 @@
                             <i class="fas fa-chevron-down position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);"></i>
                         </div>
 
-<!-- Champs IF et ICE cachés par défaut -->
-<div class="col-md-6" id="if_ice_container" style="display: none;">
-    <label for="if" class="form-label fw-semibold">IF</label>
-    <input type="text" class="form-control" id="if" name="if" maxlength="8" pattern="\d{8}" placeholder="Entrez votre IF (8 chiffres)">
-
-    <label for="ice" class="form-label fw-semibold mt-2">ICE</label>
-    <input type="text" class="form-control" id="ice" name="ice" maxlength="15" pattern="\d{15}" placeholder="Entrez votre ICE (15 chiffres)">
-</div>
 
 
                         <!-- Contre Partie -->
                         <div class="col-md-6 position-relative">
                             <label for="contre_partie" class="form-label fw-semibold">Contre Partie</label>
-                            <select class="form-select2" id="contre_partie" name="contre_partie" required>
+                            <select class="form-select2" id="contre_partie" name="contre_partie" >
                                 <option value="" selected>Sélectionner une contre partie</option>
                                 <!-- Ajoutez d'autres options ici -->
                             </select>
                             <!-- Flèche FontAwesome -->
                             <i class="fas fa-chevron-down position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);"></i>
                         </div>
+                        <!-- Champs IF et ICE cachés par défaut -->
+<div class="col-md-6" id="if_ice_container" style="display: none;">
+    <label for="if" class="form-label fw-semibold">IF</label>
+    <input type="text" class="form-control" id="if" name="if" maxlength="8" pattern="\d{7,8}"
+    placeholder="Entrez votre IF (7 ou 8 chiffres)">
+
+    <label for="ice" class="form-label fw-semibold mt-2">ICE</label>
+    <input type="text" class="form-control" id="ice" name="ice" maxlength="15" pattern="\d{15}" placeholder="Entrez votre ICE (15 chiffres)">
+</div>
+
                     </div>
                 </form>
             </div>
@@ -145,6 +175,7 @@
                 <button type="button" class="btn btn-outline-secondary px-4" id="resetFormBtn">
                     <i class="fas fa-sync-alt"></i> Réinitialiser
                 </button>
+                <div id="alertMessage" class="alert alert-success" role="alert" style="display:none;"></div>
 
                 <!-- Bouton Valider -->
                 <button type="submit" form="ajouterJournalForm" class="btn btn-primary px-4">
@@ -152,9 +183,13 @@
                 </button>
             </div>
         </div>
+
     </div>
 </div>
+
 </div>
+<div id="alertMessage" class="alert" role="alert" style="display:none;"></div>
+
 <!-- Modal d'édition -->
 <div class="modal fade" id="journalModalEdit" tabindex="-1" role="dialog" aria-labelledby="journalModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -171,7 +206,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="editCodeJournal" class="form-label fw-semibold">Code Journal</label>
-                                <input type="text" class="form-control form-control-lg shadow-sm" id="editCodeJournal" required placeholder="Entrez le code journal">
+                                <input type="text" class="form-control form-control-lg shadow-sm" id="editCodeJournal" required placeholder="Entrez le code journal" readonly>
                             </div>
                         </div>
 
@@ -200,13 +235,7 @@
                             {{-- <i class="fas fa-chevron-down position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);"></i> --}}
                         </div>
 <!-- Champs IF et ICE cachés par défaut -->
-<div class="col-md-6" id="edit_if_ice_container" style="display: none;">
-    <label for="edit_if" class="form-label fw-semibold">IF</label>
-    <input type="text" class="form-control" id="edit_if" name="edit_if" maxlength="8" pattern="\d{8}" placeholder="Entrez votre IF (8 chiffres)">
 
-    <label for="edit_ice" class="form-label fw-semibold mt-2">ICE</label>
-    <input type="text" class="form-control" id="edit_ice" name="edit_ice" maxlength="15" pattern="\d{15}" placeholder="Entrez votre ICE (15 chiffres)">
-</div>
                         <!-- Contre Partie -->
                         <div class="col-md-6 position-relative" id="contrePartieContainer">
                             <label for="editContrePartie" class="form-label">Contre Partie</label>
@@ -217,6 +246,14 @@
                             </select>
                             <!-- Flèche FontAwesome -->
                             {{-- <i class="fas fa-chevron-down position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);"></i> --}}
+                        </div>
+                        <div class="col-md-6" id="edit_if_ice_container" style="display: none;">
+                            <label for="edit_if" class="form-label fw-semibold">IF</label>
+                            <input type="text" class="form-control" id="edit_if" name="edit_if" maxlength="8"  pattern="\d{7,8}" placeholder="Entrez votre IF (7 ou 8 chiffres)">
+<small id="error-if" class="text-danger" style="display:none;"></small>
+
+                            <label for="edit_ice" class="form-label fw-semibold mt-2">ICE</label>
+                            <input type="text" class="form-control" id="edit_ice" name="edit_ice" maxlength="15" pattern="\d{15}" placeholder="Entrez votre ICE (15 chiffres)">
                         </div>
                     </div>
                 </form>
@@ -232,6 +269,7 @@
                     <i class="fas fa-check"></i> Sauvegarder
                 </button>
             </div>
+
         </div>
     </div>
 </div>
@@ -248,21 +286,21 @@
 
 
 $(document).ready(function () {
-    // Initialisation de Select2 pour les champs de type de journal et contrepartie
+    // Initialisation de Select2
     $('#type_journal, #contre_partie').select2({
         allowClear: true,
         width: '100%',
         theme: 'bootstrap-5',
         placeholder: 'Sélectionnez une option',
         dropdownAutoWidth: true,
-        dropdownParent: $('#ajouterJournalModal') // Évite les conflits dans le modal
+        dropdownParent: $('#ajouterJournalModal')
     });
 
     const ifIceContainer = $('#if_ice_container');
     const ifInput = $('#if');
     const iceInput = $('#ice');
 
-    // Fonction pour afficher ou masquer les champs IF et ICE
+    // Afficher ou masquer les champs IF et ICE
     $('#type_journal').on('change', function () {
         if ($(this).val() === "Banque") {
             ifIceContainer.show();
@@ -273,9 +311,24 @@ $(document).ready(function () {
         }
     });
 
-    // Validation IF : 8 chiffres uniquement
+    // Validation IF : Autoriser uniquement 7 ou 8 chiffres
     ifInput.on('input', function () {
-        this.value = this.value.replace(/\D/g, '').slice(0, 8);
+        let value = this.value.replace(/\D/g, ''); // Supprimer tout sauf les chiffres
+
+        // Vérifier si la longueur est entre 7 et 8 chiffres
+        if (value.length > 8) {
+            value = value.slice(0, 8); // Couper après 8 chiffres
+        }
+
+        this.value = value;
+    });
+
+    // Vérification à la sortie du champ (blur)
+    ifInput.on('blur', function () {
+        if (this.value.length !== 7 && this.value.length !== 8) {
+            alert('Le champ IF doit contenir exactement 7 ou 8 chiffres.');
+            this.value = ''; // Effacer la saisie incorrecte
+        }
     });
 
     // Validation ICE : 15 chiffres uniquement
@@ -283,18 +336,14 @@ $(document).ready(function () {
         this.value = this.value.replace(/\D/g, '').slice(0, 15);
     });
 
- // Initialisation du focus sur le champ de recherche du select2
- document.addEventListener("DOMContentLoaded", () => {
-        // Lors de l'ouverture du modal d'ajout
+    // Focus sur le champ de recherche Select2 au chargement du modal
+    document.addEventListener("DOMContentLoaded", () => {
         const ajouterJournalModal = document.getElementById('ajouterJournalModal');
         ajouterJournalModal.addEventListener('shown.bs.modal', () => {
-            // Ouvrir le select2 du type de journal et placer le curseur sur le champ de recherche
             $('#type_journal').select2('open');
         });
-
     });
-
-    });
+});
 
 
 
@@ -363,31 +412,74 @@ document.querySelector('#journalModalEdit #resetFormBtn').addEventListener('clic
             formatter: "rowSelection",
             headerSort: false,
             hozAlign: "center",
+            headerHozAlign: "center", // Centre le titre de la colonne
             width: 60,
             cellClick: function(e, cell) {
                 cell.getRow().toggleSelect();
             }
         },
-        { title: "Code Journal", field: "code_journal", editor: "input", headerFilter: "input" },
-        { title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input" },
-        { title: "Type Journal", field: "type_journal", editor: "input", headerFilter: "input" },
-        { title: "Contre Partie", field: "contre_partie", editor: "input", headerFilter: "input" },
         {
-    title: "IF",
-    field: "if",
-    editor: "input",
-    headerFilter: "input",
-    visible: false // Masquer la colonne
-},
-{
-    title: "ice",
-    field: "ice",
-    editor: "input",
-    headerFilter: "input",
-    visible: false // Masquer la colonne
-},
-
-
+            title: "Code Journal",
+            field: "code_journal",
+            editor: "input",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centre le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 220px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "Intitulé",
+            field: "intitule",
+            editor: "input",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centre le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 220px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "Type Journal",
+            field: "type_journal",
+            editor: "input",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centre le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 220px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "Contre Partie",
+            field: "contre_partie",
+            editor: "input",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centre le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 220px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "IF",
+            field: "if",
+            editor: "input",
+            headerFilter: "input",
+            visible: false // Masquer la colonne
+        },
+        {
+            title: "ice",
+            field: "ice",
+            editor: "input",
+            headerFilter: "input",
+            visible: false // Masquer la colonne
+        },
         {
             title: "Actions",
             field: "action-icons",
@@ -404,11 +496,12 @@ document.querySelector('#journalModalEdit #resetFormBtn').addEventListener('clic
                     editJournal(rowData);
                 } else if (e.target.classList.contains('delete-icon')) {
                     var rowData = cell.getRow().getData();
-                    deleteJournal(rowData.id);
+                    deleteJournal(rowData.id, rowData.code_journal);
                 }
             },
             hozAlign: "center",
             headerSort: false,
+            headerHozAlign: "center", // Centre le titre de la colonne actions
         }
     ],
     rowSelected: function(row) {
@@ -422,31 +515,47 @@ document.querySelector('#journalModalEdit #resetFormBtn').addEventListener('clic
 
     // Fonction pour supprimer les lignes sélectionnées côté serveur
     function deleteSelectedRows() {
-        var selectedRows = table.getSelectedRows();
-        var idsToDelete = selectedRows.map(function(row) {
-            return row.getData().id;
-        });
-
-        if (idsToDelete.length > 0) {
-            fetch("/journaux/delete-selected", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ ids: idsToDelete })
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-                table.deleteRow(selectedRows);
-            })
-            .catch(error => {
-                console.error('Erreur de suppression:', error);
-                alert('Erreur lors de la suppression des lignes.');
-            });
-        }
+    // Récupérer l'ID de la société depuis la balise meta
+    const societeId = document.querySelector('meta[name="societe-id"]').getAttribute('content');
+    if (!societeId) {
+        alert("Aucune société sélectionnée dans la session.");
+        return;
     }
+
+    var selectedRows = table.getSelectedRows();
+    var idsToDelete = selectedRows.map(function(row) {
+        return row.getData().id;
+    });
+
+    if (idsToDelete.length > 0) {
+        fetch("/journaux/delete-selected", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                ids: idsToDelete,
+                societeId: societeId  // Ajout de l'ID de la société
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert(data.message);
+                // Optionnel : rafraîchir ou supprimer les lignes du tableau
+                table.deleteRow(selectedRows);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur de suppression:', error);
+            alert('Erreur lors de la suppression des lignes.');
+        });
+    }
+}
+
 
     // Gestionnaire d'événements pour sélectionner/désélectionner toutes les lignes et supprimer les lignes sélectionnées
     $('#journal-table').on("click", function(e) {
@@ -574,103 +683,251 @@ function editJournal(rowData) {
     $('#journalModalEdit').modal('show');
 }
 
-// Fonction pour afficher/masquer les champs IF & ICE en fonction du type de journal
+
+
+// Fonction pour basculer l'affichage des champs IF/ICE selon le type de journal
 function toggleIfIceFields(selectedType) {
-    if (selectedType === "Banque") {
-        $("#edit_if_ice_container").show();  // Afficher les champs IF et ICE
-    } else {
-        $("#edit_if_ice_container").hide();  // Masquer les champs IF et ICE
-        $("#edit_if").val('');  // Réinitialiser la valeur du champ IF
-        $("#edit_ice").val('');  // Réinitialiser la valeur du champ ICE
-    }
+  if (selectedType === "Banque") {
+    $("#edit_if_ice_container").show();
+  } else {
+    $("#edit_if_ice_container").hide();
+    $("#edit_if").val('');
+    $("#edit_ice").val('');
+  }
 }
 
-// Détection du changement de type de journal dans l'édition
-$("#editTypeJournal").on('change', function () {
+$(document).ready(function () {
+
+  // Détection du changement de type de journal dans l'édition
+  $("#editTypeJournal").on('change', function () {
     var selectedType = $(this).val();
     toggleIfIceFields(selectedType);
+    // Charge les comptes selon le type sélectionné (fonction à définir selon votre logique)
     loadComptesEdit(selectedType, null);
-});
+  });
 
-// Validation en temps réel des champs IF & ICE
-$("#edit_if").on('input', function () {
-    this.value = this.value.replace(/\D/g, '').slice(0, 8); // Seulement 8 chiffres
-});
-$("#edit_ice").on('input', function () {
-    this.value = this.value.replace(/\D/g, '').slice(0, 15); // Seulement 15 chiffres
-});
+  // Validation en temps réel du champ IF : garder uniquement les chiffres et limiter à 8 caractères
+  $("#edit_if").on('input', function () {
+    let val = this.value.replace(/\D/g, '').slice(0, 8);
+    this.value = val;
+    if (val.length === 7 || val.length === 8) {
+      $(this).removeClass("is-invalid").addClass("is-valid");
+    } else {
+      $(this).removeClass("is-valid").addClass("is-invalid");
+    }
+  }).on('blur', function () {
+    if (this.value && (this.value.length !== 7 && this.value.length !== 8)) {
+      $(this).addClass("is-invalid");
+      $("#error-if").text("Le champ IF doit contenir exactement 7 ou 8 chiffres.").show();
+    } else {
+      $(this).removeClass("is-invalid");
+      $("#error-if").hide();
+    }
+  });
 
-// Soumission du formulaire d'édition
-$('#journalFormEdit').on('submit', function (e) {
+  // Validation en temps réel du champ ICE : autoriser uniquement 15 chiffres
+  $("#edit_ice").on('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, 15);
+  });
+
+  // Soumission du formulaire d'édition
+  $('#journalFormEdit').on('submit', function (e) {
     e.preventDefault();
+
     let journalId = $("#editJournalId").val();
+    let ifValue = $("#edit_if").val().trim();
+    let iceValue = $("#edit_ice").val().trim();
+    let submitButton = $(this).find("[type='submit']");
+
+    console.log("Valeur IF envoyée :", ifValue);
+
+    // Vérification du champ IF : doit contenir exactement 7 ou 8 chiffres
+    if (ifValue && (!/^\d{7,8}$/.test(ifValue))) {
+      $("#edit_if").addClass("is-invalid");
+      $("#error-if").text("Le champ IF doit contenir exactement 7 ou 8 chiffres.").show();
+      return;
+    } else {
+      $("#edit_if").removeClass("is-invalid");
+      $("#error-if").hide();
+    }
+
+    submitButton.prop("disabled", true);
 
     $.ajax({
-        url: "/journaux/" + journalId,
-        type: "PUT",
-        data: {
-            _token: $("meta[name='csrf-token']").attr('content'),
-            code_journal: $("#editCodeJournal").val(),
-            type_journal: $("#editTypeJournal").val(),
-            contre_partie: $("#editContrePartie").val(),
-            intitule: $("#editIntituleJournal").val(),
-            if: $("#edit_if").val(),  // Corrigé : correspond au nom de la colonne en BDD
-            ice: $("#edit_ice").val(), // Corrigé : correspond au nom de la colonne en BDD
-        },
-        success: function (response) {
-            if (response.success) {
-                table.setData("/journaux/data").then(function () {
-                    alert('Journal mis à jour avec succès');
-                    $('#journalModalEdit').modal('hide');
-                }).catch(function (error) {
-                    alert("Erreur lors du rechargement des données.");
-                });
-            } else {
-                alert(response.message || 'Erreur lors de la mise à jour du journal.');
-            }
-        },
-        error: function (xhr, status, error) {
-            alert('Erreur lors de la mise à jour du journal.');
-        }
-    });
-});
-
-// Réinitialiser les champs lors de la fermeture du modal
-$('#journalModalEdit').on('hidden.bs.modal', function () {
-    $("#edit_if_ice_container").hide();  // Cacher les champs IF et ICE
-    $("#edit_if").val('');  // Réinitialiser le champ IF
-    $("#edit_ice").val('');  // Réinitialiser le champ ICE
-});
-
-// Gestionnaire d'événement pour la soumission du formulaire d'ajout
-$('#ajouterJournalForm').on('submit', function (e) {
-    e.preventDefault();
-
-    let formData = {
+      url: "/journaux/" + journalId,
+      type: "PUT",
+      data: {
         _token: $("meta[name='csrf-token']").attr('content'),
-        code_journal: $("#code_journal").val(),
-        type_journal: $("#type_journal").val(),
-        contre_partie: $("#contre_partie").val(),  // Assurez-vous que la valeur de "contre_partie" est capturée
-        intitule: $("#intitule").val(),
-        if: $("#if").val(),
-        ice: $("#ice").val(),
-    };
-
-    $.ajax({
-        url: '/journaux',
-        type: 'POST',
-        data: formData,
-        success: function(response) {
-            table.setData("/journaux/data").then(function() {
-                alert('Journal ajouté avec succès');
-                $('#journalModal').modal('hide');
-            });
-        },
-        error: function(xhr, status, error) {
-            alert('Erreur lors de l\'ajout du journal.');
+        code_journal: $("#editCodeJournal").val(),
+        type_journal: $("#editTypeJournal").val(),
+        contre_partie: $("#editContrePartie").val(),
+        intitule: $("#editIntituleJournal").val(),
+        if: ifValue,
+        ice: iceValue
+      },
+      success: function (response) {
+        if (response.success) {
+          table.setData("/journaux/data").then(function () {
+            showAlert("Journal mis à jour avec succès", "success");
+            $('#journalModalEdit').modal('hide');
+          }).catch(function () {
+            showAlert("Erreur lors du rechargement des données.", "danger");
+          });
+        } else {
+          showAlert(response.message || "Erreur lors de la mise à jour du journal.", "danger");
         }
+      },
+      error: function (xhr) {
+        let errorMsg = "Erreur lors de la mise à jour du journal.";
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          errorMsg = xhr.responseJSON.message;
+        }
+        showAlert(errorMsg, "danger");
+      },
+      complete: function () {
+        submitButton.prop("disabled", false);
+      }
+    });
+  });
+
+  // Réinitialiser les champs lors de la fermeture du modal d'édition
+  $('#journalModalEdit').on('hidden.bs.modal', function () {
+    $("#edit_if_ice_container").hide();
+    $("#edit_if").val('');
+    $("#edit_ice").val('');
+  });
+});
+
+
+
+
+$(document).ready(function () {
+    // Fonction d'affichage de l'alerte clignotante pendant 2 secondes
+    function showAlert(message) {
+        const $alert = $("#alertMessage");
+        $alert.text(message).show();
+
+        let blinkInterval = 300; // durée entre chaque fadeToggle en ms
+        let elapsed = 0;
+        const interval = setInterval(function () {
+            $alert.fadeToggle(blinkInterval);
+            elapsed += blinkInterval;
+            if (elapsed >= 2000) {
+                clearInterval(interval);
+                $alert.fadeOut(300);
+            }
+        }, blinkInterval);
+    }
+
+    // Gestionnaire d'événement pour la soumission du formulaire d'ajout
+    $('#ajouterJournalForm').on('submit', function (e) {
+        e.preventDefault();
+
+        // Récupération des valeurs du formulaire
+        const codeJournal = $("#code_journal").val().trim();
+        const typeJournal = $("#type_journal").val();
+        let contrePartie = $("#contre_partie").val();
+        const intitule = $("#intitule").val();
+        const ifVal = $("#if").val();
+        const iceVal = $("#ice").val();
+
+        // Vérification initiale pour éviter une requête inutile
+        if (!codeJournal) {
+            alert("Le code journal est requis.");
+            return;
+        }
+
+        // Si le type de journal est "Opérations Diverses", forcer contrePartie à null
+        if (typeJournal === "Opérations Diverses") {
+            contrePartie = null;
+        }
+
+        // Vérifier via AJAX si le code journal existe déjà pour cette société
+        $.ajax({
+            url: '/check-journal',
+            type: 'GET',
+            data: {
+                code_journal: codeJournal
+            },
+            success: function (response) {
+                if (response.exists) {
+                    // Afficher le message d'erreur (en rouge) et ajouter la classe is-invalid
+                    $("#alertMessage")
+                        .removeClass('alert-success')
+                        .addClass('alert-danger')
+                        .text('Ce code journal existe déjà pour cette société')
+                        .fadeIn(300);
+                    setTimeout(function () {
+                        $("#alertMessage").fadeOut(300);
+                    }, 2000);
+                    $("#code_journal").addClass('is-invalid');
+                } else {
+                    $("#code_journal").removeClass('is-invalid');
+
+                    // Préparer les données à envoyer
+                    let formData = {
+                        _token: $("meta[name='csrf-token']").attr('content'),
+                        code_journal: codeJournal,
+                        type_journal: typeJournal,
+                        contre_partie: contrePartie,
+                        intitule: intitule,
+                        if: ifVal,
+                        ice: iceVal,
+                    };
+
+                    // Envoyer le formulaire via AJAX
+                    $.ajax({
+                        url: '/journaux',
+                        type: 'POST',
+                        data: formData,
+                        success: function (response) {
+                            // Mettre à jour le tableau des journaux (ici via Tabulator, par exemple)
+                            table.setData("/journaux/data").then(function () {
+                                // Afficher le message de succès clignotant (en vert)
+                                $("#alertMessage")
+                                    .removeClass('alert-danger')
+                                    .addClass('alert-success');
+                                showAlert('Journal ajouté avec succès');
+
+                                // Réinitialiser le formulaire
+                                $('#ajouterJournalForm').trigger("reset");
+                                // Si vous utilisez Select2, réinitialisez les sélections
+                                $('#type_journal, #contre_partie').val(null).trigger('change');
+                                // Replacer le focus sur le premier champ
+                                $("#code_journal").focus();
+                                // Masquer le modal d'ajout
+                                $('#journalModal').modal('hide');
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            $("#alertMessage")
+                                .removeClass('alert-success')
+                                .addClass('alert-danger')
+                                .text("Erreur lors de l'ajout du journal.")
+                                .fadeIn(300);
+                            setTimeout(function () {
+                                $("#alertMessage").fadeOut(300);
+                            }, 2000);
+                        }
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Erreur lors de la vérification du code journal:', error);
+                $("#alertMessage")
+                    .removeClass('alert-success')
+                    .addClass('alert-danger')
+                    .text("Erreur lors de la vérification du code journal.")
+                    .fadeIn(300);
+                setTimeout(function () {
+                    $("#alertMessage").fadeOut(300);
+                }, 2000);
+            }
+        });
     });
 });
+
+
 
 // Fonction d'initialisation pour le modal d'ajout
 $(document).ready(function() {
@@ -687,26 +944,56 @@ $(document).ready(function() {
 });
 
 
+
+
 // Fonction de suppression de journal
-function deleteJournal(journalId) {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce journal ?")) {
-        $.ajax({
-            url: `/journaux/${journalId}`,
-            type: 'DELETE',
-            data: {
-                _token: $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function (response) {
-                table.setData("/journaux/data"); // Recharger les données
-                alert(response.message); // Message de succès
-            },
-            error: function (xhr) {
-                console.error("Erreur lors de la suppression :", xhr.responseText);
-                alert("Erreur lors de la suppression : " + xhr.responseJSON.message);
-            }
-        });
+// Fonction pour supprimer un journal
+// Fonction pour supprimer un journal
+function deleteJournal(journalId, codeJournal) {
+    // Récupérer l'ID de la société depuis la balise meta
+    const societeId = $('meta[name="societe-id"]').attr('content');
+    if (!societeId) {
+        alert("Aucune société sélectionnée dans la session.");
+        return;
     }
+
+    // Déterminer si le journal est mouvementé (en normalisant la chaîne)
+    const isMouvemented = codeJournal && codeJournal.trim().toLowerCase() === 'mouvementé';
+
+    // Si le journal n'est pas mouvementé, afficher une confirmation
+    if (!isMouvemented) {
+        if (!confirm("Êtes-vous sûr de vouloir supprimer ce journal ?")) {
+            return;
+        }
+    }
+    // Pour un journal mouvementé, on ne montre pas de confirmation et on passe directement à la suppression
+
+    $.ajax({
+        url: `/journaux/${journalId}`,
+        type: 'DELETE',
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content'),
+            societeId: societeId
+        },
+        success: function (response) {
+            // Recharger les données du tableau (par exemple via Tabulator)
+            table.setData("/journaux/data");
+            alert(response.message);
+        },
+        error: function (xhr) {
+            console.error("Erreur lors de la suppression :", xhr.responseText);
+            let errorMsg = "Erreur lors de la suppression.";
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMsg = xhr.responseJSON.error;
+            }
+            alert(errorMsg);
+        }
+    });
 }
+
+
+
+
 
  });
 

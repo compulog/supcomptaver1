@@ -34,36 +34,85 @@
 @section('content')
 
 
-<div class="container my-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="text-primary">Liste des Plans Comptables</h3>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary" id="addPlanComptableBtn" data-bs-toggle="modal" data-bs-target="#planComptableModalAdd">
-                <i class="fas fa-plus me-2"></i> Ajouter
+<div class="container my-3">
+    <!-- Ligne de titre et actions -->
+    <div class="row align-items-center mb-2">
+      <div class="col-md-6">
+        <h4 class="text-secondary mb-0">Liste du Plan Comptable</h4>
+      </div>
+      <div class="col-md-6 text-end">
+        <div class="btn-group" role="group" aria-label="Actions">
+          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                  id="addPlanComptableBtn"
+                  data-bs-toggle="modal"
+                  data-bs-target="#planComptableModalAdd"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  title="Ajouter">
+            <i class="fas fa-plus icon-3d"></i>
+            <span>Ajouter</span>
+          </button>
+          <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
+                  id="importPlanComptableBtn"
+                  data-bs-toggle="modal"
+                  data-bs-target="#importModal"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  title="Importer">
+            <i class="fas fa-file-import icon-3d"></i>
+            <span>Importer</span>
+          </button>
+          <a href="{{ route('plan.comptable.excel') }}"
+             class="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
+             data-bs-toggle="tooltip"
+             data-bs-placement="top"
+             title="Exporter en Excel">
+            <i class="fas fa-file-export icon-3d"></i>
+            <span>Excel</span>
+          </a>
+          <form action="{{ route('export.plan_comptable') }}" method="GET" class="d-inline">
+            <input type="hidden" name="societe_id" value="{{ session('societe_id') }}">
+            <button type="submit" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    title="Exporter en PDF">
+              <i class="fas fa-file-pdf icon-3d"></i>
+              <span>PDF</span>
             </button>
-            <button class="btn btn-outline-secondary" id="importPlanComptableBtn" data-bs-toggle="modal" data-bs-target="#importModal">
-                <i class="fas fa-file-import me-2"></i> Importer
-            </button>
-            <a href="{{ route('plan.comptable.excel') }}" class="btn btn-outline-success">
-                <i class="fas fa-file-export me-2"></i> Exporter en Excel
-            </a>
-            <form action="{{ route('export.plan_comptable') }}" method="GET" style="display: inline;">
-                <input type="hidden" name="societe_id" value="{{ session('societe_id') }}">
-                <button type="submit" class="btn btn-outline-danger">
-                    <i class="fas fa-file-pdf me-2"></i> Exporter en PDF
-                </button>
-            </form>
+          </form>
         </div>
+      </div>
     </div>
 
     <!-- Statistiques -->
     <span id="select-stats" class="text-muted"></span>
 
     <!-- Tableau des plans comptables -->
-    <div id="plan-comptable-table" class="border rounded shadow-sm bg-white p-3"></div>
-</div>
+    <div id="plan-comptable-table" class="border rounded shadow-sm bg-white p-2" style="font-size: 0.8rem;"></div>
+  </div>
 
+  <!-- Styles personnalisés pour l'effet 3D -->
+  <style>
+    .icon-3d {
+      font-size: 1.2rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+    .icon-3d:hover {
+      transform: translateY(-2px);
+      box-shadow: 3px 3px 6px rgba(0,0,0,0.4);
+    }
+  </style>
 
+  <!-- Initialisation des tooltips Bootstrap -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    });
+  </script>
 
 @if (session('success'))
     <div class="alert alert-success" role="alert">
@@ -470,8 +519,6 @@ var table = new Tabulator("#plan-comptable-table", {
     height: "600px",
     layout: "fitColumns",
     selectable: true,
-    // rowSelection: true, // Activer la sélection des lignes
-
     columns: [
         {
             title: `
@@ -479,16 +526,38 @@ var table = new Tabulator("#plan-comptable-table", {
                 <i class="fas fa-trash-alt" id="delete-all-icon" style="cursor: pointer;" title="Supprimer les lignes sélectionnées"></i>
             `,
             field: "select",
-            formatter: "rowSelection", // Active la sélection de ligne
+            formatter: "rowSelection",
             headerSort: false,
             hozAlign: "center",
-            width: 60, // Fixe la largeur de la colonne de sélection
+            width: 60,
             cellClick: function(e, cell) {
-                cell.getRow().toggleSelect();  // Basculer la sélection de ligne
+                cell.getRow().toggleSelect();
             }
         },
-        { title: "Compte", field: "compte", editor: "input", headerFilter: "input" },
-        { title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input" },
+        {
+            title: "Compte",
+            field: "compte",
+            editor: "input",
+            headerFilter: "input",
+            headerHozAlign: "center",  // Centre le titre de colonne
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 260px; height: 22px;"
+                }
+            }
+        },
+        {
+            title: "Intitulé",
+            field: "intitule",
+            editor: "input",
+            headerFilter: "input",
+            headerHozAlign: "center",  // Centre le titre de colonne
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 260px; height: 22px;"
+                }
+            }
+        },
         {
             title: "Actions",
             field: "action-icons",
@@ -502,24 +571,26 @@ var table = new Tabulator("#plan-comptable-table", {
                 var row = cell.getRow();
                 if (e.target.classList.contains('edit-icon')) {
                     var rowData = row.getData();
-                    editPlanComptable(rowData);  // Fonction d'édition (à définir)
+                    editPlanComptable(rowData);
                 } else if (e.target.classList.contains('delete-icon')) {
                     var rowData = row.getData();
-                    deletePlanComptable(rowData.id);  // Fonction de suppression (à définir)
+                    deletePlanComptable(rowData.id);
                 }
             },
-            hozAlign: "center",
+            hozAlign: "center",         // Centre le contenu de la colonne actions
+            headerHozAlign: "center",    // Centre le titre de la colonne actions
             headerSort: false,
         }
     ],
 
     rowSelected: function(row) {
-        row.getElement().classList.add("bg-light"); // Style de ligne sélectionnée
+        row.getElement().classList.add("bg-light");
     },
     rowDeselected: function(row) {
-        row.getElement().classList.remove("bg-light"); // Retirer le style de ligne désélectionnée
+        row.getElement().classList.remove("bg-light");
     }
 });
+
 
 document.addEventListener("DOMContentLoaded", function() {
     // Sélectionner/Désélectionner toutes les lignes

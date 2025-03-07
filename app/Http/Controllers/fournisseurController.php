@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 use App\Imports\FournisseurImport;
-use App\Imports\FournisseursImport;
 use App\Models\Fournisseur;
 use App\Models\racine;
 use App\Models\PlanComptable;
@@ -61,75 +60,75 @@ class FournisseurController extends Controller
     }
 
     public function store(Request $request)
-    {
-        // Vérifier si 'societeId' existe dans la session
-        $societeId = session('societeId');
-        Log::debug('societeId dans la session : ' . $societeId);
-
-        if (!$societeId) {
-            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
-        }
-
-        // Validation des données
-        $validatedData = $request->validate([
-            'compte' => 'nullable|string|max:' . ($request->nombre_chiffre_compte ?? 255),
-            'intitule' => 'required|string|max:255',
-            'identifiant_fiscal' => 'nullable|string|max:255',
-            'ICE' => 'nullable|string|max:255',
-            'nature_operation' => 'nullable|string|max:255',
-            'rubrique_tva' => 'nullable|string|max:255',
-            'designation' => 'nullable|string|max:255',
-            'contre_partie' => 'nullable|string|max:255',
-        ]);
-
-        // Si le compte n'est pas spécifié, générer un compte unique
-        if (empty($validatedData['compte'])) {
-            $validatedData['compte'] = $this->getNextCompte($societeId); // Appel à la méthode pour générer le compte
-        }
-
-        // Ajouter l'ID de la société au tableau de données validées
-        $validatedData['societe_id'] = $societeId;
-
-        DB::beginTransaction();
-
-        try {
-            // Vérifier si un fournisseur avec ce compte existe déjà pour cette société
-            $existingFournisseur = Fournisseur::where('societe_id', $societeId)
-                ->where('compte', $validatedData['compte'])
-                ->first();
-
-            if ($existingFournisseur) {
-                return response()->json([
-                    'error' => 'Le fournisseur avec ce compte existe déjà pour la société sélectionnée.'
-                ], 422);
-            }
-
-            // Créer un nouveau fournisseur
-            $fournisseur = Fournisseur::create($validatedData);
-
-            // Ajouter ce fournisseur dans la table plan_comptable
-            PlanComptable::create([
-                'societe_id' => $societeId,
-                'compte' => $validatedData['compte'],
-                'intitule' => $validatedData['intitule'],
-            ]);
-
-            DB::commit(); // Commit les deux opérations si tout va bien
-
-            return response()->json([
-                'success' => true,
-                'fournisseur' => $fournisseur,
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack(); // Annule si une erreur se produit
-            Log::error('Erreur lors de la création du fournisseur : ' . $e->getMessage());
-
-            return response()->json([
-                'error' => 'Une erreur est survenue lors de la création du fournisseur.',
-                'details' => $e->getMessage()
-            ], 500);
-        }
+{
+    $societeId = session('societeId');
+    if (!$societeId) {
+        return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
     }
+
+    $validatedData = $request->validate([
+        'compte' => 'nullable|string|max:' . ($request->nombre_chiffre_compte ?? 255),
+        'intitule' => 'required|string|max:255',
+        'identifiant_fiscal' => 'nullable|string|max:255',
+        'ICE' => 'nullable|string|max:255',
+        'nature_operation' => 'nullable|string|max:255',
+        'rubrique_tva' => 'nullable|string|max:255',
+        'designation' => 'nullable|string|max:255',
+        'contre_partie' => 'nullable|string|max:255',
+    ]);
+
+    if (empty($validatedData['compte'])) {
+        $validatedData['compte'] = $this->getNextCompte($societeId);
+    }
+    $validatedData['societe_id'] = $societeId;
+
+    // Vérifier si un fournisseur avec ce compte existe déjà pour cette société
+    $existingFournisseur = Fournisseur::where('societe_id', $societeId)
+        ->where('compte', $validatedData['compte'])
+        ->first();
+
+    if ($existingFournisseur) {
+        return response()->json([
+            'error' => 'Le fournisseur avec ce compte existe déjà pour la société sélectionnée.'
+        ], 422);
+    }
+
+    DB::beginTransaction();
+    try {
+        $fournisseur = Fournisseur::create($validatedData);
+        PlanComptable::create([
+            'societe_id' => $societeId,
+            'compte' => $validatedData['compte'],
+            'intitule' => $validatedData['intitule'],
+        ]);
+        DB::commit();
+        return response()->json([
+            'success' => true,
+            'fournisseur' => $fournisseur,
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Erreur lors de la création du fournisseur : ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Une erreur est survenue lors de la création du fournisseur.',
+            'details' => $e->getMessage()
+        ], 500);
+    }
+}
+
+public function checkCompte(Request $request)
+{
+    $request->validate([
+        'compte' => 'required|string',
+        'societe_id' => 'required|integer'
+    ]);
+
+    $exists = Fournisseur::where('societe_id', $request->societe_id)
+                ->where('compte', $request->compte)
+                ->exists();
+
+    return response()->json(['exists' => $exists]);
+}
 
 
 
@@ -314,13 +313,6 @@ public function getComptes()
 
 
 
-    public function destroy($id)
-    {
-        $fournisseur = Fournisseur::findOrFail($id);
-        $fournisseur->delete();
-
-        return response()->json(['success' => true]);
-    }
 
 
     // Affiche le formulaire d'importation
@@ -337,26 +329,51 @@ public function getComptes()
      * Gère l'importation du fichier Excel
      */
     public function import(Request $request)
-    {
-        // Valider le fichier importé
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv',  // Vérifie que le fichier est valide
-        ]);
+{
+    // Valider le fichier et les paramètres de colonnes
+    $request->validate([
+        'file' => 'required|file|mimes:xlsx,xls,csv',
+        'colonne_compte' => 'required|integer|min:1',
+        'colonne_intitule' => 'required|integer|min:1',
+        // Les autres colonnes sont optionnelles mais doivent être entières si renseignées
+        'colonne_identifiant_fiscal' => 'nullable|integer|min:1',
+        'colonne_ICE' => 'nullable|integer|min:1',
+        'colonne_nature_operation' => 'nullable|integer|min:1',
+        'colonne_rubrique_tva' => 'nullable|integer|min:1',
+        'colonne_designation' => 'nullable|integer|min:1',
+        'colonne_contre_partie' => 'nullable|integer|min:1',
+    ]);
 
-        try {
-            // Récupérer l'ID de la société et le nombre de chiffres du compte depuis la session
-            $societe_id = session('societeId');  // Récupérer l'ID de la société stockée dans la session
-            $societe = Societe::find($societe_id);  // Trouver la société par son ID
-            $nombre_chiffre_compte = $societe->nombre_chiffre_compte;  // Récupérer le nombre de chiffres du compte
+    try {
+        // Récupérer l'ID de la société et le nombre de chiffres du compte depuis la session
+        $societe_id = session('societeId');
+        $societe = Societe::findOrFail($societe_id);
+        $nombre_chiffre_compte = $societe->nombre_chiffre_compte;
 
-            // Charger le fichier Excel et importer les données
-            Excel::import(new FournisseurImport(), $request->file('file'));
+        // Récupérer le mapping des colonnes depuis le formulaire
+        $mapping = [
+            'colonne_compte'            => (int)$request->input('colonne_compte'),
+            'colonne_intitule'          => (int)$request->input('colonne_intitule'),
+            'colonne_identifiant_fiscal'=> $request->input('colonne_identifiant_fiscal') ? (int)$request->input('colonne_identifiant_fiscal') : null,
+            'colonne_ICE'               => $request->input('colonne_ICE') ? (int)$request->input('colonne_ICE') : null,
+            'colonne_nature_operation'  => $request->input('colonne_nature_operation') ? (int)$request->input('colonne_nature_operation') : null,
+            'colonne_rubrique_tva'      => $request->input('colonne_rubrique_tva') ? (int)$request->input('colonne_rubrique_tva') : null,
+            'colonne_designation'       => $request->input('colonne_designation') ? (int)$request->input('colonne_designation') : null,
+            'colonne_contre_partie'     => $request->input('colonne_contre_partie') ? (int)$request->input('colonne_contre_partie') : null,
+        ];
 
-            return back()->with('success', 'Importation réussie!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Erreur lors de l\'importation: ' . $e->getMessage());
-        }
+        // Lancer l'import en passant le mapping et les paramètres
+        Excel::import(new FournisseurImport(
+            $societe_id,
+            $nombre_chiffre_compte,
+            $mapping
+        ), $request->file('file'));
+
+        return back()->with('success', 'Importation réussie!');
+    } catch (\Exception $e) {
+        return back()->with('error', 'Erreur lors de l\'importation: ' . $e->getMessage());
     }
+}
 
     /**
      * Parse le fichier Excel (en ignorant la première ligne).
@@ -380,28 +397,101 @@ public function getComptes()
     }
 
 
+    public function destroy(Request $request, $id)
+    {
+        // Récupérer l'ID de la société depuis la session
+        $sessionSocieteId = session('societeId');
+        if (!$sessionSocieteId) {
+            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+        }
+
+        // Récupérer le fournisseur à supprimer
+        $fournisseur = Fournisseur::findOrFail($id);
+
+        // Vérifier que le fournisseur appartient à la société de la session
+        if ($fournisseur->societe_id != $sessionSocieteId) {
+            return response()->json(['error' => "Ce fournisseur n'appartient pas à la société sélectionnée"], 400);
+        }
+
+        // Vérifier dans la table 'operation_courante' que le fournisseur n'est pas mouvementé :
+        // c'est-à-dire qu'il n'existe pas d'enregistrement où operation_courante.compte = $fournisseur->compte
+        // pour la même société
+        $isMouvemented = DB::table('operation_courante')
+                            ->where('compte', $fournisseur->compte)
+                            ->where('societe_id', $sessionSocieteId)
+                            ->exists();
+
+        if ($isMouvemented) {
+            return response()->json([
+                'error' => "Ce fournisseur '{$fournisseur->compte}' est déjà mouvementé, impossible de le supprimer !"
+            ], 400);
+        }
+
+        // Procéder à la suppression
+        $fournisseur->delete();
+        return response()->json(['message' => 'Fournisseur supprimé avec succès.']);
+    }
+
     public function deleteSelected(Request $request)
     {
         // Valider que le tableau 'ids' est bien fourni
         $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'integer',  // Chaque ID doit être un entier
+            'ids.*' => 'integer',
         ]);
 
-        try {
-            // Supprimer les lignes avec les IDs reçus
-            $deletedCount = Fournisseur::whereIn('id', $request->ids)->delete();
+        // Récupérer l'ID de la société depuis la session
+        $sessionSocieteId = session('societeId');
+        if (!$sessionSocieteId) {
+            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+        }
 
+        $ids = $request->ids;
+        $nonDeletable = [];
+        $deletableIds = [];
+
+        // Parcourir chaque fournisseur et vérifier s'il peut être supprimé
+        foreach ($ids as $id) {
+            $fournisseur = Fournisseur::find($id);
+            if ($fournisseur) {
+                // Vérifier que le fournisseur appartient à la société de la session
+                if ($fournisseur->societe_id != $sessionSocieteId) {
+                    $nonDeletable[] = $fournisseur->compte;
+                    continue;
+                }
+
+                // Vérifier dans la table 'operation_courante' si le fournisseur est mouvementé :
+                // c'est-à-dire que operation_courante.compte = $fournisseur->compte pour la même société
+                $isMouvemented = DB::table('operation_courante')
+                                    ->where('compte', $fournisseur->compte)
+                                    ->where('societe_id', $sessionSocieteId)
+                                    ->exists();
+                if ($isMouvemented) {
+                    $nonDeletable[] = $fournisseur->compte;
+                } else {
+                    $deletableIds[] = $fournisseur->id;
+                }
+            }
+        }
+
+        if (!empty($nonDeletable)) {
+            return response()->json([
+                'error' => "Les fournisseurs suivants sont déjà mouvementés et ne peuvent pas être supprimés : " . implode(', ', $nonDeletable)
+            ], 400);
+        }
+
+        try {
+            $deletedCount = Fournisseur::whereIn('id', $deletableIds)->delete();
             return response()->json([
                 'status' => 'success',
-                'message' => "{$deletedCount} lignes supprimées"
+                'message' => "{$deletedCount} fournisseurs supprimés"
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Erreur lors de la suppression.',
-                'error' => $e->getMessage()  // Retour de l'erreur spécifique
-            ]);
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 

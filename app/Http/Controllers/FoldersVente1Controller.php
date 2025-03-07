@@ -92,7 +92,8 @@ class FoldersVente1Controller extends Controller
                 $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
     
                 if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                    $file->preview = asset('storage/' . $file->path); // Image
+                    $file->preview = asset('storage/uploads/' . $file->name);
+
                 } elseif (in_array($extension, ['pdf'])) {
                     $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
                 } elseif (in_array($extension, ['doc', 'docx'])) {

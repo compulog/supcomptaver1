@@ -10,33 +10,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Opérations Courantes</title>
 <!-- SweetAlert2 CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-<!-- SweetAlert2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap CSS (dernière version Bootstrap 5.3.0) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
+  <!-- SweetAlert2 CSS (dernière version) -->
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
-     <link href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
-    {{-- <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.4/dist/css/tabulator.min.css"> --}}
+  <!-- FontAwesome CSS (dernière version, ici 6.0.0) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
-     <!-- jQuery et Luxon -->
-<!-- Luxon -->
-<script src="https://cdn.jsdelivr.net/npm/luxon@3.1.0/build/global/luxon.min.js"></script>
+  <!-- Tabulator CSS (dernière version stable 6.3.4) -->
+  <link href="https://unpkg.com/tabulator-tables@6.1.0/dist/css/tabulator_bootstrap5.min.css" rel="stylesheet">
 
-<!-- Flatpickr -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script type="text/javascript" src="https://oss.sheetjs.com/sheetjs/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-{{-- <script src="https://unpkg.com/tabulator-tables@6.3.4/dist/js/tabulator.min.js"></script> --}}
+  <!-- Flatpickr CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+  <!-- Select2 CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet">
+<!-- Ajout de FontAwesome pour les icônes -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
     <style>
 
 
+
+
+
+.tabulator-cell {
+  padding: 2px 5px;
+}
+
+.tabulator-row {
+  min-height: 30px;
+}
+
+#cumul-debit-achats,
+#cumul-credit-achats,
+#solde-debit-achats,
+#solde-credit-achats {
+  font-size: 12px; /* Ajustez la taille selon vos préférences */
+}
+
+/* Survol (hover) si vous voulez un effet au passage de la souris */
+.tabulator-row:hover .tabulator-cell {
+  background-color: #D0E7FD; /* un bleu un peu plus foncé */
+}
+
+.tabulator-row.tabulator-selected {
+  background-color: #D2E8FF !important;
+}
+
+.tabulator-cell {
+  padding: 2px 5px;
+}
+
+.tabulator-row {
+  min-height: 30px;
+}
+
+#table-Caisse .tabulator-cell,
+#table-Caisse.tabulator-header .tabulator-col {
+  font-size: 12px; /* ou la valeur que tu souhaites */
+}
+#table-operations-diverses .tabulator-cell,
+#table-operations-diverses .tabulator-header .tabulator-col {
+  font-size: 12px; /* Ajustez la taille en fonction de vos besoins */
+}
+
+#table-ventes .tabulator-cell,
+#table-ventes .tabulator-header .tabulator-col {
+  font-size: 12px; /* Ajustez la taille en fonction de vos besoins */
+}
+
+/* Par exemple, dans ton fichier CSS ou dans un style <style> dans ta page */
+    #table-achats .tabulator-cell,
+#table-achats .tabulator-header .tabulator-col {
+  font-size: 12px; /* ou la valeur que tu souhaites */
+}
 
 .select2-container--open {
   z-index: 10700 !important; /* Ajustez la valeur si besoin */
@@ -157,6 +208,7 @@
                         color: #007bff; /* Couleur au survol */
                     }
                     /*Horizontally center header and footer*/
+
 .tabulator-print-header, tabulator-print-footer{
     text-align:center;
 }
@@ -229,17 +281,203 @@
 } */
 /* Effet de surbrillance clignotante */
 .highlight-error {
-    animation: highlight 1s infinite;
-    background-color: yellow;
+      background-color: #e5f504ec;
+      animation: blink 1s steps(5, start) infinite;
+    }
+    @keyframes blink {
+      to { visibility: hidden; }
+    }
+
+    .input-group .form-control {
+      height: calc(1.5em + .75rem + 2px); /* Hauteur standard Bootstrap */
+    }
+    .input-group-append .btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    .btn {
+  position: relative;
+  z-index: 1000;
 }
 
-@keyframes highlight {
-    0% { background-color: yellow; }
-    50% { background-color: transparent; }
-    100% { background-color: yellow; }
+    /* Style pour la liste dans le popup SweetAlert2 */
+    .swal2-list-group {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .swal2-list-group-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    .swal2-list-group-item:hover,
+    .swal2-list-group-item.selected {
+      background-color: #007bff;
+      color: #fff;
+    }
+
+    .modal {
+    display: none; /* Cacher par défaut */
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0); /* Fond semi-transparent */
+    background-color: rgba(0,0,0,0.4);
+    padding-top: 60px;
 }
 
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
 
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+/* Style global pour la modale */
+.modal {
+    display: none; /* Masquer la modale par défaut */
+    position: fixed;
+    z-index: 999; /* Assurez-vous que la modale soit au-dessus du contenu */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Fond semi-transparent */
+}
+
+/* Contenu de la modale */
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 60%;
+    max-height: 80%;
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Bouton de fermeture de la modale */
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 30px;
+    color: #888;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+/* Titre de la modale */
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Contenu de la modale (liste de fichiers) */
+.modal-body {
+    margin-bottom: 20px;
+}
+
+/* Liste des fichiers */
+#fileList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#fileList li {
+    margin: 10px 0;
+}
+
+/* Bouton de fichier */
+.file-button {
+    display: flex;
+    align-items: center;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    width: 100%;
+    cursor: pointer;
+    font-size: 16px;
+    text-align: left;
+    transition: background-color 0.3s ease;
+}
+
+.file-button:hover {
+    background-color: #0056b3;
+}
+
+.file-button i {
+    margin-right: 10px;
+}
+
+/* Footer de la modale */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Bouton annuler */
+.cancel-btn {
+    background-color: #ccc;
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.cancel-btn:hover {
+    background-color: #999;
+}
+/* Style du bouton Confirmer */
+.confirm-btn {
+    background-color: #28a745; /* Couleur verte */
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px; /* Espacement entre le bouton "Annuler" et "Confirmer" */
+}
+
+.confirm-btn:hover {
+    background-color: #218838; /* Teinte plus foncée de vert au survol */
+}
 
 
     </style>
@@ -248,7 +486,7 @@
         <div class="tabs" style="display: flex; gap: 5px; margin-bottom: 10px; border-bottom: 2px solid #ccc;">
             <!-- Onglet Achats -->
             <div class="tab active" data-tab="achats"
-                 style="font-size: 9px; padding: 4px 8px; cursor: pointer; border: 1px solid #ccc; border-radius: 5px; background-color: #f0f0f0; transition: background-color 0.3s, border-color 0.3s; box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);">
+                 style="font-size: 9px; padding: 4px 8px; cursor: pointer; border: 1px solid #ccc; border-radius: 5px; background-color: #007bff; transition: background-color 0.3s, border-color 0.3s; box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);">
                 Achats
             </div>
 
@@ -291,8 +529,10 @@
         <!-- Code et Journal -->
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
             <label for="journal-achats" style="font-size: 11px; font-weight: bold;">Code :</label>
-            <select id="journal-achats" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
-            <input type="text" id="filter-intitule-achats" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
+<select id="journal-achats" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
+<input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
+
+<input type="text" id="filter-intitule-achats" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
         </div>
 
         <!-- Saisie par -->
@@ -366,6 +606,8 @@
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
             <label for="journal-ventes" style="font-size: 11px; font-weight: bold;">Code :</label>
             <select id="journal-ventes" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
+            <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
+
             <input type="text" id="filter-intitule-ventes" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
         </div>
 
@@ -434,15 +676,15 @@
 <!-- Onglet caisse -->
 <div id="Caisse" class="tab-content" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 10px; color: #333; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
     <div class="filter-container" style="display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
-
-        <!-- Code et Journal -->
-        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-            <label for="journal-Caisse" style="font-size: 11px; font-weight: bold;">Code :</label>
-            <select id="journal-Caisse" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
-            <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
-
-            <input type="text" id="filter-intitule-Caisse" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
-        </div>
+<!-- Code et Journal -->
+<div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+    <label for="journal-Caisse" style="font-size: 11px; font-weight: bold;">Code :</label>
+    <select id="journal-Caisse" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;">
+        <option value="">Sélectionner un journal</option> <!-- Option par défaut -->
+    </select>
+    <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
+    <input type="text" id="filter-intitule-Caisse" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
+</div>
 
         <!-- Saisie par -->
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
@@ -458,23 +700,44 @@
 
         </div>
 
-        <!-- Période -->
-        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-            <label for="periode-Caisse" style="font-size: 11px; font-weight: bold;">Période :</label>
-            <div class="form-check form-check-inline" style="font-size: 9px;">
-                <input class="formR" type="radio" name="filter-period-Caisse" id="filter-mois-Caisse" value="mois" checked>
-                <label class="form-check-label" for="filter-mois-Caisse" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
-            </div>
-            <div class="form-check form-check-inline" style="font-size: 9px;">
-                <input class="formR" type="radio" name="filter-period-Caisse" id="filter-exercice-Caisse" value="exercice">
-                <label class="form-check-label" for="filter-exercice-Caisse" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
-            </div>
+<!-- Période -->
+<div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+    <label for="periode-Caisse" style="font-size: 11px; font-weight: bold;">Période :</label>
+    
+    <!-- Choix du type de période -->
+    <div class="form-check form-check-inline" style="font-size: 9px;">
+        <input class="formR" type="radio" name="filter-period-Caisse" id="filter-mois-Caisse" value="mois" checked>
+        <label class="form-check-label" for="filter-mois-Caisse" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
+    </div>
+    <div class="form-check form-check-inline" style="font-size: 9px;">
+        <input class="formR" type="radio" name="filter-period-Caisse" id="filter-exercice-Caisse" value="exercice">
+        <label class="form-check-label" for="filter-exercice-Caisse" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
+    </div>
 
-            <select id="periode-Caisse" style="font-size: 10px; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
-                <option value="selectionner un mois">Sélectionner un mois</option>
-            </select>
-            <input type="text" id="annee-Caisse" readonly style="font-size: 10px; width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;" />
-        </div>
+    <!-- Liste déroulante pour les mois -->
+    <select id="periode-Caisse" style="font-size: 10px; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
+        <option value="selectionner un mois">Sélectionner un mois</option>
+        <option value="janvier">Janvier</option>
+        <option value="fevrier">Février</option>
+        <option value="mars">Mars</option>
+        <option value="avril">Avril</option>
+        <option value="mai">Mai</option>
+        <option value="juin">Juin</option>
+        <option value="juillet">Juillet</option>
+        <option value="aout">Août</option>
+        <option value="septembre">Septembre</option>
+        <option value="octobre">Octobre</option>
+        <option value="novembre">Novembre</option>
+        <option value="decembre">Décembre</option>
+    </select>
+    
+    <!-- Input pour l'année -->
+    <input type="text" id="annee-Caisse" readonly style="font-size: 10px; width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;" />
+
+    <!-- Stocker la date d'exercice (dans l'attribut data-exercice-date) -->
+    <div id="exercice-date" style="display: none;" data-exercice-date="{{ $societe->exercice_social_debut }}"></div>
+</div>
+
 
         <!-- Boutons avec icônes -->
         <div style="display: flex; align-items: center; gap: 12px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
@@ -560,26 +823,44 @@
 
 
 <!-- Onglet Opérations Diverses -->
-<div id="operations-diverses" class="tab-content" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 10px; color: #333; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+ <!-- Onglet Opérations Diverses -->
+ <div id="operations-diverses" class="tab-content" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 10px; color: #333; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
     <div class="filter-container" style="display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
         <!-- Code et Journal -->
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
             <label for="journal-operations-diverses" style="font-size: 11px; font-weight: bold;">Code :</label>
             <select id="journal-operations-diverses" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
             <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
-            <input type="text" id="filter-intitule-operations-diverses" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
+            <input type="text" id="filter-intitule-operations-diverses" readonly placeholder="Journal"
+                   style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
         </div>
 
         <!-- Saisie par -->
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
             <label style="font-size: 11px; font-weight: bold;">Saisie par :</label>
+              <!-- Filtres -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
             <div class="form-check form-check-inline" style="font-size: 9px;">
-                <input class="formR" type="radio" name="filter-period-operations-diverses" value="mois" id="filter-mois-operations-diverses" checked>
-                <label class="form-check-label" for="filter-mois-operations-diverses" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
+                <input class="formR" type="radio" name="filter-operations-diverses" value="contre-partie" id="filter-contre-partie-operations-diverses" checked>
+                <label class="form-check-label" for="filter-contre-partie-operations-diverses"
+                       style="font-size: 9px; font-weight: 600; margin-left: 5px;">Contre Partie Auto</label>
             </div>
             <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-operations-diverses" value="libre" id="filter-libre-operations-diverses">
+                <label class="form-check-label" for="filter-libre-operations-diverses"
+                       style="font-size: 9px; font-weight: 600; margin-left: 5px;">Libre</label>
+            </div>
+        </div>
+            <div class="form-check form-check-inline" style="font-size: 9px;">
+                <input class="formR" type="radio" name="filter-period-operations-diverses" value="mois" id="filter-mois-operations-diverses" checked>
+                <label class="form-check-label" for="filter-mois-operations-diverses"
+                       style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
+            </div>
+
+            <div class="form-check form-check-inline" style="font-size: 9px;">
                 <input class="formR" type="radio" name="filter-period-operations-diverses" value="exercice" id="filter-exercice-operations-diverses">
-                <label class="form-check-label" for="filter-exercice-operations-diverses" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
+                <label class="form-check-label" for="filter-exercice-operations-diverses"
+                       style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
             </div>
         </div>
 
@@ -589,22 +870,11 @@
             <select id="periode-operations-diverses" style="padding: 5px; width: 150px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;">
                 <option value="selectionner un mois">Sélectionner un mois</option>
             </select>
-            <input type="text" id="annee-operations-diverses" readonly style="font-size: 10px; width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;" />
+            <input type="text" id="annee-operations-diverses" readonly
+                   style="font-size: 10px; width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;" />
         </div>
 
-        <!-- Filtres -->
-        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
 
-            <div class="form-check form-check-inline" style="font-size: 9px;">
-                <input class="formR" type="radio" name="filter-operations-diverses" value="contre-partie" id="filter-contre-partie-operations-diverses" checked>
-                <label class="form-check-label" for="filter-contre-partie-operations-diverses" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Contre Partie Auto</label>
-            </div>
-            <div class="form-check form-check-inline" style="font-size: 9px;">
-                <input class="formR" type="radio" name="filter-operations-diverses" value="libre" id="filter-libre-operations-diverses">
-                <label class="form-check-label" for="filter-libre-operations-diverses" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Libre</label>
-            </div>
-
-        </div>
 
         <!-- Boutons avec icônes -->
         <div style="display: flex; align-items: center; gap: 12px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
@@ -617,9 +887,12 @@
             <button class="icon-button border-0 bg-transparent" id="export-operations-diversesPDF" title="Exporter PDF">
                 <i class="fas fa-file-pdf text-danger" style="font-size: 14px;"></i>
             </button>
-            <button class="icon-button border-0 bg-transparent" id="delete-row-btn" title="Supprimer">
+            <button class="icon-button border-0 bg-transparent" id="delete-row-btnOD" title="Supprimer">
                 <i class="fas fa-trash-alt text-danger" style="font-size: 14px;"></i>
             </button>
+            <a id="print-tableOp" href="#" title="Imprimer la table" class="text-dark">
+                <i class="fa fa-print" style="font-size: 16px;"></i>
+            </a>
         </div>
     </div>
 
@@ -629,13 +902,42 @@
     </div>
 </div>
 
+<!-- Modal Bootstrap pour l'upload -->
+<!-- N'oubliez pas d'inclure FontAwesome pour l'icône (par exemple via CDN) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<!-- Bootstrap JS -->
 
 </body>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <script src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
+  <!-- Bootstrap JS Bundle (inclut Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- SweetAlert2 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Tabulator JS (dernière version stable 6.3.4) -->
+  <script src="https://unpkg.com/tabulator-tables@6.1.0/dist/js/tabulator.min.js"></script>
+
+  <!-- Luxon JS (pour la gestion des dates) -->
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.1.0/build/global/luxon.min.js"></script>
+
+  <!-- Flatpickr JS -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <!-- SheetJS (XLSX) -->
+  <script src="https://oss.sheetjs.com/sheetjs/xlsx.full.min.js"></script>
+
+  <!-- jsPDF (dernière version de jspdf.umd) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+
+  <!-- jsPDF Autotable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Select2 JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+
     <script>
         window.comptesClients = window.comptesClients || [];
 
@@ -643,9 +945,46 @@
         <script>
             window.nombreChiffresCompte = {{ $societe->nombre_chiffre_compte }};
           </script>
+  {{-- <pre>
+    societe_id: {{ $societe->id }}<br>
+    nombre_chiffre_compte: {{ $societe->nombre_chiffre_compte }}
+</pre> --}}
 
-
+<!-- Injection directe des variables globales -->
+<script>
+    var societeId = {{ $societe->id }};
+    var nombreChiffresCompte = {{ $societe->nombre_chiffre_compte }};
+    console.log("Injection depuis Blade - societeId:", societeId, "nombreChiffresCompte:", nombreChiffresCompte);
+</script>
 
     <script type="text/javascript" src="{{URL::asset('js/Operation_Courante.js')}}"></script>
+    <script type="text/javascript" src="{{URL::asset('js/Operation_Caisse_Banque.js')}}"></script>
 
+<!-- Modale pour afficher les fichiers -->
+<div id="fileModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>Choisir un fichier</h2>
+        <div class="modal-body">
+            <ul id="fileList">
+                @if(isset($files) && $files->count() > 0)
+                    @foreach($files as $file)
+                        <li>
+                            <button class="file-button" data-filename="{{ $file->name }}">
+                                <i class="fas fa-file-alt"></i> {{ $file->name }}
+                            </button>
+                        </li>
+                    @endforeach
+                @else
+                    <li>Aucun fichier disponible</li>
+                @endif
+            </ul>
+        </div>
+        <div class="modal-footer">
+            <button class="cancel-btn">Annuler</button>
+            <!-- Nouveau bouton Confirmer -->
+            <button id="confirmBtn" class="confirm-btn">Confirmer</button>
+        </div>
+    </div>
+</div>
 @endsection

@@ -75,6 +75,8 @@ class SocietesImport implements ToModel, WithStartRow
 
         // Si la société existe déjà, on met à jour ses informations
         if ($societe) {
+            $societe->code_societe = $this->getValue($row, 'code_societe');
+
             $societe->forme_juridique = $this->getValue($row, 'forme_juridique');
             $societe->siege_social = $this->getValue($row, 'siege_social');
             $societe->patente = $this->getValue($row, 'patente');
@@ -95,10 +97,14 @@ class SocietesImport implements ToModel, WithStartRow
             $societe->fait_generateur = $faitGenerateur; // Mise à jour avec la description du fait générateur
             $societe->rubrique_tva = $this->getValue($row, 'rubrique_tva');
             $societe->designation = $this->getValue($row, 'designation');
+            $societe->cnss = $this->getValue($row, 'cnss');
+            $validatedData['created_by_user_id'] = auth()->id(); // L'ID de l'utilisateur connecté
+
             $societe->save(); // Enregistrer les modifications
         } else {
             // Si la société n'existe pas, on la crée
             $societe = new Societe([ 
+                'code_societe' => $this->getValue($row, 'code_societe'),
                 'raison_sociale' => $raisonSociale,
                 'forme_juridique' => $this->getValue($row, 'forme_juridique'),
                 'siege_social' => $this->getValue($row, 'siege_social'),
@@ -117,9 +123,12 @@ class SocietesImport implements ToModel, WithStartRow
                 'assujettie_partielle_tva' => $this->getValue($row, 'assujettie_partielle_tva'),
                 'prorata_de_deduction' => $this->getValue($row, 'prorata_de_deduction'),
                 'regime_declaration' => $regimeDeclaration,
+                'cnss' => $this->getValue($row, 'cnss'),
                 'fait_generateur' => $faitGenerateur, // Ajout de la description du fait générateur
                 'rubrique_tva' => $this->getValue($row, 'rubrique_tva'),
                 'designation' => $this->getValue($row, 'designation'),
+                'created_by_user_id' => auth()->id(),  // Ici vous assurez que la valeur est bien insérée
+
             ]);
             $societe->save(); // Enregistrer la nouvelle société
         }

@@ -24,6 +24,42 @@ class FileController extends Controller
             return $next($request);
         });
     }
+
+
+    public function update(Request $request, $id)
+    {
+        // Validation de l'entrée
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+    
+        // Récupération du fichier de la base de données
+        $file = File::findOrFail($id);
+    
+        // Le nom du fichier actuel dans le stockage
+        $oldFileName = $file->name;
+    
+        // Nouveau nom du fichier
+        $newFileName = $request->input('name');
+    
+        // Chemin du fichier dans le stockage
+        $oldFilePath = public_path('storage/uploads/' . $oldFileName);
+        $newFilePath = public_path('storage/uploads/' . $newFileName);
+    
+        // Vérification si le fichier existe avant de tenter de le renommer
+        if (file_exists($oldFilePath)) {
+            // Renommer le fichier
+            rename($oldFilePath, $newFilePath);
+        }
+    
+        // Mise à jour du nom dans la base de données
+        $file->name = $newFileName;
+        $file->save();
+    
+        // Retour à la page précédente
+        return redirect()->back();
+    }
+    
     public function view($id)
     {
         // Récupérer le fichier de la base de données
@@ -63,6 +99,6 @@ public function destroy($id)
     Storage::delete($file->path); // Si vous stockez les fichiers sur le système de fichiers
     $file->delete();
 
-    return redirect()->back()->with('success', 'Fichier supprimé avec succès.');
+    return redirect()->back();
 }
 }

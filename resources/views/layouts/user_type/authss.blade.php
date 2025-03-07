@@ -47,9 +47,37 @@
             <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg {{ (Request::is('rtl') ? 'overflow-hidden' : '') }}">
                 <nav class="navbar">
                 @if(isset($societe))         
-                           <button id="menuToggle" class="navbar-toggler d-none d-lg-block" type="button" style="padding: 0; border: none; background: transparent;">
-                     <p style="font-size:15px;color:black;"><i class="fas fa-bars"></i></p>
-                    </button>
+                @if(auth()->check() && auth()->user()->type !== 'interlocuteurs')
+
+<button id="menuToggle" class="navbar-toggler" type="button" style="padding: 0; border: none; background: transparent; margin-left: 20px; display: flex; align-items: center; border: 1px solid black; border-radius: 5px; transition: background-color 0.3s;">
+    <!-- Icône -->
+    <i class="fas fa-bars" style="font-size: 20px; color: black; padding: 5px;"></i>
+    
+    <!-- Texte Menu -->
+    <span id="menuText" style="font-size: 15px; color: black; margin-left: 5px; padding: 5px 10px;">Menu</span>
+</button>
+
+<!-- Style CSS pour le survol -->
+<style>
+    #menuToggle:hover {
+        background-color: black;
+    }
+
+    #menuToggle:hover #menuText {
+        color: white;
+    }
+
+    #menuToggle:hover .fas {
+        color: white;
+    }
+
+    #menuToggle:hover  , #menuToggle:hover span {
+        background-color: white;
+    }
+</style>
+
+
+@endif
                     @endif
                     @include('layouts.navbars.auth.nav1')
                 </nav>

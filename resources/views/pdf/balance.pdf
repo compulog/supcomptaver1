@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Balance Comptable PDF</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; }
+        table, th, td { border: 1px solid black; }
+        th, td { padding: 5px; text-align: left; }
+    </style>
+</head>
+<body>
+    <h2>Balance Comptable</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Compte</th>
+                <th>Intitulé</th>
+                <th>A nouveau Débit</th>
+                <th>A nouveau Crédit</th>
+                <th>Opération Débit</th>
+                <th>Opération Crédit</th>
+                <th>Cumul Débit</th>
+                <th>Cumul Crédit</th>
+                <th>Solde Débit</th>
+                <th>Solde Crédit</th>
+                <th>Date Opération</th>
+                <th>Societe ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($balanceData as $row)
+                <tr>
+                    <td>{{ $row->compte }}</td>
+                    <td>{{ $row->intitule }}</td>
+                    <td>{{ $row->anv_debit }}</td>
+                    <td>{{ $row->anv_credit }}</td>
+                    <td>{{ $row->ope_debit }}</td>
+                    <td>{{ $row->ope_credit }}</td>
+                    <td>{{ $row->cumul_debit }}</td>
+                    <td>{{ $row->cumul_credit }}</td>
+                    <td>{{ $row->solde_debit }}</td>
+                    <td>{{ $row->solde_credit }}</td>
+                    <td>{{ $row->date_operation }}</td>
+                    <td>{{ $row->societe_id }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+</body>
+</html>

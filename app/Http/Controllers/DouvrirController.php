@@ -84,19 +84,21 @@ class DouvrirController extends Controller
         foreach ($files as $file) {
             $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
     
-            // Déterminer l'aperçu en fonction du type de fichier
+   
+
             if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                $file->preview = asset('storage/' . $file->path);
+                $file->preview = asset('storage/uploads/' . $file->name);
+
             } elseif (in_array($extension, ['pdf'])) {
-                $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF';
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
             } elseif (in_array($extension, ['doc', 'docx'])) {
-                $file->preview = 'https://via.placeholder.com/80x100.png?text=Word';
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=Word'; // Word
             } elseif (in_array($extension, ['xls', 'xlsx'])) {
-                $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel';
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel'; // Excel
             } else {
-                $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier';
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
             }
-    
+
             // Récupérer les messages non lus associés à ce fichier
             $unreadMessages = Message::where('file_id', $file->id)
                                      ->where('is_read', 0)
@@ -125,15 +127,20 @@ class DouvrirController extends Controller
             $file = $request->file('file');
     
             // Créer un nom unique pour le fichier
-            $filename = time() . '-' . $file->getClientOriginalName();
+            $filename =  $file->getClientOriginalName();
     
-            // Sauvegarder le fichier dans le stockage public
-            $path = $file->storeAs('uploads', $filename, 'public'); // Enregistre le fichier sur disque
-    
+          // Vérifiez si le répertoire 'uploads' existe dans 'public/storage' et créez-le si nécessaire
+          if (!file_exists(public_path('storage/uploads'))) {
+            mkdir(public_path('storage/uploads'), 0777, true);
+        }
+
+        // Déplacer le fichier téléchargé dans 'public/storage/uploads'
+        $file->move(public_path('storage/uploads'), $filename);
+
             // Sauvegarder les informations du fichier dans la base de données
             $fileRecord = new File();
             $fileRecord->name = $filename;  // Nom du fichier
-            $fileRecord->path = $path;  // Sauvegarde du chemin d'accès (assurez-vous que le chemin est relatif au dossier 'storage/app/public')
+            $fileRecord->path = 'storage/uploads/' . $filename;  // Le chemin est relatif à 'public'
             $fileRecord->societe_id = $request->input('societe_id');  // ID de la société
             $fileRecord->type = $request->input('folder_type');  // Type du dossier
             $fileRecord->save();  // Sauvegarde dans la base de données

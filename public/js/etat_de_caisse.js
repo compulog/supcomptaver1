@@ -91,13 +91,14 @@ document.getElementById('month-select').addEventListener('change', function() {
     } else {
         document.getElementById('initial-balance').disabled = false; // Activer l'input
     }
-    updateTotals($('#month-select').val(), $('input[type="text"]').val());
+     updateTotals($('#month-select').val(),  $('#year-select').val());
     saveData();
 });
 
 document.getElementById('cloturer-button').addEventListener('click', function() {
     var mois = $('#month-select').val();
-    var annee = $('input[type="text"]').val();
+      var annee = $('#year-select').val();
+
     var journalCode = document.getElementById('journal-select').value;
 
     // Créer un message de confirmation
@@ -219,7 +220,7 @@ document.getElementById('journal-select').addEventListener('change', function() 
     var selectedJournalCode = this.value; // Récupérer le code journal sélectionné
     filterSoldeInitial(selectedMonth, selectedYear, selectedJournalCode); // Appeler la fonction avec le code journal
     updateTableData(selectedMonth, selectedYear); // Mettre à jour le tableau avec le nouveau code journal
-    updateTotals($('#month-select').val(), $('input[type="text"]').val());
+    updateTotals($('#month-select').val(),  $('#year-select').val());
     saveData();
 });
 document.addEventListener('DOMContentLoaded', function() {
@@ -312,7 +313,7 @@ var table = new Tabulator("#example-table", {
     data: [],
     selectable: true,  // Permet la sélection de lignes
      cellEdited: function(cell) {
-        updateTotals($('#month-select').val(), $('input[type="text"]').val());
+         updateTotals($('#month-select').val(),  $('#year-select').val());
         saveData();
     }
 
@@ -557,7 +558,7 @@ function selectAllRows() {
                 if (response.success) {
                     console.log("Transaction supprimée avec succès");
                     table.deleteRow(transactionId);
-                    updateTotals($('#month-select').val(), $('input[type="text"]').val());
+                    updateTotals($('#month-select').val(),  $('#year-select').val());
                 saveData();
                 } else {
                     console.error("Erreur lors de la suppression : " + response.message);
@@ -606,7 +607,8 @@ function selectAllRows() {
 
     function saveData() {
         var mois = $('#month-select').val();
-        var year = $('input[type="text"]').val();
+                var year = $('#year-select').val();
+
         var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
 
         // Enregistrer le solde actuel
@@ -718,19 +720,19 @@ function selectAllRows() {
 }
 
     $('#initial-balance').on('input', function() {
-        updateTotals($('#month-select').val(), $('input[type="text"]').val());
+        updateTotals($('#month-select').val(),  $('#year-select').val());
         saveData();
     });
 
     $(document).ready(function() {
         var currentMonth = $('#month-select').val();
-        var currentYear = $('input[type="text"]').val();
+        var currentYear = $('#year-select').val();
         updateTableData(currentMonth, currentYear);
     });
 
     $('#month-select, #year-select').on('change', function() {
         var currentMonth = $('#month-select').val();
-        var currentYear = $('input[type="text"]').val();
+        var currentYear =   $('#year-select').val();
         updateTableData(currentMonth, currentYear);
 
     });
@@ -785,7 +787,7 @@ table.on("cellEdited", function(cell) {
     // Sélectionner la ligne en cours après modification
     table.deselectRow(); // Désélectionner toutes les lignes
     cell.getRow().select(); // Sélectionner la ligne en cours
-    updateTotals($('#month-select').val(), $('input[type="text"]').val());
+     updateTotals($('#month-select').val(),  $('#year-select').val());
 
     // Appeler saveData() après que les totaux ont été mis à jour
     saveData();
@@ -797,7 +799,8 @@ $('#example-table').on('keydown', function(e) {
         if (selectedRows.length > 0) {
             var rowData = selectedRows[0].getData();
             var selectedMonth = $('#month-select').val();
-            var selectedYear = $('input[type="text"]').val();
+                        var selectedYear = $('#year-select').val();
+
             var formattedDate = selectedYear + '-' + selectedMonth + '-' + rowData.day.padStart(2, '0');
             var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
 
@@ -835,7 +838,7 @@ $('#example-table').on('keydown', function(e) {
                     },
                     success: function(response) {
                         // Mettre à jour les totaux
-                        updateTotals($('#month-select').val(), $('input[type="text"]').val());
+                         updateTotals($('#month-select').val(),  $('#year-select').val());
 
                         // Ajouter la nouvelle transaction au tableau
                         table.addData([{

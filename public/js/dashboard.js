@@ -5,55 +5,55 @@
    });
    
     
-     $(document).ready(function() {
-         // Réinitialiser le formulaire lors de l'ouverture du modal
-         $('#nouvelleSocieteModal').on('show.bs.modal', function (event) {
-             $('#societe-form')[0].reset();
-         });
-     
-         // Lorsqu'on clique sur le bouton "Ajouter"
-         $('#ajouter-societe').on('click', function(event) {
-             // Sélectionner les éléments Rubrique TVA et Désignation
-             const rubriqueTvaSelect = $('#rubrique_tva');
-             const designationInput = $('input[name="designation"]');
-     
-             // Vérifier si Désignation est vide et si Rubrique TVA a une option sélectionnée
-             if (designationInput.val().trim() === '' && rubriqueTvaSelect.val()) {
-                 // Extraire le texte de l'option sélectionnée dans Rubrique TVA
-                 const rubriqueTvaText = rubriqueTvaSelect.find('option:selected').text().trim();
-     
-                 // Séparer le texte en mots
-                 const words = rubriqueTvaText.split(' ');
-     
-                 // Exclure le premier et le dernier mot
-                 const middleWords = words.slice(1, words.length - 1);
-     
-                 // Reconstituer la chaîne de texte sans le premier et dernier mot
-                 const racineNom = middleWords.join(' ');
-     
-                 // Mettre à jour la valeur de Désignation avec le texte modifié
-                 designationInput.val(racineNom);
-             };
-             document.getElementById('societe-form').addEventListener('submit', function(event) {
-             event.preventDefault();  // Empêcher l'envoi du formulaire pour que l'alerte s'affiche avant l'envoi réel
-     
-             // Récupérer les valeurs des champs
-             const raisonSociale = document.querySelector('input[name="raison_sociale"]').value;
-             const exerciceDebut = document.querySelector('input[name="exercice_social_debut"]').value;
-             const exerciceFin = document.querySelector('input[name="exercice_social_fin"]').value;
-     
-             // Afficher l'alerte avec les données du formulaire
-             alert('La société ' + raisonSociale + ', Exercice du ' + exerciceDebut + ' au ' + exerciceFin + ' crés avec succès');
-             alert("Le compte d'accès interlocuteur généré avec succès !!\nMerci de consulter son profil sur la rubrique Interlocuteurs");
-             // Si l'alerte est affichée, soumettre le formulaire
-             this.submit();
-         });
-     
-       
-         });
-       
-     });
-     
+    $(document).ready(function() {
+    // Réinitialiser le formulaire lors de l'ouverture du modal
+    $('#nouvelleSocieteModal').on('show.bs.modal', function (event) {
+        $('#societe-form')[0].reset();
+    });
+
+    // Lorsqu'on clique sur le bouton "Ajouter"
+    $('#ajouter-societe').on('click', function(event) {
+        // Sélectionner les éléments Rubrique TVA et Désignation
+        const rubriqueTvaSelect = $('#rubrique_tva');
+        const designationInput = $('input[name="designation"]');
+
+        // Vérifier si Désignation est vide et si Rubrique TVA a une option sélectionnée
+        if (designationInput.val().trim() === '' && rubriqueTvaSelect.val()) {
+            // Extraire le texte de l'option sélectionnée dans Rubrique TVA
+            const rubriqueTvaText = rubriqueTvaSelect.find('option:selected').text().trim();
+
+            // Séparer le texte en mots
+            const words = rubriqueTvaText.split(' ');
+
+            // Exclure le premier et le dernier mot
+            const middleWords = words.slice(1, words.length - 1);
+
+            // Reconstituer la chaîne de texte sans le premier et dernier mot
+            const racineNom = middleWords.join(' ');
+
+            // Mettre à jour la valeur de Désignation avec le texte modifié
+            designationInput.val(racineNom);
+        }
+    });
+
+    // Écouter l'événement de soumission du formulaire
+    $('#societe-form').on('submit', function(event) {
+        event.preventDefault();  // Empêcher la soumission réelle du formulaire
+
+        // Récupérer les valeurs des champs
+        const raisonSociale = $('input[name="raison_sociale"]').val();
+        const exerciceDebut = $('input[name="exercice_social_debut"]').val();
+        const exerciceFin = $('input[name="exercice_social_fin"]').val();
+
+        // Afficher l'alerte avec les données du formulaire
+        alert('La société ' + raisonSociale + ', Exercice du ' + exerciceDebut + ' au ' + exerciceFin + ' créé avec succès');
+        alert("Le compte d'accès interlocuteur généré avec succès !!\nMerci de consulter son profil sur la rubrique Interlocuteurs");
+
+        // Soumettre le formulaire après les alertes
+        this.submit();  // Soumettre le formulaire après avoir affiché les alertes
+    });
+});
+
      
     
      
@@ -226,7 +226,12 @@
        
            $.get(url, function(data) {
                // Remplir le formulaire avec les données de la société
+             
                $('#modification_id').val(data.id);
+
+               $('#mod_code-societe').val(data.code_societe);
+               $('#mod_cnss').val(data.cnss);
+
                $('#mod_raison_sociale').val(data.raison_sociale);
                $('#mod_siège_social').val(data.siege_social);
                $('#mod_ice').val(data.ice);
@@ -235,6 +240,8 @@
                $('#mod_patente').val(data.patente);
                $('#mod_centre_rc').val(data.centre_rc);
                $('#mod_forme_juridique').val(data.forme_juridique);
+               $('#mod_date_creation').val(data.date_creation);
+
                $('#mod_exercice_social_debut').val(data.exercice_social_debut);
                $('#mod_exercice_social_fin').val(data.exercice_social_fin);
                $('#mod_assujettie_partielle_tva').val(data.assujettie_partielle_tva);
@@ -314,6 +321,12 @@
                        cell.getRow().toggleSelect();  // Basculer la sélection de ligne
                    }
                },
+               {title: "Code Societe", field: "code_societe", headerFilter: true, width: 130, formatter: function(cell) {
+                var codeEntreprise = cell.getData()["code_societe"];
+                 
+                return codeEntreprise  ;
+                }
+            },
                {title: "Raison Sociale", field: "raison_sociale", formatter: function(cell) {
                    var nomEntreprise = cell.getData()["raison_sociale"];
                    var formeJuridique = cell.getData().forme_juridique;
@@ -399,7 +412,7 @@
            alert("Aucune société sélectionnée.");
            return;
        }
-       fetch("{{ route('societes.deleteSelected') }}", {
+       fetch("/societes/delete-selected", {
        method: "DELETE",
        headers: {
            "Content-Type": "application/json",
@@ -478,14 +491,14 @@
            remplirRubriquesTva();
        });
    
-      
+     
    
    
    
    // Gestion du changement de la valeur "Assujettie partielle à la TVA"
    document.getElementById('assujettie_partielle_tva').addEventListener('change', function() {
        var prorataField = document.getElementById('prorata_de_deduction');
-   
+  
        if (this.value === "Null") {
            // Si "choisir un option" est sélectionné, désactiver 'Prorata de Déduction' et le réinitialiser
            prorataField.value = "0";  // Réinitialiser la valeur
@@ -558,25 +571,13 @@
    }
    
     
-   $(document).ready(function() {
-    // Réinitialiser le formulaire lors de l'ouverture du modal
-    $('#nouvelleSocieteModal').on('show.bs.modal', function (event) {
-        $('#societe-form')[0].reset();
-        // Mettre le focus sur le champ "Raison sociale"
-        $('input[name="raison_sociale"]').focus();
-    });
 
-    // Lorsqu'on clique sur le bouton "Ajouter"
-    $('#ajouter-societe').on('click', function(event) {
-        // Votre logique existante ici...
-    });
-});
 $(document).ready(function() {
     // Réinitialiser le formulaire lors de l'ouverture du modal
     $('#nouvelleSocieteModal').on('shown.bs.modal', function (event) {
         $('#societe-form')[0].reset();
         // Mettre le focus sur le champ "Raison sociale"
-        $('input[name="raison_sociale"]').focus();
+        $('input[name="code_societe"]').focus();
     });
 
     // Lorsqu'on clique sur le bouton "Ajouter"
@@ -593,4 +594,19 @@ $(document).ready(function() {
 
     // Autres événements et logiques existants...
 });
-   
+    $(document).ready(function() {
+    // Réinitialiser le formulaire lors de l'ouverture du modal
+    $('#nouvelleSocieteModal').on('shown.bs.modal', function (event) {
+        $('#societe-form')[0].reset();
+        // Mettre le focus sur le champ "Code société"
+        $('input[name="code_societe"]').focus();
+        
+        // Définir la valeur par défaut du champ "Prorata de Déduction" à 100
+        $('#prorata_de_deduction').val(100);
+    });
+
+    // Lorsqu'on clique sur le bouton "Ajouter"
+    $('#ajouter-societe').on('click', function(event) {
+        // Votre logique existante ici...
+    });
+});

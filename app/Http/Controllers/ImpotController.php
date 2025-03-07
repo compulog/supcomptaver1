@@ -34,8 +34,10 @@ class ImpotController extends Controller
     if ($societeId) {
         // Initialiser la requête pour les fichiers de type 'impot'
         $query = File::where('societe_id', $societeId)
-                     ->where('type', 'impot');
-
+                     ->where('type', 'impot')
+                     ->where('folders', 0);
+                    //  ->get();
+                    //  dd($query);
         // Filtrage et tri des fichiers en fonction des paramètres de la requête
         if ($request->has('filter_by')) {
             $filterBy = $request->get('filter_by');
@@ -58,15 +60,16 @@ class ImpotController extends Controller
 
             // Déterminer l'aperçu en fonction du type de fichier
             if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                $file->preview = asset('storage/' . $file->path);
+                $file->preview = asset($file->path);
+
             } elseif (in_array($extension, ['pdf'])) {
-                $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF';
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
             } elseif (in_array($extension, ['doc', 'docx'])) {
-                $file->preview = 'https://via.placeholder.com/80x100.png?text=Word';
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=Word'; // Word
             } elseif (in_array($extension, ['xls', 'xlsx'])) {
-                $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel';
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel'; // Excel
             } else {
-                $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier';
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
             }
 
             // Récupérer les messages non lus associés à chaque fichier

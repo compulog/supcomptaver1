@@ -59,15 +59,16 @@ class CaisseController extends Controller
     
                 // Déterminer l'aperçu en fonction du type de fichier
                 if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                    $file->preview = asset('storage/' . $file->path);
+                    $file->preview = asset('storage/uploads/' . $file->name);
+
                 } elseif (in_array($extension, ['pdf'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF';
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
                 } elseif (in_array($extension, ['doc', 'docx'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Word';
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Word'; // Word
                 } elseif (in_array($extension, ['xls', 'xlsx'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel';
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel'; // Excel
                 } else {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier';
+                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
                 }
     
                 // Récupérer les messages non lus associés à chaque fichier

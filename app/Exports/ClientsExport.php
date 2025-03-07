@@ -18,8 +18,10 @@ class ClientsExport implements FromCollection, WithHeadings
 
     public function collection()
     {
+        $societeId = session()->get('societeId');
+
         // Filtrer les clients selon le societe_id
-        return Client::where('societe_id', $this->societeId)
+        return Client::where('societe_id', $societeId)
             ->select('compte', 'intitule', 'identifiant_fiscal', 'ICE', 'type_client')
             ->get();
     }
@@ -34,4 +36,6 @@ class ClientsExport implements FromCollection, WithHeadings
             'Type Client',
         ];
     }
+   
+
 }

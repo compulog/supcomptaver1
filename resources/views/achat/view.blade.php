@@ -23,8 +23,9 @@
         .container {
             width: 90%;
             max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
+            margin: 0 auto;
+            padding: 60px;
+            margin-top:-50px;
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -72,7 +73,7 @@
             position: fixed;
             right: 20px;
             top: -5px;
-            width: 350px;
+            width: 250px;
             height: 100%;
             border: 1px solid #ddd;
             background-color: #fff;
@@ -188,222 +189,252 @@
 </head>
 <body>
 <div class="container">
-    <!-- <h3>{{ $file->name }}</h3> -->
-     <!-- Affichage du fichier selon son type -->
-    @if(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'pdf')
-    <div style="margin-left:600px;">
-        <a href="{{ Storage::url($file->path) }}" class="btn btn-primary mt-3" download>
-            <i class="fas fa-download" title="Télécharger"></i>
-        </a>
-
-        <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printPDF('{{ Storage::url($file->path) }}')" title="Imprimer">
-            <i class="fas fa-print"></i>
-        </a>
-        <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="closeFile()" title="Fermer">
-        <i class="fas fa-times"></i>
-          </a>
-          <script>
-       function closeFile() {
-    var societeId = "{{ session('societeId') }}"; // Récupérer l'ID de la société depuis la session
-    window.location.href = '/exercices/' + societeId; // Remplacez '/societe/' par l'URL de votre choix
-}
-          </script>
-    </div>
-        <div id="pdf-preview-{{ $file->id }}" class="pdf-preview" style="overflow: hidden; width: 70%;"></div>
-        <div id="page-num-{{ $file->id }}" class="page-num" style="text-align: center; margin-top: 10px;"></div>
- 
- <script>
-            var url = "{{ Storage::url($file->path) }}";
-            var container = document.getElementById('pdf-preview-{{ $file->id }}');
-            var pageNumDiv = document.getElementById('page-num-{{ $file->id }}'); // Pour afficher le numéro de page
-
-            pdfjsLib.getDocument(url).promise.then(function(pdf) {
-                var totalPages = pdf.numPages;
-                var currentPage = 1;
-
-                // Fonction pour afficher une page
-                function renderPage(pageNum) {
-                    container.innerHTML = '';
-                    pdf.getPage(pageNum).then(function(page) {
-                        var canvas = document.createElement('canvas');
-                        container.appendChild(canvas);
-
-                        var context = canvas.getContext('2d');
-                        var scale = 0.9;
-                        var viewport = page.getViewport({ scale: scale });
-
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-
-                        page.render({ canvasContext: context, viewport: viewport });
-
-                        // Mettre à jour la numérotation de la page
-                        pageNumDiv.textContent = 'Page ' + currentPage + ' sur ' + totalPages;
-                    });
-                }
-
-                // Afficher la première page
-                renderPage(currentPage);
-
-                // Navigation entre les pages avec la souris
-                container.addEventListener('wheel', function(event) {
-                    if (event.deltaY > 0) {
-                        // Défilement vers le bas
-                        if (currentPage < totalPages) {
-                            currentPage++;
-                            renderPage(currentPage);
-                        }
-                    } else {
-                        // Défilement vers le haut
-                        if (currentPage > 1) {
-                            currentPage--;
-                            renderPage(currentPage);
-                        }
-                    }
-                    event.preventDefault(); // Empêche le défilement de la page
-                });
-            });
-
-            function printPDF(url) {
-                var printWindow = window.open(url, '_blank');
-                printWindow.onload = function() {
-                    printWindow.print();
-                };
-            }
-        </script>
-
-    @elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'xlsx' || strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'xls')
-    <div style="margin-left:600px;">  
-    <a href="{{ Storage::url($file->path) }}" class="btn btn-primary mt-3" download>
-            <i class="fas fa-download" title="Télécharger"></i>
-        </a>
-
-        <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printExcel('{{ Storage::url($file->path) }}')" title="Imprimer">
-            <i class="fas fa-print"></i>
-        </a>
-        <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="closeFile()" title="Fermer">
-        <i class="fas fa-times"></i>
-          </a>
-          <script>
-       function closeFile() {
-    var societeId = "{{ session('societeId') }}"; // Récupérer l'ID de la société depuis la session
-    window.location.href = '/exercices/' + societeId; // Remplacez '/societe/' par l'URL de votre choix
-}
-          </script>
-        </div>
-        <div id="excel-preview-{{ $file->id }}" class="excel-preview" style="overflow: clip;"></div>
-
-        <script>
-            var fileUrl = "{{ Storage::url($file->path) }}";
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', fileUrl, true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onload = function() {
-                var data = xhr.response;
-                var workbook = XLSX.read(data, { type: 'array' });
-                var sheet = workbook.Sheets[workbook.SheetNames[0]];
-                var htmlString = XLSX.utils.sheet_to_html(sheet);
-                document.getElementById('excel-preview-{{ $file->id }}').innerHTML = htmlString;
-            };
-            xhr.send();
-
-            function printExcel(fileUrl) {
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', fileUrl, true);
-                xhr.responseType = 'arraybuffer';
-                xhr.onload = function() {
-                    var data = xhr.response;
-                    var workbook = XLSX.read(data, { type: 'array' });
-                    var sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    var htmlString = XLSX.utils.sheet_to_html(sheet);
-                    var printWindow = window.open('', '_blank');
-                    printWindow.document.write('<html><head><title>Impression</title></head><body>');
-                    printWindow.document.write(htmlString);
-                    printWindow.document.write('</body></html>');
-                    printWindow.document.close();
-                    printWindow.print();
-                };
-                xhr.send();
-            }
-        </script>
-@elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'docx' || strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'doc')
-<div style="margin-left:600px;">  
-<a href="{{ Storage::url($file->path) }}" class="btn btn-primary mt-3" download>
+@if(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'pdf')
+<div style="margin-left:700px;">
+    <a href="{{ asset($file->path) }}" class="btn btn-primary mt-3" download>
         <i class="fas fa-download" title="Télécharger"></i>
     </a>
 
-    <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printWord('{{ Storage::url($file->path) }}')" title="Imprimer">
+    <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printPDF('{{ asset($file->path) }}')" title="Imprimer">
         <i class="fas fa-print"></i>
     </a>
     <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="closeFile()" title="Fermer">
         <i class="fas fa-times"></i>
-          </a>
-          <script>
-       function closeFile() {
-    var societeId = "{{ session('societeId') }}"; // Récupérer l'ID de la société depuis la session
-    window.location.href = '/exercices/' + societeId; // Remplacez '/societe/' par l'URL de votre choix
-}
-          </script>
-    </div>
-    <div id="word-preview-{{ $file->id }}" class="word-preview" style="overflow: auto; width: 100%; margin: 0 auto;"></div>
-    
+    </a>
     <script>
-        var fileUrl = "{{ Storage::url($file->path) }}";
+        // function closeFile() {
+        //     var societeId = "{{ session('societeId') }}"; // Récupérer l'ID de la société depuis la session
+        //     window.location.href = '/exercices/' + societeId; // Remplacez '/societe/' par l'URL de votre choix
+        // }
+        function closeFile() {
+    window.history.back(); // Cela ramène l'utilisateur à la page précédente
+}
+
+    </script>
+</div>
+
+<div id="pdf-preview-{{ $file->id }}" class="pdf-preview" style="overflow-y: auto; height: 90vh; width: 75%; margin-left: 20px;"></div>
+<div id="page-num-{{ $file->id }}" class="page-num" style="text-align: center; margin-top: 10px;color:white;margin-left:-300px;"></div>
+
+<script>
+  var url = "{{ asset($file->path) }}";  // URL du PDF
+var container = document.getElementById('pdf-preview-{{ $file->id }}');
+var pageNumDiv = document.getElementById('page-num-{{ $file->id }}'); // Pour afficher le numéro de page
+
+pdfjsLib.getDocument(url).promise.then(function(pdf) {
+    var totalPages = pdf.numPages;
+    var currentPage = 1;  // Page actuelle
+
+    // Fonction pour afficher une page
+    function renderPage(pageNum) {
+        container.innerHTML = ''; // Vider le conteneur avant de rendre une nouvelle page
+
+        pdf.getPage(pageNum).then(function(page) {
+            var canvas = document.createElement('canvas');
+            container.appendChild(canvas);
+
+            var context = canvas.getContext('2d');
+            var scale = 1.4;
+            var viewport = page.getViewport({ scale: scale });
+
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            page.render({ canvasContext: context, viewport: viewport });
+
+            // Mettre à jour la numérotation de la page
+            pageNumDiv.textContent = 'Page ' + currentPage + ' sur ' + totalPages;
+        });
+    }
+
+    // Afficher la première page
+    renderPage(currentPage);
+
+    // Navigation entre les pages avec la souris
+    container.addEventListener('wheel', function(event) {
+        if (event.deltaY > 0) {
+            // Défilement vers le bas
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderPage(currentPage);
+            }
+        } else {
+            // Défilement vers le haut
+            if (currentPage > 1) {
+                currentPage--;
+                renderPage(currentPage);
+            }
+        }
+        event.preventDefault(); // Empêche le défilement de la page
+    });
+});
+
+
+</script>
+ 
+@elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'xlsx' || strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'xls')
+<div style="margin-left:600px;">  
+    <a href="{{ asset($file->path) }}" class="btn btn-primary mt-3" download>
+        <i class="fas fa-download" title="Télécharger"></i>
+    </a>
+
+    <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printExcel('{{ asset($file->path) }}')" title="Imprimer">
+        <i class="fas fa-print"></i>
+    </a>
+    <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="closeFile()" title="Fermer">
+        <i class="fas fa-times"></i>
+    </a>
+    <script>
+          function closeFile() {
+    window.history.back(); // Cela ramène l'utilisateur à la page précédente
+}
+    </script>
+</div>
+
+<div id="excel-preview-{{ $file->id }}" class="excel-preview" style="overflow-x: auto; width: 75%; margin: 20px auto;margin-left:0px;"></div>
+
+<style>
+    .excel-preview {
+        width: 70%; /* Définit la largeur à 70% de la page */
+        margin: 20px auto; /* Centre le conteneur */
+        border: 1px solid #ddd; /* Bordure autour du conteneur */
+        border-radius: 8px; /* Coins arrondis */
+        background-color: #fff; /* Couleur de fond blanche */
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Ombre légère */
+        overflow-x: auto; /* Ajoute un défilement horizontal si nécessaire */
+    }
+
+    .excel-preview table {
+        width: 100%; /* Le tableau prend toute la largeur du conteneur */
+        border-collapse: collapse; /* Supprime les espaces entre les cellules */
+    }
+
+    .excel-preview th, .excel-preview td {
+        border: 1px solid #ddd; /* Bordure grise claire */
+        padding: 12px; /* Espacement interne */
+        text-align: left; /* Alignement à gauche */
+        font-size: 14px; /* Taille de la police */
+    }
+
+    .excel-preview th {
+        background-color: #1a73e8; /* Couleur de fond des en-têtes */
+        color: white; /* Couleur du texte des en-têtes */
+    }
+
+    .excel-preview tr:nth-child(even) {
+        background-color: #f2f2f2; /* Couleur de fond pour les lignes paires */
+    }
+
+    .excel-preview tr:hover {
+        background-color: #ddd; /* Couleur de fond au survol */
+    }
+</style>
+
+<script>
+    var fileUrl = "{{ asset($file->path) }}";  
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', fileUrl, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function() {
+        var data = xhr.response;
+        var workbook = XLSX.read(data, { type: 'array' });
+        var sheet = workbook.Sheets[workbook.SheetNames[0]];
+        var htmlString = XLSX.utils.sheet_to_html(sheet);
+        document.getElementById('excel-preview-{{ $file->id }}').innerHTML = htmlString;
+    };
+    xhr.send();
+
+    function printExcel(fileUrl) {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', fileUrl, true);
         xhr.responseType = 'arraybuffer';
         xhr.onload = function() {
             var data = xhr.response;
-            mammoth.convertToHtml({ arrayBuffer: data }).then(function(result) {
-                var previewContainer = document.getElementById('word-preview-{{ $file->id }}');
-                previewContainer.innerHTML = result.value;
+            var workbook = XLSX.read(data, { type: 'array' });
+            var sheet = workbook.Sheets[workbook.SheetNames[0]];
+            var htmlString = XLSX.utils.sheet_to_html(sheet);
+            var printWindow = window.open('', '_blank');
+            printWindow.document.write('<html><head><title>Impression</title></head><body>');
+            printWindow.document.write(htmlString);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        };
+        xhr.send();
+    }
+</script>
+@elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'docx' || strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'doc')
+<div style="margin-left:600px;">  
+    <a href="{{ asset($file->path) }}" class="btn btn-primary mt-3" download>
+        <i class="fas fa-download" title="Télécharger"></i>
+    </a>
 
-                // Réduire l'échelle de l'affichage pour que tout le document soit visible
-                previewContainer.style.transform = 'scale(0.2)'; // Réduit à 50% de la taille originale
-                previewContainer.style.transformOrigin = 'top left'; // Le point de référence pour l'échelle est le coin supérieur gauche
-                previewContainer.style.width = '250%'; // Augmente la largeur pour éviter la coupure du contenu après l'échelle
+    <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printWord('{{ asset($file->path) }}')" title="Imprimer">
+        <i class="fas fa-print"></i>
+    </a>
+    <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="closeFile()" title="Fermer">
+        <i class="fas fa-times"></i>
+    </a>
+</div>
+
+<div id="word-preview-{{ $file->id }}" class="word-preview" style="overflow-y: auto; height: 80vh; width: 40%; margin-left: 30px;"></div>
+<div id="page-num-{{ $file->id }}" class="page-num" style="text-align: center; margin-top: 10px;"></div>
+
+<script>
+    var fileUrl = "{{ asset($file->path) }}";  
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', fileUrl, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function() {
+        var data = xhr.response;
+        mammoth.convertToHtml({ arrayBuffer: data }).then(function(result) {
+            var previewContainer = document.getElementById('word-preview-{{ $file->id }}');
+            previewContainer.innerHTML = result.value;
+
+            // Ajuster l'échelle pour que tout le document soit visible
+            previewContainer.style.transform = 'scale(0.7)'; // Ajustez l'échelle selon vos besoins
+            previewContainer.style.transformOrigin = 'top left'; 
+            previewContainer.style.width = '100%'; // Ajustez la largeur
+        }).catch(function(err) {
+            console.log("Erreur lors de la conversion du fichier Word:", err);
+        });
+    };
+    xhr.send();
+
+    function printWord(url) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function() {
+            var data = xhr.response;
+            mammoth.convertToHtml({ arrayBuffer: data }).then(function(result) {
+                var printWindow = window.open('', '_blank');
+                printWindow.document.write('<html><head><title>Impression</title></head><body>');
+                printWindow.document.write(result.value);
+                printWindow.document.write('</body></html>');
+                printWindow.document.close();
+                printWindow.print();
             }).catch(function(err) {
                 console.log("Erreur lors de la conversion du fichier Word:", err);
             });
         };
         xhr.send();
-        
-        function printWord(url) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', url, true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onload = function() {
-                var data = xhr.response;
-                mammoth.convertToHtml({ arrayBuffer: data }).then(function(result) {
-                    var printWindow = window.open('', '_blank');
-                    printWindow.document.write('<html><head><title>Impression</title></head><body>');
-                    printWindow.document.write(result.value);
-                    printWindow.document.write('</body></html>');
-                    printWindow.document.close();
-                    printWindow.print();
-                }).catch(function(err) {
-                    console.log("Erreur lors de la conversion du fichier Word:", err);
-                });
-            };
-            xhr.send();
-        }
-    </script>
-
-    @else
+    }
+</script>
+@else
     <div style="margin-left:600px;">
-        <a href="{{ Storage::url($file->path) }}" class="btn btn-primary mt-3" download>
+        <a href="{{ asset($file->path) }}" class="btn btn-primary mt-3" download>
             <i class="fas fa-download" title="Télécharger"></i>
         </a>
-        <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printImage('{{ Storage::url($file->path) }}')" title="Imprimer">
+        <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printImage('{{ asset($file->path) }}')" title="Imprimer">
             <i class="fas fa-print"></i>
         </a>
         <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="closeFile()" title="Fermer">
         <i class="fas fa-times"></i>
           </a>
           <script>
-       function closeFile() {
-    var societeId = "{{ session('societeId') }}"; // Récupérer l'ID de la société depuis la session
-    window.location.href = '/exercices/' + societeId; // Remplacez '/societe/' par l'URL de votre choix
+         function closeFile() {
+    window.history.back(); // Cela ramène l'utilisateur à la page précédente
 }
           </script>
         </div>
@@ -417,7 +448,7 @@
             </button>
         </div>
 
-        <img id="image-preview" src="{{ Storage::url($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2" style="height: auto; width: 100%; transform: scale(1); transition: transform 0.3s;">
+        <img id="image-preview" src="{{ asset($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2" style="height: auto; width: 50%; transform: scale(1); transition: transform 0.3s;">
     @endif
 
     <!-- Boîte de communication -->
@@ -429,7 +460,7 @@
 
         <form action="{{ route('messages.store') }}" method="POST" >
             @csrf  
-            <textarea id="message_text" name="text_message" placeholder="Écrivez ici..." style="width:325px;"></textarea>
+            <textarea id="message_text" name="text_message" placeholder="Écrivez ici..." style="width:225px;"></textarea>
             <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
             <input type="hidden" name="file_id" value="{{ $file->id ?? 'null' }}">
             <input type="hidden" name="societe_id" value="{{ session('societeId') }}">
@@ -437,26 +468,85 @@
         </form>
     </div>
 
-    <!-- Navigation entre les fichiers -->
-    <div class="navigation-container" style="margin-left:-198px;">
-        @if($currentFileIndex > 0)
-            <a href="{{ route('achat.views', ['fileId' => $files[$currentFileIndex - 1]->id]) }}" class="btn btn-secondary">
-                <i class="fas fa-chevron-left"></i>
-            </a>
-        @endif
-        <button id="zoom-out" class="btn btn-secondary" title="Zoom arrière">
-            <i class="fas fa-minus"></i>
-        </button>
-        <button id="zoom-in" class="btn btn-secondary" title="Zoom avant">
-            <i class="fas fa-plus"></i>
-        </button>
+     <style>
+    /* Styles pour les flèches de navigation */
+    .nav-arrow {
+        position: fixed;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 24px;
+        color: #1a73e8;
+        z-index: 1000; /* Assurez-vous qu'elles sont au-dessus des autres éléments */
+    }
+
+    .nav-left {
+        left: 20px; /* Position à gauche */
+    }
+
+    .nav-right {
+        right: 20px; /* Position à droite */
+    }
+</style>
+
+<!-- Navigation entre les fichiers -->
+<div class="navigation-container">
+      
+    @if($currentFileIndex > 0)
+        <a href="{{ route('achat.views', ['fileId' => $files[$currentFileIndex - 1]->id]) }}" class="nav-arrow nav-left">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+    @endif
+
+    @if($currentFileIndex < count($files) - 1)
+        <a href="{{ route('achat.views', ['fileId' => $files[$currentFileIndex + 1]->id]) }}" class="nav-arrow nav-right">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    @endif
+</div>
+<div class="zoom-controls" style="margin-left:300px;">
+   
+    <button id="zoom-out" class="zoom-btn" title="Zoom arrière" style="margin-left:180px;">
+        <i class="fas fa-minus" style="color:white;"></i>
+    </button>
+    <button id="zoom-in" class="zoom-btn" title="Zoom avant">
+        <i class="fas fa-plus" style="color:white;"></i>
+    </button>
+</div>
+<style>
+    .zoom-controls {
+        margin-left:500px;
+     width:300px;
+    background-color:rgba(0, 0, 0, .75);
+    display: flex;
+    justify-content: center; /* Centre les boutons horizontalement */
+    margin: 20px 0; /* Ajoute un espacement vertical */
+    margin-top:-48px;
+    margin-left:-190px;
+    border-radius:25px;
+}
+ 
+.zoom-btn {
+    
+    background-color:transparent;
+    border: 1px solid transparent; /* Bordure grise claire */
+    border-radius: 25px; /* Coins arrondis */
+    padding: 10px 12px; /* Espacement interne */
+    margin: 0 5px; /* Espacement entre les boutons */
+    cursor: pointer; /* Change le curseur au survol */
+    font-size: 16px; /* Taille de la police */
+}
+
+.zoom-btn:hover {
+    background-color:rgba(51, 50, 50, 0.75);    /* transform: translateY(-2px); 
+}
+
+.zoom-btn:focus {
+    outline: none; /* Supprime le contour par défaut */
+    border-color: #1a73e8; /* Bordure bleue au focus */
+}
+</style>
        
-        @if($currentFileIndex < count($files) - 1)
-            <a href="{{ route('achat.views', ['fileId' => $files[$currentFileIndex + 1]->id]) }}" class="btn btn-secondary">
-                <i class="fas fa-chevron-right"></i>
-            </a>
-        @endif
-    </div>
+    
     
 </div>
 
@@ -512,13 +602,14 @@
 
     window.onload = function() {
         var fileId = "{{ $file->id }}"; 
-
-        fetch(`/messages/getMessages?file_id=${fileId}`)
+console.log(fileId);
+fetch(`/messages/getMessages/${fileId}`) 
             .then(response => response.json())
             .then(data => {
                 if (data.messages) {
                     const messagesContainer = document.getElementById("messages-container");
                     messagesContainer.innerHTML = '';
+                    console.log("Données reçues:", data); // Ajoutez cette ligne pour afficher les données reçues
 
                     data.messages.forEach(function(message) {
                         var messageDiv = document.createElement("div");
@@ -719,22 +810,33 @@
                                     }
                                 });
 
-                                // Bouton de marquage comme lu pour la réponse
-                                var markAsReadButton = document.createElement("button");
-                                markAsReadButton.innerHTML = '<i class="fas fa-envelope" title="Marquer comme lue" style="cursor: pointer; font-size: 15px; color: rgb(231, 74, 59);"></i>';
-                                markAsReadButton.style = "background: none; border: none; cursor: pointer; color: #28a745;";
-                                markAsReadButton.addEventListener("click", function() {
-                                    fetch(`/messages/read/${reply.id}`)
-                                        .then(response => response.json())
-                                        .then(data => {
-                                            if (data.success) {
-                                                alert("Réponse marquée comme lue");
-                                                // Mise à jour de l'icône
-                                                replyDiv.querySelector("i").classList.replace("fa-envelope", "fa-envelope-open");
-                                            }
-                                        })
-                                        .catch(error => console.error("Erreur lors du marquage comme lu de la réponse:", error));
-                                });
+                                
+                               // Bouton de marquage comme lu pour la réponse
+var markAsReadButton = document.createElement("button");
+markAsReadButton.innerHTML = '<i class="fas ' + (reply.is_read ? 'fa-envelope-open' : 'fa-envelope') + '" title="' + (reply.is_read ? 'Marqué comme lu' : 'Marquer comme lue') + '" style="cursor: pointer; font-size: 15px; color: ' + (reply.is_read ? '#28a745' : '#e74a3b') + ';"></i>';
+markAsReadButton.style = "background: none; border: none; cursor: pointer; color: #28a745;";
+
+
+markAsReadButton.addEventListener("click", function() {
+    fetch(`/messages/read/${reply.id}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mise à jour de l'icône
+            reply.is_read = true; // Met à jour l'état local
+            markAsReadButton.innerHTML = '<i class="fas fa-envelope-open" title="Marqué comme lu" style="cursor: pointer; font-size: 15px; color: #28a745;"></i>';
+        } else {
+            alert(data.message); // Affiche un message d'erreur si le marquage échoue
+        }
+    })
+    .catch(error => console.error("Erreur lors du marquage comme lu de la réponse:", error));
+});
 
                                 replyActionsDiv.appendChild(editReplyButton);
                                 replyActionsDiv.appendChild(deleteReplyButton);
@@ -751,6 +853,6 @@
             .catch(error => console.error("Erreur lors du chargement des messages:", error));
     };
 </script>
-
+ 
 </body>
 </html>

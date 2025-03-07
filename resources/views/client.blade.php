@@ -13,10 +13,10 @@
     border-radius: 0.25rem; /* Coins arrondis pour un look plus moderne */
    height:40px;
 }
-#compte{
-    height:40px
+#compte {
+    height: 40px;
+    border-radius: 0.25rem; /* Ajout de coins arrondis */
 }
-
 
 
 
@@ -35,37 +35,75 @@
 
 
 <meta name="csrf-token" content="{{ csrf_token() }}">
-    <div class="container mt-5">
-        <h3>Liste des Clients</h3>
+<div class="container my-3">
+    <!-- Ligne de titre et actions -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h4 class="text-secondary mb-0">Liste des Clients</h4>
+      <div class="d-flex gap-2 flex-wrap">
+        <!-- Bouton Créer -->
+        <button type="button" id="create-button" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel"
+                data-bs-toggle="tooltip" data-bs-placement="top" title="Créer"
+                style="color:#007bff; border-color: #007bff;">
+          <i class="fas fa-plus icon-3d"></i>
+          <span>Créer</span>
+        </button>
+        <!-- Bouton Importer -->
+        <button type="button" id="import-button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
+                data-bs-toggle="modal" data-bs-target="#modal-import-excel"
+                data-bs-toggle="tooltip" data-bs-placement="top" title="Importer">
+          <i class="fas fa-file-import icon-3d"></i>
+          <span>Importer</span>
+        </button>
+        <!-- Exporter en Excel -->
+        <a href="/export-clients" class="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
+           data-bs-toggle="tooltip" data-bs-placement="top" title="Exporter en Excel">
+          <i class="fas fa-file-export icon-3d"></i>
+          <span>Excel</span>
+        </a>
+        <!-- Exporter en PDF -->
+        <form action="{{ route('export.clients.pdf') }}" method="POST" class="d-inline">
+          @csrf
+          <input type="hidden" name="societe_id" value="{{ $societe->id }}">
+          <button type="submit" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
+                  data-bs-toggle="tooltip" data-bs-placement="top" title="Exporter en PDF">
+            <i class="fas fa-file-pdf icon-3d"></i>
+            <span>PDF</span>
+          </button>
+        </form>
+      </div>
+    </div>
 
-        <!-- Affichage du message de succès ou d'erreur -->
-        <div id="message" class="alert d-none" role="alert"></div>
+    <!-- Affichage du message -->
+    <div id="message" class="alert d-none" role="alert"></div>
 
-        <div class="mb-3 d-flex align-items-center gap-2 flex-wrap-nowrap">
-    <!-- Bouton Créer -->
-    <button type="button" id="create-button" class="btn btn-outline-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel" style="color:#007bff; border-color: #007bff;">
-        Créer
-    </button> 
+    <!-- Conteneur du tableau -->
+    <div id="table-list" class="border rounded shadow-sm bg-white p-3"></div>
+  </div>
 
-    <!-- Bouton Importer -->
-    <button type="button" id="import-button" class="btn btn-outline-secondary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modal-import-excel">
-        Importer
-    </button>
+  <!-- Styles personnalisés pour l'effet 3D -->
+  <style>
+    .icon-3d {
+      font-size: 1.2rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    .icon-3d:hover {
+      transform: translateY(-2px);
+      box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4);
+    }
+  </style>
 
-    <!-- Formulaire pour exporter les clients -->
-    <form action="{{ route('export.clients') }}" method="POST" class="d-inline">
-        @csrf
-        <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
-        <button type="submit" class="btn btn-outline-success d-flex align-items-center gap-2">Exporter les clients</button>
-    </form>
+  <!-- Initialisation des tooltips Bootstrap -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    });
+  </script>
 
-    <!-- Formulaire pour exporter en PDF -->
-    <form action="/export-clients-pdf" method="POST" class="d-inline">
-        @csrf
-        <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
-        <button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-2">Exporter en PDF</button>
-    </form>
-</div>
 
 
 <!-- Modal pour le formulaire d'ajout manuel -->
@@ -90,9 +128,7 @@
                                 <div class="input-group">
                                     <input type="text" class="form-control" name="compte" id="compte" value="3421" required>
                                     <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
-                                    <div class="input-group-append">
-                                        <button type="button" class="btn btn-secondary" id="auto-increment">Auto</button>
-                                    </div>
+                                   
                                 </div>
                             </div>
                         </div>
@@ -179,7 +215,7 @@
                                 <label for="file" class="form-label">Fichier Excel :</label>
                                 <input type="file" name="file" class="form-control" required>
                             </div>
-                        
+
                             <div class="mb-3">
                                 <label for="compte">Colonne Compte :</label>
                                 <input type="number" name="mapping[compte]" class="form-control">
@@ -230,7 +266,7 @@
     </div>
 @endif
 
- 
+
 
 <!-- @foreach($clients as $client)
 
@@ -288,7 +324,30 @@
     </div>
 </div>
 
+<script>
+$(document).ready(function () {
+    $('#modal-saisie-manuel').on('shown.bs.modal', function () {
+        // Logique pour déterminer le prochain compte
+        const comptes = table.getData().map(row => row.compte);
+        let comptePrefix = '3421'; // Préfixe
+        let compteLength = {{ $societe->nombre_chiffre_compte }}; // Longueur totale
 
+        // Logique pour déterminer le prochain compte
+        let newCompte = comptePrefix + '0'.repeat(compteLength - comptePrefix.length - 1) + '1'; // Valeur par défaut
+
+        if (comptes.length > 0) {
+            const numeraux = comptes.map(compte => parseInt(compte.substring(comptePrefix.length)));
+            numeraux.sort((a, b) => a - b);
+            newCompte = comptePrefix + (numeraux[numeraux.length - 1] + 1).toString().padStart(compteLength - comptePrefix.length , '0');
+        }
+
+        $('#compte').val(newCompte); // Mettre à jour le champ "compte"
+        var input = $('#compte')[0];
+        input.setSelectionRange(newCompte.length, newCompte.length); // Positionner le curseur à la fin
+        $('#compte').focus(); // Focus sur le champ "compte"
+    });
+});
+</script>
 
 <!-- CSS de Tabulator -->
 <link href="https://unpkg.com/tabulator-tables@5.4.3/dist/css/tabulator.min.css" rel="stylesheet">
@@ -297,12 +356,7 @@
 <script src="https://unpkg.com/tabulator-tables@5.4.3/dist/js/tabulator.min.js"></script>
 
     <!-- Conteneur Tabulator avec recherche -->
-<div class="container mt-4">
 
-
-    <!-- Conteneur pour Tabulator -->
-    <div id="table-list"></div>
-</div>
 
 {{-- <!-- Table Tabulator -->
 <div id="table-list"></div> --}}
@@ -327,10 +381,10 @@
 </div>
 
 <script>
-  
+
 const societeId = '{{ session('societeId') }}';
 
- 
+
     document.getElementById('export-clients-button').addEventListener('click', function() {
     window.location.href = '/export-clients';
 });
@@ -345,62 +399,112 @@ document.getElementById("export-pdf").addEventListener("click", function() {
 var table = new Tabulator("#table-list", {
     layout: "fitColumns",
     data: @json($clients), // Chargement initial des données
-    selectable: true, // Permet de sélectionner les lignes
+    selectable: true,
     rowSelection: true,
-    initialSort: [ // Tri initial par colonne 'Compte'
+    initialSort: [
         { column: "compte", dir: "asc" }
     ],
     columns: [
         {
             title: `
-<i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="toggleSelectAll()"></i>
+                <i class="fas fa-square" id="selectAllIcon" title="Sélectionner tout" style="cursor: pointer;" onclick="toggleSelectAll()"></i>
                 <i class="fas fa-trash-alt" id="deleteAllIcon" title="Supprimer toutes les lignes sélectionnées" style="cursor: pointer;"></i>
             `,
             field: "select",
-            formatter: "rowSelection", // Active la sélection de ligne
+            formatter: "rowSelection",
             headerSort: false,
             hozAlign: "center",
-            width: 60, // Fixe la largeur de la colonne de sélection
+            headerHozAlign: "center",
+            width: 60,
             cellClick: function(e, cell) {
-                cell.getRow().toggleSelect();  // Basculer la sélection de ligne
+                cell.getRow().toggleSelect();
             }
         },
-        { title: "Compte", field: "compte", headerFilter: "input" },
-        { title: "Intitulé", field: "intitule", headerFilter: "input" },
-        { title: "Identifiant fiscal", field: "identifiant_fiscal", headerFilter: "input" },
-        { title: "ICE", field: "ICE", headerFilter: "input" },
-        { title: "Type client", field: "type_client", headerFilter: "input" },
+        {
+            title: "Compte",
+            field: "compte",
+            headerFilter: "input",
+            headerHozAlign: "center",
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 140px; height: 22px;"
+                }
+            }
+        },
+        {
+            title: "Intitulé",
+            field: "intitule",
+            headerFilter: "input",
+            headerHozAlign: "center",
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 140px; height: 22px;"
+                }
+            }
+        },
+        {
+            title: "Identifiant fiscal",
+            field: "identifiant_fiscal",
+            headerFilter: "input",
+            headerHozAlign: "center",
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 140px; height: 22px;"
+                }
+            }
+        },
+        {
+            title: "ICE",
+            field: "ICE",
+            headerFilter: "input",
+            headerHozAlign: "center",
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 140px; height: 22px;"
+                }
+            }
+        },
+        {
+            title: "Type client",
+            field: "type_client",
+            headerFilter: "input",
+            headerHozAlign: "center",
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 140px; height: 22px;"
+                }
+            }
+        },
         {
             title: "Actions",
             field: "id",
             formatter: function(cell, formatterParams, onRendered) {
                 var id = cell.getValue();
                 return `
-                   <span class="text-warning edit-client" title="Modifier" style="cursor: pointer;" data-id="${id}">
-                        <i class="fas fa-edit" style="color:#82d616;"></i>
-                    </span>
-                    <span class="text-danger" title="Supprimer" style="cursor: pointer;" onclick="deleteClient(${id})">
-                        <i class="fas fa-trash" style="color:#82d616;"></i>
-                    </span>
+                  <span class="edit-client icon" title="Modifier" style="cursor: pointer; font-size: 0.9em;" data-id="${id}">
+    <i class="fas fa-edit text-primary"></i>
+</span>
+<span class="delete-client icon" title="Supprimer" style="cursor: pointer; font-size: 0.9em;" onclick="deleteClient(${id})">
+    <i class="fas fa-trash-alt text-danger"></i>
+</span>
+
                 `;
-            }
+            },
+            headerSort: false,
+            hozAlign: "center",
+            headerHozAlign: "center"
         }
     ],
     rowFormatter: function(row) {
-        // Récupérer les valeurs du compte et de l'intitulé de la ligne
-        var compte = row.getData().compte;
-        var intitule = row.getData().intitule;
-
-        // Récupérer le nombre de chiffres du compte défini dans la variable PHP
+        var data = row.getData();
+        var compte = data.compte;
+        var intitule = data.intitule;
         var nombreChiffresCompte = {{ $societe->nombre_chiffre_compte }};
-
-        // Vérifier si la valeur de 'compte' ou 'intitule' est égale à 0 ou null
         if (compte == 0 || compte == null || intitule == 0 || intitule == null) {
-            row.getElement().style.backgroundColor = " rgba(233, 233, 13, 0.838)"; // Appliquer la couleur rouge à la ligne
+            row.getElement().style.backgroundColor = "rgba(233, 233, 13, 0.838)";
         }
-        // Vérifier si le nombre de chiffres du compte ne correspond pas à nombreChiffresCompte
         else if (compte.toString().length !== nombreChiffresCompte) {
-            row.getElement().style.backgroundColor = "rgba(228, 20, 20, 0.453)"; // Appliquer la couleur jaune à la ligne
+            row.getElement().style.backgroundColor = "rgba(228, 20, 20, 0.453)";
             row.getElement().style.color = "white";
         }
     }
@@ -510,7 +614,7 @@ location.reload();
     }
 });
 
- 
+
 $(document).ready(function () {
     var initialValue = '3421'; // La valeur initiale à ne pas modifier
     var nombreChiffresCompte = {{ $societe->nombre_chiffre_compte }}; // Nombre de chiffres pour le compte
@@ -536,15 +640,26 @@ $(document).ready(function () {
         }
     });
 
-    // Lors de l'ouverture du modal de saisie manuelle
     $('#modal-saisie-manuel').on('shown.bs.modal', function () {
-        // Positionner le curseur juste après le "3421" (index 4)
-        var input = $('#compte')[0];
-        input.setSelectionRange(4, 4); // Positionner le curseur après le "3421"
+    // Logique pour déterminer le prochain compte
+    const comptes = table.getData().map(row => row.compte);
+    let comptePrefix = '3421'; // Préfixe
+    let compteLength = {{ $societe->nombre_chiffre_compte }}; // Longueur totale
 
-        // Focus sur le champ "compte" lorsque le modal s'ouvre
-        $('#compte').focus();
-    });
+    // Logique pour déterminer le prochain compte
+    let newCompte = comptePrefix + '0'.repeat(compteLength - comptePrefix.length - 1) + '1'; // Valeur par défaut
+
+    if (comptes.length > 0) {
+        const numeraux = comptes.map(compte => parseInt(compte.substring(comptePrefix.length)));
+        numeraux.sort((a, b) => a - b);
+        newCompte = comptePrefix + (numeraux[numeraux.length - 1] + 1).toString().padStart(compteLength - comptePrefix.length, '0');
+    }
+
+    $('#compte').val(newCompte); // Mettre à jour le champ "compte"
+    var input = $('#compte')[0];
+    input.setSelectionRange(newCompte.length, newCompte.length); // Positionner le curseur à la fin
+    $('#compte').focus(); // Focus sur le champ "compte"
+});
 
     // Quand le bouton "auto-increment" est cliqué
     $('#auto-increment').on('click', function () {

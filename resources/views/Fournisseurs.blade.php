@@ -27,7 +27,6 @@
 
 
 
-</head>
 
     <style>
 .invalid-row {
@@ -39,6 +38,7 @@
 
 </style>
 
+<meta name="societe-id" content="{{ session('societeId') }}">
 
 </head>
 
@@ -46,13 +46,14 @@
 <body>
  <!-- jQuery -->
  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+ <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+ <!-- Chargement de Select2 JS -->
  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-
     <!-- Bootstrap JS -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Select2 JS
+    {{-- <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> --}}-->
 
     <!-- Tabulator JS -->
     <script src="https://unpkg.com/tabulator-tables@5.0.7/dist/js/tabulator.min.js"></script>
@@ -76,39 +77,88 @@
 @endif
 
 
-<!-- Conteneur principal -->
-<!-- Section principale -->
-<div class="container my-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="text-primary">Liste des Fournisseurs</h3>
+<div class="container my-3">
+    <!-- Ligne de titre et actions -->
+    <div class="row align-items-center mb-2">
+      <div class="col-md-6">
+        <h4 class="text-secondary mb-0">Liste des Fournisseurs</h4>
+      </div>
+      <div class="col-md-6 text-end">
+        <div class="btn-group" role="group" aria-label="Actions">
+          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                  id="addFournisseurBtn"
+                  data-bs-toggle="modal"
+                  data-bs-target="#fournisseurModaladd"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  title="Créer">
+            <i class="bi bi-plus-circle icon-3d"></i>
+            <span>Créer</span>
+          </button>
+          <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
+                  id="importFournisseurBtn"
+                  data-bs-toggle="modal"
+                  data-bs-target="#importModal"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  title="Importer">
+            <i class="bi bi-file-earmark-arrow-up icon-3d"></i>
+            <span>Importer</span>
+          </button>
+          <a href="{{ url('/export-fournisseurs-excel') }}"
+             class="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
+             data-bs-toggle="tooltip"
+             data-bs-placement="top"
+             title="Exporter en Excel">
+            <i class="bi bi-file-earmark-excel icon-3d"></i>
+            <span>Excel</span>
+          </a>
+          <a href="{{ url('/export-fournisseurs-pdf') }}"
+             class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
+             data-bs-toggle="tooltip"
+             data-bs-placement="top"
+             title="Exporter en PDF">
+            <i class="bi bi-file-earmark-pdf icon-3d"></i>
+            <span>PDF</span>
+          </a>
+        </div>
+      </div>
     </div>
 
-    <!-- Boutons d'actions -->
-    <div class="d-flex flex-wrap gap-2 mb-4">
-        <!-- Bouton Créer -->
-        <button class="btn btn-outline-primary d-flex align-items-center gap-2" id="addFournisseurBtn" data-bs-toggle="modal" data-bs-target="#fournisseurModaladd">
-            <i class="bi bi-plus-circle"></i> Créer
-        </button>
-
-        <!-- Bouton Importer -->
-        <button class="btn btn-outline-secondary d-flex align-items-center gap-2" id="importFournisseurBtn" data-bs-toggle="modal" data-bs-target="#importModal">
-            <i class="bi bi-file-earmark-arrow-up"></i> Importer
-        </button>
-
-        <!-- Bouton Exporter en Excel -->
-        <a href="{{ url('/export-fournisseurs-excel') }}" class="btn btn-outline-success d-flex align-items-center gap-2">
-            <i class="bi bi-file-earmark-excel"></i> Exporter en Excel
-        </a>
-
-        <!-- Bouton Exporter en PDF -->
-        <a href="{{ url('/export-fournisseurs-pdf') }}" class="btn btn-outline-danger d-flex align-items-center gap-2">
-            <i class="bi bi-file-earmark-pdf"></i> Exporter en PDF
-        </a>
+    <!-- Liste des fournisseurs dans une carte avec taille réduite -->
+    <div class="card shadow-sm">
+      <div class="card-body p-2" style="font-size: 0.8rem;">
+        <div id="fournisseur-table" class="border rounded bg-white p-2"></div>
+      </div>
     </div>
+  </div>
 
-    <!-- Tableau des Fournisseurs -->
-    <div id="fournisseur-table" class="border rounded shadow-sm bg-white p-3"></div>
-</div>
+  <!-- Styles personnalisés pour l'effet 3D -->
+  <style>
+    .icon-3d {
+      font-size: 1.2rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      /* Effet d'ombre initial */
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+    .icon-3d:hover {
+      transform: translateY(-2px);
+      box-shadow: 3px 3px 6px rgba(0,0,0,0.4);
+    }
+  </style>
+
+  <!-- Initialisation des tooltips Bootstrap -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    });
+  </script>
+
+
+
 
 <p style="font-size: 14px; color: black; margin-top: 10px;">
     <span style="background-color: rgba(233, 233, 13, 0.838); /* Jaune clair/orangé */
@@ -259,22 +309,20 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="compte">Compte</label>
-                                <div class="d-flex">
-                                    <input type="text" class="form-control form-control-sm shadow-sm " id="compte" name="compte" placeholder="4411XXXX" required>
-                                   <!-- {{-- <button type="button" class="btn btn-secondary btn-sm" id="autoIncrementBtn" >
-                                       auto
-                                    </button> --}}-->
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Champ Intitulé -->
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="intitule">Intitulé</label>
-                                <input type="text" class="form-control form-control-sm shadow-sm" id="intitule" name="intitule" required>
-                            </div>
-                        </div>
-                    </div>
+                <div class="d-flex">
+                  <input type="text" class="form-control form-control-sm shadow-sm" id="compte" name="compte" placeholder="4411XXXX" required>
+                </div>
+                <small id="compte-error" class="text-danger" style="display: none;"></small>
+              </div>
+            </div>
+            <!-- Champ Intitulé -->
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="intitule">Intitulé</label>
+                <input type="text" class="form-control form-control-sm shadow-sm" id="intitule" name="intitule" required>
+              </div>
+            </div>
+          </div>
                     <div class="row">
                         <!-- Champ Identifiant Fiscal -->
                         <div class="col-md-6">
@@ -336,7 +384,10 @@
                         </div>
                     </div>
                     <div class="d-flex justify-content-between">
-                        <button type="button" class="btn btn-secondary btn-sm" id="resetModal"><i class="bi bi-arrow-clockwise fs-6"></i> Réinitialiser</button>
+                        <button type="button" class="btn btn-outline-secondary px-4" id="resetFormBtn">
+                            <i class="fas fa-sync-alt"></i> Réinitialiser
+                        </button>
+                        {{-- <button type="button" class="btn btn-secondary btn-sm" id="resetModal"><i class="bi bi-arrow-clockwise fs-6"></i> Réinitialiser</button> --}}
                         <button type="submit" class="btn btn-primary btn-sm">Valider <i class="bi bi-check-lg"></i></button>
                     </div>
                 </form>
@@ -428,11 +479,11 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between">
                         <!-- Bouton de réinitialisation -->
-                        <button type="button" class="btn btn-secondary mr-2" id="resetModal">
-                            <i class="bi bi-arrow-clockwise fs-6"></i> Réinitialiser
-                        </button>
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary px-4" id="resetFormBtn">
+                                <i class="fas fa-sync-alt"></i> Réinitialiser
+                            </button>
                         <!-- Bouton de validation -->
                         <button type="submit" class="btn btn-primary ml-2">Valider
                             <i class="bi bi-check-lg bi-2x"></i>
@@ -445,35 +496,35 @@
 </div>
 
 <!-- Modal Plan Comptable -->
-<div class="modal fade" id="planComptableModalAdd" tabindex="-1" aria-labelledby="planComptableModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+<div class="modal fade" id="planComptableModalAdd" tabindex="-1" role="dialog" aria-labelledby="planComptableModalLabel" aria-hidden="true">
+    <div class="modal-dialog shadow-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
+            <div class="modal-header d-flex justify-content-between align-items-center">
                 <h5 class="modal-title" id="planComptableModalLabel">Ajouter un compte</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close text-white bg-dark shadow" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="planComptableFormAdd">
-                    <!-- Champs du formulaire -->
-                    <div class="form-group ">
-                        <input type="hidden" id="nombre_chiffre_compte" value="{{ $societe->nombre_chiffre_compte }}">
-                        <input type="hidden" id="societe_id" name="societe_id" value="{{ session('societeId') }}">
-                        <label for="compte_add" class="form-label">Compte</label>
-                        <input type="text" class="form-control form-control-lg shadow-sm" id="compte_add" name="compte" placeholder="Entrer le numéro du compte">
-
+                    @csrf
+                    <!-- Champs cachés -->
+                    <input type="hidden" id="nombre_chiffre_compte" value="{{ $societe->nombre_chiffre_compte }}">
+                    <input type="hidden" id="societe_id" name="societe_id" value="{{ session('societeId') }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="compte_add" class="form-label">Compte</label>
+                            <input type="text" class="form-control shadow-sm" id="compte_add" name="compte" placeholder="Entrer le numéro du compte" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="intitule_add" class="form-label">Intitulé</label>
+                            <input type="text" class="form-control shadow-sm" id="intitule_add" name="intitule" placeholder="Entrer l'intitulé" required>
+                        </div>
                     </div>
-                    <div class="form-group ">
-                        <label for="intitule_add" class="form-label">Intitulé</label>
-                        <input type="text" class="form-control form-control-lg shadow-sm" id="intitule_add" name="intitule" placeholder="Entrer l'intitulé">
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <!-- Bouton de réinitialisation -->
-                        <button type="button" class="btn btn-secondary mr-2" id="resetModal">
-                            <i class="bi bi-arrow-clockwise fs-6"></i> Réinitialiser
+                    <div class="d-flex justify-content-between mt-3">
+                        <button type="reset" class="btn btn-light d-flex align-items-center">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
                         </button>
-                        <!-- Bouton de validation -->
-                        <button type="submit" class="btn btn-primary ml-2">Ajouter
-                            <i class="bi bi-check-lg bi-2x"></i>
+                        <button type="submit" class="btn btn-primary d-flex align-items-center ms-2">
+                            <i class="bi bi-plus-circle me-1"></i> Ajouter
                         </button>
                     </div>
                 </form>
@@ -481,6 +532,7 @@
         </div>
     </div>
 </div>
+
 
  <!-- Statistiques -->
  <span id="select-stats" class="text-muted"></span>
@@ -505,20 +557,106 @@
             formatter: "rowSelection", // Active la sélection de ligne
             headerSort: false,
             hozAlign: "center",
+            headerHozAlign: "center", // Centrer le titre de cette colonne
             width: 60,
             cellClick: function (e, cell) {
                 cell.getRow().toggleSelect(); // Basculer la sélection de ligne
             },
         },
-        { title: "Compte", field: "compte", editor: "input", headerFilter: "input" },
-        { title: "Intitulé", field: "intitule", headerFilter: "input" },
-        { title: "Identifiant Fiscal", field: "identifiant_fiscal", headerFilter: "input" },
-        { title: "ICE", field: "ICE", headerFilter: "input" },
-        { title: "Nature de l'opération", field: "nature_operation", headerFilter: "input" },
-        { title: "Rubrique TVA", field: "rubrique_tva", headerFilter: "input" },
-        { title: "Désignation", field: "designation", headerFilter: "input" },
-        { title: "Contre Partie", field: "contre_partie", headerFilter: "input" },
-        { title: "Invalid", field: "invalid", visible: false }, // Champs caché mais utile pour les validations
+        {
+            title: "Compte",
+            field: "compte",
+            editor: "input",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centrer le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "Intitulé",
+            field: "intitule",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centrer le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "Identifiant Fiscal",
+            field: "identifiant_fiscal",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centrer le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "ICE",
+            field: "ICE",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centrer le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "Nature de l'opération",
+            field: "nature_operation",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centrer le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "Rubrique TVA",
+            field: "rubrique_tva",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centrer le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "Désignation",
+            field: "designation",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centrer le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "Contre Partie",
+            field: "contre_partie",
+            headerFilter: "input",
+            headerHozAlign: "center", // Centrer le titre
+            headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 90px; height: 22px;"
+                }
+            },
+        },
+        {
+            title: "Invalid",
+            field: "invalid",
+            visible: false // Champ caché mais utile pour les validations
+        },
         {
             title: "Actions",
             field: "action-icons",
@@ -530,8 +668,6 @@
             },
             cellClick: function (e, cell) {
                 var row = cell.getRow();
-
-                // Vérifier quel élément a été cliqué
                 if (e.target.classList.contains("edit-icon")) {
                     var rowData = cell.getRow().getData();
                     editFournisseur(rowData); // Fonction de modification
@@ -542,16 +678,15 @@
             },
             hozAlign: "center",
             headerSort: false,
+            headerHozAlign: "center", // Centrer le titre
         },
     ],
     rowFormatter: function (row) {
         let data = row.getData();
         let rowElement = row.getElement();
-
         // Réinitialiser les styles au début
         rowElement.style.backgroundColor = "";
         rowElement.classList.remove("invalid-row");
-
         // Vérification pour compte et intitulé vides ou nuls
         if ((!data.compte && !data.intitule) || (!data.compte && data.intitule) || (!data.intitule && data.compte)) {
             rowElement.style.backgroundColor = "rgba(233, 233, 13, 0.838)"; // Jaune orangé
@@ -560,6 +695,7 @@
         }
     },
 });
+
 
 // Définir un événement pour l'édition des cellules
 table.on("cellEdited", function (cell) {
@@ -593,6 +729,15 @@ table.on("cellEdited", function (cell) {
 
 // Fonction pour supprimer les lignes sélectionnées côté serveur
 function deleteSelectedRows() {
+    // Récupérer l'ID de la société depuis la balise meta
+    const societeId = document
+        .querySelector('meta[name="societe-id"]')
+        .getAttribute("content");
+    if (!societeId) {
+        alert("Aucune société sélectionnée dans la session.");
+        return;
+    }
+
     var selectedRows = table.getSelectedRows();
     var idsToDelete = selectedRows.map(function (row) {
         return row.getData().id;
@@ -606,23 +751,27 @@ function deleteSelectedRows() {
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": document
                         .querySelector('meta[name="csrf-token"]')
-                        .getAttribute("content"),
+                        .getAttribute("content")
                 },
-                body: JSON.stringify({ ids: idsToDelete }),
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data.success) {
-                        alert("Succès: " + data.message);
-                        selectedRows.forEach((row) => row.delete());
-                    } else {
-                        alert("Erreur: " + data.message);
-                    }
+                // Ajout de societeId dans le corps de la requête
+                body: JSON.stringify({
+                    ids: idsToDelete,
+                    societeId: societeId
                 })
-                .catch((error) => {
-                    alert("Erreur: Impossible de supprimer les fournisseurs sélectionnés.");
-                    console.error(error);
-                });
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    alert("Succès: " + data.message);
+                    selectedRows.forEach((row) => row.delete());
+                } else {
+                    alert("Erreur: " + data.error);
+                }
+            })
+            .catch((error) => {
+                alert("Erreur: Impossible de supprimer les fournisseurs sélectionnés.");
+                console.error(error);
+            });
         }
     } else {
         alert("Aucune ligne sélectionnée.");
@@ -641,6 +790,7 @@ document.getElementById("fournisseur-table").addEventListener("click", function 
         deleteSelectedRows();
     }
 });
+
 
 
 // Intégration des formulaires d'ajout et de modification
@@ -710,6 +860,9 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
     });
 }
 
+
+
+
 // Soumission du formulaire d'ajout
 $("#fournisseurFormAdd").on("submit", function (e) {
     e.preventDefault();
@@ -726,6 +879,11 @@ $("#fournisseurFormAdd").on("submit", function (e) {
     envoyerDonnees();
 });
 
+// Masquer le message d'erreur lors du clic dans le champ "compte"
+$("#compte").on("click", function () {
+    $("#compte-error").hide();
+});
+
 // Envoi des données via AJAX
 function envoyerDonnees() {
     $.ajax({
@@ -737,22 +895,37 @@ function envoyerDonnees() {
             identifiant_fiscal: $("#identifiant_fiscal").val(),
             ICE: $("#ICE").val(),
             nature_operation: $("#nature_operation").val(),
-            rubrique_tva: $("#rubrique_tva option:selected").text(), // Texte complet récupéré
+            rubrique_tva: $("#rubrique_tva option:selected").text(),
             designation: $("#designation").val(),
             contre_partie: $("#contre_partie").val(),
             societe_id: $("#societe_id").val(),
             _token: '{{ csrf_token() }}'
         },
         success: function (response) {
+            // Si succès, actualiser la table, fermer la modal et réinitialiser le formulaire
             table.setData("/fournisseurs/data");
             $("#fournisseurModaladd").modal("hide");
             $("#fournisseurFormAdd")[0].reset();
+            $("#compte-error").hide();
         },
         error: function (xhr) {
-            console.error("Erreur lors de l'envoi des données:", xhr.responseText);
+            // Vérification du code d'erreur 422 pour l'unicité du compte
+            if (xhr.status === 422) {
+                var response = xhr.responseJSON;
+                if (response && response.error) {
+                    $("#compte-error").text(response.error).show();
+                    // On peut aussi éventuellement positionner le focus sur le champ "compte"
+                    $("#compte").focus();
+                }
+            } else {
+                console.error("Erreur lors de l'envoi des données:", xhr.responseText);
+            }
         }
     });
 }
+
+
+
 // Remplir les rubriques TVA
 function remplirRubriquesTva(selectId, selectedValue = null) {
     $.ajax({
@@ -1231,6 +1404,88 @@ $(document).ready(function () {
     });
 });
 
+$(document).ready(function() {
+    $("#resetFormBtn").on("click", function(e) {
+        e.preventDefault();
+        // Réinitialise le formulaire entier
+        document.getElementById("fournisseurFormAdd").reset();
+        // Masquer le message d'erreur si présent
+        $("#compte-error").hide();
+    });
+
+});
+
+$(document).ready(function() {
+    $("#resetFormBtn").on("click", function(e) {
+        e.preventDefault(); // Empêche toute action par défaut
+        document.getElementById("fournisseurFormEdit").reset(); // Réinitialise le formulaire
+        // Si vous avez des messages d'erreur ou d'autres éléments à masquer, vous pouvez le faire ici :
+        // $("#edit-compte-error").hide();
+    });
+});
+
+
+/////////////////////////////verification compte ////////////////////////////////
+document.addEventListener('DOMContentLoaded', function() {
+  const nombreChiffreCompte = parseInt(document.getElementById('nombre_chiffre_compte').value) || 0;
+  const compteInput = document.getElementById('compte');
+  const submitBtn = document.getElementById('submitBtn');
+
+  if(nombreChiffreCompte > 0) {
+    compteInput.setAttribute('maxlength', nombreChiffreCompte);
+  }
+
+  function verifierCompte(compte, societeId) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    return fetch('/verifier-compte', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken
+      },
+      body: JSON.stringify({ compte: compte, societe_id: societeId })
+    }).then(response => response.json());
+  }
+
+  compteInput.addEventListener('blur', function() {
+    const compteValue = this.value.trim();
+    const societeId = document.getElementById('societe_id').value;
+
+    // Si le champ n'est pas vide et que la longueur n'est pas correcte
+    if (compteValue !== "" && compteValue.length !== nombreChiffreCompte) {
+      alert(`Attention, le compte N° "${compteValue}" doit comporter exactement ${nombreChiffreCompte} caractères.`);
+      this.value = "";
+      this.focus();
+      submitBtn.disabled = true;
+      return;
+    }
+
+    // Si le champ est vide, ne rien faire
+    if (compteValue === "") {
+      return;
+    }
+
+    // Vérifier l'existence du compte
+    verifierCompte(compteValue, societeId)
+      .then(data => {
+        if (data.exists) {
+          alert(`Attention, le compte N° "${compteValue}" existe déjà ! Vous ne pouvez pas continuer.`);
+          compteInput.value = "";
+          compteInput.focus();
+          submitBtn.disabled = true;
+        } else {
+          submitBtn.disabled = false;
+        }
+      })
+      .catch(error => {
+        console.error("Erreur lors de la vérification du compte:", error);
+      });
+  });
+
+  compteInput.addEventListener('input', function() {
+    submitBtn.disabled = false;
+  });
+});
 
 
 // excel
@@ -1295,6 +1550,7 @@ document.getElementById('file').addEventListener('change', function(e) {
 });
 
 
+
 document.getElementById('resetModal').addEventListener('click', function () {
     const form = document.getElementById('importForm');
     form.reset(); // Réinitialise tous les champs du formulaire
@@ -1319,24 +1575,37 @@ document.getElementById('importForm').addEventListener('keydown', function (even
 
   // Fonction pour supprimer un fournisseur
   function deleteFournisseur(id) {
-    // Demande de confirmation
+    // Récupérer l'ID de la société depuis la balise meta
+    const societeId = $('meta[name="societe-id"]').attr('content');
+    if (!societeId) {
+        alert("Aucune société sélectionnée dans la session.");
+        return;
+    }
+
     if (confirm("Êtes-vous sûr de vouloir supprimer ce fournisseur ?")) {
-        // Appel à la route de suppression
         $.ajax({
-            url: "/fournisseurs/" + id,
-            type: "DELETE",
+            url: `/fournisseurs/${id}`,
+            type: 'DELETE',
             data: {
-                _token: '{{ csrf_token() }}'
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                societeId: societeId
             },
             success: function(response) {
-                table.setData("/fournisseurs/data"); // Recharger les données
+                // Actualiser le tableau des fournisseurs
+                table.setData("/fournisseurs/data");
+                alert(response.message);
             },
             error: function(xhr) {
-                alert("Erreur lors de la suppression des données !");
+                let errorMsg = "Erreur lors de la suppression.";
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
+                alert(errorMsg);
             }
         });
     }
 }
+
 
 
 // Convertir une date du format "yyyy-MM-dd" au format "dd/MM/yyyy"

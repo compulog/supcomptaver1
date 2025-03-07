@@ -131,15 +131,45 @@
 </nav>
 <center><h5>ETAT DE CAISSE MENSUELLE</h5></center>
 <!-- Conteneur pour les sélecteurs -->
-<div class="form-group" style="display: flex; align-items: center; margin-left: -500px;">
+<div class="form-group" style="display: flex; align-items: center; margin-left: -22%;">
     <!-- Sélecteur de code journal -->
     <label for="journal-select" style="margin-right: 10px;">Code Journal :</label>
-<select id="journal-select" style="width: 150px; height: 31px; margin-right: 20px;">
-    @foreach ($journauxCaisse as $journal)
-        <option value="{{ $journal->code_journal }}">{{ $journal->code_journal }}</option>
-    @endforeach
-    <!-- Vous pouvez également ajouter d'autres options ici si nécessaire -->
-</select>
+    <select id="journal-select" style="width: 150px; height: 31px; margin-right: 20px;">
+        @foreach ($journauxCaisse as $journal)
+            <option value="{{ $journal->code_journal }}" data-intitule="{{ $journal->intitule }}">{{ $journal->code_journal }}</option>
+        @endforeach
+        <!-- Vous pouvez également ajouter d'autres options ici si nécessaire -->
+    </select>
+
+    <!-- Champ de texte pour l'intitulé -->
+    <label for="intitule-input" style="margin-right: 10px;">Intitulé :</label>
+    <input type="text" id="intitule-input" style="width: 150px; height: 31px;" readonly>
+
+
+<script>
+    // Récupérer les éléments du DOM
+    const journalSelect = document.getElementById('journal-select');
+    const intituleInput = document.getElementById('intitule-input');
+
+    // Ajouter un écouteur d'événements pour détecter le changement de sélection du code journal
+    journalSelect.addEventListener('change', function() {
+        // Récupérer l'option sélectionnée
+        const selectedOption = journalSelect.options[journalSelect.selectedIndex];
+        // Récupérer l'intitulé associé à cette option
+        const intitule = selectedOption.getAttribute('data-intitule');
+        
+        // Mettre à jour l'intitulé dans l'input correspondant
+        intituleInput.value = intitule;
+    });
+
+    // Initialiser l'intitulé au chargement de la page avec la première sélection
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialiser avec la première option sélectionnée
+        journalSelect.dispatchEvent(new Event('change'));
+    });
+</script>
+
+
 
 
     <!-- Sélecteur de mois et d'année -->
@@ -170,22 +200,23 @@
 </div>
 
 <!-- Solde initial à afficher en fonction du mois et de l'année choisis -->
-<div class="form-group" style="margin-left:850px;margin-top:-30px;">
+<div class="form-group" style="margin-left:70%;margin-top:-20px;">
     <label for="initial-balance">Solde initial :</label>
-    <input type="number" id="initial-balance" readonly>
+    <!-- <input type="number" id="initial-balance" readonly> -->
+    <input type="number" id="initial-balance" >
 </div>
  
 <div id="example-table"></div>
 <input type="hidden" id="total-revenue" placeholder="Total recette">
      <input type="hidden" id="total-expense" placeholder="Total dépense"> 
 <!-- Total recette, dépense et solde final -->
-<div style="margin-left:900px;">
+<div style="margin-left:70%;">
      
     <label for="final-balance">Solde final :</label>
     <input type="number" id="final-balance" placeholder="Solde final" style="border-radius:4px;border:green;">
 </div>
  
-<button id="cloturer-button" class="btn btn-primary" style="margin-left:90%;height:31px;border-radius:4px;font-size:10px;">Clôturer</button>
+<button id="cloturer-button" class="btn btn-primary" style="margin-left:85%;height:31px;border-radius:4px;font-size:10px;">Clôturer</button>
 
 <!-- <i class="fa fa-trash" id="delete-selected"></i> -->
 

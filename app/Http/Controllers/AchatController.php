@@ -88,17 +88,34 @@ class AchatController extends Controller
                 // Vérifier l'extension du fichier pour afficher une prévisualisation
                 $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
     
-                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                    $file->preview = asset('storage/' . $file->path); // Image
-                } elseif (in_array($extension, ['pdf'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
-                } elseif (in_array($extension, ['doc', 'docx'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Word'; // Word
-                } elseif (in_array($extension, ['xls', 'xlsx'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel'; // Excel
-                } else {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
-                }
+                // if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                //     $file->preview = asset('storage/' . $file->path); // Image
+                // } elseif (in_array($extension, ['pdf'])) {
+                //     $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
+                // } elseif (in_array($extension, ['doc', 'docx'])) {
+                //     $file->preview = 'https://via.placeholder.com/80x100.png?text=Word'; // Word
+                // } elseif (in_array($extension, ['xls', 'xlsx'])) {
+                //     $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel'; // Excel
+                // } else {
+                //     $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
+                // }
+
+
+                    if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                        $file->preview = asset($file->path);
+
+                    } elseif (in_array($extension, ['pdf'])) {
+                        $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF';  
+                    } elseif (in_array($extension, ['doc', 'docx'])) {
+                        $file->preview = 'https://via.placeholder.com/80x100.png?text=Word';  
+                    } elseif (in_array($extension, ['xls', 'xlsx'])) {
+                        $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel';  
+                    } else {
+                        $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
+                    }
+
+
+                
     
                 // Vérifier si un message existe pour ce fichier et si le champ 'is_read' est égal à 0
                 $unreadMessagesForFile = Message::where('file_id', $file->id)
@@ -123,8 +140,19 @@ class AchatController extends Controller
         // Récupérer le fichier recherché par son ID
         $file = File::findOrFail($fileId);
     
-        
-        $files = File::where('folders', $file->folders)->get();
+        // Utiliser 'asset()' pour générer le chemin complet des fichiers
+        // Exemple : public/storage/uploads/nom_du_fichier
+        $file->path = asset($file->path);  // Générer l'URL absolue pour le fichier
+        $societeId = session('societeId');
+        // Récupérer tous les fichiers du même dossier
+        $files = File::where('folders', $file->folders)
+        ->where('societe_id', $societeId) // Assurez-vous que 'societe_id' est bien la clé de votre session
+        ->whereNull('deleted_at') // Filtrer les fichiers qui ne sont pas supprimés
+        ->get();
+        // Générer les chemins absolus pour tous les fichiers
+        foreach ($files as $fileItem) {
+            $fileItem->path = asset($fileItem->path);  // Générer l'URL absolue pour chaque fichier
+        }
     
         // Trouver l'index du fichier recherché pour la navigation
         $currentFileIndex = $files->search(fn($f) => $f->id == $fileId);
@@ -132,7 +160,6 @@ class AchatController extends Controller
         // Passer le fichier recherché, tous les fichiers, et l'index à la vue
         return view('achat.view', compact('file', 'files', 'currentFileIndex'));
     }
-     
     
 
 

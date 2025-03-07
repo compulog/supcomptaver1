@@ -2,6 +2,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.tab');
 
+    // Forcer l'activation de l'onglet "Achats" par défaut
+    const defaultTab = document.querySelector('.tab[data-tab="achats"]');
+    if (defaultTab) {
+        defaultTab.classList.add('active');
+    }
+
     tabs.forEach(tab => {
         tab.addEventListener('click', function() {
             // Enlever la classe 'active' de tous les onglets
@@ -13,18 +19,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // Modifier la couleur de fond des onglets
             tabs.forEach(t => {
                 if (t.classList.contains('active')) {
-                    t.style.backgroundColor = '#007bff'; // Fond bleu pour l'onglet actif
-                    t.style.color = 'white'; // Texte en blanc
-                    t.style.borderColor = '#0056b3'; // Bordure plus foncée pour l'onglet actif
+                    t.style.backgroundColor = '#007bff';
+                    t.style.color = 'white';
+                    t.style.borderColor = '#0056b3';
                 } else {
-                    t.style.backgroundColor = '#f9f9f9'; // Fond gris clair pour les onglets inactifs
-                    t.style.color = 'black'; // Texte noir pour les onglets inactifs
-                    t.style.borderColor = '#ccc'; // Bordure grise pour les onglets inactifs
+                    t.style.backgroundColor = '#f9f9f9';
+                    t.style.color = 'black';
+                    t.style.borderColor = '#ccc';
                 }
             });
         });
     });
 });
+  
 function remplirContrePartie(selectId, selectedValue = null) {
     $.ajax({
         url: '/comptes',
@@ -176,7 +183,7 @@ function focusNextEditableCell(currentCell) {
 function updateLibelle(row) {
     const rowData = row.getData();
     const numeroFacture = rowData.numero_facture || "Inconnu";
-    const compteFournisseur = rowData.compte;
+    const compteFournisseur = rowData.compte; // Ce champ doit contenir uniquement le numéro de compte
 
     if (!compteFournisseur) {
         row.update({ libelle: "" });
@@ -190,12 +197,16 @@ function updateLibelle(row) {
                 console.error("Erreur lors de la récupération des détails :", data.error);
                 return;
             }
-            const fournisseur = data.find(f => `${f.compte} - ${f.intitule}` === compteFournisseur);
+            // On recherche par numéro de compte seulement
+            const fournisseur = data.find(f => f.compte === compteFournisseur);
             if (fournisseur) {
+                // Mise à jour du libellé avec le numéro de facture et l'intitulé du fournisseur
                 row.update({
                     libelle: `F° ${numeroFacture} ${fournisseur.intitule}`
                 });
-                // Après mise à jour, on met le focus sur le champ "credit"
+                // Affichage des autres données du fournisseur dans la console (ou dans un autre composant si nécessaire)
+                console.log("Détails fournisseur :", fournisseur);
+                // Après mise à jour, on met le focus sur la cellule "credit"
                 setTimeout(() => {
                     const creditCell = row.getCell("credit");
                     if (creditCell) {
@@ -203,13 +214,88 @@ function updateLibelle(row) {
                     }
                 }, 300); // délai de 300ms (ajustez si nécessaire)
             } else {
-                console.warn("Aucun fournisseur correspondant trouvé pour :", compteFournisseur);
+                console.warn("Aucun fournisseur correspondant trouvé pour le compte :", compteFournisseur);
             }
         })
         .catch(error => {
             console.error("Erreur réseau lors de la récupération des détails :", error);
             alert("Une erreur est survenue lors de la récupération des détails du fournisseur.");
         });
+}
+
+// Fonction pour mettre à jour la ligne avec le libellé et déplacer le focus
+function updateLibelleAndFocus(row, compte) {
+    // Première tentative via l'API des détails
+    fetch(`/get-fournisseurs-avec-details?societe_id=${societeId}`)
+        .then(response => response.json())
+        .then(data => {
+            let fournisseur = data.find(f => f.compte === compte);
+            if (!fournisseur) {
+                // Si aucun fournisseur trouvé, on tente via l'API /fournisseurs-comptes
+                return fetch('/fournisseurs-comptes')
+                    .then(response => response.json())
+                    .then(data2 => {
+                        fournisseur = data2.find(f => f.compte === compte);
+                        if (fournisseur) {
+                            updateRowWithFournisseur(row, fournisseur);
+                        } else {
+                            console.warn("Aucun fournisseur trouvé pour le compte :", compte);
+                        }
+                    });
+            } else {
+                updateRowWithFournisseur(row, fournisseur);
+            }
+        })
+        .catch(error => {
+            console.error("Erreur réseau lors de la récupération :", error);
+            alert("Une erreur est survenue lors de la récupération du fournisseur.");
+        });
+}
+
+// Fonction qui met à jour la ligne avec les données du fournisseur
+function updateRowWithFournisseur(row, fournisseur) {
+    const numeroFacture = row.getCell("numero_facture").getValue() || "Inconnu";
+    const libelle = `F° ${numeroFacture} ${fournisseur.intitule || ""}`;
+    const tauxTVA = parseFloat(fournisseur.taux_tva) || 0;
+    window.tauxTVAGlobal = tauxTVA;  // mise à jour globale si nécessaire
+
+    row.update({
+        libelle: libelle,
+        contre_partie: fournisseur.contre_partie || "",
+        rubrique_tva: fournisseur.rubrique_tva || "",
+        taux_tva: tauxTVA,
+        compte_tva: (window.comptesVentes && window.comptesVentes.length > 0)
+            ? `${window.comptesVentes[0].compte} - ${window.comptesVentes[0].intitule || ""}`
+            : ""
+    });
+
+    // Déplacement du focus en fonction du préfixe du compte
+    let trimmed = row.getCell("compte").getValue().trim();
+    if (trimmed.startsWith("55") || trimmed.startsWith("1") || trimmed.startsWith("4") || trimmed.startsWith("7")) {
+        setTimeout(() => {
+            const creditCell = row.getCell("credit");
+            if (creditCell) { creditCell.edit(); }
+        }, 300);
+    } else if (trimmed.startsWith("51") || trimmed.startsWith("2") || trimmed.startsWith("3") || trimmed.startsWith("6")) {
+        setTimeout(() => {
+            const debitCell = row.getCell("debit");
+            if (debitCell) { debitCell.edit(); }
+        }, 300);
+    }
+}
+
+
+function getFormattedComptesFournisseurs() {
+    var formatted = [];
+    if (window.comptesFournisseurs && Array.isArray(window.comptesFournisseurs)) {
+        for (let i = 0; i < window.comptesFournisseurs.length; i++){
+            let f = window.comptesFournisseurs[i];
+            if (f && f.compte) {
+                formatted.push(`${f.compte} - ${f.intitule || ""}`);
+            }
+        }
+    }
+    return formatted;
 }
 
 
@@ -276,6 +362,7 @@ function genericTextEditorForLibelle(cell, onRendered, success, cancel, editorPa
 
     return input;
 }
+
 
 var societeId = $('#societe_id').val(); // ID de la société
 var nombreChiffresCompte = parseInt($('#nombre_chiffre_compte').val()); // Nombre de chiffres du compte
@@ -543,14 +630,11 @@ function customListEditorClt(cell, onRendered, success, cancel, editorParams) {
     return container;
   }
 
-// Éditeur personnalisé générique pour les listes (sans traitement fournisseur)
-function customListEditor(cell, onRendered, success, cancel, editorParams) {
-    // Création du container principal pour l'éditeur
+ /********** Éditeur pour les listes personnalisées **********/
+ function customListEditor(cell, onRendered, success, cancel, editorParams) {
     var container = document.createElement("div");
-    container.className = "custom-list-editor-container";
     container.style.position = "relative";
 
-    // Création de l'input
     var input = document.createElement("input");
     input.type = "text";
     input.style.width = "100%";
@@ -559,17 +643,15 @@ function customListEditor(cell, onRendered, success, cancel, editorParams) {
     input.value = cell.getValue() || "";
     container.appendChild(input);
 
-    // Récupération des options depuis editorParams.values
     var options = [];
-    if (editorParams && editorParams.values) {
+    if(editorParams && editorParams.values){
       options = Array.isArray(editorParams.values)
         ? editorParams.values
         : Object.values(editorParams.values);
     }
 
-    // Création du dropdown personnalisé (placé dans le body pour éviter les problèmes d'overflow)
+    // Création d'un dropdown personnalisé pour la recherche
     var dropdown = document.createElement("div");
-    dropdown.className = "custom-dropdown";
     dropdown.style.position = "absolute";
     dropdown.style.background = "#fff";
     dropdown.style.border = "1px solid #ccc";
@@ -579,7 +661,6 @@ function customListEditor(cell, onRendered, success, cancel, editorParams) {
     dropdown.style.display = "none";
     document.body.appendChild(dropdown);
 
-    // Fonction pour positionner le dropdown sous l'input
     function positionDropdown() {
       var rect = input.getBoundingClientRect();
       dropdown.style.top = (rect.bottom + window.scrollY) + "px";
@@ -587,14 +668,12 @@ function customListEditor(cell, onRendered, success, cancel, editorParams) {
       dropdown.style.width = rect.width + "px";
     }
 
-    // Fonction pour mettre à jour le contenu du dropdown en fonction de la saisie
     function updateDropdown() {
       dropdown.innerHTML = "";
       var search = input.value.trim().toLowerCase();
-      var filtered = options.filter(function(opt) {
+      var filtered = options.filter(function(opt){
         return opt.toLowerCase().indexOf(search) !== -1;
       });
-
       filtered.forEach(function(opt) {
         var item = document.createElement("div");
         item.textContent = opt;
@@ -609,8 +688,7 @@ function customListEditor(cell, onRendered, success, cancel, editorParams) {
         });
         dropdown.appendChild(item);
       });
-
-      if (filtered.length > 0) {
+      if(filtered.length > 0){
         positionDropdown();
         dropdown.style.display = "block";
       } else {
@@ -618,41 +696,40 @@ function customListEditor(cell, onRendered, success, cancel, editorParams) {
       }
     }
 
-    // Actualise le dropdown lors de la saisie ou du focus
-    input.addEventListener("input", function() {
-      updateDropdown();
-    });
-    input.addEventListener("focus", function() {
-      updateDropdown();
-    });
+    input.addEventListener("input", updateDropdown);
+    input.addEventListener("focus", updateDropdown);
 
-    // Masque le dropdown au blur après un léger délai (pour permettre le clic)
-    input.addEventListener("blur", function() {
-      setTimeout(function() {
+    // Lorsqu'on appuie sur Enter dans cet éditeur, on valide la saisie
+    input.addEventListener("keydown", function(e) {
+      if(e.key === "Enter"){
+        e.preventDefault();
         dropdown.style.display = "none";
-        // Validation : si la valeur existe dans les options, on valide
-        if (options.indexOf(input.value) !== -1) {
-          success(input.value);
-        }
-      }, 150);
+        success(input.value);
+      } else if(e.key === "Escape"){
+        cancel();
+      }
     });
 
-    // Au rendu, donner le focus à l'input et afficher le dropdown
-    onRendered(function() {
+    input.addEventListener("blur", function() {
+      setTimeout(function(){
+        dropdown.style.display = "none";
+        success(input.value);
+      },150);
+    });
+
+    onRendered(function(){
       input.focus();
       updateDropdown();
     });
 
     return container;
   }
-
-
 // Éditeur personnalisé pour le champ "Compte" (Fournisseurs)
 function customListEditorFrs(cell, onRendered, success, cancel, editorParams) {
     // Création du container principal pour l'éditeur
     var container = document.createElement("div");
     container.className = "custom-list-editor-container";
-    container.style.position = "relative"; // Pour une bonne gestion du focus
+    container.style.position = "relative";
 
     // Création de l'input
     var input = document.createElement("input");
@@ -663,15 +740,15 @@ function customListEditorFrs(cell, onRendered, success, cancel, editorParams) {
     input.value = cell.getValue() || "";
     container.appendChild(input);
 
-    // Préparez le tableau d'options à partir des paramètres
+    // Préparation du tableau d'options depuis editorParams.values
     var options = [];
     if (editorParams && editorParams.values) {
-      options = Array.isArray(editorParams.values)
-        ? editorParams.values
-        : Object.values(editorParams.values);
+        // Ici, nous utilisons la fonction manuelle
+        options = getFormattedComptesFournisseurs();
     }
+    console.log("Options disponibles (contre-partie):", options);
 
-    // Création du dropdown personnalisé (placé dans le body pour éviter qu'il ne soit caché)
+    // Création du dropdown personnalisé
     var dropdown = document.createElement("div");
     dropdown.className = "custom-dropdown";
     dropdown.style.position = "absolute";
@@ -679,116 +756,210 @@ function customListEditorFrs(cell, onRendered, success, cancel, editorParams) {
     dropdown.style.border = "1px solid #ccc";
     dropdown.style.maxHeight = "200px";
     dropdown.style.overflowY = "auto";
-    dropdown.style.zIndex = "10000"; // Pour qu'il apparaisse au-dessus
-    dropdown.style.display = "none"; // Caché par défaut
+    dropdown.style.zIndex = "10000";
+    dropdown.style.display = "none";
     document.body.appendChild(dropdown);
 
-    // Positionne le dropdown sous l'input
     function positionDropdown() {
-      var rect = input.getBoundingClientRect();
-      dropdown.style.top = (rect.bottom + window.scrollY) + "px";
-      dropdown.style.left = (rect.left + window.scrollX) + "px";
-      dropdown.style.width = rect.width + "px";
+        var rect = input.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + window.scrollY) + "px";
+        dropdown.style.left = (rect.left + window.scrollX) + "px";
+        dropdown.style.width = rect.width + "px";
     }
 
-    // Met à jour le contenu du dropdown en fonction de la saisie
     function updateDropdown() {
-      dropdown.innerHTML = "";
-      var search = input.value.trim().toLowerCase();
-      var filtered = options.filter(function(opt) {
-        return opt.toLowerCase().indexOf(search) !== -1;
-      });
-
-      if (filtered.length > 0) {
-        filtered.forEach(function(opt) {
-          var item = document.createElement("div");
-          item.textContent = opt;
-          item.style.padding = "5px";
-          item.style.cursor = "pointer";
-          item.style.borderBottom = "1px solid #eee";
-          item.addEventListener("mousedown", function(e) {
-            e.preventDefault();
-            input.value = opt;
-            dropdown.style.display = "none";
-            success(opt);
-          });
-          dropdown.appendChild(item);
+        dropdown.innerHTML = "";
+        var search = input.value.trim().toLowerCase();
+        var filtered = options.filter(function(opt) {
+            return opt.toLowerCase().indexOf(search) !== -1;
         });
-      } else {
-        // Aucun résultat : afficher un message et le bouton +
-        var item = document.createElement("div");
-        item.style.display = "flex";
-        item.style.justifyContent = "space-between";
-        item.style.alignItems = "center";
-        item.style.padding = "5px";
-        item.style.borderBottom = "1px solid #eee";
-
-        var message = document.createElement("span");
-        message.textContent = "Fournisseur non trouvé";
-        message.style.color = "red";
-        item.appendChild(message);
-
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.innerHTML = '<i class="fas fa-plus-circle" style="color:green;"></i>';
-        btn.style.border = "none";
-        btn.style.background = "none";
-        btn.style.cursor = "pointer";
-        btn.addEventListener("mousedown", function(e) {
-          e.preventDefault();
-          // Confirmation avant d'ouvrir la pop-up d'ajout
-          Swal.fire({
-            title: "Fournisseur non trouvé",
-            text: "Voulez-vous ajouter ce fournisseur ?",
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonText: "Oui, ajouter",
-            cancelButtonText: "Non"
-          }).then((result) => {
-            if (result.isConfirmed) {
-              ouvrirPopupFournisseur(input.value, cell.getRow(), cell, 0);
-            } else {
-              input.focus();
-            }
-          });
-        });
-        item.appendChild(btn);
-        dropdown.appendChild(item);
-      }
-      positionDropdown();
-      dropdown.style.display = "block";
+        if (filtered.length > 0) {
+            filtered.forEach(function(opt) {
+                var item = document.createElement("div");
+                item.textContent = opt;
+                item.style.padding = "5px";
+                item.style.cursor = "pointer";
+                item.style.borderBottom = "1px solid #eee";
+                item.addEventListener("mousedown", function(e) {
+                    e.preventDefault();
+                    input.value = opt;
+                    dropdown.style.display = "none";
+                    success(opt.split(" - ")[0]); // Retourne uniquement le compte
+                });
+                dropdown.appendChild(item);
+            });
+        } else {
+            var item = document.createElement("div");
+            item.style.display = "flex";
+            item.style.justifyContent = "space-between";
+            item.style.alignItems = "center";
+            item.style.padding = "5px";
+            item.style.borderBottom = "1px solid #eee";
+            var message = document.createElement("span");
+            message.textContent = "Fournisseur non trouvé";
+            message.style.color = "red";
+            item.appendChild(message);
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.innerHTML = '<i class="fas fa-plus-circle" style="color:green;"></i>';
+            btn.style.border = "none";
+            btn.style.background = "none";
+            btn.style.cursor = "pointer";
+            btn.addEventListener("mousedown", function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: "Fournisseur non trouvé",
+                    text: "Voulez-vous ajouter ce fournisseur ?",
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonText: "Oui, ajouter",
+                    cancelButtonText: "Non"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        ouvrirPopupFournisseur(input.value, cell.getRow(), cell, 0);
+                    } else {
+                        input.focus();
+                    }
+                });
+            });
+            item.appendChild(btn);
+            dropdown.appendChild(item);
+        }
+        positionDropdown();
+        dropdown.style.display = "block";
     }
 
-    // Déclenche l'update du dropdown lors de la saisie ou du focus
-    input.addEventListener("input", function() {
-      updateDropdown();
-    });
-    input.addEventListener("focus", function() {
-      updateDropdown();
-    });
-
-    // Masquer le dropdown lors du blur avec un léger délai pour permettre le clic
+    input.addEventListener("input", updateDropdown);
+    input.addEventListener("focus", updateDropdown);
     input.addEventListener("blur", function() {
-      setTimeout(function(){
-        dropdown.style.display = "none";
-        // Si la valeur correspond à une option existante, on valide
-        if (options.indexOf(input.value) !== -1) {
-          success(input.value);
-        }
-      }, 150);
+        setTimeout(function(){
+            dropdown.style.display = "none";
+            if (options.indexOf(input.value) !== -1) {
+                success(input.value);
+            }
+        }, 150);
     });
 
-    // Au rendu, donner le focus à l'input et afficher le dropdown
     onRendered(function() {
-      input.focus();
-      updateDropdown();
+        input.focus();
+        updateDropdown();
     });
 
     return container;
 }
 
+function openFileSelectionPopup(input) {
+    console.log("Ouverture du popup de sélection de fichiers...");
+    $.ajax({
+      url: '/files', // Votre route qui renvoie la liste des fichiers
+      method: 'GET',
+      dataType: 'json',
+      success: function(files) {
+        console.log("Fichiers reçus :", files);
+        // Si files est vide ou non défini, utiliser un fallback pour tester
+        if (!files || files.length === 0) {
+          console.warn("Aucun fichier reçu, utilisation d'un fallback de test.");
+          files = [{"name": "TestFile1.pdf"}, {"name": "TestFile2.jpg"}];
+        }
+        let html = '<ul class="swal2-list-group">';
+        files.forEach(function(file) {
+          html += `<li class="swal2-list-group-item" data-filename="${file.name}">${file.name}</li>`;
+        });
+        html += '</ul>';
+        Swal.fire({
+          title: "Sélectionnez un fichier",
+          html: html,
+          showCancelButton: true,
+          confirmButtonText: 'Valider',
+          preConfirm: () => {
+            let selected = $('.swal2-list-group-item.active').data('filename');
+            if (!selected) {
+              Swal.showValidationMessage("Veuillez sélectionner un fichier.");
+            }
+            return selected;
+          },
+          didOpen: () => {
+            $('.swal2-list-group-item').on('click', function() {
+              $('.swal2-list-group-item').removeClass('active');
+              $(this).addClass('active');
+            });
+          }
+        }).then((result) => {
+          console.log("Résultat du popup :", result);
+          if(result.isConfirmed) {
+            input.value = result.value;
+            // Déclenche le commit (validation) en simulant un blur sur l'input
+            input.dispatchEvent(new Event("blur"));
+          }
+        });
+      },
+      error: function() {
+        Swal.fire("Erreur", "Impossible de charger les fichiers.", "error");
+      }
+    });
+  }
+
+  /**
+   * Éditeur personnalisé pour la colonne "Pièce".
+   * Affiche un input group (champ texte + bouton "Charger Fichiers").
+   * Le bouton ouvre le popup pour sélectionner un fichier.
+   */
+  function integratedPieceEditor(cell, onRendered, success, cancel, editorParams) {
+    // Créer le conteneur input group
+    var container = document.createElement("div");
+    container.classList.add("input-group");
+
+    // Créer le champ texte
+    var textInput = document.createElement("input");
+    textInput.type = "text";
+    textInput.classList.add("form-control");
+    textInput.value = cell.getValue() || "";
+    container.appendChild(textInput);
+
+    // Créer le bouton d'upload dans un div d'append
+    var appendDiv = document.createElement("div");
+    appendDiv.classList.add("input-group-append");
+
+    var uploadButton = document.createElement("button");
+    uploadButton.type = "button";
+    uploadButton.classList.add("btn", "btn-secondary", "btn-sm");
+    uploadButton.textContent = "Charger Fichiers";
+    appendDiv.appendChild(uploadButton);
+    container.appendChild(appendDiv);
+
+    // Ajouter un log pour vérifier que le bouton est cliqué
+    uploadButton.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("Bouton 'Charger Fichiers' cliqué");
+      openFileSelectionPopup(textInput);
+    });
+
+    // Dès que l'éditeur est rendu, mettre le focus sur le champ texte
+    onRendered(function() {
+      textInput.focus();
+    });
+
+    // Valider la valeur lorsque le champ perd le focus ou lors de la touche Entrée
+    textInput.addEventListener("blur", function() {
+      success(textInput.value);
+    });
+    textInput.addEventListener("keydown", function(e) {
+      if(e.key === "Enter") {
+        e.preventDefault();
+        success(textInput.value);
+      } else if(e.key === "Escape") {
+        cancel();
+      }
+    });
+
+    return container;
+  }
 
 
+
+
+  /********** Éditeur pour la cellule "Pièce" **********/
   function pieceEditor(cell, onRendered, success, cancel, editorParams) {
     const input = document.createElement("input");
     input.type = "text";
@@ -796,36 +967,34 @@ function customListEditorFrs(cell, onRendered, success, cancel, editorParams) {
     input.value = cell.getValue() || "";
 
     onRendered(() => {
-        input.focus();
+      input.focus();
     });
 
-    // Fonction commit : valider la saisie, sélectionner la ligne et déplacer le focus sur la cellule "Sélectionner"
+    // La fonction commit valide la saisie, sélectionne la ligne,
+    // et déplace le focus sur la cellule "Sélectionner"
     function commit() {
-        success(input.value);               // Enregistre la nouvelle valeur dans Tabulator
-        cell.getRow().select();             // Sélectionne la ligne correspondante
-        setTimeout(() => {
-            // Tente de déplacer le focus vers la cellule de la colonne "Sélectionner"
-            let selectCell = cell.getRow().getCell("select");
-            if (selectCell) {
-                // On force le focus sur l'élément de la cellule
-                selectCell.getElement().focus();
-            }
-        }, 50);
+      success(input.value);
+      cell.getRow().select();
+      setTimeout(() => {
+        let selectCell = cell.getRow().getCell("select");
+        if (selectCell) {
+          selectCell.getElement().focus();
+        }
+      }, 50);
     }
 
     input.addEventListener("blur", commit);
-
     input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            commit();
-        }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commit();
+      } else if (e.key === "Escape") {
+        cancel();
+      }
     });
 
     return input;
   }
-
-
 /**
  * Ajoute la navigation par la touche Enter à l'élément d'édition.
  * @param {HTMLElement} editorElement - L'élément de l'éditeur (input, textarea, etc.).
@@ -931,59 +1100,66 @@ function ouvrirPopupFournisseur(compteFournisseur, row, cell, tauxTVA) {
 
     Swal.fire({
       title: 'Ajouter un nouveau fournisseur',
-      width: '800px',
+      width: '900px',
       html: `
-        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-          <!-- Ligne 1 : Compte et Intitulé -->
-          <div style="flex: 1 1 45%;">
-            <input id="swal-compte" class="swal2-input" placeholder="Compte" value="">
-          </div>
-          <div style="flex: 1 1 45%;">
-            <input id="swal-intitule" class="swal2-input" placeholder="Intitulé" required value="${compteFournisseur}">
-          </div>
-          <!-- Ligne 2 : Identifiant Fiscal et ICE -->
-          <div style="flex: 1 1 45%;">
-            <input id="swal-identifiant" class="swal2-input" placeholder="Identifiant Fiscal"
-                   pattern="^\\d{7,8}$" maxlength="8" title="L'identifiant fiscal doit comporter 7 ou 8 chiffres"
-                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-          </div>
-          <div style="flex: 1 1 45%;">
-            <input id="swal-ICE" class="swal2-input" placeholder="ICE"
-                   pattern="^\\d{15}$" maxlength="15" title="L'ICE doit comporter exactement 15 chiffres"
-                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-          </div>
-          <!-- Ligne 3 : Rubrique et Contre-partie sur une seule ligne -->
-          <div style="display: flex; flex-wrap: nowrap; gap: 10px; width: 100%;">
-            <div style="flex: 1;">
-              <select id="swal-rubrique" class="swal2-input"></select>
-            </div>
-            <div style="flex: 1;">
-              <select id="swal-contre-partie" class="swal2-input"></select>
-            </div>
-          </div>
-          <!-- Ligne 4 : Nature de l'opération et Désignation sur une seule ligne -->
-          <div style="display: flex; flex-wrap: nowrap; gap: 10px; width: 100%;">
-            <div style="flex: 1;">
-              <label for="swal-nature_operation" style="font-size: 0.85rem; margin-bottom: 3px; display:block;">
-                Nature de l'opération
-              </label>
-              <select id="swal-nature_operation" class="swal2-input form-select form-select-sm shadow-sm">
-                <option value="">Sélectionner une option</option>
-                <option value="1-Achat de biens d'équipement">1-Achat de biens d'équipement</option>
-                <option value="2-Achat de travaux">2-Achat de travaux</option>
-                <option value="3-Achat de services">3-Achat de services</option>
-              </select>
-            </div>
-       <div style="flex: 1;">
-    <label for="swal-designation" style="font-size: 0.85rem; margin-bottom: 2px; display:block;">
-      Désignation
-    </label>
-    <input id="swal-designation" class="swal2-input" placeholder="">
+<div style="max-width:800px; margin:auto; padding:25px; border:1px solid #ddd; border-radius:8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); box-sizing:border-box;">
+  <div style="display:flex; flex-wrap:wrap; gap:10px; box-sizing:border-box;">
+    <!-- Ligne 1 : Compte et Intitulé -->
+    <div style="width:calc(50% - 5px); box-sizing:border-box;">
+      <label for="swal-compte" style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:3px;">Compte:</label>
+      <input id="swal-compte" class="swal2-input" placeholder="Compte" style="width:100%; height:35px; padding:5px; box-sizing:border-box;" value="">
+    </div>
+    <div style="width:calc(45% - 5px); box-sizing:border-box;">
+      <label for="swal-intitule" style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:3px;">Intitulé:</label>
+      <input id="swal-intitule" class="swal2-input" placeholder="Intitulé" style="width:100%; height:35px; padding:5px; box-sizing:border-box;" required value="${compteFournisseur}">
+    </div>
+
+    <!-- Ligne 2 : Identifiant Fiscal et ICE -->
+    <div style="width:calc(50% - 5px); box-sizing:border-box;">
+      <label for="swal-identifiant" style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:3px;">Identifiant Fiscal:</label>
+      <input id="swal-identifiant" class="swal2-input" placeholder="Identifiant Fiscal" style="width:100%; height:35px; padding:5px; box-sizing:border-box;"
+             pattern="^\\d{7,8}$" maxlength="8" title="L'identifiant fiscal doit comporter 7 ou 8 chiffres"
+             oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+    </div>
+    <div style="width:calc(45% - 5px); box-sizing:border-box;">
+      <label for="swal-ICE" style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:3px;">ICE:</label>
+      <input id="swal-ICE" class="swal2-input" placeholder="ICE" style="width:100%; height:35px; padding:5px; box-sizing:border-box;"
+             pattern="^\\d{15}$" maxlength="15" title="L'ICE doit comporter exactement 15 chiffres"
+             oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+    </div>
+
+    <!-- Ligne 3 : Nature de l'opération et Contre‑partie -->
+    <div style="width:calc(50% - 5px); box-sizing:border-box;">
+      <label for="swal-nature_operation" style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:3px;">Nature de l'opération:</label>
+      <select id="swal-nature_operation" class="swal2-input form-select" style="width:100%; height:35px; padding:5px; box-sizing:border-box;">
+        <option value="">Sélectionner une option</option>
+        <option value="1-Achat de biens d'équipement">1-Achat de biens d'équipement</option>
+        <option value="2-Achat de travaux">2-Achat de travaux</option>
+        <option value="3-Achat de services">3-Achat de services</option>
+      </select>
+    </div>
+    <div style="width:calc(50% - 5px); box-sizing:border-box;">
+      <label for="swal-contre-partie" style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:3px;">Contre‑partie:</label>
+      <select id="swal-contre-partie" class="swal2-input" style="width:100%; height:35px; padding:5px; box-sizing:border-box;">
+        <option value="">Sélectionner</option>
+        <!-- Ajoutez ici vos options -->
+      </select>
+    </div>
+
+    <!-- Ligne 4 : Rubrique TVA et Désignation -->
+    <div style="width:calc(50% - 5px); box-sizing:border-box;">
+      <label for="swal-rubrique" style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:3px;">Rubrique TVA:</label>
+      <select id="swal-rubrique" class="swal2-input" style="width:100%; height:35px; padding:5px; box-sizing:border-box;">
+        <option value="">Sélectionner</option>
+        <!-- Ajoutez ici vos options -->
+      </select>
+    </div>
+    <div style="width:calc(45% - 5px); box-sizing:border-box;">
+      <input id="swal-designation" class="swal2-input" placeholder="Désignation" style="width:100%; height:35px; padding:5px; box-sizing:border-box;">
+    </div>
   </div>
+</div>
 
-
-          </div>
-        </div>
       `,
       didOpen: () => {
         // Auto-incrémente le compte dans le champ "swal-compte"
@@ -1012,15 +1188,14 @@ function ouvrirPopupFournisseur(compteFournisseur, row, cell, tauxTVA) {
           selectContrePartie.select2({ dropdownParent: dropdownParent });
         }
 
-       // Initialisation de Select2 pour le select concerné (par exemple, pour "swal-nature_operation")
-var selectNature = $('#swal-nature_operation');
-if (selectNature.length) {
-  selectNature.select2({
-    dropdownParent: $('.swal2-container'),
-    width: '100%'
-  });
-}
-
+        // Initialisation de Select2 pour le select "swal-nature_operation"
+        var selectNature = $('#swal-nature_operation');
+        if (selectNature.length) {
+          selectNature.select2({
+            dropdownParent: $('.swal2-container'),
+            width: '100%'
+          });
+        }
       },
       focusConfirm: false,
       showCancelButton: true,
@@ -1098,11 +1273,309 @@ if (selectNature.length) {
   }
 
 
+  // Fonction éditeur personnalisé pour le plan comptable
+// Fonction éditeur personnalisé pour le plan comptable
+function customListEditorPlanComptable(cell, onRendered, success, cancel, editorParams) {
+    // Création du container principal
+    var container = document.createElement("div");
+    container.className = "custom-list-editor-container";
+    container.style.position = "relative";
+
+    // Création de l'input
+    var input = document.createElement("input");
+    input.type = "text";
+    input.style.width = "100%";
+    input.style.boxSizing = "border-box";
+    input.placeholder = "Rechercher...";
+    input.value = cell.getValue() || "";
+    container.appendChild(input);
+
+    // Initialisation du tableau d'options (sera rempli par l'appel async)
+    var options = [];
+
+    // Création du dropdown personnalisé (ajouté au body pour éviter les problèmes de overflow)
+    var dropdown = document.createElement("div");
+    dropdown.className = "custom-dropdown";
+    dropdown.style.position = "absolute";
+    dropdown.style.background = "#fff";
+    dropdown.style.border = "1px solid #ccc";
+    dropdown.style.maxHeight = "200px";
+    dropdown.style.overflowY = "auto";
+    dropdown.style.zIndex = "10000";
+    dropdown.style.display = "none"; // caché par défaut
+    document.body.appendChild(dropdown);
+
+    // Positionnement du dropdown sous l'input
+    function positionDropdown() {
+        var rect = input.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + window.scrollY) + "px";
+        dropdown.style.left = (rect.left + window.scrollX) + "px";
+        dropdown.style.width = rect.width + "px";
+    }
+
+    // Mise à jour du contenu du dropdown en fonction de la saisie
+    function updateDropdown() {
+        dropdown.innerHTML = "";
+        var search = input.value.trim().toLowerCase();
+        var filtered = options.filter(function(opt) {
+            return opt.toLowerCase().indexOf(search) !== -1;
+        });
+
+        if (filtered.length > 0) {
+            filtered.forEach(function(opt) {
+                var item = document.createElement("div");
+                item.textContent = opt;
+                item.style.padding = "5px";
+                item.style.cursor = "pointer";
+                item.style.borderBottom = "1px solid #eee";
+                item.addEventListener("mousedown", function(e) {
+                    e.preventDefault();
+                    input.value = opt;
+                    dropdown.style.display = "none";
+                    success(opt);
+                });
+                dropdown.appendChild(item);
+            });
+        } else {
+            // Aucun résultat : affichage du message et du bouton pour ajouter un compte
+            var item = document.createElement("div");
+            item.style.display = "flex";
+            item.style.justifyContent = "space-between";
+            item.style.alignItems = "center";
+            item.style.padding = "5px";
+            item.style.borderBottom = "1px solid #eee";
+
+            var message = document.createElement("span");
+            message.textContent = "Compte non trouvé";
+            message.style.color = "red";
+            item.appendChild(message);
+
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.innerHTML = '<i class="fas fa-plus-circle" style="color:green;"></i>';
+            btn.style.border = "none";
+            btn.style.background = "none";
+            btn.style.cursor = "pointer";
+            btn.addEventListener("mousedown", function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: "Compte non trouvé",
+                    text: "Voulez-vous ajouter ce compte ?",
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonText: "Oui, ajouter",
+                    cancelButtonText: "Non"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        ouvrirPopupPlanComptable(input.value, cell.getRow(), cell);
+                    } else {
+                        input.focus();
+                    }
+                });
+            });
+            item.appendChild(btn);
+            dropdown.appendChild(item);
+        }
+        positionDropdown();
+        dropdown.style.display = "block";
+    }
+
+    // Événements sur l'input
+    input.addEventListener("input", function() {
+        updateDropdown();
+    });
+    input.addEventListener("focus", function() {
+        updateDropdown();
+    });
+    input.addEventListener("blur", function() {
+        setTimeout(function(){
+            dropdown.style.display = "none";
+            if (options.indexOf(input.value) !== -1) {
+                success(input.value);
+            }
+        }, 150);
+    });
+
+    // Au rendu, on récupère les options via la fonction asynchrone valuesLookup
+    onRendered(function() {
+        input.focus();
+        if (editorParams && typeof editorParams.valuesLookup === "function") {
+            editorParams.valuesLookup(cell)
+                .then(function(result) {
+                    options = result;
+                    console.log("Options récupérées :", options);
+                    updateDropdown();
+                })
+                .catch(function(err) {
+                    console.error("Erreur lors de la récupération des options :", err);
+                    updateDropdown();
+                });
+        } else {
+            updateDropdown();
+        }
+    });
+
+    return container;
+}
+
+// Définition de la colonne "Contre-Partie"
+var contrePartieColumn = {
+    title: "Contre-Partie",
+    field: "contre_partie",
+    headerFilter: "input",
+    headerFilterParams: {
+        elementAttributes: {
+            style: "width: 85px; height: 25px;"
+        }
+    },
+    editor: customListEditorPlanComptable,
+    editorParams: {
+        autocomplete: true,
+        listOnEmpty: true,
+        // Fonction asynchrone qui récupère et fusionne les données
+        valuesLookup: async function(cell) {
+            const societeId = $('#societe_id').val();
+            if (!societeId) {
+                alert("Veuillez sélectionner une société avant de modifier la Contre-Partie.");
+                return [];
+            }
+            try {
+                let fournisseurData = [];
+                let codeJournalData = [];
+                let planComptableData = [];
+
+                // Récupération des contre-parties fournisseurs
+                const fournisseurResponse = await fetch(`/get-all-contre-parties?societe_id=${societeId}`);
+                if (fournisseurResponse.ok) {
+                    const data = await fournisseurResponse.json();
+                    fournisseurData = data.map(item => item.contre_partie);
+                } else {
+                    console.error("Erreur lors de la récupération des contre-parties fournisseurs.");
+                }
+
+                // Récupération des contre-parties liées au code journal (si défini)
+                if (typeof selectedCodeJournal !== "undefined" && selectedCodeJournal) {
+                    const codeJournalResponse = await fetch(`/get-contre-parties?code_journal=${selectedCodeJournal}`);
+                    if (codeJournalResponse.ok) {
+                        const data = await codeJournalResponse.json();
+                        codeJournalData = data.map(item => item.contre_partie);
+                    } else {
+                        console.error("Erreur lors de la récupération des contre-parties du code journal.");
+                    }
+                }
+
+                // Récupération de la liste des comptes du plan comptable
+                const planComptableResponse = await fetch(`/get-plan-comptable?societe_id=${societeId}`);
+                if (planComptableResponse.ok) {
+                    const data = await planComptableResponse.json();
+                    planComptableData = data.map(item => item.compte);
+                } else {
+                    console.error("Erreur lors de la récupération des comptes du plan comptable.");
+                }
+
+                // Fusion des listes en supprimant les doublons
+                let mergedData = [...new Set([...fournisseurData, ...codeJournalData, ...planComptableData])];
+
+                // Priorisation : si un code journal est sélectionné et renvoie des données, placer sa contre-partie en premier
+                if (typeof selectedCodeJournal !== "undefined" && selectedCodeJournal && codeJournalData.length > 0) {
+                    let cpJournal = codeJournalData[0]; // on prend la première valeur
+                    const index = mergedData.indexOf(cpJournal);
+                    if (index > -1) {
+                        mergedData.splice(index, 1);
+                    }
+                    mergedData.unshift(cpJournal);
+                }
+                // Sinon, si un compte fournisseur est sélectionné, le placer en tête
+                else if (typeof selectedFournisseur !== "undefined" && selectedFournisseur) {
+                    const index = mergedData.indexOf(selectedFournisseur);
+                    if (index > -1) {
+                        mergedData.splice(index, 1);
+                    }
+                    mergedData.unshift(selectedFournisseur);
+                }
+
+                console.log("Liste fusionnée des contre-parties :", mergedData);
+                return mergedData;
+            } catch (error) {
+                console.error("Erreur lors de la récupération des contre-parties :", error);
+                alert("Impossible de récupérer les contre-parties.");
+                return [];
+            }
+        }
+    },
+    cellEdited: function(cell) {
+        console.log("Contre-Partie mise à jour :", cell.getValue());
+    }
+};
+
+
+
+
+
+
+
+  function ouvrirPopupPlanComptable(compteInitial, row, cell) {
+    // Récupérer l'identifiant de la société via une balise meta
+    const societeId = document.querySelector('meta[name="societe_id"]').getAttribute("content");
+
+    Swal.fire({
+      title: 'Ajouter un compte',
+      width: '800px',
+      html: `
+           <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <label for="swal-compte" style="font-weight: bold; font-size: 0.9rem; white-space: nowrap;">Compte:</label>
+          <input id="swal-compte" class="swal2-input" placeholder="Compte" style="width: 200px; height: 35px;" value="${compteInitial || ''}">
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <label for="swal-intitule" style="font-weight: bold; font-size: 0.9rem; white-space: nowrap;">Intitulé:</label>
+          <input id="swal-intitule" class="swal2-input" placeholder="Intitulé" style="width: 200px; height: 35px;" required>
+        </div>
+      </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Ajouter',
+      preConfirm: () => {
+        return {
+          compte: document.getElementById('swal-compte').value,
+          intitule: document.getElementById('swal-intitule').value,
+          societe_id: societeId
+        };
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        fetch('/plancomptable', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify(result.value)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            Swal.fire('Erreur', data.error, 'error');
+          } else {
+            // Mise à jour de la cellule avec le compte seulement
+            cell.setValue(data.data.compte);
+            Swal.fire('Succès', data.message, 'success');
+          }
+        })
+        .catch(error => {
+          console.error('Erreur:', error);
+          Swal.fire('Erreur', "Une erreur est survenue lors de l'enregistrement.", 'error');
+        });
+      }
+    });
+  }
+
 
 
 document.addEventListener("DOMContentLoaded", function () {
     // Liste des sections
-    const sections = ["achats", "ventes", "Caisse", "Banque","operations-diverses"];
+    const sections = ["achats", "ventes"];
 
     // Fonction pour initialiser une section
     function initializeSection(section) {
@@ -1141,7 +1614,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
         // Déclaration des tables Tabulator
-var tableAch, tableVentes, tableBanque, tableCaisse,tableOP;
+var tableAch, tableVentes;
 // Liste des mois en anglais et en français
 const moisAnglais = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const moisFrancais = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -1169,16 +1642,12 @@ function loadExerciceSocialAndPeriodes() {
             const anneeDebut = new Date(sessionSocialData.exercice_social_debut).getFullYear();
             $('#annee-achats').val(anneeDebut);
             $('#annee-ventes').val(anneeDebut);
-            $('#annee-Caisse').val(anneeDebut);
-            $('#annee-Banque').val(anneeDebut);
-          $('#annee-operations-diverses').val(anneeDebut);
+
 
             // Peupler les périodes pour tous les onglets
             populateMonths('achats', periodesData);
             populateMonths('ventes', periodesData);
-            populateMonths('Banque', periodesData);
-            populateMonths('Caisse', periodesData);
-            populateMonths('operations-diverses', periodesData);
+
         })
         .fail(function (jqXHR, textStatus, errorThrown) {
             console.error('Erreur lors du chargement des données :', textStatus, errorThrown);
@@ -1231,7 +1700,7 @@ function updateTabulatorDate(year, month) {
     const formattedDate = `${year}-${month.padStart(2, '0')}-01`;
 
     // Met à jour la date dans toutes les tables Tabulator
-    [tableAch, tableVentes, tableBanque,tableCaisse,tableOP].forEach(function(table) {
+    [tableAch,tableVentes].forEach(function(table) {
         table.updateData(table.getData().map(row => ({
             ...row,
             date: formattedDate,
@@ -1262,7 +1731,7 @@ function setupPeriodChangeHandler(onglet) {
 // Fonction de gestion des changements dans les boutons radio
 function setupFilterEventHandlers() {
     // Liste des onglets à gérer
-    const onglets = ['Achats', 'Ventes', 'Banque','Caisse','Operations-diverses'];
+    const onglets = ['achats','ventes'];
 
     // Parcourir chaque onglet et mettre en place un gestionnaire pour chaque
     onglet => {
@@ -1283,14 +1752,15 @@ function setupFilterEventHandlers() {
 $(document).ready(function () {
     loadExerciceSocialAndPeriodes();
     setupFilterEventHandlers();
-    ['achats', 'ventes', 'Banque','Caisse','operations'].forEach(onglet => {
+    ['achats', 'ventes'].forEach(onglet => {
         setupPeriodChangeHandler(onglet);
     });
 });
 
 
 
-var tableAch, tableVentes, tableBanque,tableCaisse,tableOP;
+
+var tableAch, tableVentes;
 
        $(document).ready(function () {
 
@@ -1328,7 +1798,7 @@ function loadJournaux(typeJournal, selectId) {
 
 // Vérifier si un journal est sélectionné
 function checkJournalSelection() {
-    const selectedJournal = $('#journal-achats').val() || $('#journal-ventes').val() || $('#journal-Banque').val() || $('#journal-Caisse').val() || $('#journal-operations-diverses').val();
+    const selectedJournal = $('#journal-achats').val() || $('#journal-ventes').val();
 
     if (!selectedJournal) {
         // Afficher l'alerte si aucun journal n'est sélectionné
@@ -1349,9 +1819,7 @@ $('input, select').on('change', function () {
 // Charger les journaux pour chaque onglet
 loadJournaux('achats', '#journal-achats');
 loadJournaux('ventes', '#journal-ventes');
-loadJournaux('Banque', '#journal-Banque');
-loadJournaux('Caisse', '#journal-Caisse');
-loadJournaux('operations-diverses', '#journal-operations-diverses');
+
 
 // Gestion des changements de journal
 $('select').on('change', function () {
@@ -1403,25 +1871,37 @@ class TabulatorManager {
 const journalSelectors = [
     '#journal-achats',
     '#journal-ventes',
-    '#journal-Banque',
-    '#journal-Caisse',
-    '#journal-operations-diverses'
+
 ];
 // Initialiser le gestionnaire de Tabulator avec les sélecteurs des journaux
 const tabulatorManager = new TabulatorManager(journalSelectors);
 
 
 
-
-
-
 const { DateTime } = luxon;
 
-let societeId = $('#societe_id').val();
-if (!societeId) {
-    alert('L\'ID de la société est introuvable.');
-    throw new Error("ID de la société manquant.");
-}
+document.addEventListener("DOMContentLoaded", function(){
+
+
+
+
+
+    // Mettre à jour window.filterAchats lors du changement de sélection
+    const radios = document.querySelectorAll('input[name="filter-achats"]');
+    radios.forEach(radio => {
+        radio.addEventListener("change", function(){
+            window.filterAchats = this.value;
+            console.log("Nouveau filtre sélectionné :", window.filterAchats);
+        });
+    });
+
+    // Initialiser la variable globale avec la valeur du radio checked au chargement
+    window.filterAchats = document.querySelector('input[name="filter-achats"]:checked')?.value || "";
+});
+
+
+
+
 
 // Fonction pour récupérer les rubriques TVA
 async function fetchRubriquesTva() {
@@ -1447,24 +1927,35 @@ async function fetchComptesTva() {
 }
 
 // Initialisation des tables après récupération des données
-(async function initTables() {
-    try {
-        const { ventes: rubriquesVentes, achats: rubriquesAchats } = await fetchRubriquesTva();
-        const { ventes: comptesVentes, achats: comptesAchats } = await fetchComptesTva();
+// Fonction d'initialisation de la table et des données
+    (async function initTables() {
+        try {
+            // Récupération d'autres données (rubriques, comptes TVA, etc.)
+            const { ventes: rubriquesVentes, achats: rubriquesAchats } = await fetchRubriquesTva();
+            const { ventes: comptesVentes, achats: comptesAchats } = await fetchComptesTva();
 
-        // Récupération des clients et fournisseurs
-        const clients = await fetch(`/get-clients?societe_id=${societeId}`).then(res => res.json());
-        const fournisseurs = await fetch(`/get-fournisseurs-avec-details?societe_id=${societeId}`).then(res => res.json());
+            // Récupération des clients (si nécessaire)
+            const clients = await fetch(`/get-clients?societe_id=${societeId}`).then(res => res.json());
+            window.clients = clients; // Pour y accéder globalement si besoin
+            window.comptesClients = clients.map(client => `${client.compte} - ${client.intitule}`);
 
-        const comptesClients = clients.map(client => `${client.compte} - ${client.intitule}`);
-        const comptesFournisseurs = fournisseurs.map(fournisseur => `${fournisseur.compte} - ${fournisseur.intitule}`);
+            // Récupération des fournisseurs avec détails (les données brutes attendues)
+            const fournisseurs = await fetch(`/get-fournisseurs-avec-details?societe_id=${societeId}`)
+                .then(res => res.json());
 
+            // Stocker globalement les données brutes pour utilisation ultérieure
+            window.comptesFournisseurs = fournisseurs;
+
+            // Créer une version formatée pour l'éditeur (tableau de chaînes "compte - intitule")
+            window.formattedComptesFournisseurs = getFormattedComptesFournisseurs();
+
+            console.log("comptesFournisseurs:", window.comptesFournisseurs);
+            console.log("formattedComptesFournisseurs:", window.formattedComptesFournisseurs);
 
                 // Fonction pour formater les valeurs en monnaie
                 function formatCurrency(value) {
-                    if (value == null) return '0,00';
-                    return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,').replace('.', ',');
-                }
+                    return parseFloat(value).toFixed(2);
+                  }
 
 
                 let numeroIncrementGlobal = 1; // Compteur global pour les pièces justificatives
@@ -1478,13 +1969,21 @@ async function fetchComptesTva() {
                 });
 
 
+// Variables globales pour le suivi de la valeur précédente et du mode couleur
+let lastPiece = null;
+let toggle = false;
         // Table des achats
         var tableAch = new Tabulator("#table-achats", {
             height: "500px",
             layout: "fitColumns",
-             clipboard:true,
+            // reactiveData: true,
+            rowHeight: 30, // définit la hauteur de ligne à 30px
+
+           clipboard:true,
            clipboardPasteAction:"replace",
            placeholder: "Aucune donnée disponible",
+            // Regrouper les lignes par numero_facture
+
     ajaxResponse: function(url, params, response) {
         console.log("Données reçues :", response);
 
@@ -1507,21 +2006,22 @@ async function fetchComptesTva() {
             printHeader:"<h1>Table Achats<h1>",
             printFooter:"<h2>Example Table Footer<h2>",
             selectable: true,
-            footerElement: "<table style='width: 30%; margin-top: 6px; border-collapse: collapse;'>" +
-                                    "<tr>" +
-                                        "<td style='padding: 8px; text-align: left; font-weight: bold;'>Cumul Débit :</td>" +
-                                        "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='cumul-debit-achats'></span></td>" +
-                                        "<td style='padding: 8px; text-align: left; font-weight: bold;'>Cumul Crédit :</td>" +
-                                        "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='cumul-credit-achats'></span></td>" +
-                                    "</tr>" +
-                                    "<tr>" +
-                                        "<td style='padding: 8px; text-align: left; font-weight: bold;'>Solde Débiteur :</td>" +
-                                        "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='solde-debit-achats'></span></td>" +
-                                        "<td style='padding: 8px; text-align: left; font-weight: bold;'>Solde Créditeur :</td>" +
-                                        "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='solde-credit-achats'></span></td>" +
-                                    "</tr>" +
-                                    "</table>",  // Footer sous forme de tableau avec des styles inline
+            footerElement: "<table style='width: 15%; margin-top: 6px; border-collapse: collapse;'>" +
+    "<tr>" +
+        "<td style='padding: 8px; text-align: left; font-weight: bold; font-size: 11px;'>Cumul Débit :</td>" +
+        "<td style='padding: 8px; text-align: center; font-size: 10px;'><span id='cumul-debit-achats'></span></td>" +
+        "<td style='padding: 8px; text-align: left; font-weight: bold; font-size: 11px;'>Cumul Crédit :</td>" +
+        "<td style='padding: 8px; text-align: center; font-size: 10px;'><span id='cumul-credit-achats'></span></td>" +
+    "</tr>" +
+    "<tr>" +
+        "<td style='padding: 8px; text-align: left; font-weight: bold; font-size: 11px;'>Solde Débiteur :</td>" +
+        "<td style='padding: 8px; text-align: center; font-size: 10px;'><span id='solde-debit-achats'></span></td>" +
+        "<td style='padding: 8px; text-align: left; font-weight: bold; font-size: 11px;'>Solde Créditeur :</td>" +
+        "<td style='padding: 8px; text-align: center; font-size: 10px;'><span id='solde-credit-achats'></span></td>" +
+    "</tr>" +
+"</table>",  // Footer sous forme de tableau avec des styles inline
             // data: Array(1).fill({}),
+
             columns: [
                 { title: "ID", field: "id", visible: false },
 
@@ -1532,7 +2032,7 @@ async function fetchComptesTva() {
                     headerFilter: "input",
                     headerFilterParams: {
                         elementAttributes: {
-                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                            style: "width: 80px; height: 25px;" // 80 pixels de large
                         }
                     },
                     sorter: "date",
@@ -1675,110 +2175,94 @@ async function fetchComptesTva() {
                         headerFilter: "input",
                         headerFilterParams: {
                             elementAttributes: {
-                                style: "width: 90px; height: 20px;" // 80 pixels de large
+                                style: "width: 80px; height: 25px;" // 80 pixels de large
                             }
                         },
                         editor: genericTextEditor
                     },
- // Colonne "Compte" avec gestion de la vérification du fournisseur
- {
+
+// Configuration de la colonne "Compte" dans Tabulator
+{
     title: "Compte",
     field: "compte",
     headerFilter: "input",
     headerFilterParams: {
-      elementAttributes: { style: "width: 120px; height: 20px;" }
+        elementAttributes: { style: "width: 85px; height: 25px;" }
     },
-    editor: customListEditorFrs, // Utilise l'éditeur personnalisé pour fournisseurs
+    editor: function(cell, onRendered, success, cancel) {
+        let currentFilter = document.querySelector('input[name="filter-achats"]:checked')?.value;
+        console.log("Editor - filter-achats =", currentFilter);
+
+        if (currentFilter === 'libre') {
+            // Mode libre : éditeur <select> affichant "compte - intitule"
+            let editor = document.createElement("select");
+            editor.style.width = "100%";
+            editor.style.height = "100%";
+            fetch('/fournisseurs-comptes')
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(compteObj => {
+                        let option = document.createElement("option");
+                        option.textContent = `${compteObj.compte} - ${compteObj.intitule || ""}`;
+                        option.value = compteObj.compte;
+                        editor.appendChild(option);
+                    });
+                    editor.value = cell.getValue() || "";
+                    onRendered(() => editor.focus());
+                })
+                .catch(error => {
+                    console.error("Erreur lors du chargement des comptes :", error);
+                    cancel();
+                });
+            editor.addEventListener("change", function(){
+                success(editor.value);
+            });
+            editor.addEventListener("blur", function(){
+                success(editor.value);
+            });
+            return editor;
+        } else if (currentFilter === 'contre-partie') {
+            // Mode contre-partie : utilisation de l'éditeur personnalisé customListEditorFrs
+            return customListEditorFrs(cell, onRendered, success, cancel, {
+                values: window.formattedComptesFournisseurs
+            });
+        } else {
+            let input = document.createElement("input");
+            input.type = "text";
+            input.value = cell.getValue() || "";
+            onRendered(() => input.focus());
+            input.addEventListener("blur", function(){
+                success(input.value);
+            });
+            return input;
+        }
+    },
     editorParams: {
-      autocomplete: true,
-      listOnEmpty: true,
-      values: comptesFournisseurs // Ex : ["001 - Fournisseur A", "002 - Fournisseur B", ...]
+        autocomplete: true,
+        listOnEmpty: true,
+        values: window.formattedComptesFournisseurs || []
+    },
+    formatter: function(cell) {
+        // Affiche uniquement le numéro de compte (avant " - ")
+        let value = cell.getValue();
+        if (value && typeof value === "string") {
+            let parts = value.split(" - ");
+            return parts[0];
+        }
+        return value;
     },
     cellEdited: function(cell) {
-      const compteFournisseur = cell.getValue();
-      const row = cell.getRow();
-      if (!compteFournisseur) return;
+        let currentFilter = document.querySelector('input[name="filter-achats"]:checked')?.value;
+        const row = cell.getRow();
+        const compte = cell.getValue();
+        if (!compte) return;
 
-      // Récupération et initialisation du taux TVA global
-      window.tauxTVAGlobal = window.tauxTVAGlobal || 0;
-      let tauxTVA = window.tauxTVAGlobal;
+        // Appeler updateLibelleAndFocus pour les deux modes, libre ou contre-partie
+        updateLibelleAndFocus(row, compte);
 
-      // Vérifier l'existence du fournisseur via fetch
-      fetch(`/get-fournisseurs-avec-details?societe_id=${societeId}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.error) {
-            console.error("Erreur lors de la récupération :", data.error);
-            return;
-          }
-          // Recherche dans le format "compte - intitule"
-          const fournisseur = data.find(f => `${f.compte} - ${f.intitule}` === compteFournisseur);
-          if (fournisseur) {
-            // Utilisation directe du taux TVA fourni par le fournisseur
-            tauxTVA = parseFloat(fournisseur.taux_tva) || 0;
-            window.tauxTVAGlobal = tauxTVA;
-            const rubriqueTVA = fournisseur.rubrique_tva || "";
-            const contrePartie = fournisseur.contre_partie || "";
-            const numeroFacture = row.getCell("numero_facture").getValue() || "Inconnu";
-
-            row.update({
-              contre_partie: contrePartie,
-              rubrique_tva: rubriqueTVA,
-              taux_tva: tauxTVA,
-              libelle: `F° ${numeroFacture} ${fournisseur.intitule}`,
-              compte_tva: (comptesVentes.length > 0)
-                ? `${comptesVentes[0].compte} - ${comptesVentes[0].intitule}`
-                : ""
-            });
-            // Le fournisseur étant trouvé, l'éditeur se ferme naturellement.
-          } else {
-            // Fournisseur non trouvé :
-            let editorEl = cell.getElement();
-            if (!editorEl.querySelector('.btn-ajouter-fournisseur')) {
-              editorEl.innerHTML = `
-                <div style="display: flex; flex-direction: column; padding: 5px;">
-                  <span style="color:red; font-size:0.9em;">Fournisseur non trouvé</span>
-                  <div style="display: flex; align-items: center; margin-top: 3px;">
-                    <span>${compteFournisseur}</span>
-                    <button type="button" class="btn-ajouter-fournisseur" title="Ajouter fournisseur"
-                      style="margin-left:5px; padding:0 5px; border:none; background:none; cursor:pointer;">
-                      <i class="fas fa-plus-circle" style="color:green;"></i>
-                    </button>
-                  </div>
-                </div>
-              `;
-              editorEl.querySelector('.btn-ajouter-fournisseur').addEventListener('click', () => {
-                Swal.fire({
-                  title: 'Fournisseur non trouvé',
-                  text: "Voulez-vous ajouter ce fournisseur ?",
-                  icon: 'question',
-                  showCancelButton: true,
-                  confirmButtonText: 'Oui, ajouter',
-                  cancelButtonText: 'Non'
-                }).then((resultConfirmation) => {
-                  if (resultConfirmation.isConfirmed) {
-                    ouvrirPopupFournisseur(compteFournisseur, row, cell, tauxTVA);
-                  } else {
-                    cell.edit();
-                  }
-                });
-              });
-            }
-            if (!cell._reopened) {
-              cell._reopened = true;
-              setTimeout(() => { cell.edit(); }, 100);
-            }
-          }
-        })
-        .catch(error => {
-          console.error("Erreur réseau :", error);
-          alert("Une erreur est survenue lors de la récupération du fournisseur.");
-        });
+        console.log("Valeur Compte mise à jour :", cell.getValue());
     }
-  },
-
-
-
+},
 
                     {
     title: "Libellé",
@@ -1786,7 +2270,7 @@ async function fetchComptesTva() {
     headerFilter: "input",
     headerFilterParams: {
         elementAttributes: {
-            style: "width: 90px; height: 20px;" // 80 pixels de large
+            style: "width: 85px; height: 25px;" // 80 pixels de large
         }
     },
     editor: genericTextEditorForLibelle
@@ -1798,7 +2282,7 @@ async function fetchComptesTva() {
                     headerFilter: "input",
                     headerFilterParams: {
                         elementAttributes: {
-                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                            style: "width: 85px; height: 25px;" // 80 pixels de large
                         }
                     },
                     editor: customNumberEditor, // Utilisation de notre éditeur personnalisé
@@ -1814,7 +2298,7 @@ async function fetchComptesTva() {
                     headerFilter: "input",
                     headerFilterParams: {
                         elementAttributes: {
-                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                            style: "width: 85px; height: 25px;" // 80 pixels de large
                         }
                     },
                     editor: customNumberEditor, // Utilisation de l'éditeur personnalisé
@@ -1830,69 +2314,7 @@ async function fetchComptesTva() {
                         console.log("Valeur Crédit mise à jour :", cell.getValue());
                     }
                 },
-                {
-                    title: "Contre-Partie",
-                    field: "contre_partie",
-                    headerFilter: "input",
-                    headerFilterParams: {
-                        elementAttributes: {
-                            style: "width: 90px; height: 20px;" // 80 pixels de large
-                        }
-                    },
-                    editor: customListEditor,
-                    editorParams: {
-                        autocomplete: true,
-                        listOnEmpty: true,
-                        valuesLookup: async function (cell) {
-                            const societeId = $('#societe_id').val();
-
-                            if (!societeId) {
-                                alert("Veuillez sélectionner une société avant de modifier la Contre-Partie.");
-                                return [];
-                            }
-
-                            try {
-                                let fournisseurData = [];
-                                let codeJournalData = [];
-
-                                // Récupération des contre-parties des fournisseurs
-                                const fournisseurResponse = await fetch(`/get-all-contre-parties?societe_id=${societeId}`);
-                                if (fournisseurResponse.ok) {
-                                    const data = await fournisseurResponse.json();
-                                    fournisseurData = data.map(item => item.contre_partie);  // 🔹 Retourner un tableau de valeurs
-                                } else {
-                                    console.error("Erreur lors de la récupération des contre-parties des fournisseurs.");
-                                }
-
-                                // Récupération des contre-parties via le code journal uniquement si défini
-                                if (selectedCodeJournal) {
-                                    const codeJournalResponse = await fetch(`/get-contre-parties?code_journal=${selectedCodeJournal}`);
-                                    if (codeJournalResponse.ok) {
-                                        const data = await codeJournalResponse.json();
-                                        codeJournalData = data.map(item => item.contre_partie);  // 🔹 Même correction ici
-                                    } else {
-                                        console.error("Erreur lors de la récupération des contre-parties du code journal.");
-                                    }
-                                }
-
-                                // Fusion des données sans doublons
-                                const mergedData = [...new Set([...fournisseurData, ...codeJournalData])];
-
-                                console.log("Contre-Parties fusionnées :", mergedData);
-                                return mergedData;  // 🔹 Retourner un tableau simple avec les valeurs
-                            } catch (error) {
-                                console.error("Erreur lors de la récupération des contre-parties :", error);
-                                alert("Impossible de récupérer les contre-parties.");
-                                return [];
-                            }
-                        }
-                    },
-                    cellEdited: function (cell) {
-                        console.log("Contre-Partie mise à jour :", cell.getValue());
-                    }
-                },
-
-
+                contrePartieColumn,
 
                 {
                     title: "Rubrique TVA",
@@ -1901,7 +2323,7 @@ async function fetchComptesTva() {
                     editor: customListEditor,
                     headerFilterParams: {
                         elementAttributes: {
-                            style: "width: 90px; height: 20px;" // 80 pixels de large
+                            style: "width: 85px; height: 25px;" // 80 pixels de large
                         }
                     },
                     editorParams: {
@@ -1910,70 +2332,78 @@ async function fetchComptesTva() {
                         values: rubriquesAchats
                     }
                 },
+
                 {
                     title: "Compte TVA",
                     field: "compte_tva",
                     headerFilter: "input",
                     editor: customListEditor,
                     headerFilterParams: {
-                        elementAttributes: {
-                            style: "width: 90px; height: 20px;" // 80 pixels de large
-                        }
+                      elementAttributes: { style: "width: 85px; height: 25px;" }
                     },
                     editorParams: {
-                        autocomplete: true,
-                        listOnEmpty: true,
-                        values: comptesVentes.map(compte => `${compte.compte} - ${compte.intitule}`)
+                      autocomplete: true,
+                      listOnEmpty: true,
+                      values: comptesVentes.map(function(compte) {
+                        return compte.compte + " - " + compte.intitule;
+                      })
                     }
-                },
-                {
+                  },
+                  {
                     title: "Prorat de deduction",
                     field: "prorat_de_deduction",
                     headerFilter: "input",
                     editor: customListEditor,
                     headerFilterParams: {
-                        elementAttributes: {
-                            style: "width: 90px; height: 20px;" // 80 pixels de large
-                        }
+                      elementAttributes: { style: "width: 85px; height: 25px;" }
                     },
                     editorParams: {
-                        autocomplete: true,
-                        listOnEmpty: true,
-                        values: ["Oui", "Non"]
+                      autocomplete: true,
+                      listOnEmpty: true,
+                      values: ["Oui", "Non"]
                     }
-                },
-                {
+                  },
+                  {
                     title: "Solde Cumulé",
-                    field: "value", // Ce champ contient le solde cumulé calculé
+                    field: "value",
                     headerFilter: "input",
                     headerFilterParams: {
-                        elementAttributes: {
-                            style: "width: 90px; height: 20px;" // 80 pixels de large
-                        }
+                      elementAttributes: { style: "width: 85px; height: 25px;" }
                     },
                     formatter: function(cell, formatterParams, onRendered) {
                         let val = cell.getValue();
+
+                        // Vérifier si c'est un nombre
                         if (val !== "" && !isNaN(val)) {
-                            return parseFloat(val).toFixed(2);
+                          let numericVal = parseFloat(val);
+
+                          // Si c'est -0, on le force à 0
+                          if (Object.is(numericVal, -0)) {
+                            numericVal = 0;
+                          }
+
+                          // Retourne la valeur formatée sur 2 décimales
+                          return numericVal.toFixed(2);
                         }
+
                         return val;
-                    }
-                },
-                {
+                      }
+                  },
+                  {
                     title: "Pièce",
                     field: "piece_justificative",
-                    headerFilter: "input",
-                    headerFilterParams: {
-                        elementAttributes: {
-                            style: "width: 90px; height: 20px;" // 80 pixels de large
-                        }
+                    editor: pieceEditor,
+                    formatter: function(cell) {
+                      return cell.getValue() || "Aucun fichier";
                     },
-                    editor: pieceEditor // Utilisation de l'éditeur personnalisé
-                },
-
-                {
+                    headerFilter:"input",
+                    headerFilterParams: {
+                      elementAttributes: { style: "width: 85px; height: 25px;" }
+                    }
+                  },
+                  {
                     title: "Sélectionner",
-                    field: "select",  // Champ ajouté pour pouvoir cibler cette colonne
+                    field: "select",
                     headerSort: false,
                     resizable: true,
                     frozen: true,
@@ -1983,50 +2413,81 @@ async function fetchComptesTva() {
                     hozAlign: "center",
                     formatter: "rowSelection",
                     titleFormatter: "rowSelection",
-                    // Rendre la cellule focusable et ajouter un écouteur keydown pour détecter "Enter"
-                    cellRendered: function(cell) {
-                        let el = cell.getElement();
-                        el.setAttribute("tabindex", "0"); // Permet de focaliser cette cellule
-                        el.addEventListener("keydown", function(e) {
-                            if (e.key === "Enter") {
-                                e.preventDefault();
-                                // Basculer la sélection de la ligne (toggle)
-                                cell.getRow().toggleSelect();
-                            }
-                        });
+                    cellEdited: function(cell) {
+                      var el = cell.getElement();
+                      el.setAttribute("tabindex", "0");
+                      el.addEventListener("keydown", function(e) {
+                        if(e.key === "Enter"){
+                          e.preventDefault();
+                          cell.getRow().toggleSelect();
+                        }
+                      });
                     }
                   },
 
-  { title: "Code_journal", field: "type_Journal", visible: false },
-  { title: "categorie", field: "categorie", visible: false },
-
-
+                  { title: "Code_journal", field: "type_Journal", visible: false },
+                  { title: "categorie", field: "categorie", visible: false }
                 ],
 
+                // Lorsque la cellule "Prorat de deduction" est éditée et validée (Enter)
+                cellEdited: function(cell) {
+                  if(cell.getField() === "prorat_de_deduction") {
+                    var row = cell.getRow();
+                    var rowData = row.getData();
+                    // Mise à jour du numéro de pièce
+                    var updatedData = updatePieceJustificative(table.getData());
+                    var updatedRow = updatedData.find(function(r) {
+                      return r.id === rowData.id;
+                    });
+                    if(updatedRow) {
+                      row.update({ piece_justificative: updatedRow.piece_justificative });
+                    }
+                    // Après validation, lancer l'éditeur de la cellule "Pièce" pour afficher le numéro calculé
+                    setTimeout(function(){
+                      row.getCell("piece_justificative").edit();
+                      // Ensuite, sélectionner la ligne et déplacer le focus sur la cellule "Sélectionner"
+                      setTimeout(function(){
+                        row.select();
+                        var selectCell = row.getCell("select");
+                        if(selectCell) {
+                          selectCell.getElement().focus();
+                        }
+                      }, 200);
+                    }, 100);
+                  }
+                },
+                    // Calcul et mise à jour des totaux dans le footer pour chaque rendu de ligne
+                    rowFormatter: function(row) {
+                        let data = row.getData();
 
-                rowFormatter: function(row) {
-    let debitTotal = 0;
-    let creditTotal = 0;
+                        // Appliquer le zebra striping en fonction de piece_justificative
+                        if (data.piece_justificative !== lastPiece) {
+                            toggle = !toggle;
+                            lastPiece = data.piece_justificative;
+                        }
+                        row.getElement().style.backgroundColor = toggle ? "#f2f2f2" : "#ffffff";
 
-    // Calcul des totaux pour toutes les lignes
-    row.getTable().getRows().forEach(function(r) {
-        debitTotal += parseFloat(r.getData().debit || 0);
-        creditTotal += parseFloat(r.getData().credit || 0);
-    });
+                        // Calculs cumulés (pour chaque row, ce qui peut être optimisé si nécessaire)
+                        let debitTotal = 0;
+                        let creditTotal = 0;
+                        row.getTable().getRows().forEach(function(r) {
+                            debitTotal += parseFloat(r.getData().debit || 0);
+                            creditTotal += parseFloat(r.getData().credit || 0);
+                        });
+                        let soldeDebiteur = debitTotal > creditTotal ? debitTotal - creditTotal : 0.00;
+                        let soldeCrediteur = creditTotal > debitTotal ? creditTotal - debitTotal : 0.00;
+                        // Mise à jour du footer (assurez-vous que ces éléments existent dans votre HTML)
+                        document.getElementById('cumul-debit-achats').innerText = formatCurrency(debitTotal);
+                        document.getElementById('cumul-credit-achats').innerText = formatCurrency(creditTotal);
 
-    // Règles de calcul pour le solde débiteur et créditeur
-    let soldeDebiteur = debitTotal > creditTotal ? debitTotal - creditTotal : 0.00;
-    let soldeCrediteur = creditTotal > debitTotal ? creditTotal - debitTotal : 0.00;
+                        document.getElementById('solde-debit-achats').innerText = formatCurrency(soldeDebiteur);
+                        document.getElementById('solde-credit-achats').innerText = formatCurrency(soldeCrediteur);
+                         // Diminuer la taille de la police pour ces éléments
 
-    // Mise à jour du footer avec les résultats
-    document.getElementById('cumul-debit-achats').innerText = formatCurrency(debitTotal);
-    document.getElementById('cumul-credit-achats').innerText = formatCurrency(creditTotal);
-    document.getElementById('solde-debit-achats').innerText = formatCurrency(soldeDebiteur);
-    document.getElementById('solde-credit-achats').innerText = formatCurrency(soldeCrediteur);
-}
+                    },
 
+                });
 
- });
 
 // Événement de mise à jour des champs
 // Récupérer le token CSRF du meta tag
@@ -2212,11 +2673,12 @@ document.querySelector("#journal-ventes").addEventListener("change", function() 
     console.log("Code journal sélectionné (Ventes):", selectedCodeJournal2);
 });
 
-
 // Table des ventes
 var tableVentes = new Tabulator("#table-ventes", {
     height: "500px",
     layout: "fitColumns",
+    rowHeight: 30, // définit la hauteur de ligne à 30px
+
     clipboard: true,
     clipboardPasteAction: "replace",
     placeholder: "Aucune donnée disponible",
@@ -2239,22 +2701,22 @@ var tableVentes = new Tabulator("#table-ventes", {
     },
     printAsHtml: true,
     printHeader: "<h1>Table Ventes</h1>",
-    printFooter: "<h2>Example Table Footer</h2>",
+    printFooter: "<h2>Table Footer</h2>",
     selectable: true,
-    footerElement: "<table style='width: 30%; margin-top: 6px; border-collapse: collapse;'>" +
-                        "<tr>" +
-                            "<td style='padding: 8px; text-align: left; font-weight: bold;'>Cumul Débit :</td>" +
-                            "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='cumul-debit-ventes'></span></td>" +
-                            "<td style='padding: 8px; text-align: left; font-weight: bold;'>Cumul Crédit :</td>" +
-                            "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='cumul-credit-ventes'></span></td>" +
-                        "</tr>" +
-                        "<tr>" +
-                            "<td style='padding: 8px; text-align: left; font-weight: bold;'>Solde Débiteur :</td>" +
-                            "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='solde-debit-ventes'></span></td>" +
-                            "<td style='padding: 8px; text-align: left; font-weight: bold;'>Solde Créditeur :</td>" +
-                            "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='solde-credit-ventes'></span></td>" +
-                        "</tr>" +
-                    "</table>",
+    footerElement:"<table style='width: 30%; margin-top: 6px; border-collapse: collapse;'>" +
+    "<tr>" +
+        "<td style='padding: 8px; text-align: left; font-weight: bold; font-size: 12px;'>Cumul Débit :</td>" +
+        "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='cumul-debit-ventes'></span></td>" +
+        "<td style='padding: 8px; text-align: left; font-weight: bold; font-size: 12px;'>Cumul Crédit :</td>" +
+        "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='cumul-credit-ventes'></span></td>" +
+    "</tr>" +
+    "<tr>" +
+        "<td style='padding: 8px; text-align: left; font-weight: bold; font-size: 12px;'>Solde Débiteur :</td>" +
+        "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='solde-debit-ventes'></span></td>" +
+        "<td style='padding: 8px; text-align: left; font-weight: bold; font-size: 12px;'>Solde Créditeur :</td>" +
+        "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='solde-credit-ventes'></span></td>" +
+    "</tr>" +
+"</table>",
     columns: [
         { title: "ID", field: "id", visible: false },
         {
@@ -2264,7 +2726,7 @@ var tableVentes = new Tabulator("#table-ventes", {
             headerFilter: "input",
             headerFilterParams: {
                 elementAttributes: {
-                    style: "width: 90px; height: 20px;" // 80 pixels de large
+                    style: "width: 85px; height: 25px;" // 80 pixels de large
                 }
             },
             sorter: "date",
@@ -2351,94 +2813,91 @@ var tableVentes = new Tabulator("#table-ventes", {
 
         { title: "N° dossier", field: "numero_dossier",headerFilter: "input",headerFilterParams: {
             elementAttributes: {
-                style: "width: 90px; height: 20px;" // 80 pixels de large
+                style: "width: 85px; height: 25px;" // 80 pixels de large
             }
         },
         editor: "input"
      },
         { title: "N° Facture", field: "numero_facture",headerFilter: "input",headerFilterParams: {
             elementAttributes: {
-                style: "width: 90px; height: 20px;" // 80 pixels de large
+                style: "width: 85px; height: 25px;" // 80 pixels de large
             }
         }, editor: "input" },
 
-       {
-  title: "Compte",
-  field: "compte",
-  headerFilter: "input",
-  headerFilterParams: {
-    elementAttributes: { style: "width: 90px; height: 20px;" }
-  },
-  // Utilisation de l'éditeur personnalisé pour les clients
-  editor: customListEditorClt,
-  editorParams: {
-    autocomplete: true,
-    listOnEmpty: true,
-    values: comptesClients // Exemple : ["001 - Client A", "002 - Client B", …]
-  },
-  cellEdited: function(cell) {
-    const compteClient = cell.getValue();
-    const row = cell.getRow();
-    if (!compteClient) return;
+        {
+            title: "Compte",
+            field: "compte",
+            headerFilter: "input",
+            headerFilterParams: {
+              elementAttributes: { style: "width: 85px; height: 25px;" }
+            },
+            // Utilisation de l'éditeur personnalisé pour les clients
+            editor: customListEditorClt,
+            editorParams: {
+              autocomplete: true,
+              listOnEmpty: true,
+              values: window.comptesClients // On passe la liste formatée
+            },
+            cellEdited: function(cell) {
+              const compteClient = cell.getValue();
+              const row = cell.getRow();
+              if (!compteClient) return;
 
-    // Recherche du client dans votre tableau de clients
-    const client = clients.find(c => `${c.compte} - ${c.intitule}` === compteClient);
-    const numeroDossier = row.getCell("numero_dossier").getValue() || "";
-    const numeroFacture = row.getCell("numero_facture").getValue() || "";
+              // Recherche du client dans le tableau global
+              const client = window.clients.find(c => `${c.compte} - ${c.intitule}` === compteClient);
+              const numeroDossier = row.getCell("numero_dossier").getValue() || "";
+              const numeroFacture = row.getCell("numero_facture").getValue() || "";
 
-    if (client) {
-      // Mise à jour du libellé si le client est trouvé
-      row.update({
-        libelle: `F°${numeroFacture} D°${numeroDossier} ${client.intitule}`
-      });
-    } else {
-      // Cas où le client n'est pas trouvé : on affiche un message et un bouton pour l'ajouter
-      let editorEl = cell.getElement();
-      if (!editorEl.querySelector('.btn-ajouter-client')) {
-        editorEl.innerHTML = `
-          <div style="display: flex; flex-direction: column; padding: 5px;">
-            <span style="color:red; font-size:0.9em;">Client non trouvé</span>
-            <div style="display: flex; align-items: center; margin-top: 3px;">
-              <span>${compteClient}</span>
-              <button type="button" class="btn-ajouter-client" title="Ajouter client"
-                style="margin-left:5px; padding:0 5px; border:none; background:none; cursor:pointer;">
-                <i class="fas fa-plus-circle" style="color:green;"></i>
-              </button>
-            </div>
-          </div>
-        `;
-        editorEl.querySelector('.btn-ajouter-client').addEventListener('click', () => {
-          Swal.fire({
-            title: 'Client non trouvé',
-            text: "Voulez-vous ajouter ce client ?",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Oui, ajouter',
-            cancelButtonText: 'Non'
-          }).then((resultConfirmation) => {
-            if (resultConfirmation.isConfirmed) {
-              // Appel de la fonction d'ouverture de la pop-up pour ajouter un client
-              ouvrirPopupClient(compteClient, row, cell);
-            } else {
-              cell.edit();
+              if (client) {
+                row.update({
+                  libelle: `F°${numeroFacture} D°${numeroDossier} ${client.intitule}`
+                });
+              } else {
+                // Affichage d'un message et d'un bouton pour ajouter un client
+                let editorEl = cell.getElement();
+                if (!editorEl.querySelector('.btn-ajouter-client')) {
+                  editorEl.innerHTML = `
+                    <div style="display: flex; flex-direction: column; padding: 5px;">
+                      <span style="color:red; font-size:0.9em;">Client non trouvé</span>
+                      <div style="display: flex; align-items: center; margin-top: 3px;">
+                        <span>${compteClient}</span>
+                        <button type="button" class="btn-ajouter-client" title="Ajouter client"
+                          style="margin-left:5px; padding:0 5px; border:none; background:none; cursor:pointer;">
+                          <i class="fas fa-plus-circle" style="color:green;"></i>
+                        </button>
+                      </div>
+                    </div>
+                  `;
+                  editorEl.querySelector('.btn-ajouter-client').addEventListener('click', () => {
+                    Swal.fire({
+                      title: 'Client non trouvé',
+                      text: "Voulez-vous ajouter ce client ?",
+                      icon: 'question',
+                      showCancelButton: true,
+                      confirmButtonText: 'Oui, ajouter',
+                      cancelButtonText: 'Non'
+                    }).then((resultConfirmation) => {
+                      if (resultConfirmation.isConfirmed) {
+                        ouvrirPopupClient(compteClient, row, cell);
+                      } else {
+                        cell.edit();
+                      }
+                    });
+                  });
+                }
+                if (!cell._reopened) {
+                  cell._reopened = true;
+                  setTimeout(() => { cell.edit(); }, 100);
+                }
+              }
+
+              // Focus sur la cellule "Débit"
+              const debitCell = row.getCell("debit");
+              if (debitCell) {
+                debitCell.getElement().focus();
+              }
             }
-          });
-        });
-      }
-      if (!cell._reopened) {
-        cell._reopened = true;
-        setTimeout(() => { cell.edit(); }, 100);
-      }
-    }
-
-    // Mise au focus sur la cellule "Débit"
-    const debitCell = row.getCell("debit");
-    if (debitCell) {
-      debitCell.getElement().focus();
-    }
-  }
-},
-
+          },
 
 
 {
@@ -2447,7 +2906,7 @@ var tableVentes = new Tabulator("#table-ventes", {
     headerFilter: "input",
     headerFilterParams: {
         elementAttributes: {
-            style: "width: 90px; height: 20px;" // 80 pixels de large
+            style: "width: 85px; height: 25px;" // 80 pixels de large
         }
     },
     editor: "input", // Optionnel, si modification manuelle est permise
@@ -2459,7 +2918,7 @@ field: "debit",
 headerFilter: "input",
 headerFilterParams: {
     elementAttributes: {
-        style: "width: 90px; height: 20px;" // 80 pixels de large
+        style: "width: 85px; height: 25px;" // 80 pixels de large
     }
 },
 editor: "number", // Permet l'édition en tant que nombre
@@ -2473,7 +2932,7 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
 },
 { title: "Crédit", field: "credit", headerFilter: "input", headerFilterParams: {
     elementAttributes: {
-        style: "width: 90px; height: 20px;" // 80 pixels de large
+        style: "width: 85px; height: 25px;" // 80 pixels de large
     }
 },
  editor: "number", // Permet l'édition en tant que nombre
@@ -2490,10 +2949,10 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
     headerFilter: "input",
     headerFilterParams: {
         elementAttributes: {
-            style: "width: 90px; height: 20px;" // 80 pixels de large
+            style: "width: 85px; height: 25px;" // 80 pixels de large
         }
     },
-    editor: customListEditor,
+    editor: customListEditorPlanComptable,
     editorParams: {
         autocomplete: true,
         listOnEmpty: true,
@@ -2541,7 +3000,7 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
             headerFilter: "input",
             headerFilterParams: {
                 elementAttributes: {
-                    style: "width: 90px; height: 20px;" // 80 pixels de large
+                    style: "width: 85px; height: 25px;" // 80 pixels de large
                 }
             },
             editor: customListEditor,
@@ -2557,7 +3016,7 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
             headerFilter: "input",
             headerFilterParams: {
                 elementAttributes: {
-                    style: "width: 90px; height: 20px;"
+                    style: "width: 85px; height: 25px;"
                 }
             },
             // Éditeur personnalisé qui va remplir l'input via une requête AJAX
@@ -2630,17 +3089,27 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
             headerFilter: "input",
             headerFilterParams: {
                 elementAttributes: {
-                    style: "width: 90px; height: 20px;" // 80 pixels de large
+                    style: "width: 85px; height: 25px;" // 80 pixels de large
                 }
             },
             formatter: function(cell, formatterParams, onRendered) {
-              // Formatage en nombre avec 2 décimales (si la valeur est numérique)
-              let val = cell.getValue();
-              if(val !== "" && !isNaN(val)) {
-                return parseFloat(val).toFixed(2);
+                let val = cell.getValue();
+
+                // Vérifier si c'est un nombre
+                if (val !== "" && !isNaN(val)) {
+                  let numericVal = parseFloat(val);
+
+                  // Si c'est -0, on le force à 0
+                  if (Object.is(numericVal, -0)) {
+                    numericVal = 0;
+                  }
+
+                  // Retourne la valeur formatée sur 2 décimales
+                  return numericVal.toFixed(2);
+                }
+
+                return val;
               }
-              return val;
-            }
           },
 
         {
@@ -2650,7 +3119,7 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
         headerFilter: "input",
         headerFilterParams: {
             elementAttributes: {
-                style: "width: 90px; height: 20px;" // 80 pixels de large
+                style: "width: 85px; height: 25px;" // 80 pixels de large
             }
         },
 
@@ -2676,27 +3145,35 @@ return value ? parseFloat(value).toFixed(2) : "0.00";
 { title: "categorie", field: "categorie", visible: false },
 
         ],
-            rowFormatter: function(row) {
-                let data = row.getData();
-                // Calcul des totaux
-                let debitTotal = 0;
-                let creditTotal = 0;
+        rowFormatter: function(row) {
+            let data = row.getData();
 
-                row.getTable().getRows().forEach(function(r) {
-                    debitTotal += parseFloat(r.getData().debit || 0);
-                    creditTotal += parseFloat(r.getData().credit || 0);
-                });
-
-                // Calcul des soldes
-                let soldeDebiteur = debitTotal - creditTotal; // Solde débiteur = Débit - Crédit
-                let soldeCrediteur = creditTotal - debitTotal; // Solde créditeur = Crédit - Débit
-
-                // Mise à jour du footer avec les totaux
-                document.getElementById('cumul-debit-ventes').innerText = formatCurrency(debitTotal);
-                document.getElementById('cumul-credit-ventes').innerText = formatCurrency(creditTotal);
-                document.getElementById('solde-debit-ventes').innerText = formatCurrency(soldeDebiteur);
-                document.getElementById('solde-credit-ventes').innerText = formatCurrency(soldeCrediteur);
+            // Appliquer le zebra striping en fonction de piece_justificative
+            if (data.piece_justificative !== lastPiece) {
+                toggle = !toggle;
+                lastPiece = data.piece_justificative;
             }
+            row.getElement().style.backgroundColor = toggle ? "#f2f2f2" : "#ffffff";
+
+            // Calcul cumulés des totaux
+            let debitTotal = 0;
+            let creditTotal = 0;
+            row.getTable().getRows().forEach(function(r) {
+                debitTotal += parseFloat(r.getData().debit || 0);
+                creditTotal += parseFloat(r.getData().credit || 0);
+            });
+
+            // Calcul des soldes en appliquant la logique conditionnelle
+            let soldeDebiteur = debitTotal > creditTotal ? debitTotal - creditTotal : 0.00;
+            let soldeCrediteur = creditTotal > debitTotal ? creditTotal - debitTotal : 0.00;
+
+            // Mise à jour du footer avec les totaux et soldes pour les ventes
+            document.getElementById('cumul-debit-ventes').innerText = formatCurrency(debitTotal);
+            document.getElementById('cumul-credit-ventes').innerText = formatCurrency(creditTotal);
+            document.getElementById('solde-debit-ventes').innerText = formatCurrency(soldeDebiteur);
+            document.getElementById('solde-credit-ventes').innerText = formatCurrency(soldeCrediteur);
+        }
+
 
 });
 
@@ -2809,107 +3286,128 @@ function supprimerDoublonsLignes(lignes) {
 
 // =====================================================================
 // Fonction pour ajouter une ligne au tableau
+// =====================================================================
+// Fonction pour ajouter une ligne dans Tabulator
+// =====================================================================
+// 1. Fonction pour ajouter une ligne (vide ou préremplie)
 async function ajouterLigne(table, preRemplir = false, ligneActive = null) {
-    let nouvellesLignes = []; // Tableau vide pour stocker les nouvelles lignes
-    let idCounter = table.getData().length + 1; // Générer un ID unique pour chaque ligne ajoutée
-
+    let nouvellesLignes = [];
+    let idCounter = table.getData().length + 1;
     let codeJournal = document.querySelector("#journal-achats").value;
-    let moisActuel = new Date().getMonth() + 1; // Mois courant (1-12)
-
-    // Récupérer la valeur du filtre sélectionné
+    let moisActuel = new Date().getMonth() + 1;
     let filterAchats = document.querySelector('input[name="filter-achats"]:checked')?.value;
+
     if (!filterAchats) {
-        alert("Veuillez sélectionner un filtre.");
-        return;
+      alert("Veuillez sélectionner un filtre.");
+      return;
     }
 
     if (preRemplir && ligneActive) {
-        // La fonction ajouterLignePreRemplie doit retourner un tableau
-        nouvellesLignes = await ajouterLignePreRemplie(idCounter, ligneActive, codeJournal, moisActuel, filterAchats);
-        console.log("Lignes pré-remplies générées:", nouvellesLignes);
+      // Ajout de la ligne pré-remplie en fonction du filtre
+      nouvellesLignes = await ajouterLignePreRemplie(idCounter, ligneActive, codeJournal, moisActuel, filterAchats);
+      console.log("Lignes pré-remplies générées:", nouvellesLignes);
     } else {
-        let ligneVide = ajouterLigneVide(idCounter, ligneActive, codeJournal, moisActuel);
-        nouvellesLignes.push(ligneVide);
+      // Création d'une ligne vide
+      let ligneVide = ajouterLigneVide(idCounter, ligneActive, codeJournal, moisActuel);
+      nouvellesLignes.push(ligneVide);
     }
 
-    // Vérifier que nouvellesLignes est bien un tableau
     if (Array.isArray(nouvellesLignes)) {
-        nouvellesLignes.forEach(ligne => {
-            table.addRow(ligne, false);
-        });
+      nouvellesLignes.forEach(ligne => {
+        table.addRow(ligne, false);
+      });
     } else {
-        console.error("Erreur: nouvellesLignes n'est pas un tableau.");
+      console.error("Erreur: nouvellesLignes n'est pas un tableau.");
     }
-
-    console.log("Toutes les lignes du tableau après ajout:", table.getData());
-
-    // Optionnel : supprimer les doublons si nécessaire
-    const lignesSansDoublons = supprimerDoublonsLignes(table.getData());
-    console.log("Lignes après suppression des doublons:", lignesSansDoublons);
-
     return nouvellesLignes;
 }
 
 // =====================================================================
-// Exemple de fonction pour ajouter une ligne pré-remplie
+// 2. Fonction pour ajouter une ligne pré-remplie selon le filtre sélectionné
 async function ajouterLignePreRemplie(idCounter, ligneActive, codeJournal, moisActuel, filterAchats) {
     let lignes = [];
-    let ligne1 = { ...ligneActive, id: idCounter++ };
-    let ligne2 = { ...ligneActive, id: idCounter++ };
-
-    console.log("Ajout des lignes pré-remplies avec filterAchats:", filterAchats);
-
-    const creditPremierLigne = parseFloat(ligneActive.credit) || 0;
-    console.log("Crédit de la première ligne:", creditPremierLigne);
+    let creditPremierLigne = parseFloat(ligneActive.credit) || 0;
 
     if (filterAchats === 'contre-partie') {
-        // Ligne 1
-        ligne1.compte = ligneActive.contre_partie || '';
-        ligne1.contre_partie = ligneActive.compte || '';
-        ligne1.debit = 0;  // Calculé ultérieurement
-        ligne1.credit = 0; // Forcer à 0
-        ligne1.piece = ligneActive.piece; // (Si vous utilisez ce champ ailleurs)
-        ligne1.type_journal = codeJournal || '';
-        lignes.push(ligne1);
+      // Pour le filtre contre-partie : création de deux lignes
+      let ligne1 = { ...ligneActive, id: idCounter++ };
+      ligne1.compte = ligneActive.contre_partie || '';
+      ligne1.contre_partie = ligneActive.compte || '';
+      ligne1.debit = 0;
+      ligne1.credit = 0;
+      ligne1.piece = ligneActive.piece;
+      ligne1.type_journal = codeJournal || '';
+      lignes.push(ligne1);
 
-        // Ligne 2
-        ligne2.compte = ligneActive.compte_tva || '';
-        ligne2.contre_partie = ligne1.compte || '';
-        ligne2.debit = 0;
-        ligne2.credit = 0;
-        ligne2.piece = ligneActive.piece;
-        ligne2.type_journal = codeJournal || '';
-        lignes.push(ligne2);
+      let ligne2 = { ...ligneActive, id: idCounter++ };
+      ligne2.compte = ligneActive.compte_tva || '';
+      ligne2.contre_partie = ligne1.compte || '';
+      ligne2.debit = 0;
+      ligne2.credit = 0;
+      ligne2.piece = ligneActive.piece;
+      ligne2.type_journal = codeJournal || '';
+      lignes.push(ligne2);
+
     } else if (filterAchats === 'libre') {
-        // Pour le filtre "libre", ajouter une ligne vide
-        ligne1.compte = '';
-        ligne1.contre_partie = '';
-        ligne1.debit = 0;
-        ligne1.credit = 0;
-        ligne1.piece = '';
-        ligne1.type_journal = codeJournal || '';
-        lignes.push(ligne1);
+      // Pour le filtre libre : création d'une seule ligne préremplie (initialement)
+      let ligne1 = { ...ligneActive, id: idCounter++ };
+      ligne1.compte = ''; // à renseigner via sélection ultérieure
+      ligne1.contre_partie = ''; // sera rempli automatiquement
+      ligne1.debit = 0;
+      ligne1.credit = 0;
+      ligne1.piece = ligneActive.piece || '';
+      ligne1.numero_facture = ligneActive.numero_facture || '';
+      ligne1.libelle = ligneActive.libelle || '';
+      ligne1.rubrique_tva = ligneActive.rubrique_tva || '';
+      ligne1.piece_justificative = ligneActive.piece_justificative || '';
+      ligne1.prorat = 'Oui'; // par défaut
+      ligne1.type_journal = codeJournal || '';
+      lignes.push(ligne1);
     }
 
-    console.log("Lignes pré-remplies générées:", lignes);
+    // Calcul du débit (adaptable selon votre logique)
+    for (let i = 0; i < lignes.length; i++) {
+      const typeLigne = (i === 0) ? "ligne1" : "ligne2";
+      await calculerDebit(lignes[i], typeLigne, creditPremierLigne);
+      console.log(`Débit calculé pour ${typeLigne}:`, lignes[i].debit);
+    }
 
-    if (Array.isArray(lignes)) {
-        for (let i = 0; i < lignes.length; i++) {
-            const typeLigne = (i === 0) ? "ligne1" : "ligne2";
-            console.log(`Calcul du débit pour ${typeLigne}:`, lignes[i]);
-            await calculerDebit(lignes[i], typeLigne, creditPremierLigne);
-            console.log(`Débit calculé pour ${typeLigne}:`, lignes[i].debit);
+    // Pour le filtre contre-partie, incrémenter la pièce si la facture est équilibrée
+    if (filterAchats === 'contre-partie') {
+      lignes.forEach((ligne, index) => {
+        if (parseFloat(ligne.debit) === parseFloat(ligne.credit)) {
+          let piece = parseInt(ligne.piece) || 0;
+          ligne.piece = piece + 1;
+          console.log(`Nouvelle pièce pour la ligne ${index}: ${ligne.piece}`);
         }
-    } else {
-        console.error("Erreur: 'lignes' n'est pas un tableau:", lignes);
+      });
     }
-
     return lignes;
 }
 
+// =====================================================================
+// 3. Fonction pour créer une ligne vide
+function ajouterLigneVide(idCounter, ligneActive, codeJournal, moisActuel) {
+    return {
+      id: idCounter,
+      compte: '',
+      contre_partie: '',
+      compte_tva: '',
+      debit: 0,
+      credit: 0,
+      piece: '',
+      piece_justificative: '',
+      numero_facture: '',
+      libelle: '',
+      rubrique_tva: '',
+      prorat: '',
+      type_journal: codeJournal,
+      date: '' // Doit être rendu en input avec la classe .date-ligne
+    };
+}
 
 // =====================================================================
-// Fonction pour calculer dynamiquement le débit
+// 4. Fonction pour calculer dynamiquement le débit
 async function calculerDebit(rowData, typeLigne, credit) {
     const tauxTVA = parseFloat(rowData.taux_tva || 0) / 100;
     console.log(`Calcul du débit pour ${typeLigne}: Crédit = ${credit}, Taux TVA = ${tauxTVA}`);
@@ -2923,7 +3421,6 @@ async function calculerDebit(rowData, typeLigne, credit) {
     const prorataDeDeduction = (rowData.prorat_de_deduction || "Non").trim().toLowerCase();
     const isProrataOui = prorataDeDeduction === "oui";
     let prorata = 0;
-
     if (isProrataOui) {
         try {
             const response = await fetch('/get-session-prorata');
@@ -2934,7 +3431,6 @@ async function calculerDebit(rowData, typeLigne, credit) {
             console.error('Erreur lors de la récupération du prorata de déduction :', error);
         }
     }
-
     let debit = 0;
     if (typeLigne === "ligne1") {
         debit = isProrataOui
@@ -2945,21 +3441,17 @@ async function calculerDebit(rowData, typeLigne, credit) {
             ? ((credit / (1 + tauxTVA)) * tauxTVA) * (prorata / 100)
             : (credit / (1 + tauxTVA)) * tauxTVA;
     }
-
     rowData.debit = parseFloat(debit.toFixed(2));
     console.log(`Débit final pour ${typeLigne}: ${rowData.debit}`);
 }
 
 // =====================================================================
-// Fonction pour mettre à jour le champ piece_justificative selon les règles
-// Fonction utilitaire pour récupérer le code journal sélectionné
+// 5. Mise à jour du champ piece_justificative selon certaines règles
 function getSelectedCodeJournal() {
     const selectors = [
         "#journal-achats",
         "#journal-ventes",
-        "#journal-caisse",
-        "#journal-banque",
-        "#journal-operation-diverses"
+
     ];
     for (let sel of selectors) {
         const el = document.querySelector(sel);
@@ -2967,7 +3459,7 @@ function getSelectedCodeJournal() {
             return el.value.trim();
         }
     }
-    return "CJ"; // Valeur par défaut si aucun code journal n'est sélectionné
+    return "CJ";
 }
 
 function updatePieceJustificative(data) {
@@ -2982,8 +3474,6 @@ function updatePieceJustificative(data) {
             factures[nf].push(row);
         }
     });
-
-    // Pour chaque facture
     Object.keys(factures).forEach(nf => {
         const rows = factures[nf];
         let totalDebit = 0, totalCredit = 0;
@@ -2991,9 +3481,8 @@ function updatePieceJustificative(data) {
             totalDebit += parseFloat(row.debit) || 0;
             totalCredit += parseFloat(row.credit) || 0;
         });
-
-        // On génère toujours la pièce justificative pour la facture,
-        // puis on ajuste l'incrément si la facture est équilibrée et non nulle.
+        // Création de la pièce justificative : si la facture est équilibrée ET non nulle,
+        // on incrémente, sinon on conserve la valeur existante.
         let dt = luxon.DateTime.fromFormat(rows[0].date, "yyyy-MM-dd HH:mm:ss");
         if (!dt.isValid) {
             dt = luxon.DateTime.fromISO(rows[0].date);
@@ -3003,15 +3492,10 @@ function updatePieceJustificative(data) {
             return;
         }
         const moisFormatted = dt.toFormat("MM");
-
-        // Récupérer le code journal depuis la ligne ou via la fonction utilitaire
         const codeJournal = rows[0].type_journal || getSelectedCodeJournal();
-
-        // Rechercher dans toutes les données les numéros de pièces existants pour ce mois et ce code journal
         let existingNumbers = [];
         data.forEach(row => {
             if (row.piece_justificative) {
-                // Format attendu : P{MM}{codeJournal}{NNNN}
                 const prefix = `P${moisFormatted}${codeJournal}`;
                 if (row.piece_justificative.startsWith(prefix)) {
                     const numStr = row.piece_justificative.substring(prefix.length);
@@ -3023,252 +3507,339 @@ function updatePieceJustificative(data) {
             }
         });
         existingNumbers.sort((a, b) => a - b);
-
-        // Par défaut, on génère la pièce avec l'incrément 1.
         let newIncrement = 1;
-        // On n'incrémente (i.e. on prend le dernier numéro + 1) que si la facture est équilibrée et non nulle.
-        // Pour Achats et Ventes, la condition est la même puisque si totalDebit === totalCredit,
-        // alors vérifier l'un ou l'autre revient au même.
         if (totalDebit === totalCredit && totalDebit !== 0) {
             newIncrement = existingNumbers.length > 0 ? existingNumbers[existingNumbers.length - 1] + 1 : 1;
         }
         const numeroFormate = String(newIncrement).padStart(4, "0");
         const newPiece = `P${moisFormatted}${codeJournal}${numeroFormate}`;
-
-        // Mettre à jour le champ piece_justificative pour toutes les lignes de cette facture
         rows.forEach(row => {
             row.piece_justificative = newPiece;
         });
     });
-
     return data;
 }
 
-
 // =====================================================================
-// Fonction pour enregistrer les lignes
+// 6. Fonction pour enregistrer les lignes sans quitter le tableau
 async function enregistrerLignesAch() {
     try {
-        // Récupérer les données actuelles du tableau
-        let lignes = tableAch.getData();
-        console.log("📌 Données récupérées du tableau :", lignes);
+      let lignes = tableAch.getData();
+      console.log("📌 Données récupérées du tableau :", lignes);
 
-        // Récupérer l'élément select et extraire le code du journal ainsi que le type (catégorie)
-        const journalSelect = document.querySelector("#journal-achats");
-        const codeJournal = journalSelect.value;
-        if (!codeJournal) {
-            alert("⚠️ Veuillez sélectionner un journal.");
-            return;
-        }
-        const selectedOption = journalSelect.options[journalSelect.selectedIndex];
-        const categorie = selectedOption ? selectedOption.getAttribute("data-type") : "";
-        console.log("Catégorie extraite :", categorie);  // Vérification de la valeur extraite
+      const journalSelect = document.querySelector("#journal-achats");
+      const codeJournal = journalSelect.value;
+      if (!codeJournal) {
+        alert("⚠️ Veuillez sélectionner un journal.");
+        return;
+      }
+      const selectedOption = journalSelect.options[journalSelect.selectedIndex];
+      const categorie = selectedOption ? selectedOption.getAttribute("data-type") : "";
+      console.log("Catégorie extraite :", categorie);
 
-        const selectedFilter = document.querySelector('input[name="filter-achats"]:checked')?.value || null;
+      const selectedFilter = document.querySelector('input[name="filter-achats"]:checked')?.value || null;
+      // Mise à jour de la pièce justificative selon les règles
+      lignes = updatePieceJustificative(lignes);
 
-        // Mettre à jour le champ piece_justificative pour chaque facture
-        lignes = updatePieceJustificative(lignes);
+      const lignesAEnvoyer = lignes
+        .filter(ligne => ligne.compte && (ligne.debit > 0 || ligne.credit > 0))
+        .map(ligne => ({
+          id: ligne.id || null,
+          date: ligne.date || new Date().toISOString().slice(0, 10),
+          numero_facture: ligne.numero_facture || 'N/A',
+          compte: ligne.compte || '',
+          debit: ligne.debit ? parseFloat(ligne.debit) : 0,
+          credit: ligne.credit ? parseFloat(ligne.credit) : 0,
+          contre_partie: ligne.contre_partie || '',
+          rubrique_tva: ligne.rubrique_tva || '',
+          compte_tva: ligne.compte_tva || '',
+          type_journal: codeJournal,
+          categorie: categorie,
+          prorat_de_deduction: ligne.prorat_de_deduction || '',
+          piece_justificative: ligne.piece_justificative || '',
+          libelle: ligne.libelle || '',
+          filtre_selectionne: selectedFilter,
+          value: typeof ligne.solde_cumule !== "undefined" ? ligne.solde_cumule : ""
+        }));
 
-        // Filtrer les lignes valides à envoyer
-        const lignesAEnvoyer = lignes
-            .filter(ligne => ligne.compte && (ligne.debit > 0 || ligne.credit > 0))
-            .map(ligne => ({
-                id: ligne.id || null,
-                date: ligne.date || new Date().toISOString().slice(0, 10),
-                numero_facture: ligne.numero_facture || 'N/A',
-                compte: ligne.compte || '',
-                debit: ligne.debit ? parseFloat(ligne.debit) : 0,
-                credit: ligne.credit ? parseFloat(ligne.credit) : 0,
-                contre_partie: ligne.contre_partie || '',
-                rubrique_tva: ligne.rubrique_tva || '',
-                compte_tva: ligne.compte_tva || '',
-                type_journal: codeJournal,
-                categorie: categorie, // Ajout du champ catégorie
-                prorat_de_deduction: ligne.prorat_de_deduction || '',
-                piece_justificative: ligne.piece_justificative || '',
-                libelle: ligne.libelle || '',
-                filtre_selectionne: selectedFilter,
-                value: typeof ligne.solde_cumule !== "undefined" ? ligne.solde_cumule : ""
-            }));
+      console.log("📤 Données envoyées :", lignesAEnvoyer);
+      if (lignesAEnvoyer.length === 0) {
+        alert("⚠️ Aucune ligne valide à enregistrer.");
+        return;
+      }
 
-        console.log("📤 Données envoyées :", lignesAEnvoyer);
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      const response = await fetch('/lignes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken
+        },
+        body: JSON.stringify({ lignes: lignesAEnvoyer })
+      });
+      if (!response.ok) {
+        console.error("❌ Erreur serveur :", response.status, response.statusText);
+        alert(`Erreur lors de l'enregistrement : ${response.statusText}`);
+        return;
+      }
+      const result = await response.json();
+      console.log("📥 Réponse du serveur :", result);
 
-        if (lignesAEnvoyer.length === 0) {
-            alert("⚠️ Aucune ligne valide à enregistrer.");
-            return;
-        }
+      // Actualiser le tableau sans quitter la page
+      if (Array.isArray(result)) {
+        tableAch.setData(result);
+        console.log("✅ Tableau mis à jour avec les nouvelles données.");
+      } else if (result && Array.isArray(result.data)) {
+        tableAch.setData(result.data);
+        console.log("✅ Tableau mis à jour avec les nouvelles données.");
+      } else {
+        console.warn("⚠️ Format inattendu de la réponse :", result);
+        alert("Aucune donnée valide reçue du serveur.");
+        return;
+      }
+      calculerSoldeCumule();
 
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-        const response = await fetch('/lignes', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify({ lignes: lignesAEnvoyer })
+      // Vérifier si la dernière ligne est vide, sinon l'ajouter
+      const dataActuelle = tableAch.getData();
+      let derniereLigne = dataActuelle[dataActuelle.length - 1];
+      if (!derniereLigne || derniereLigne.compte !== '') {
+        tableAch.addRow({
+          id: null,
+          compte: '',
+          contre_partie: '',
+          compte_tva: '',
+          debit: 0,
+          credit: 0,
+          piece: '',
+          piece_justificative: '',
+          libelle: '',
+          rubrique_tva: '',
+          type_journal: codeJournal,
+          value: ""
         });
-
-        if (!response.ok) {
-            console.error("❌ Erreur serveur :", response.status, response.statusText);
-            alert(`Erreur lors de l'enregistrement : ${response.statusText}`);
-            return;
-        }
-
-        const result = await response.json();
-        console.log("📥 Réponse du serveur :", result);
-
-        // Vérification du format de la réponse et mise à jour du tableau
-        if (Array.isArray(result)) {
-            tableAch.setData(result);
-            console.log("✅ Tableau mis à jour avec les nouvelles données.");
-        } else if (result && Array.isArray(result.data)) {
-            tableAch.setData(result.data);
-            console.log("✅ Tableau mis à jour avec les nouvelles données.");
-        } else {
-            console.warn("⚠️ Format inattendu de la réponse :", result);
-            alert("Aucune donnée valide reçue du serveur.");
-            return;
-        }
-
-        // Recalculer le solde cumulé après la mise à jour des données
-        calculerSoldeCumule();
-
-        // Vérifier si la dernière ligne est vide avant d'ajouter une nouvelle
-        const dataActuelle = tableAch.getData();
-        const derniereLigne = dataActuelle[dataActuelle.length - 1];
-
-        if (!derniereLigne || derniereLigne.compte !== '') {
-            tableAch.addRow({
-                id: null,
-                compte: '',
-                contre_partie: '',
-                compte_tva: '',
-                debit: 0,
-                credit: 0,
-                piece_justificative: '',
-                libelle: '',
-                rubrique_tva: '',
-                type_journal: codeJournal,
-                value: "" // On peut laisser vide ici ou calculer un solde si nécessaire.
-            });
-        }
-
+      }
     } catch (error) {
-        console.error("🚨 Erreur lors de l'enregistrement :", error);
-        alert("❌ Une erreur s'est produite. Vérifiez la console pour plus de détails.");
+      console.error("🚨 Erreur lors de l'enregistrement :", error);
+      alert("❌ Une erreur s'est produite. Vérifiez la console pour plus de détails.");
     }
 }
 
+// =====================================================================
+// 7. Fonction d'écoute sur l'événement "Enter" du tableau
+async function ecouterEntrer(table) {
+  table.element.addEventListener("keydown", async function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
 
+      // 1. Récupérer la ligne active (sélectionnée)
+      const selectedRows = table.getSelectedRows();
+      if (!selectedRows.length) {
+        console.error("Aucune ligne active trouvée");
+        return;
+      }
+      const activeRowData = selectedRows[0].getData();
 
+      // 2. Générer la nouvelle ligne via la fonction existante
+      let addedRows = await ajouterLigne(table, true, activeRowData);
+      if (!Array.isArray(addedRows)) {
+        addedRows = [addedRows];
+      }
+      console.log("Lignes ajoutées :", addedRows);
+
+      // 3. Enregistrer les lignes sans quitter la page
+      await enregistrerLignesAch();
+
+      // 4. Récupérer les données mises à jour du tableau
+      let dataAfter = table.getData();
+
+      // 5. Identifier la dernière ligne enregistrée (celle avec un champ compte non vide)
+      let nonEmptyRows = dataAfter.filter(row => row.compte && row.compte.trim() !== "");
+      let lastRecorded = nonEmptyRows[nonEmptyRows.length - 1];
+      console.log("Dernière ligne enregistrée :", lastRecorded);
+
+      // 6. Rechercher une ligne vide dans le tableau
+      let emptyRow = dataAfter.find(row => !row.compte || row.compte.trim() === "");
+      if (!emptyRow) {
+        // S'il n'y a pas de ligne vide, en ajouter une
+        const newEmpty = {
+          id: dataAfter.length + 1,
+          compte: '',
+          contre_partie: '',
+          compte_tva: '',
+          debit: 0,
+          credit: 0,
+          piece: '',
+          piece_justificative: '',
+          numero_facture: '',
+          libelle: '',
+          rubrique_tva: '',
+          prorat: '',
+          type_journal: document.querySelector("#journal-achats").value,
+          date: ''
+        };
+        let newEmptyComponent = await table.addRow(newEmpty);
+        emptyRow = newEmptyComponent.getData();
+      }
+      console.log("Ligne vide :", emptyRow);
+
+      // 7. Pour le filtre "libre" : si le solde cumulé est différent de 0,
+      // recopier exactement les données de la dernière ligne (sans incrémenter la pièce)
+      const selectedFilter = document.querySelector('input[name="filter-achats"]:checked')?.value;
+      if (selectedFilter === "libre" && lastRecorded) {
+        let cumBalance = parseFloat(lastRecorded.value);
+        if (isNaN(cumBalance)) { cumBalance = 0; }
+        console.log("Solde cumulé :", cumBalance);
+        if (cumBalance !== 0) {
+          // Construction de la nouvelle ligne en recopiant toutes les valeurs de la précédente
+          const newRowData = {
+            id: dataAfter.length + 1,
+            compte: lastRecorded.contre_partie,
+            contre_partie: lastRecorded.compte,
+            compte_tva: lastRecorded.compte_tva,
+            debit: lastRecorded.debit,
+            credit: lastRecorded.credit,
+            piece_justificative: lastRecorded.piece_justificative, // Recopie exacte
+            numero_facture: lastRecorded.numero_facture,
+            libelle: lastRecorded.libelle,
+            rubrique_tva: lastRecorded.rubrique_tva,
+            prorat: lastRecorded.prorat,
+            type_journal: lastRecorded.type_journal,
+            date: lastRecorded.date,
+          };
+          console.log("Nouvelle ligne préremplie (libre) :", newRowData);
+          // Ajouter la nouvelle ligne et placer le focus sur le champ date
+          let newRowComponent = await table.addRow(newRowData);
+          if (newRowComponent) {
+            let newRowEl = newRowComponent.getElement();
+            if (newRowEl) {
+              let newDateInput = newRowEl.querySelector('.date-ligne');
+              if (newDateInput) {
+                newDateInput.focus();
+              }
+            }
+          }
+        } else {
+          // Si le solde cumulé est 0, placer le focus sur la ligne vide
+          if (emptyRow && emptyRow.id) {
+            let emptyRowComponent = table.getRow(emptyRow.id);
+            if (emptyRowComponent) {
+              let emptyEl = emptyRowComponent.getElement();
+              let dateInput = emptyEl.querySelector('.date-ligne');
+              if (dateInput) {
+                dateInput.focus();
+              }
+            }
+          }
+        }
+      } else {
+        // Pour les autres filtres, placer le focus sur la cellule date de la ligne vide
+        if (emptyRow && emptyRow.id) {
+          let emptyRowComponent = table.getRow(emptyRow.id);
+          if (emptyRowComponent) {
+            let emptyEl = emptyRowComponent.getElement();
+            let dateInput = emptyEl.querySelector('.date-ligne');
+            if (dateInput) {
+              dateInput.focus();
+            }
+          }
+        }
+      }
+    }
+  });
+}
 
 // =====================================================================
-// Fonction d'écoute sur l'événement "Enter" du tableau
-async function ecouterEntrer(table) {
-    table.element.addEventListener("keydown", async function (event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-
-            const selectedRows = table.getSelectedRows();
-            if (selectedRows.length === 0) {
-                console.error("Aucune ligne active trouvée");
-                return;
-            }
-
-            const ligneActive = selectedRows[0].getData();
-            let nouvellesLignes = await ajouterLigne(table, true, ligneActive);
-
-            if (!Array.isArray(nouvellesLignes)) {
-                nouvellesLignes = [nouvellesLignes];
-            }
-
-            console.log("Lignes ajoutées :", nouvellesLignes);
-
-            // Récupérer les données actuelles du tableau
-            const dataActuelle = table.getData();
-            const derniereLigne = dataActuelle[dataActuelle.length - 1];
-
-            // Nettoyer : supprimer les lignes dont le champ "compte" est non vide (sauf la ligne vide)
-            table.setData(dataActuelle.filter(ligne => ligne.compte !== ""));
-
-            // Ajouter une ligne vide si nécessaire
-            if (!derniereLigne || derniereLigne.compte !== '') {
-                const nouvelleLigneVide = {
-                    id: dataActuelle.length + 1,
-                    compte: '',
-                    contre_partie: '',
-                    compte_tva: '',
-                    debit: 0,
-                    credit: 0,
-                    piece_justificative: '', // La pièce sera générée lors de l'enregistrement
-                    type_journal: document.querySelector("#journal-achats").value
-                };
-                table.addRow(nouvelleLigneVide);
-            } else {
-                console.log("Ligne vide déjà présente, pas besoin d'en ajouter une autre.");
-            }
-
-            // Enregistrer les lignes après l'ajout
-            await enregistrerLignesAch();
-        }
-    });
-}
+// 8. Lancer l'écoute sur le tableau
 ecouterEntrer(tableAch);
+
+// =====================================================================
+// 9. Fonction d'aide pour traiter la ligne suivante en mode "libre"
+function traiterLigneLibre(rowElement) {
+    let lignesDOM = document.querySelectorAll('.ligne');
+    let index = Array.from(lignesDOM).indexOf(rowElement);
+    if (index > 0) {
+      let lignePrecedente = lignesDOM[index - 1];
+      let datePrecedente = lignePrecedente.querySelector('.date-ligne')?.value;
+      if (datePrecedente) {
+        let dateInput = rowElement.querySelector('.date-ligne');
+        if(dateInput) dateInput.value = datePrecedente;
+      }
+      ['numero_facture', 'libelle', 'piece_justificative', 'rubrique_tva'].forEach(champ => {
+        let champPrecedent = lignePrecedente.querySelector(`.${champ}`);
+        let champCourant = rowElement.querySelector(`.${champ}`);
+        if (champPrecedent && champCourant) {
+          champCourant.value = champPrecedent.value;
+        }
+      });
+      let comptePrecedent = lignePrecedente.querySelector('.compte')?.value;
+      let contrePartie = rowElement.querySelector('.contre_partie');
+      if (comptePrecedent && contrePartie) {
+        contrePartie.value = comptePrecedent;
+      }
+      let proratField = rowElement.querySelector('.prorat');
+      if (proratField) {
+        proratField.value = "Oui";
+      }
+    }
+}
+
+// =====================================================================
 // Fonction pour calculer le solde cumulé et appliquer la vérification
 function calculerSoldeCumule() {
     const rows = tableAch.getRows();
     const groupSums = {};
     const factures = {};
 
-    rows.forEach((row, index) => {
-        const data = row.getData();
-        const key = `${data.numero_facture}`;
+    rows.forEach((row) => {
+      const data = row.getData();
+      const key = `${data.numero_facture}`;
 
-        // Initialisation du solde si non défini
-        if (typeof groupSums[key] === "undefined") {
-            groupSums[key] = 0;
-        }
+      if (typeof groupSums[key] === "undefined") {
+        groupSums[key] = 0;
+      }
 
-        // Calcul du solde cumulé
-        const debit = parseFloat(data.debit) || 0;
-        const credit = parseFloat(data.credit) || 0;
-        const nouveauSolde = groupSums[key] + debit - credit;
+      const debit = parseFloat(data.debit) || 0;
+      const credit = parseFloat(data.credit) || 0;
+      let nouveauSolde = groupSums[key] + debit - credit;
 
-        // Mise à jour du solde cumulé pour cette ligne
-        data.value = nouveauSolde;
-        groupSums[key] = nouveauSolde;
+      // Correction pour ne pas afficher -0.00
+      if (Math.abs(nouveauSolde) < Number.EPSILON) {
+        nouveauSolde = 0;
+      }
 
-        // Mise à jour de la ligne dans Tabulator
-        row.update({ value: nouveauSolde });
+      // Format d'affichage à deux décimales
+      const displayValue = nouveauSolde.toFixed(2);
 
-        // Vérification si c'est la dernière ligne pour cette facture
-        if (!factures[data.numero_facture]) {
-            factures[data.numero_facture] = { lastRow: row, lastSolde: nouveauSolde };
-        } else {
-            factures[data.numero_facture].lastRow = row;
-            factures[data.numero_facture].lastSolde = nouveauSolde;
-        }
+      data.value = displayValue;
+      groupSums[key] = nouveauSolde;
+      row.update({ value: displayValue });
+
+      if (!factures[data.numero_facture]) {
+        factures[data.numero_facture] = { lastRow: row, lastSolde: nouveauSolde };
+      } else {
+        factures[data.numero_facture].lastRow = row;
+        factures[data.numero_facture].lastSolde = nouveauSolde;
+      }
     });
 
-    // Vérification du solde cumulé pour la dernière ligne de chaque facture
+    // Appliquer la surbrillance uniquement si le solde est différent de 0.00
     for (const numero_facture in factures) {
-        const { lastRow, lastSolde } = factures[numero_facture];
-
-        if (lastSolde !== 0) {
-            // Appliquer la surbrillance clignotante si le solde cumulé n'est pas zéro
-            lastRow.getElement().classList.add("highlight-error");
-        }
+      const { lastRow, lastSolde } = factures[numero_facture];
+      if (Math.abs(lastSolde) > 0.00) { // Si lastSolde est différent de 0
+        lastRow.getCell("value").getElement().classList.add("highlight-error");
+      } else {
+        // Optionnel : retirer la classe si elle a été ajoutée auparavant
+        lastRow.getCell("value").getElement().classList.remove("highlight-error");
+      }
     }
 
-    // Redessiner le tableau après la mise à jour
     tableAch.redraw();
-}
+  }
 
-// Appeler la fonction de calcul après le chargement des données
-tableAch.on("dataLoaded", function() {
+  tableAch.on("dataLoaded", function() {
     calculerSoldeCumule();
-});
+  });
+
 
 
 // Fonction de mise à jour des données du tableau Achats en fonction des filtres
@@ -3301,18 +3872,18 @@ function updateTabulatorDataAchats() {
         },
         body: JSON.stringify(dataToSend),
     })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Données reçues après filtrage Achats :", data);
-            // Remplacer les données du tableau Achats
-            tableAch.replaceData(data).then(() => {
-                // Après remplacement, recalculer immédiatement le solde cumulé
-                calculerSoldeCumule();
-            });
-        })
-        .catch(error => {
-            console.error("Erreur lors de la mise à jour Achats :", error);
+    .then(response => response.json())
+    .then(data => {
+        console.log("Données reçues après filtrage Achats :", data);
+        // Remplacer les données du tableau Achats
+        tableAch.replaceData(data).then(() => {
+            // Après remplacement, recalculer immédiatement le solde cumulé
+            calculerSoldeCumule();
         });
+    })
+    .catch(error => {
+        console.error("Erreur lors de la mise à jour Achats :", error);
+    });
 }
 
 // Ajout des écouteurs pour les filtres Achats
@@ -3322,7 +3893,6 @@ document.getElementById("annee-achats").addEventListener("input", updateTabulato
 
 // Chargement initial des données Achats
 updateTabulatorDataAchats();
-
 
 
 
@@ -3673,18 +4243,18 @@ function updateTabulatorDataVentes() {
         },
         body: JSON.stringify(dataToSend),
     })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Données reçues après filtrage Ventes :", data);
-            // Remplacer les données du tableau Ventes
-            tableVentes.replaceData(data).then(() => {
-                // Après remplacement, recalculer immédiatement le solde cumulé
-                calculerSoldeCumuleVentes();
-            });
-        })
-        .catch(error => {
-            console.error("Erreur lors de la mise à jour Ventes :", error);
+    .then(response => response.json())
+    .then(data => {
+        console.log("Données reçues après filtrage Ventes :", data);
+        // Remplacer les données du tableau Ventes
+        tableVentes.replaceData(data).then(() => {
+            // Après remplacement, recalculer immédiatement le solde cumulé
+            calculerSoldeCumuleVentes();
         });
+    })
+    .catch(error => {
+        console.error("Erreur lors de la mise à jour Ventes :", error);
+    });
 }
 
 // Ajout des écouteurs pour les filtres Ventes
@@ -3701,54 +4271,56 @@ function calculerSoldeCumuleVentes() {
     const groupSums = {};
     const factures = {};
 
-    rows.forEach((row, index) => {
-        const data = row.getData();
-        const key = `${data.numero_facture}`;
+    rows.forEach((row) => {
+      const data = row.getData();
+      const key = `${data.numero_facture}`;
 
-        // Initialisation du solde si non défini
-        if (typeof groupSums[key] === "undefined") {
-            groupSums[key] = 0;
-        }
+      if (typeof groupSums[key] === "undefined") {
+        groupSums[key] = 0;
+      }
 
-        // Calcul du solde cumulé
-        const debit = parseFloat(data.debit) || 0;
-        const credit = parseFloat(data.credit) || 0;
-        const nouveauSolde = groupSums[key] + debit - credit;
+      const debit = parseFloat(data.debit) || 0;
+      const credit = parseFloat(data.credit) || 0;
+      let nouveauSolde = groupSums[key] + debit - credit;
 
-        // Mise à jour du solde cumulé pour cette ligne
-        data.value = nouveauSolde;
-        groupSums[key] = nouveauSolde;
+      // Correction pour ne pas afficher -0.00
+      if (Math.abs(nouveauSolde) < Number.EPSILON) {
+        nouveauSolde = 0;
+      }
 
-        // Mise à jour de la ligne dans Tabulator
-        row.update({ value: nouveauSolde });
+      // Format d'affichage à deux décimales
+      const displayValue = nouveauSolde.toFixed(2);
 
-        // Vérification si c'est la dernière ligne pour cette facture
-        if (!factures[data.numero_facture]) {
-            factures[data.numero_facture] = { lastRow: row, lastSolde: nouveauSolde };
-        } else {
-            factures[data.numero_facture].lastRow = row;
-            factures[data.numero_facture].lastSolde = nouveauSolde;
-        }
+      data.value = displayValue;
+      groupSums[key] = nouveauSolde;
+      row.update({ value: displayValue });
+
+      if (!factures[data.numero_facture]) {
+        factures[data.numero_facture] = { lastRow: row, lastSolde: nouveauSolde };
+      } else {
+        factures[data.numero_facture].lastRow = row;
+        factures[data.numero_facture].lastSolde = nouveauSolde;
+      }
     });
 
-    // Vérification du solde cumulé pour la dernière ligne de chaque facture
+    // Appliquer la surbrillance uniquement si le solde est différent de 0.00
     for (const numero_facture in factures) {
-        const { lastRow, lastSolde } = factures[numero_facture];
-
-        if (lastSolde !== 0) {
-            // Appliquer la surbrillance clignotante si le solde cumulé n'est pas zéro
-            lastRow.getElement().classList.add("highlight-error");
-        }
+      const { lastRow, lastSolde } = factures[numero_facture];
+      if (Math.abs(lastSolde) > 0.00) {  // Si lastSolde est différent de 0
+        lastRow.getCell("value").getElement().classList.add("highlight-error");
+      } else {
+        // Optionnel : supprimer la classe si elle a été appliquée auparavant
+        lastRow.getCell("value").getElement().classList.remove("highlight-error");
+      }
     }
 
-    // Redessiner le tableau après la mise à jour
     tableVentes.redraw();
-}
+  }
 
-// Appeler la fonction de calcul après le chargement des données
-tableVentes.on("dataLoaded", function() {
+  tableVentes.on("dataLoaded", function() {
     calculerSoldeCumuleVentes();
-});
+  });
+
 
 
 // Vous pouvez aussi appeler la fonction dès le chargement complet de la page, si besoin
@@ -3762,9 +4334,7 @@ document.addEventListener("DOMContentLoaded", function() {
 // Initialiser l'écouteur d'événements pour chaque table
 ecouterEntrerVentes(tableVentes);
 ecouterEntrer(tableAch);
-ecouterEntrer(tableBanque);
-ecouterEntrer(tableCaisse);
-ecouterEntrer(tableOP);
+
 tabulatorManager.applyToTabulator(tableAch);
 tabulatorManager.applyToTabulator(tableVentes);
 
@@ -3883,450 +4453,6 @@ document.getElementById("delete-row-btn").addEventListener("click", function () 
         console.error("Erreur lors de l'initialisation des tables :", error);
     }
 })();
-
-// function formatDate(cell) {
-//     let dateValue = cell.getValue();
-//     if (dateValue) {
-//         const dt = DateTime.fromISO(dateValue);
-//         return dt.isValid ? dt.toFormat('dd/MM/yyyy') : "Date invalide";
-//     }
-//     return "";
-// }
-
-
-function formatCurrency(value) {
-                    if (value == null) return '0,00';
-                    return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,').replace('.', ',');
-                }
-
-
-// Configuration du tableau Trésorerie
-var tableBanque = new Tabulator("#table-Banque", {
-    layout: "fitColumns",
-    height: "500px",
-    // rowHeader:{headerSort:false, resizable: true, frozen:true,width:50,minwidth:40, headerHozAlign:"center", hozAlign:"center", formatter:"rowSelection", titleFormatter:"rowSelection", cellClick:function(e, cell){
-    //   cell.getRow().toggleSelect();
-    // }},
-    selectable: true,
-    data: Array(1).fill({}),
-    columns: [
-        { title: "ID", field: "id", visible: false },
-        {
-            title: "Date",
-            field: "date",
-            hozAlign: "center",
-            headerFilter: "input",
-
-            sorter: "date",
-            editor: function(cell, onRendered, success, cancel) {
-                const input = document.createElement("input");
-                input.type = "text"; // Utilisation d'un champ de texte pour flatpickr
-                const currentValue = cell.getValue();
-                input.value = currentValue ? luxon.DateTime.fromISO(currentValue).toFormat('dd/MM/yyyy') : '';
-                input.placeholder = "jj/mm/aaaa";
-                flatpickr(input, {
-                    dateFormat: "d/m/Y",
-                    defaultDate: currentValue ? luxon.DateTime.fromISO(currentValue).toFormat('dd/MM/yyyy') : '',
-                    onChange: function(selectedDates) {
-                        success(luxon.DateTime.fromJSDate(selectedDates[0]).toISODate());
-                    },
-                    allowInput: true,
-                });
-                onRendered(function() {
-                    input.focus();
-                });
-                return input;
-            },
-            formatter: function(cell) {
-                let dateValue = cell.getValue();
-                if (dateValue) {
-                    const dt = luxon.DateTime.fromISO(dateValue);
-                    return dt.isValid ? dt.toFormat('dd/MM/yyyy') : "Date invalide";
-                }
-                return "";
-            },
-        },
-        {
-    title: "Mode de paiement",
-    field: "Mode_pay",
-    headerFilter: "input", // Permet de rechercher dans la colonne
-    editor: "list", // Type d'éditeur pour une liste déroulante
-    editorParams: {
-        values: ["Espèces", "Chèques", "Virement", "Effet", "Prélèvements", "Compensations", "Autres"], // Options dans la liste
-        clearable: true, // Permet de réinitialiser à une valeur vide
-        verticalNavigation: "editor", // Navigation clavier pour ouvrir l'éditeur
-    },
-},
-        { title: "Compte", field: "compte", headerFilter: "input", editor: "input" },
-
-        { title: "Libellé", field: "libelle", headerFilter: "input", editor: "input" },
-        {
-    title: "Débit",
-    field: "debit",
-    headerFilter: "input",
-    editor: "number", // Permet l'édition en tant que nombre
-    bottomCalc: "sum", // Calcul du total dans le bas de la colonne
-    formatter: function(cell) {
-        // Formater pour afficher 0.00 si la cellule est vide ou nulle
-        const value = cell.getValue();
-        return value ? parseFloat(value).toFixed(2) : "0.00";
-    },
-    mutatorEdit: function(value) {
-        // Retourner "0.00" comme valeur par défaut si vide lors de l'édition
-        return value || "0.00";
-
-        // Mettre à jour la valeur du champ "Débit"
-        cell.setValue(debit.toFixed(2)); // Format en 2 décimales
-    }
-},
-{ title: "Crédit", field: "credit", headerFilter: "input",  editor: "number", // Permet l'édition en tant que nombre
-    bottomCalc: "sum", // Calcul du total dans le bas de la colonne
-    formatter: function(cell) {
-        // Formater pour afficher 0.00 si la cellule est vide ou nulle
-        const value = cell.getValue();
-        return value ? parseFloat(value).toFixed(2) : "0.00";
-    },
-
-},
-        { title: "N° facture lettrée", field: "fact_lettrer", headerFilter: "input", editor: "input" },
-        { title: "Taux RAS TVA", field: "taux_ras_tva", headerFilter: "input", editor: "input" },
-        { title: "Nature de l'opération", field: "nature_op", headerFilter: "input" , editor: "input" },
-        { title: "Date lettrage", field: "date_lettrage", headerFilter: "input", editor: "input" },
-        { title: "Contre-Partie", field: "contre_partie", headerFilter: "input" , editor: "input" },
-        { title: "Pièce justificative", field:"piece_justificative"
-, headerFilter: "input" , editor: "input" },
-{
-            title: "Sélectionner",
-            headerSort: false,
-            resizable: true,
-            frozen: true,
-            width: 50,
-            minWidth: 40,
-            headerHozAlign: "center",
-            hozAlign: "center",
-            formatter: "rowSelection",
-            titleFormatter: "rowSelection",
-            cellClick: function(e, cell){
-                cell.getRow().toggleSelect();
-            }
-        },
-
-
-    ],
-    footerElement: "<table style='width: 30%; margin-top: 10px; border-collapse: collapse;'>" +
-                    "<tr>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Cumul Débit :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='cumul-debit-Banque'></span></td>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Cumul Crédit :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='cumul-credit-Banque'></span></td>" +
-                    "</tr>" +
-                    "<tr>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Solde Débiteur :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='solde-debit-Banque'></span></td>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Solde Créditeur :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='solde-credit-Banque'></span></td>" +
-                    "</tr>" +
-                    "</table>", // Footer sous forme de tableau
-    rowFormatter: function(row) {
-        let debitTotal = 0;
-        let creditTotal = 0;
-
-        row.getTable().getRows().forEach(function(r) {
-            debitTotal += parseFloat(r.getData().montant || 0);
-            creditTotal += parseFloat(r.getData().montant || 0);
-        });
-
-        let soldeDebiteur = debitTotal - creditTotal;
-        let soldeCrediteur = creditTotal - debitTotal;
-
-        // Mise à jour des éléments dans le footer
-        document.getElementById('cumul-debit-Banque').innerText = formatCurrency(debitTotal);
-        document.getElementById('cumul-credit-Banque').innerText = formatCurrency(creditTotal);
-        document.getElementById('solde-debit-Banque').innerText = formatCurrency(soldeDebiteur);
-        document.getElementById('solde-credit-Banque').innerText = formatCurrency(soldeCrediteur);
-    }
-});
-tabulatorManager.applyToTabulator(tableBanque);
-// Configuration du tableau Trésorerie
-var tableCaisse = new Tabulator("#table-Caisse", {
-    layout: "fitColumns",
-    height: "500px",
-    // rowHeader:{headerSort:false, resizable: true, frozen:true,width:50,minwidth:40, headerHozAlign:"center", hozAlign:"center", formatter:"rowSelection", titleFormatter:"rowSelection", cellClick:function(e, cell){
-    //   cell.getRow().toggleSelect();
-    // }},
-    selectable: true,
-    data: Array(1).fill({}),
-    columns: [
-        { title: "ID", field: "id", visible: false },
-        {
-            title: "Date",
-            field: "date",
-            hozAlign: "center",
-            headerFilter: "input",
-
-            sorter: "date",
-            editor: function(cell, onRendered, success, cancel) {
-                const input = document.createElement("input");
-                input.type = "text"; // Utilisation d'un champ de texte pour flatpickr
-                const currentValue = cell.getValue();
-                input.value = currentValue ? luxon.DateTime.fromISO(currentValue).toFormat('dd/MM/yyyy') : '';
-                input.placeholder = "jj/mm/aaaa";
-                flatpickr(input, {
-                    dateFormat: "d/m/Y",
-                    defaultDate: currentValue ? luxon.DateTime.fromISO(currentValue).toFormat('dd/MM/yyyy') : '',
-                    onChange: function(selectedDates) {
-                        success(luxon.DateTime.fromJSDate(selectedDates[0]).toISODate());
-                    },
-                    allowInput: true,
-                });
-                onRendered(function() {
-                    input.focus();
-                });
-                return input;
-            },
-            formatter: function(cell) {
-                let dateValue = cell.getValue();
-                if (dateValue) {
-                    const dt = luxon.DateTime.fromISO(dateValue);
-                    return dt.isValid ? dt.toFormat('dd/MM/yyyy') : "Date invalide";
-                }
-                return "";
-            },
-        },
-        {
-    title: "Mode de paiement",
-    field: "Mode_pay",
-    headerFilter: "input", // Permet de rechercher dans la colonne
-    editor: "list", // Type d'éditeur pour une liste déroulante
-    editorParams: {
-        values: ["Espèces", "Chèques", "Virement", "Effet", "Prélèvements", "Compensations", "Autres"], // Options dans la liste
-        clearable: true, // Permet de réinitialiser à une valeur vide
-        verticalNavigation: "editor", // Navigation clavier pour ouvrir l'éditeur
-    },
-},
-        { title: "Compte", field: "compte", headerFilter: "input", editor: "input" },
-
-        { title: "Libellé", field: "libelle", headerFilter: "input", editor: "input" },
-        {
-    title: "Débit",
-    field: "debit",
-    headerFilter: "input",
-    editor: "number", // Permet l'édition en tant que nombre
-    bottomCalc: "sum", // Calcul du total dans le bas de la colonne
-    formatter: function(cell) {
-        // Formater pour afficher 0.00 si la cellule est vide ou nulle
-        const value = cell.getValue();
-        return value ? parseFloat(value).toFixed(2) : "0.00";
-    },
-    mutatorEdit: function(value) {
-        // Retourner "0.00" comme valeur par défaut si vide lors de l'édition
-        return value || "0.00";
-
-        // Mettre à jour la valeur du champ "Débit"
-        cell.setValue(debit.toFixed(2)); // Format en 2 décimales
-    }
-},
-{ title: "Crédit", field: "credit", headerFilter: "input",  editor: "number", // Permet l'édition en tant que nombre
-    bottomCalc: "sum", // Calcul du total dans le bas de la colonne
-    formatter: function(cell) {
-        // Formater pour afficher 0.00 si la cellule est vide ou nulle
-        const value = cell.getValue();
-        return value ? parseFloat(value).toFixed(2) : "0.00";
-    },
-    mutatorEdit: function(value) {
-        // Retourner "0.00" comme valeur par défaut si vide lors de l'édition
-        return value || "0.00";
-      // Mettre à jour la valeur du champ "Débit"
-        cell.setValue(debit.toFixed(2)); // Format en 2 décimales
-    }
-},
-        { title: "N° facture lettrée", field: "fact_lettrer", headerFilter: "input", editor: "input" },
-        { title: "Taux RAS TVA", field: "taux_ras_tva", headerFilter: "input", editor: "input" },
-        { title: "Nature de l'opération", field: "nature_op", headerFilter: "input" , editor: "input" },
-        { title: "Date lettrage", field: "date_lettrage", headerFilter: "input", editor: "input" },
-        { title: "Contre-Partie", field: "contre_partie", headerFilter: "input" , editor: "input" },
-        { title: "Pièce justificative", field:"piece_justificative"
-, headerFilter: "input" , editor: "input" },
-{
-            title: "Sélectionner",
-            headerSort: false,
-            resizable: true,
-            frozen: true,
-            width: 50,
-            minWidth: 40,
-            headerHozAlign: "center",
-            hozAlign: "center",
-            formatter: "rowSelection",
-            titleFormatter: "rowSelection",
-            cellClick: function(e, cell){
-                cell.getRow().toggleSelect();
-            }
-        },
-
-
-    ],
-    footerElement: "<table style='width: 30%; margin-top: 10px; border-collapse: collapse;'>" +
-                    "<tr>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Cumul Débit :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='cumul-debit-Caisse'></span></td>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Cumul Crédit :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='cumul-credit-Caisse'></span></td>" +
-                    "</tr>" +
-                    "<tr>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Solde Débiteur :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='solde-debit-Caisse'></span></td>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Solde Créditeur :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='solde-credit-Caisse'></span></td>" +
-                    "</tr>" +
-                    "</table>", // Footer sous forme de tableau
-    rowFormatter: function(row) {
-        let debitTotal = 0;
-        let creditTotal = 0;
-
-        row.getTable().getRows().forEach(function(r) {
-            debitTotal += parseFloat(r.getData().montant || 0);
-            creditTotal += parseFloat(r.getData().montant || 0);
-        });
-
-        let soldeDebiteur = debitTotal - creditTotal;
-        let soldeCrediteur = creditTotal - debitTotal;
-
-        // Mise à jour des éléments dans le footer
-        document.getElementById('cumul-debit-Caisse').innerText = formatCurrency(debitTotal);
-        document.getElementById('cumul-credit-Caisse').innerText = formatCurrency(creditTotal);
-        document.getElementById('solde-debit-Caisse').innerText = formatCurrency(soldeDebiteur);
-        document.getElementById('solde-credit-Caisse').innerText = formatCurrency(soldeCrediteur);
-    }
-});
-tabulatorManager.applyToTabulator(tableCaisse);
-
-// Configuration du tableau Opérations Diverses
-var tableOP = new Tabulator("#table-operations-diverses", {
-    layout: "fitColumns",
-    height: "500px",
-    // rowHeader:{headerSort:false, resizable: true, frozen:true,width:50,minwidth:40, headerHozAlign:"center", hozAlign:"center", formatter:"rowSelection", titleFormatter:"rowSelection", cellClick:function(e, cell){
-    //   cell.getRow().toggleSelect();
-    // }},
-    selectable: true,
-    data: Array(1).fill({}),
-    columns: [
-        { title: "ID", field: "id", visible: false },
-        {
-            title: "Date",
-            field: "date",
-            hozAlign: "center",
-            headerFilter: "input",
-
-            sorter: "date",
-            editor: function(cell, onRendered, success, cancel) {
-                const input = document.createElement("input");
-                input.type = "text"; // Utilisation d'un champ de texte pour flatpickr
-                const currentValue = cell.getValue();
-                input.value = currentValue ? luxon.DateTime.fromISO(currentValue).toFormat('dd/MM/yyyy') : '';
-                input.placeholder = "jj/mm/aaaa";
-                flatpickr(input, {
-                    dateFormat: "d/m/Y",
-                    defaultDate: currentValue ? luxon.DateTime.fromISO(currentValue).toFormat('dd/MM/yyyy') : '',
-                    onChange: function(selectedDates) {
-                        success(luxon.DateTime.fromJSDate(selectedDates[0]).toISODate());
-                    },
-                    allowInput: true,
-                });
-                onRendered(function() {
-                    input.focus();
-                });
-                return input;
-            },
-            formatter: function(cell) {
-                let dateValue = cell.getValue();
-                if (dateValue) {
-                    const dt = luxon.DateTime.fromISO(dateValue);
-                    return dt.isValid ? dt.toFormat('dd/MM/yyyy') : "Date invalide";
-                }
-                return "";
-            },
-        },
-        { title: "N°Facture", field: "numero_facture", headerFilter: "input", editor: "input" },
-
-        { title: "Compte", field: "compte" , headerFilter: "input", editor: "input"},
-        { title: "Libellé", field: "libelle", editor: "input" , headerFilter: "input",},
-        {
-    title: "Débit",
-    field: "debit",
-    headerFilter: "input",
-    editor: "number", // Permet l'édition en tant que nombre
-    bottomCalc: "sum", // Calcul du total dans le bas de la colonne
-    formatter: function(cell) {
-        // Formater pour afficher 0.00 si la cellule est vide ou nulle
-        const value = cell.getValue();
-        return value ? parseFloat(value).toFixed(2) : "0.00";
-    },
-    mutatorEdit: function(value) {
-        // Retourner "0.00" comme valeur par défaut si vide lors de l'édition
-        return value || "0.00";
-
-
-
-        // Mettre à jour la valeur du champ "Débit"
-        cell.setValue(debit.toFixed(2)); // Format en 2 décimales
-    }
-},
-      { title: "Crédit", field: "credit", headerFilter: "input", editor: "number", bottomCalc: "sum" },
-        {
-            title: "Sélectionner",
-            headerSort: false,
-            resizable: true,
-            frozen: true,
-            width: 50,
-            minWidth: 40,
-            headerHozAlign: "center",
-            hozAlign: "center",
-            formatter: "rowSelection",
-            titleFormatter: "rowSelection",
-            cellClick: function(e, cell){
-                cell.getRow().toggleSelect();
-            }
-        },
-
-     ],
-    footerElement: "<table style='width: 30%; margin-top: 10px; border-collapse: collapse;'>" +
-                    "<tr>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Cumul Débit :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='cumul-debit-operations-diverses'></span></td>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Cumul Crédit :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='cumul-credit-operations-diverses'></span></td>" +
-                    "</tr>" +
-                    "<tr>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Solde Débiteur :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='solde-debit-operations-diverses'></span></td>" +
-                        "<td style='padding: 10px; text-align: left; font-weight: bold;'>Solde Créditeur :</td>" +
-                        "<td style='padding: 10px; text-align: right; font-size: 14px;'><span id='solde-credit-operations-diverses'></span></td>" +
-                    "</tr>" +
-                    "</table>", // Footer sous forme de tableau
-    rowFormatter: function(row) {
-        let debitTotal = 0;
-        let creditTotal = 0;
-
-        row.getTable().getRows().forEach(function(r) {
-            debitTotal += parseFloat(r.getData().montant || 0);
-            creditTotal += parseFloat(r.getData().montant || 0);
-        });
-
-        let soldeDebiteur = debitTotal - creditTotal;
-        let soldeCrediteur = creditTotal - debitTotal;
-
-        // Mise à jour des éléments dans le footer
-        document.getElementById('cumul-debit-operations-diverses').innerText = formatCurrency(debitTotal);
-        document.getElementById('cumul-credit-operations-diverses').innerText = formatCurrency(creditTotal);
-        document.getElementById('solde-debit-operations-diverses').innerText = formatCurrency(soldeDebiteur);
-        document.getElementById('solde-credit-operations-diverses').innerText = formatCurrency(soldeCrediteur);
-    }
-
-
-
-});
-
-tabulatorManager.applyToTabulator(tableOP);
 
 
 

@@ -10,6 +10,7 @@ use App\Models\PlanComptable;
 use App\Models\Fournisseur;
 use App\Models\Journal;
 use App\Models\Client;
+use App\Models\File; // Assurez-vous d'importer le modèle File
 
 use Carbon\Carbon;
 use Complex\Operations;
@@ -24,9 +25,35 @@ use Illuminate\Support\Facades\Session;
 class OperationCouranteController extends Controller
 {
     public function index()
-    {
-        return view('operations'); // Chemin de votre vue Blade
+{
+    // Récupérer l'ID de la société depuis la session
+    $societeId = session('societeId'); 
+    
+    // Initialiser la variable $files
+    $files = null;
+
+    if ($societeId) {
+        // Récupérer tous les fichiers associés à la société (filtrés par societe_id)
+        $files = File::where('societe_id', $societeId)
+        ->where('type', 'caisse')
+        ->get();
+
+        $files_banque = File::where('societe_id', $societeId)
+        ->where('type', 'banque')
+        ->get();
+        $files_achat = File::where('societe_id', $societeId)
+        ->where('type', 'achat')
+        ->get();
+        $files_vente = File::where('societe_id', $societeId)
+        ->where('type', 'vente')
+        ->get();
+
     }
+
+    // Passer la variable $files à la vue avec compact()
+    return view('Operation_Courante', compact('files')); // Chemin de votre vue Blade
+}
+
 
     public function updateField(Request $request, $id)
 {
@@ -362,23 +389,26 @@ public function getContrePartiesVentes(Request $request)
 
 
 
+
+
    // Charger les journaux
    public function getJournauxACH()
-{
-    $societeId = session('societeId');
-    $societe = Societe::find($societeId);
+   {
+       $societeId = session('societeId');
+       $societe = Societe::find($societeId);
 
-    if (!$societe) {
-        return response()->json(['error' => 'Société introuvable'], 400);
-    }
+       if (!$societe) {
+           return response()->json(['error' => 'Société introuvable'], 400);
+       }
 
-    // Filtrer par type_journal 'Achats'
-    $journaux = Journal::select('code_journal', 'intitule', 'type_journal')
-        ->where('type_journal', 'Achats') // Filtrer par type_journal
-        ->get();
+       // Filtrer par societe_id et par type_journal 'Achats'
+       $journaux = Journal::select('code_journal', 'intitule', 'type_journal')
+           ->where('societe_id', $societeId)
+           ->where('type_journal', 'Achats')
+           ->get();
 
-    return response()->json($journaux);
-}
+       return response()->json($journaux);
+   }
 
 public function getJournauxVTE()
 {
@@ -391,6 +421,8 @@ public function getJournauxVTE()
 
     // Filtrer par type_journal 'Ventes'
     $journaux = Journal::select('code_journal', 'intitule', 'type_journal')
+    ->where('societe_id', $societeId)
+
         ->where('type_journal', 'Ventes') // Filtrer par type_journal
         ->get();
 
@@ -408,6 +440,8 @@ public function getJournauxBanque()
 
     // Filtrer par type_journal 'banque'
     $journaux = Journal::select('code_journal', 'intitule', 'type_journal')
+    ->where('societe_id', $societeId)
+
         ->where('type_journal', 'Banque') // Filtrer par type_journal
         ->get();
 
@@ -424,6 +458,8 @@ public function getJournauxCaisse()
 
     // Filtrer par type_journal 'caisse'
     $journaux = Journal::select('code_journal', 'intitule', 'type_journal')
+    ->where('societe_id', $societeId)
+
         ->where('type_journal', 'Caisse') // Filtrer par type_journal
         ->get();
 
@@ -441,6 +477,8 @@ public function getJournauxOPE()
 
     // Filtrer par type_journal 'Opérations'
     $journaux = Journal::select('code_journal', 'intitule', 'type_journal')
+    ->where('societe_id', $societeId)
+
         ->where('type_journal', 'Opérations Diverses') // Filtrer par type_journal
         ->get();
 
@@ -717,6 +755,55 @@ public function getComptesjrxCP(Request $request)
     return response()->json($comptes);
 }
 
+public function getComptes(Request $request)
+{
+    // Récupérer les comptes de la table fournisseurs, avec filtrage sur "4411%"
+    $comptesFournisseurs = Fournisseur::select('compte', 'intitule')
+        ->where('compte', 'like', '4411%')
+        ->get()
+        ->toArray();
+
+    // Récupérer tous les comptes de la table plan_comptable sans filtrer
+    $comptesPlan = PlanComptable::select('compte', 'intitule')
+        ->get()
+        ->toArray();
+
+    // Marquer l'origine pour distinguer les deux sources
+    $comptesFournisseurs = array_map(function ($compte) {
+        $compte['origine'] = 'fournisseurs';
+        return $compte;
+    }, $comptesFournisseurs);
+
+    $comptesPlan = array_map(function ($compte) {
+        $compte['origine'] = 'plan_comptable';
+        return $compte;
+    }, $comptesPlan);
+
+    // Créer un tableau associatif indexé par "compte" pour les comptes fournisseurs
+    $fournisseursAssoc = [];
+    foreach ($comptesFournisseurs as $compte) {
+        $fournisseursAssoc[$compte['compte']] = $compte;
+    }
+
+    // Fusionner : pour chaque compte du plan_comptable, si ce compte n'existe pas déjà dans fournisseurs, l'ajouter
+    $comptesResultat = $fournisseursAssoc; // On commence par les comptes fournisseurs
+    foreach ($comptesPlan as $comptePlan) {
+        if (!isset($fournisseursAssoc[$comptePlan['compte']])) {
+            $comptesResultat[$comptePlan['compte']] = $comptePlan;
+        }
+    }
+
+    // Convertir le tableau associatif en tableau indexé et trier par le champ "compte"
+    $comptes = array_values($comptesResultat);
+    usort($comptes, function ($a, $b) {
+        return strcmp($a['compte'], $b['compte']);
+    });
+
+    // Retourner la réponse JSON
+    return response()->json($comptes);
+}
+
+
 
 public function getCompteTvaAch(Request $request)
 {
@@ -781,7 +868,7 @@ public function getTypeJournal(Request $request)
     public function getClients(Request $request)
     {
         // Vérifie que le societe_id est bien présent dans la requête
-        $societeId = $request->input('societe_id');
+        $societeId = session('societeId');
 
         if (!$societeId) {
             return response()->json(['error' => 'Aucune société sélectionnée'], 400); // Erreur si pas de société
@@ -805,34 +892,33 @@ public function getTypeJournal(Request $request)
 
     public function getFournisseursAvecDetails(Request $request)
     {
-        $societeId = $request->input('societe_id');
+        // Récupère le paramètre 'societe_id' depuis la query string (GET)
+        $societeId = session('societeId');
 
+        // Si le paramètre n'est pas présent, retourne une erreur
         if (!$societeId) {
             return response()->json(['error' => 'Aucune société sélectionnée'], 400);
         }
 
         try {
-            // Récupère les fournisseurs de la société donnée
+            // Récupère les fournisseurs de la société donnée dont le compte commence par '44'
             $fournisseurs = Fournisseur::where('societe_id', $societeId)
-                ->where('compte', 'LIKE', '44%') // Filtre sur les comptes commençant par '44'
+                ->where('compte', 'LIKE', '44%')
                 ->get(['compte', 'intitule', 'contre_partie', 'rubrique_tva']);
 
-            // Ajoute le taux TVA à chaque fournisseur
+            // Pour chaque fournisseur, ajoute le taux de TVA correspondant
             $fournisseursAvecDetails = $fournisseurs->map(function ($fournisseur) {
                 $rubriqueTva = $fournisseur->rubrique_tva;
-
-                // Récupère le taux de TVA depuis la table Racine
+                // Recherche dans la table Racine le taux de TVA associé à la rubrique
                 $racine = Racine::where('num_racines', $rubriqueTva)->first();
                 $tauxTva = $racine ? $racine->Taux : 0;
-
-                // Ajout des détails supplémentaires
-                $fournisseur->taux_tva = $tauxTva; // Taux TVA
+                $fournisseur->taux_tva = $tauxTva;
                 return $fournisseur;
             });
 
             return response()->json($fournisseursAvecDetails);
         } catch (\Exception $e) {
-            // Capture les erreurs
+            // En cas d'erreur, retourne le message d'erreur
             return response()->json(['error' => 'Erreur lors de la récupération des fournisseurs : ' . $e->getMessage()], 500);
         }
     }

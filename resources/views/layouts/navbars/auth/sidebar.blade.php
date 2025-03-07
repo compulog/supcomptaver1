@@ -78,7 +78,7 @@
       </li> -->
 
       <li class="nav-item mt-2">
-        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">paramétres</h6>
+        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Configuration</h6>
       </li>
     
       <li class="nav-item pb-2">
@@ -110,14 +110,7 @@
           <span class="nav-link-text ms-1">Grand livre</span>
         </a>
       </li> -->
-      <li class="nav-item pb-2">
-        <a class="nav-link {{ (Request::is('Grand_livre') ? 'active' : '') }}" href="{{ url('Grand_livre') }}">
-            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i style="font-size: 1rem;" class="fas fa-book-open fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('gestion-des-journaux') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
-            </div>
-            <span class="nav-link-text ms-1">Grand_livre</span>
-        </a>
-      </li>
+    
 
       <li class="nav-item pb-2">
         <a class="nav-link {{ (Request::is('plancomptable') ? 'active' : '') }}" href="{{ url('plancomptable') }}">
@@ -146,7 +139,9 @@
       <span class="nav-link-text ms-1">Clients</span>
         </a>
       </li>
-
+      <li class="nav-item mt-2">
+        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Traitement</h6>
+      </li>
       <li class="nav-item">
       <a class="nav-link {{ (Request::is('Operation_Courante') ? 'active' : '') }}" href="{{ url('Operation_Courante') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -154,6 +149,29 @@
   
         </div>
       <span class="nav-link-text ms-1">Opérations Courantes</span>
+        </a>
+      </li>
+
+
+      <li class="nav-item mt-2">
+        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Édition</h6>
+      </li>
+
+      <li class="nav-item pb-2">
+        <a class="nav-link {{ (Request::is('Grand-livre') ? 'active' : '') }}" href="{{ url('Grand-livre') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+            <i style="font-size: 1rem;" class="fas fa-book-open fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('Grand-livre') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
+            </div>
+            <span class="nav-link-text ms-1">Grand-livre</span>
+        </a>
+      </li>
+      <li class="nav-item">
+      <a class="nav-link {{ (Request::is('balance') ? 'active' : '') }}" href="{{ url('balance') }}">
+          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+          <i style="font-size: 1rem;" class="fas fa-balance-scale fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('balance') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
+  
+        </div>
+      <span class="nav-link-text ms-1">Balance</span>
         </a>
       </li>
 

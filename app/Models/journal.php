@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class journal extends Model
+class Journal extends Model
 {
     use SoftDeletes; // Active Soft Deletes
 
