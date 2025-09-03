@@ -1,13 +1,13 @@
 
 <aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 " id="sidenav-main">
-  <div class="sidenav-header">
+  <!-- <div class="sidenav-header">
     <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav"></i>
-    <!-- <a class="align-items-center d-flex m-0 navbar-brand text-wrap" href="{{ route('dashboard') }}">
+      <a class="align-items-center d-flex m-0 navbar-brand text-wrap" href="{{ route('dashboard') }}">
         <img src="../assets/img/acc.png" class="navbar-brand-img h-100" alt="...">
         <span class="ms-3 font-weight-bold">supcompta</span>
-    </a> -->
-  </div>
-  <hr class="horizontal dark mt-0">
+    </a>  
+  </div> -->
+  <!-- <hr class="horizontal dark mt-0"> -->
   <div class="collapse navbar-collapse  w-auto" id="sidenav-collapse-main">
     <ul class="navbar-nav">
     <!-- <li class="nav-item">
@@ -26,15 +26,15 @@
         </a>
       </li> -->
 
-      <li class="nav-item">
+      <li class="nav-item mt-2">
 
-      @if(isset($societe))
-      <a class="nav-link {{ Request::is('exercices/'.$societe->id) ? 'active' : '' }}" href="{{ url('exercices/'.$societe->id) }}">
+      <!-- @if(isset($societe)) -->
+      <a href="{{ url('exercices/'.$societe->id) }}">
     
     
-@endif
+<!-- @endif -->
   
-      <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+      <!-- <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
             <svg width="12px" height="12px" viewBox="0 0 45 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
               <title>shop </title>
               <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -48,13 +48,18 @@
                 </g>
               </g>
             </svg>
-          </div>
-          <span class="nav-link-text ms-1">Tableau De Board</span>
+          </div> -->
+   <span class="sidebar-section-title ps-4 ms-2 text-uppercase text-xs font-weight-bolder  d-flex align-items-center"  style="cursor:pointer;user-select:none;">
+        <div class="sidebar-section-card d-flex align-items-center w-100" style="background-color:#ffffff;">
+          <span style="color: #211c84;">Tableau de bord</span>
+          <!-- <i id="chevron-config-section" class="fas fa-chevron-right ms-auto transition-chev chev-white"></i> -->
+        </div>
+        </span>      
         </a>
       </li>
-      <li class="nav-item mt-2">
+      <!-- <li class="nav-item mt-2">
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6"></h6>
-      </li>
+      </li> -->
       <!-- <li class="nav-item">
         <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
             <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -78,103 +83,182 @@
       </li> -->
 
       <li class="nav-item mt-2">
-        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Configuration</h6>
+        <span class="sidebar-section-title ps-4 ms-2 text-uppercase text-xs font-weight-bolder  d-flex align-items-center" onclick="toggleSection('config-section')" style="cursor:pointer;user-select:none;">
+        <div class="sidebar-section-card d-flex align-items-center w-100" style="background-color:#ffffff;">
+          <span style="color: #211c84;">Configuration</span>
+          <i id="chevron-config-section" class="fas fa-chevron-right ms-auto transition-chev chev-white"></i>
+        </div>
+        </span>
       </li>
-    
-      <li class="nav-item pb-2">
-        <a class="nav-link {{ (Request::is('gestion-des-journaux') ? 'active' : '') }}" href="{{ url('gestion-des-journaux') }}">
+      <ul class="navbar-nav ps-4" id="config-section" style="display:none;">
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('societe') ? 'active' : '') }}" href="{{ route('popupModification') }}">
             <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i style="font-size: 1rem;" class="fas fa-newspaper fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('gestion-des-journaux') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
+              <i class="fas fa-building text-sm" style="color: #344767 !important;"></i>
             </div>
-            <span class="nav-link-text ms-1">Gestion Des Journaux</span>
-        </a>
+            <span class="nav-link-text ms-1" style="color:#fff;">Societe</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('plancomptable') ? 'active' : '') }}" href="{{ url('plancomptable') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-calculator text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Plan Comptable</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('Fournisseurs') ? 'active' : '') }}" href="{{ url('Fournisseurs') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-truck text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Fournisseurs</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('clients') ? 'active' : '') }}" href="{{ url('clients') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-user text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Clients</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('gestion-des-journaux') ? 'active' : '') }}" href="{{ url('gestion-des-journaux') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-newspaper text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Gestion des Journaux</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('racines') ? 'active' : '') }}" href="{{ url('racines') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-percent text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Gestion Rubrique TVA</span>
+          </a>
+        </li>
+      </ul>
+
+      <li class="nav-item mt-2">
+        <span class="sidebar-section-title ps-4 ms-2 text-uppercase text-xs font-weight-bolder  d-flex align-items-center" onclick="toggleSection('traitement-section')" style="cursor:pointer;user-select:none;">
+        <div class="sidebar-section-card d-flex align-items-center w-100" style="background-color: #ffffff;">
+          <span style="color: #211c84;">Traitement</span>
+          <i id="chevron-traitement-section" class="fas fa-chevron-right ms-auto transition-chev chev-white"></i>
+        </div>
+        </span>
       </li>
-      <!-- <li class="nav-item">
-        <a class="nav-link {{ (Request::is('Grand_livre') ? 'active' : '') }}" href="{{ url('Grand_livre') }}">
+      <ul class="navbar-nav ps-4" id="traitement-section" style="display:none;">
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('Operation_Courante') ? 'active' : '') }}" href="{{ url('Operation_Courante') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-exchange-alt text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Opérations Courantes</span>
+          </a>
+        </li>
+      </ul>
+
+      <li class="nav-item mt-2">
+        <span class="sidebar-section-title ps-4 ms-2 text-uppercase text-xs font-weight-bolder  d-flex align-items-center" onclick="toggleSection('edition-section')" style="cursor:pointer;user-select:none;">
+        <div class="sidebar-section-card d-flex align-items-center w-100" style="background-color:#ffffff;">
+          <span style="color: #211c84;">Édition</span>
+          <i id="chevron-edition-section" class="fas fa-chevron-right ms-auto transition-chev chev-white"></i>
+        </div>
+        </span>
+      </li>
+      <ul class="navbar-nav ps-4" id="edition-section" style="display:none;">
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('journaux01') ? 'active' : '') }}" href="{{ url('journaux01') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-book-open text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Journaux</span>
+          </a>
+        </li>
+        <li class="nav-item">
+  <a class="nav-link {{ request()->routeIs('grandlivre.index') ? 'active' : '' }}"
+     href="{{ route('grandlivre.index') }}">
+    <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+      <i class="fas fa-book-open text-dark text-sm"></i>
+    </div>
+    <span class="nav-link-text ms-1" style="color:#fff;">Grand Livre</span>
+  </a>
+</li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('balance') ? 'active' : '') }}" href="{{ url('balance') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-balance-scale text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Balance</span>
+          </a>
+        </li>
+      </ul>
+
+<script>
+function toggleSection(sectionId) {
+  // Ferme les autres sections et remet les chevrons à droite
+  ['config-section','traitement-section','edition-section'].forEach(function(id) {
+    if(id !== sectionId) {
+      document.getElementById(id).style.display = 'none';
+      var chev = document.getElementById('chevron-' + id);
+      if(chev) chev.classList.remove('chev-down');
+    }
+  });
+  // Toggle la section cliquée
+  var el = document.getElementById(sectionId);
+  var chev = document.getElementById('chevron-' + sectionId);
+  var isOpen = (el.style.display === 'block');
+  el.style.display = isOpen ? 'none' : 'block';
+  if(chev) {
+    if(isOpen) {
+      chev.classList.remove('chev-down');
+    } else {
+      chev.classList.add('chev-down');
+    }
+  }
+}
+</script>
+<style>
+.sidebar-section-title {
+  background: none !important;
+  border: none !important;
+  padding-right: 1rem;
+}
+.transition-chev {
+  transition: transform 0.2s;
+}
+.chev-down {
+  transform: rotate(90deg);
+}
+.chev-color {
+  color: #67748e !important;
+}
+.chev-white {
+  color: #fff !important;
+}
+.sidebar-section-card {
+  background: #211C84;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin: 0.25rem 0;
+  box-shadow: 0 2px 6px 0 rgba(0,0,0,0.05);
+}
+</style>
+    
+      <!-- <li class="nav-item mt-2">
+        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Test</h6>
+      </li>
+      <li class="nav-item">
+      <a class="nav-link {{ (Request::is('Charger-document') ? 'active' : '') }}" href="{{ url('Charger-document') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <svg width="12px" height="12px" viewBox="0 0 42 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              <title>box-3d-50</title>
-              <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                <g transform="translate(-2319.000000, -291.000000)" fill="#FFFFFF" fill-rule="nonzero">
-                  <g transform="translate(1716.000000, 291.000000)">
-                    <g transform="translate(603.000000, 0.000000)">
-                      <path class="color-background" d="M22.7597136,19.3090182 L38.8987031,11.2395234 C39.3926816,10.9925342 39.592906,10.3918611 39.3459167,9.89788265 C39.249157,9.70436312 39.0922432,9.5474453 38.8987261,9.45068056 L20.2741875,0.1378125 L20.2741875,0.1378125 C19.905375,-0.04725 19.469625,-0.04725 19.0995,0.1378125 L3.1011696,8.13815822 C2.60720568,8.38517662 2.40701679,8.98586148 2.6540352,9.4798254 C2.75080129,9.67332903 2.90771305,9.83023153 3.10122239,9.9269862 L21.8652864,19.3090182 C22.1468139,19.4497819 22.4781861,19.4497819 22.7597136,19.3090182 Z"></path>
-                      <path class="color-background opacity-6" d="M23.625,22.429159 L23.625,39.8805372 C23.625,40.4328219 24.0727153,40.8805372 24.625,40.8805372 C24.7802551,40.8805372 24.9333778,40.8443874 25.0722402,40.7749511 L41.2741875,32.673375 L41.2741875,32.673375 C41.719125,32.4515625 42,31.9974375 42,31.5 L42,14.241659 C42,13.6893742 41.5522847,13.241659 41,13.241659 C40.8447549,13.241659 40.6916418,13.2778041 40.5527864,13.3472318 L24.1777864,21.5347318 C23.8390024,21.7041238 23.625,22.0503869 23.625,22.429159 Z"></path>
-                      <path class="color-background opacity-6" d="M20.4472136,21.5347318 L1.4472136,12.0347318 C0.953235098,11.7877425 0.352562058,11.9879669 0.105572809,12.4819454 C0.0361450918,12.6208008 6.47121774e-16,12.7739139 0,12.929159 L0,30.1875 L0,30.1875 C0,30.6849375 0.280875,31.1390625 0.7258125,31.3621875 L19.5528096,40.7750766 C20.0467945,41.0220531 20.6474623,40.8218132 20.8944388,40.3278283 C20.963859,40.1889789 21,40.0358742 21,39.8806379 L21,22.429159 C21,22.0503869 20.7859976,21.7041238 20.4472136,21.5347318 Z"></path>
-                    </g>
-                  </g>
-                </g>
-              </g>
-            </svg>
-          </div>
-          <span class="nav-link-text ms-1">Grand livre</span>
+          <i style="font-size: 1rem;" class="fas fa-balance-scale fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('Charger-document') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
+  
+        </div>
+      <span class="nav-link-text ms-1">Charger document</span>
         </a>
       </li> -->
-    
-
-      <li class="nav-item pb-2">
-        <a class="nav-link {{ (Request::is('plancomptable') ? 'active' : '') }}" href="{{ url('plancomptable') }}">
-            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i style="font-size: 1rem;" class="fas fa-calculator fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('gestion-du-plan-comptable') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
-            </div>
-            <span class="nav-link-text ms-1">Gestion Plan Comptable</span>
-        </a>
-      </li>
-
-
-      <li class="nav-item pb-2">
-        <a class="nav-link {{ (Request::is('Fournisseurs') ? 'active' : '') }}" href="{{ url('Fournisseurs') }}">
-            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i style="font-size: 1rem;" class="fas fa-truck fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('gestion-des-fournisseurs') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
-            </div>
-            <span class="nav-link-text ms-1">Fournisseurs</span>
-        </a>
-      </li>
-      <li class="nav-item">
-      <a class="nav-link {{ (Request::is('clients') ? 'active' : '') }}" href="{{ url('clients') }}">
-          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-          <i style="font-size: 1rem;" class="fas fa-user fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('gestion-des-clients') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
- 
-        </div>
-      <span class="nav-link-text ms-1">Clients</span>
-        </a>
-      </li>
-      <li class="nav-item mt-2">
-        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Traitement</h6>
-      </li>
-      <li class="nav-item">
-      <a class="nav-link {{ (Request::is('Operation_Courante') ? 'active' : '') }}" href="{{ url('Operation_Courante') }}">
-          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-          <i style="font-size: 1rem;" class="fas fa-exchange-alt fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('operations-courantes') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
-  
-        </div>
-      <span class="nav-link-text ms-1">Opérations Courantes</span>
-        </a>
-      </li>
-
-
-      <li class="nav-item mt-2">
-        <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-6">Édition</h6>
-      </li>
-
-      <li class="nav-item pb-2">
-        <a class="nav-link {{ (Request::is('Grand-livre') ? 'active' : '') }}" href="{{ url('Grand-livre') }}">
-            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i style="font-size: 1rem;" class="fas fa-book-open fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('Grand-livre') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
-            </div>
-            <span class="nav-link-text ms-1">Grand-livre</span>
-        </a>
-      </li>
-      <li class="nav-item">
-      <a class="nav-link {{ (Request::is('balance') ? 'active' : '') }}" href="{{ url('balance') }}">
-          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-          <i style="font-size: 1rem;" class="fas fa-balance-scale fa-lg ps-2 pe-2 text-center text-dark {{ (Request::is('balance') ? 'text-white' : 'text-dark') }}" aria-hidden="true"></i>
-  
-        </div>
-      <span class="nav-link-text ms-1">Balance</span>
-        </a>
-      </li>
-
 <!--
       <li class="nav-item pb-2">
         <a class="nav-link {{ (Request::is('saisie de mouvement TRESO') ? 'active' : '') }}" href="{{ url('saisie de mouvement TRESO') }}">
@@ -261,7 +345,7 @@
  <!-- <div class="sidenav-footer mx-3 ">
     <div class="card card-background shadow-none card-background-mask-secondary" id="sidenavCard">
       <div class="full-background" style="background-image: url('../assets/img/curved-images/white.jpeg')"></div>
-    <!-- <div class="card-body text-start p-3 w-100">
+      <div class="card-body text-start p-3 w-100">
       <div class="full-background" style="background-image: url('../assets/img/-images/white-.jpeg')"></div>
     <div class="card-body text-start p-3 w-100">
        <div class="icon icon-shape icon-sm bg-white shadow text-center mb-3 d-flex align-items-center justify-content-center border-radius-md">
@@ -275,4 +359,6 @@
       </div>
     </div>
   </div> -->
+
+  
 </aside>

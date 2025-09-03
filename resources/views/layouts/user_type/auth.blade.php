@@ -100,7 +100,7 @@
 
             <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg {{ (Request::is('rtl') ? 'overflow-hidden' : '') }}">
 
-                <nav class="navbar d-flex">
+<nav class="navbar d-flex fixed-top" style="background-color:#ffffff; z-index: 1030;">
 
                   
 
@@ -110,12 +110,12 @@
 
 @if(auth()->check() && auth()->user()->type !== 'interlocuteurs')
 
-<button id="menuToggle" class="navbar-toggler" type="button" style="padding: 0; border: none; background: transparent; margin-left: 20px; display: flex; align-items: center; border: 1px solid black; border-radius: 5px; transition: background-color 0.3s;">
+<button id="menuToggle" class="navbar-toggler" type="button" style="padding: 0; border: none; background: transparent;display: flex; align-items: center; border: 1px solid black; border-radius: 5px; transition: background-color 0.3s;">
     <!-- Icône -->
     <i class="fas fa-bars" style="font-size: 20px; color: black; padding: 5px;"></i>
     
     <!-- Texte Menu -->
-    <span id="menuText" style="font-size: 15px; color: black; margin-left: 5px; padding: 5px 10px;">Menu</span>
+    <span id="menuText" style="font-size: 15px; color: black;">Menu</span>
 </button>
 
 <!-- Style CSS pour le survol -->
@@ -176,45 +176,20 @@
 
     <!-- Script JavaScript pour afficher/masquer la sidebar -->
 
-    <script>
+ 
 
-        // Lorsque l'utilisateur clique sur l'icône du menu
+   <script>
+    document.getElementById("menuToggle").addEventListener("click", function () {
+        document.getElementById("sidebar").classList.add("sidebar-open");
+        document.getElementById("overlay").classList.add("overlay-open");
+    });
 
-        document.getElementById("menuToggle").addEventListener("click", function() {
+    document.getElementById("overlay").addEventListener("click", function () {
+        document.getElementById("sidebar").classList.remove("sidebar-open");
+        document.getElementById("overlay").classList.remove("overlay-open");
+    });
+</script>
 
-            // Basculer l'affichage de la sidebar
-
-            document.getElementById("sidebar").classList.toggle("sidebar-open");
-
-
-
-            // Ajouter ou enlever l'overlay semi-transparent
-
-            document.getElementById("overlay").classList.toggle("overlay-open");
-
-
-
-            // Ajuster le style du main-content pour qu'il prenne moins de place
-
-            document.querySelector('.main-content').classList.toggle('sidebar-open');
-
-        });
-
-
-
-        // Lorsque l'utilisateur clique sur l'overlay, masquer la sidebar
-
-        document.getElementById("overlay").addEventListener("click", function() {
-
-            document.getElementById("sidebar").classList.remove("sidebar-open");
-
-            document.getElementById("overlay").classList.remove("overlay-open");
-
-            document.querySelector('.main-content').classList.remove('sidebar-open');
-
-        });
-
-    </script>
 
 
 
@@ -223,52 +198,45 @@
     <style>
 
         /* Cacher la sidebar par défaut */
+ 
+ /* Cacher la sidebar par défaut */
+#sidebar {
+    margin-top:3.5%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 290px;
+    /* background-color: #ffffff; */
+    background-color: #211C84;
+    color: white;
+    z-index: 1050;
+    transform: translateX(-100%); /* On la déplace hors de l’écran */
+    transition: transform 0.3s ease-in-out;
+}
 
-        #sidebar {
+/* Quand elle est ouverte */
+#sidebar.sidebar-open {
+    transform: translateX(0); /* Elle revient à l’écran */
+}
 
-            display: none;
+/* Overlay (fond sombre) */
+#overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1049;
+}
 
-            position: fixed;
+/* Quand l'overlay est actif */
+#overlay.overlay-open {
+    display: block;
+}
 
-            top: 0;
-
-            left: -250px; /* Sidebar cachée à gauche */
-
-            height: 100%;
-
-            width: 250px;
-
-            background-color: #333; /* Fond de la sidebar */
-
-            color: white;
-
-            transition: all 0.3s ease-in-out; /* Effet de transition */
-
-
-
-        }
-
-
-
-        /* Sidebar ouverte : elle occupe toute la largeur de l'écran */
-
-        .sidebar-open {
-
-            left: 0;
-
-            display: block !important;
-
-        }
-
-
-
-        /* Ajustement du contenu principal quand la sidebar est ouverte */
-
-        .sidebar-open + .main-content {
-
-            margin-left: 250px; /* Pousse le contenu à droite pour faire de la place */
-
-        }
 
 
 

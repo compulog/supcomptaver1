@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 class CreateSocieteTable extends Migration
 {
+
     public function up()
     {
         Schema::create('societe', function (Blueprint $table) {

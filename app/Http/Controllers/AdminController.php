@@ -73,7 +73,7 @@ public function index()
     // Récupérer les utilisateurs dont la colonne 'baseName' correspond au nom de la base de données actuelle
     // et dont le type est 'utilisateur'
     $users = User::where('baseName', $databaseName)
-                 ->where('type', 'utilisateur')
+->whereIn('type', ['utilisateur', 'admin'])
                  ->get()
                  ->makeVisible(['password', 'raw_password']); // Rendre 'raw_password' et 'password' visibles
 

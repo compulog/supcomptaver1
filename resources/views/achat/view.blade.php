@@ -185,6 +185,9 @@
         .navigation-container a:hover {
             color: #0c59b3;
         }
+        .pdf-page {
+    margin-bottom: 15px; /* Ajoute un espace de 20 pixels entre les pages */
+}
     </style>
 </head>
 <body>
@@ -202,76 +205,127 @@
         <i class="fas fa-times"></i>
     </a>
     <script>
-        // function closeFile() {
-        //     var societeId = "{{ session('societeId') }}"; // Récupérer l'ID de la société depuis la session
-        //     window.location.href = '/exercices/' + societeId; // Remplacez '/societe/' par l'URL de votre choix
-        // }
-        function closeFile() {
-    window.history.back(); // Cela ramène l'utilisateur à la page précédente
-}
+      function closeFile() {
+    // Récupère le paramètre 'currentPath' de l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentPath = urlParams.get('currentPath');
 
+    // Si 'currentPath' est défini, redirige vers ce chemin
+    if (currentPath) {
+        window.location.href = currentPath;
+    } else {
+        // Sinon, retourne à la page précédente
+        window.history.back();
+    }
+}
     </script>
 </div>
 
+<!-- Prévisualisation du PDF -->
 <div id="pdf-preview-{{ $file->id }}" class="pdf-preview" style="overflow-y: auto; height: 90vh; width: 75%; margin-left: 20px;"></div>
-<div id="page-num-{{ $file->id }}" class="page-num" style="text-align: center; margin-top: 10px;color:white;margin-left:-300px;"></div>
+
+<!-- Zone de navigation des pages et recherche -->
+<div id="page-num-{{ $file->id }}" class="page-num" style="text-align: center; margin-top: 10px;color:white;margin-left:-300px;">
+    <span id="current-page-display">Page 1 sur 1</span> <!-- Affichage dynamique de la page -->
+    <input type="number" id="page-search" min="1" oninput="goToPage()" style="width: 25px; margin-left: -80px; color: white; background-color: transparent; border: none; -moz-appearance: textfield; -webkit-appearance: none; appearance: none;" />
+    </div>
 
 <script>
   var url = "{{ asset($file->path) }}";  // URL du PDF
-var container = document.getElementById('pdf-preview-{{ $file->id }}');
-var pageNumDiv = document.getElementById('page-num-{{ $file->id }}'); // Pour afficher le numéro de page
+  var container = document.getElementById('pdf-preview-{{ $file->id }}');
+  var pageNumDiv = document.getElementById('page-num-{{ $file->id }}'); // Pour afficher le numéro de page
+  var currentPageDisplay = document.getElementById('current-page-display'); // Pour afficher la page actuelle
 
-pdfjsLib.getDocument(url).promise.then(function(pdf) {
-    var totalPages = pdf.numPages;
-    var currentPage = 1;  // Page actuelle
+  var totalPages; // Déclare la variable totalPages
+  var pageHeight = []; // Tableau pour stocker la hauteur des pages rendues
+  var currentPage = 1;
 
-    // Fonction pour afficher une page
-    function renderPage(pageNum) {
-        container.innerHTML = ''; // Vider le conteneur avant de rendre une nouvelle page
+  pdfjsLib.getDocument(url).promise.then(function(pdf) {
+      totalPages = pdf.numPages; // Initialisation du total des pages
+      var scale = 1.4; // Tu peux ajuster cette valeur selon tes besoins
 
-        pdf.getPage(pageNum).then(function(page) {
-            var canvas = document.createElement('canvas');
-            container.appendChild(canvas);
+      // Fonction pour rendre une page
+      function renderPage(pageNum) {
+          return pdf.getPage(pageNum).then(function(page) {
+              var canvas = document.createElement('canvas');
+              canvas.classList.add('pdf-page'); // Ajouter une classe pour le style
+              container.appendChild(canvas);
+              var context = canvas.getContext('2d');
+              var viewport = page.getViewport({ scale: scale });
 
-            var context = canvas.getContext('2d');
-            var scale = 1.4;
-            var viewport = page.getViewport({ scale: scale });
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
+              page.render({ canvasContext: context, viewport: viewport });
 
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
+              // Stocke la hauteur de la page
+              pageHeight[pageNum] = viewport.height;
+          });
+      }
 
-            page.render({ canvasContext: context, viewport: viewport });
+      // Fonction pour rendre toutes les pages du PDF avec chevauchement
+      function renderAllPages() {
+          container.innerHTML = ''; // Vide le conteneur avant de rendre les pages
 
-            // Mettre à jour la numérotation de la page
-            pageNumDiv.textContent = 'Page ' + currentPage + ' sur ' + totalPages;
-        });
-    }
+          for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+              renderPage(pageNum);
+          }
+      }
 
-    // Afficher la première page
-    renderPage(currentPage);
+      // Fonction pour mettre à jour la page visible en fonction du défilement
+      function updateVisiblePage() {
+          var scrollPosition = container.scrollTop; // Position du défilement
+          var visiblePage = 1;
+          var cumulativeHeight = 0;
 
-    // Navigation entre les pages avec la souris
-    container.addEventListener('wheel', function(event) {
-        if (event.deltaY > 0) {
-            // Défilement vers le bas
-            if (currentPage < totalPages) {
-                currentPage++;
-                renderPage(currentPage);
-            }
-        } else {
-            // Défilement vers le haut
-            if (currentPage > 1) {
-                currentPage--;
-                renderPage(currentPage);
-            }
-        }
-        event.preventDefault(); // Empêche le défilement de la page
-    });
-});
+          // Calculer la page visible en fonction de la position du défilement
+          for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+              cumulativeHeight += pageHeight[pageNum];
 
+              if (scrollPosition + container.clientHeight >= cumulativeHeight) {
+                  visiblePage = pageNum;
+              }
+          }
 
+          // Met à jour le numéro de la page dans le compteur
+          currentPageDisplay.innerHTML = 'Page <span style="margin-left: 35px;">'  + '</span> sur ' + totalPages;
+          document.getElementById('page-search').value = visiblePage; // Met à jour la valeur du champ de recherche
+          currentPage = visiblePage;
+      }
+
+      // Initialisation des pages et de la mise à jour du compteur
+      renderAllPages();
+
+      // Met à jour le compteur de pages lors du défilement
+      container.addEventListener('scroll', function() {
+          updateVisiblePage();
+      });
+
+      // Met à jour le compteur initial
+      updateVisiblePage();
+  });
+
+  // Fonction pour rechercher et aller à une page spécifique
+  function goToPage() {
+      var pageNumber = parseInt(document.getElementById('page-search').value, 10);
+
+      // Vérifiez si le numéro de page est valide
+      if (isNaN(pageNumber) || pageNumber < 1 || pageNumber > totalPages) {
+          return;  // Si le numéro de page est invalide, ne faites rien
+      }
+
+      // Calculer la position de défilement pour la page demandée
+      var scrollPosition = 0;
+
+      // Calculer la position du scroll jusqu'à la page demandée
+      for (let i = 1; i < pageNumber; i++) {
+          scrollPosition += pageHeight[i];
+      }
+
+      // Défilement vers la page demandée
+      container.scrollTop = scrollPosition;
+  }
 </script>
- 
+
 @elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'xlsx' || strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'xls')
 <div style="margin-left:600px;">  
     <a href="{{ asset($file->path) }}" class="btn btn-primary mt-3" download>
@@ -285,8 +339,18 @@ pdfjsLib.getDocument(url).promise.then(function(pdf) {
         <i class="fas fa-times"></i>
     </a>
     <script>
-          function closeFile() {
-    window.history.back(); // Cela ramène l'utilisateur à la page précédente
+        function closeFile() {
+    // Récupère le paramètre 'currentPath' de l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentPath = urlParams.get('currentPath');
+
+    // Si 'currentPath' est défini, redirige vers ce chemin
+    if (currentPath) {
+        window.location.href = currentPath;
+    } else {
+        // Sinon, retourne à la page précédente
+        window.history.back();
+    }
 }
     </script>
 </div>
@@ -363,6 +427,70 @@ pdfjsLib.getDocument(url).promise.then(function(pdf) {
         xhr.send();
     }
 </script>
+
+
+
+<!-- @elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'docx' || strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'doc')
+<div style="margin-left:600px;">  
+    <a href="{{ asset($file->path) }}" class="btn btn-primary mt-3" download>
+        <i class="fas fa-download" title="Télécharger"></i>
+    </a>
+
+    <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="printWord('{{ asset($file->path) }}')" title="Imprimer">
+        <i class="fas fa-print"></i>
+    </a>
+    <a href="javascript:void(0);" class="btn btn-secondary mt-3" onclick="closeFile()" title="Fermer">
+        <i class="fas fa-times"></i>
+    </a>
+</div>
+
+<div id="word-preview-{{ $file->id }}" class="word-preview" style="overflow-y: auto; height: 80vh; width: 40%; margin-left: 30px;"></div>
+<div id="page-num-{{ $file->id }}" class="page-num" style="text-align: center; margin-top: 10px;"></div>
+
+<script>
+    var fileUrl = "{{ asset($file->path) }}";  
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', fileUrl, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function() {
+        var data = xhr.response;
+        mammoth.convertToHtml({ arrayBuffer: data }).then(function(result) {
+            var previewContainer = document.getElementById('word-preview-{{ $file->id }}');
+            previewContainer.innerHTML = result.value;
+
+            // Ajuster l'échelle pour que tout le document soit visible
+            previewContainer.style.transform = 'scale(0.7)'; // Ajustez l'échelle selon vos besoins
+            previewContainer.style.transformOrigin = 'top left'; 
+            previewContainer.style.width = '100%'; // Ajustez la largeur
+        }).catch(function(err) {
+            console.log("Erreur lors de la conversion du fichier Word:", err);
+        });
+    };
+    xhr.send();
+
+    function printWord(url) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function() {
+            var data = xhr.response;
+            mammoth.convertToHtml({ arrayBuffer: data }).then(function(result) {
+                var printWindow = window.open('', '_blank');
+                printWindow.document.write('<html><head><title>Impression</title></head><body>');
+                printWindow.document.write(result.value);
+                printWindow.document.write('</body></html>');
+                printWindow.document.close();
+                printWindow.print();
+            }).catch(function(err) {
+                console.log("Erreur lors de la conversion du fichier Word:", err);
+            });
+        };
+        xhr.send();
+    }
+</script> -->
+
+
+
 @elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'docx' || strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'doc')
 <div style="margin-left:600px;">  
     <a href="{{ asset($file->path) }}" class="btn btn-primary mt-3" download>
@@ -433,21 +561,22 @@ pdfjsLib.getDocument(url).promise.then(function(pdf) {
         <i class="fas fa-times"></i>
           </a>
           <script>
-         function closeFile() {
-    window.history.back(); // Cela ramène l'utilisateur à la page précédente
+       function closeFile() {
+    // Récupère le paramètre 'currentPath' de l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentPath = urlParams.get('currentPath');
+
+    // Si 'currentPath' est défini, redirige vers ce chemin
+    if (currentPath) {
+        window.location.href = currentPath;
+    } else {
+        // Sinon, retourne à la page précédente
+        window.history.back();
+    }
 }
           </script>
         </div>
-        <!-- Ajout des boutons de zoom pour l'image -->
-        <div class="image-zoom-controls">
-            <button id="zoom-out" class="btn btn-secondary" title="Zoom arrière">
-                <i class="fas fa-minus"></i>
-            </button>
-            <button id="zoom-in" class="btn btn-secondary" title="Zoom avant">
-                <i class="fas fa-plus"></i>
-            </button>
-        </div>
-
+      
         <img id="image-preview" src="{{ asset($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2" style="height: auto; width: 50%; transform: scale(1); transition: transform 0.3s;">
     @endif
 
@@ -487,24 +616,24 @@ pdfjsLib.getDocument(url).promise.then(function(pdf) {
         right: 20px; /* Position à droite */
     }
 </style>
-
-<!-- Navigation entre les fichiers -->
+ <!-- Navigation entre les fichiers -->
 <div class="navigation-container">
-      
     @if($currentFileIndex > 0)
-        <a href="{{ route('achat.views', ['fileId' => $files[$currentFileIndex - 1]->id]) }}" class="nav-arrow nav-left">
+        <a href="{{ route('achat.views', ['fileId' => $files[$currentFileIndex - 1]->id]) }}?currentPath={{ request('currentPath') ?? url()->previous() }}" class="nav-arrow nav-left">
             <i class="fas fa-chevron-left"></i>
         </a>
     @endif
 
     @if($currentFileIndex < count($files) - 1)
-        <a href="{{ route('achat.views', ['fileId' => $files[$currentFileIndex + 1]->id]) }}" class="nav-arrow nav-right">
+        <a href="{{ route('achat.views', ['fileId' => $files[$currentFileIndex + 1]->id]) }}?currentPath={{ request('currentPath') ?? url()->previous() }}" class="nav-arrow nav-right">
             <i class="fas fa-chevron-right"></i>
         </a>
     @endif
 </div>
+
+<!-- Boîte de zoom uniquement si le fichier n'est pas un Excel -->
+@if(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) != 'xlsx' && strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) != 'xls')
 <div class="zoom-controls" style="margin-left:300px;">
-   
     <button id="zoom-out" class="zoom-btn" title="Zoom arrière" style="margin-left:180px;">
         <i class="fas fa-minus" style="color:white;"></i>
     </button>
@@ -512,6 +641,7 @@ pdfjsLib.getDocument(url).promise.then(function(pdf) {
         <i class="fas fa-plus" style="color:white;"></i>
     </button>
 </div>
+@endif
 <style>
     .zoom-controls {
         margin-left:500px;
@@ -569,32 +699,25 @@ pdfjsLib.getDocument(url).promise.then(function(pdf) {
 
     // Fonction pour mettre à jour le zoom
     function updateZoom() {
-        // Applique le zoom sur le contenu à l'intérieur des conteneurs
-        var pdfContainer = document.getElementById('pdf-preview-{{ $file->id }}');
-        if (pdfContainer) {
-            pdfContainer.firstChild.style.transform = 'scale(' + zoomLevel + ')'; // Applique le zoom au contenu
-            pdfContainer.firstChild.style.transformOrigin = 'top left'; // Point d'origine pour le zoom
-        }
-
-        var excelContainer = document.getElementById('excel-preview-{{ $file->id }}');
-        if (excelContainer) {
-            excelContainer.firstChild.style.transform = 'scale(' + zoomLevel + ')'; // Applique le zoom au contenu
-            excelContainer.firstChild.style.transformOrigin = 'top left';
-        }
-
-        var wordContainer = document.getElementById('word-preview-{{ $file->id }}');
-        if (wordContainer) {
-            wordContainer.firstChild.style.transform = 'scale(' + zoomLevel + ')'; // Applique le zoom au contenu
-            wordContainer.firstChild.style.transformOrigin = 'top left';
-        }
-
-        // Appliquer le zoom à l'image
-        var imagePreview = document.getElementById('image-preview');
-        if (imagePreview) {
-            imagePreview.style.transform = 'scale(' + zoomLevel + ')'; // Applique le zoom à l'image
-            imagePreview.style.transformOrigin = 'top left'; // Point d'origine pour le zoom
+    // Vérifie si des pages PDF sont présentes
+    if (typeof totalPages !== 'undefined' && totalPages > 0) {
+        // Applique le zoom sur chaque page rendue
+        for (let i = 1; i <= totalPages; i++) {
+            var pageCanvas = document.querySelector(`#pdf-preview-{{ $file->id }} .pdf-page:nth-child(${i})`);
+            if (pageCanvas) {
+                pageCanvas.style.transform = 'scale(' + zoomLevel + ')'; // Applique le zoom à chaque page
+                pageCanvas.style.transformOrigin = 'top left'; // Point d'origine pour le zoom
+            }
         }
     }
+
+    // Applique le zoom à l'image si elle est présente
+    var imagePreview = document.getElementById('image-preview');
+    if (imagePreview) {
+        imagePreview.style.transform = 'scale(' + zoomLevel + ')'; // Applique le zoom à l'image
+        imagePreview.style.transformOrigin = 'center'; // Point d'origine pour le zoom (centre de l'image)
+    }
+}
 
     // Ajoutez les événements pour les boutons de zoom
     document.getElementById('zoom-in').addEventListener('click', zoomIn);

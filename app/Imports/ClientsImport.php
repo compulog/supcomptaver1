@@ -3,6 +3,8 @@
 namespace App\Imports;
 
 use App\Models\Client;
+use App\Models\PlanComptable; // Importer le modèle PlanComptable
+use Illuminate\Support\Facades\Log; // Importer le facade Log
 use App\Models\TypeClient; // Importer le modèle TypeClient
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -22,21 +24,21 @@ class ClientsImport implements ToModel, WithHeadings, WithChunkReading
     public function model(array $row)
     {
         // Ignorer la première ligne
-        static $isFirstRow = true; // Variable statique pour garder l'état entre les appels
-
+        static $isFirstRow = true;
+    
         if ($isFirstRow) {
-            $isFirstRow = false; // Marquer la première ligne comme traitée
-            return null; // Ne rien retourner pour la première ligne
+            $isFirstRow = false;
+            return null;
         }
-
-        // Vérifiez si les colonnes nécessaires existent (en vérifiant que les mappings ne sont pas zéro)
-        $compte = $this->getValue($row, 'compte');
-        $intitule = $this->getValue($row, 'intitule');
-        $identifiantFiscal = $this->getValue($row, 'identifiant_fiscal');
-        $ICE = $this->getValue($row, 'ICE');
-        $typeClient = $this->getValue($row, 'type_client');
-
-        // Traitement de la valeur de type_client
+    
+        // Normaliser les données
+        $compte = trim($this->getValue($row, 'compte'));
+        $intitule = trim($this->getValue($row, 'intitule'));
+        $identifiantFiscal = trim($this->getValue($row, 'identifiant_fiscal'));
+        $ICE = trim($this->getValue($row, 'ICE'));
+        $typeClient = trim($this->getValue($row, 'type_client'));
+    
+        // Traitement de type_client
         if ($typeClient) {
             if (is_numeric($typeClient)) {
                 $typeClientNumero = (int) $typeClient;
@@ -49,35 +51,52 @@ class ClientsImport implements ToModel, WithHeadings, WithChunkReading
         } else {
             $typeClientDescription = null;
         }
-
-        // Chercher le client existant par le compte et societe_id
+    
+        // Chercher le client existant
         $client = Client::where('compte', $compte)
                         ->where('societe_id', $this->societe_id)
                         ->first();
-
-        // Appliquer la logique d'ajout ou de mise à jour
+    
         if ($client) {
-            // Mettre à jour le client existant avec les nouvelles valeurs
+            // Mettre à jour le client existant
             $client->intitule = $intitule;
             $client->identifiant_fiscal = $identifiantFiscal;
             $client->ICE = $ICE;
             $client->type_client = $typeClientDescription;
-            $client->save(); // Enregistrer les modifications
+            $client->save();
         } else {
-            // Créer un nouveau client si celui-ci n'existe pas
-            return new Client([
+            // Créer un nouveau client
+            $client = new Client([
                 'compte' => $compte,
                 'intitule' => $intitule,
                 'identifiant_fiscal' => $identifiantFiscal,
                 'ICE' => $ICE,
                 'type_client' => $typeClientDescription,
-                'societe_id' => $this->societe_id, // Ajouter societe_id ici
+                'societe_id' => $this->societe_id,
+            ]);
+            $client->save();
+        }
+    
+        // Ajouter ou mettre à jour dans la table plan_comptable
+        $planComptable = PlanComptable::where('compte', $compte)
+                                      ->where('societe_id', $this->societe_id)
+                                      ->first();
+    
+        if ($planComptable) {
+            // Mettre à jour l'entrée existante
+            $planComptable->intitule = $intitule;
+            $planComptable->save();
+        } else {
+            // Créer une nouvelle entrée
+            PlanComptable::create([
+                'societe_id' => $this->societe_id,
+                'compte' => $compte,
+                'intitule' => $intitule,
             ]);
         }
-
-        return null; // Ne pas enregistrer si une colonne requise est manquante
+    
+        return null;
     }
-
     // Fonction pour obtenir la valeur d'un champ, ou 0 si le champ n'existe pas dans le mapping
     private function getValue(array $row, $field)
     {

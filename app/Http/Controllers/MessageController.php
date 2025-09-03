@@ -2,12 +2,38 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message; 
+use App\Models\Dossier; 
+use App\Models\User; 
+use App\Models\File; 
+use App\Models\Folder; 
+use App\Models\SoldeMensuel; 
 use Illuminate\Http\Request;
+ use Illuminate\Support\Facades\Mail;
 
 class MessageController extends Controller
 {
    
-  
+    public function showForm()
+    {
+        return view('Charger-document');
+    }
+
+    public function sendEmail(Request $request)
+    {
+        // dd($request->all());
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'message' => 'required|string|max:1000',
+        ]);
+        // dd($validated);
+        Mail::raw($validated['message'], function ($message) use ($validated) {
+            $message->to('compulog.services@gmail.com')
+                    ->from($validated['email'])
+                    ->subject('Nouveau message du formulaire de contact');
+        });
+
+        return redirect()->route('contact.form')->with('success', 'Message envoyé avec succès !');
+    }
 
     public function markAsRead($messageId)
     {
@@ -38,31 +64,45 @@ public function updateStatus(Request $request, $messageId)
     return response()->json(['success' => false, 'message' => 'Message not found'], 404);
 }
 
-    public function store(Request $request)
-    {
-    //   dd($request);
-        $textMessage = $request->input('text_message');
-        $userId = $request->input('user_id');
-        $fileId = $request->input('file_id');
-        $societeId = $request->input('societe_id');
-        $folderId = $request->input('folder_id');
-        $messageId = $request->input('reply_to_message_id');
+ 
+public function store(Request $request)
+{
+    //  dd($request->all());
+    $textMessage = $request->input('text_message');
+    $commentaire = $request->input('commentaire'); // <-- récupère le commentaire séparé
+    $userId = $request->input('user_id');
+    $fileId = $request->input('file_id');
+    $societeId = $request->input('societe_id');
+    $folderId = $request->input('folder_id');
+    $messageId = $request->input('reply_to_message_id');
 
-        $message = Message::create([
-            'text_message' => $textMessage,
-            'user_id' => $userId,
-            'file_id' => $fileId,
-            'societe_id' => $societeId,
-            'folder_id' => $folderId,   
-            'parent_id' => $messageId,
-        ]);
-
-        return redirect()->route('achat.views', ['fileId' => $fileId]);
-    }
+    $message = Message::create([
+        'text_message' => $textMessage,
+        'commentaire' => $commentaire,
+        'user_id' => $userId,
+        'file_id' => $fileId,
+        'societe_id' => $societeId,
+        'folder_id' => $folderId,
+        'parent_id' => $messageId,
+    ]);
+// $isFirstMessage = Message::where('file_id', $fileId)->count() === 1;
+// // dd($textMessage);
+// if($isFirstMessage ){
+//  return back();
+//  }else{
+    return response()->json([
+        'success' => true,
+        'user_name' => auth()->user()->name,
+        'created_at' => now()->format('Y-m-d H:i:s'),
+        'text_message' => $textMessage,
+        // 'isFirstMessage' => $isFirstMessage
+    ]);
+//  }
+}
 
     public function getMessages($file_id, Request $request)
     {
-        \Log::info('File ID:', ['file_id' => $file_id]);
+         \Log::info('File ID:', ['file_id' => $file_id]);
     
         if (is_null($file_id)) {
             return response()->json(['success' => false, 'message' => 'File ID is required'], 400);
@@ -95,6 +135,7 @@ public function updateStatus(Request $request, $messageId)
                 return [
                     'id' => $message->id,
                     'text_message' => $message->text_message,
+                    'commentaire' => $message->commentaire,
                     'user_id' => $message->user_id,
                     'user_name' => $message->user ? $message->user->name : 'Utilisateur inconnu',
                     'created_at' => $message->created_at->format('Y-m-d H:i:s'),
@@ -120,6 +161,8 @@ public function updateStatus(Request $request, $messageId)
 
         // Vérifier si le message existe
         if ($message) {
+              $message->is_read = 0;
+        $message->save();
             $message->delete();  // Supprimer le message de la base de données
 
             // Retourner une réponse JSON
@@ -152,9 +195,143 @@ public function updateStatus(Request $request, $messageId)
 
         // Mettre à jour le message
         $message->text_message = $request->text_message;
+        $message->is_read = 0;
         $message->save();
 
         // Retourner une réponse JSON
         return response()->json(['success' => true, 'message' => 'Message modifié avec succès']);
     }
+public function unreadMessages()
+{
+    try {
+        $societeId = session('societeId');
+        
+        if (!$societeId) {
+            return response()->json(['error' => 'Société non définie'], 400);
+        }
+// dd(auth()->user()->id);
+        // 1. Récupérer les messages non lus avec les fichiers et utilisateurs
+        $messages = Message::where('is_read', 0)
+            ->where('societe_id', $societeId)
+            ->where('user_id', '!=', auth()->user()->id)
+            ->with('file', 'user')
+            ->latest()
+            ->get();
+
+        // 2. Extraire tous les types de fichiers liés aux messages
+        $typesFromMessages = $messages->pluck('file.type')->filter()->unique()->values();
+
+        // 3. Charger les dossiers correspondants à ces types
+        $dossiersByName = Dossier::whereIn('name', $typesFromMessages)->get()->keyBy('name');
+
+        // 4. Injecter le dossier dans chaque fichier lié au message
+        foreach ($messages as $message) {
+            if ($message->file) {
+                if (isset($dossiersByName[$message->file->type])) {
+                    $message->file->dossier = $dossiersByName[$message->file->type];
+                } else {
+                    $message->file->dossier = null;
+                }
+            }
+        }
+
+        // Récupération des dossiers, soldes, fichiers, folders
+        $dossiers = Dossier::with('user')
+            ->where('is_read', 0)
+            ->where('societe_id', $societeId)
+            ->where('updated_by', '!=', auth()->user()->id)
+            ->latest()
+            ->get();
+        $olddossiers = Dossier::with('user')
+            ->onlyTrashed()
+            ->where('is_read', 0)
+            ->where('societe_id', $societeId)
+            ->where('updated_by', '!=', auth()->id())
+            ->latest()
+            ->get();
+            $renamedossiers = Dossier::with('user')
+    ->where('is_read', 0)
+    ->where('societe_id', $societeId)
+    ->whereColumn('created_at', '!=', 'updated_at') // Ajout de cette condition
+    ->where('updated_by', '!=', auth()->id())
+    ->latest()
+    ->get();
+
+        $folders = Folder::with('updatedBy')
+            ->where('is_read', 0)
+            ->where('societe_id', $societeId)
+            ->where('updated_by', '!=', auth()->id())
+            ->latest()
+            ->get();
+$oldfolders = Folder::with('updatedBy')
+        ->onlyTrashed()
+            ->where('is_read', 0)
+            ->where('societe_id', $societeId)
+            ->where('updated_by', '!=', auth()->id())
+            ->latest()
+            ->get();
+$renamefolders = Folder::with('updatedBy')
+    ->where('is_read', 0)
+    ->where('societe_id', $societeId)
+    ->whereColumn('created_at', '!=', 'updated_at') // → Comparaison des dates
+    ->where('updated_by', '!=', auth()->id())
+    ->latest()
+    ->get();
+
+        $soldes = SoldeMensuel::with('updatedBy')
+            ->where('societe_id', $societeId)
+            ->where('is_read', 0)
+            ->where('cloturer', true)
+            ->where('updated_by', '!=', auth()->id())
+            ->latest()
+            ->get();
+
+        $files = File::with(['societe', 'folder', 'updatedBy'])
+            ->where('is_read', 0)
+            ->where('updated_by', '!=', auth()->id())
+            ->where('societe_id', $societeId)
+            ->get();
+        $renamefiles = File::with(['societe', 'folder', 'updatedBy'])
+    ->where('is_read', 0)
+    ->where('societe_id', $societeId)
+    ->whereColumn('updated_at', '!=', 'created_at') 
+    ->where('updated_by', '!=', auth()->id())
+    ->get();
+
+    $oldfiles = File::with(['societe', 'folder', 'updatedBy'])
+    ->onlyTrashed()
+    ->where('is_read', 0)
+    ->where('societe_id', $societeId)
+    ->where('updated_by', '!=', auth()->id())
+    ->get();
+
+        $types = $files->pluck('type')->unique()->filter()->values();
+        $dossiers1 = Dossier::whereIn('name', $types)->get()->keyBy('name');
+
+        foreach ($files as $file) {
+            $file->dossier = $dossiers1[$file->type] ?? null;
+        }
+
+        return response()->json([
+            'messages' => $messages,
+            'dossiers' => $dossiers,
+            'soldes'   => $soldes,
+            'files'    => $files,
+            'folders'  => $folders,
+            'oldfiles' => $oldfiles,
+            'oldfolders' => $oldfolders,
+            'olddossiers' => $olddossiers,
+            'renamefiles' => $renamefiles,
+            'renamedossiers' => $renamedossiers,
+            'renamefolders' => $renamefolders
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Erreur unreadMessages: ' . $e->getMessage());
+        return response()->json(['error' => 'Erreur serveur'], 500);
+    }
 }
+
+
+}
+

@@ -59,8 +59,12 @@ class DouvrirController extends Controller
         $dossier = Dossier::findOrFail($id); // Si le dossier n'existe pas, il retournera une erreur 404
     
         // Récupérer les fichiers ayant le même type que le dossier
-        $query = File::where('type', $dossier->name); // Requête de base pour récupérer les fichiers
-    
+        $query = File::where('type', $dossier->name)
+        ->where(function($q) {
+            $q->whereNull('folders')
+              ->orWhere('folders', 0);
+        });
+
         // Appliquer un filtrage ou un tri si des paramètres sont fournis dans la requête
         if ($request->has('filter_by')) {
             $filterBy = $request->get('filter_by');
@@ -87,7 +91,7 @@ class DouvrirController extends Controller
    
 
             if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                $file->preview = asset('storage/uploads/' . $file->name);
+                $file->preview = asset($file->path);
 
             } elseif (in_array($extension, ['pdf'])) {
                 $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
@@ -116,38 +120,74 @@ class DouvrirController extends Controller
     
     public function uploadFile(Request $request)
     {
+    //    dd($request);
+        // Validation des fichiers uploadés
         $request->validate([
             'file' => 'required|file|mimes:jpg,png,pdf,docx,xlsx,doc', // Types de fichiers acceptés
+            'folder_type' => 'required|string', // Le type (Achat, Vente, etc.)
             'societe_id' => 'required|integer', // Validation pour societe_id
-            'folder_type' => 'nullable|string', // Le type de dossier (optionnel)
+            'exercice_debut' => 'nullable|date',
+            'exercice_fin' => 'nullable|date',
         ]);
-    
-        // Vérifier si un fichier a été téléchargé
-        if ($request->hasFile('file')) {
-            $file = $request->file('file');
-    
-            // Créer un nom unique pour le fichier
-            $filename =  $file->getClientOriginalName();
-    
-          // Vérifiez si le répertoire 'uploads' existe dans 'public/storage' et créez-le si nécessaire
-          if (!file_exists(public_path('storage/uploads'))) {
-            mkdir(public_path('storage/uploads'), 0777, true);
-        }
+        
+        $dbName = session('database'); // Assurez-vous que 'database' est bien défini dans la session
+// dd($request->folders);
+ // Vérifier si un fichier a été téléchargé
+ if ($request->hasFile('file')) {
+    $file = $request->file('file');
+    $originalFilename = $file->getClientOriginalName();
 
-        // Déplacer le fichier téléchargé dans 'public/storage/uploads'
-        $file->move(public_path('storage/uploads'), $filename);
+    // Vérifier si le fichier existe déjà dans la base de données
+    $existingFile = File::where('name', $originalFilename)
+                         ->where('societe_id', $request->input('societe_id'))
+                         ->first();
 
+    if ($existingFile) {
+        // Si le fichier existe, retourner une vue avec un message d'alerte
+        // return back()->with('alert', 'Un fichier avec ce nom existe déjà. Voulez-vous l\'écraser ?')->withInput();
+        return back()->with('alert', 'Un fichier avec ce nom existe déjà.')->withInput();
+
+    }
+        
             // Sauvegarder les informations du fichier dans la base de données
             $fileRecord = new File();
-            $fileRecord->name = $filename;  // Nom du fichier
-            $fileRecord->path = 'storage/uploads/' . $filename;  // Le chemin est relatif à 'public'
+            $fileRecord->name = $originalFilename;  // Nom original du fichier
+            $fileRecord->type = $request->input('folder_type');  // Type du fichier (Achat, Vente, etc.)
             $fileRecord->societe_id = $request->input('societe_id');  // ID de la société
-            $fileRecord->type = $request->input('folder_type');  // Type du dossier
-            $fileRecord->save();  // Sauvegarde dans la base de données
+            $fileRecord->exercice_debut = $request->input('exercice_debut');
+            $fileRecord->exercice_fin = $request->input('exercice_fin');
+            // Après avoir déplacé le fichier
+            $fileRecord->path = 'storage/uploads/' . $dbName . '/' . $fileRecord->id . '_' . $originalFilename; // Assurez-vous que cette ligne est exécutée
+ 
+        $fileRecord->updated_by = auth()->id();    
+        $fileRecord->save();  // Sauvegarde dans la base de données
     
-            return back()->with('success', 'Fichier téléchargé avec succès!');
+            // Récupérer l'ID du fichier enregistré
+            $fileId = $fileRecord->id;
+    
+            // Créer un nom de fichier avec l'ID
+            $filename = $fileId . '_' . $originalFilename;
+    
+     
+            // Vérifiez si le répertoire de la base de données existe et créez-le si nécessaire
+            $dbPath = public_path('storage/uploads/' . $dbName);
+            if (!file_exists($dbPath)) {
+                mkdir($dbPath, 0777, true);
+            }
+    
+            // Déplacer le fichier téléchargé dans le dossier de la base de données
+            $file->move($dbPath, $filename);
+    
+            // Mettre à jour le chemin du fichier dans la base de données
+            $fileRecord->path = 'storage/uploads/' . $dbName . '/' . $filename;  // Le chemin est relatif à 'public'
+            $fileRecord->save();  // Sauvegarde mise à jour dans la base de données
+    
+            return back()->with('success', 'Fichier téléchargé avec succès. ID du fichier : ' . $fileId);
+            // return back();
+
         } else {
             return back()->withErrors(['file' => 'Aucun fichier téléchargé.']);
         }
     }
+
 }

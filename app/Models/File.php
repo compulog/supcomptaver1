@@ -16,19 +16,24 @@ class File extends Model
     protected $table = 'files';
 
     // Ajout de 'file_data' aux champs remplissables
-    protected $fillable = ['name', 'path', 'type', 'societe_id', 'file_data','folders'];  
+    protected $fillable = ['name', 'path', 'type', 'societe_id', 'file_data','folders', 'exercice_debut','exercice_fin'];  
 
     public function societe()
     {
         return $this->belongsTo(Societe::class);
     }
     public function folder()
-    {
-        return $this->belongsTo(Folder::class, 'folders'); // 
+            {
+                return $this->belongsTo(Folder::class, 'folders'); // 
             }
-            public function dossier()
+     public function dossier()
             {
                 return $this->belongsTo(Dossier::class); // Chaque fichier appartient à un dossier
             }
+
+            public function updatedBy()
+{
+    return $this->belongsTo(User::class, 'updated_by');
+}
     
 }

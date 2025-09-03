@@ -35,7 +35,10 @@ class ImpotController extends Controller
         // Initialiser la requête pour les fichiers de type 'impot'
         $query = File::where('societe_id', $societeId)
                      ->where('type', 'impot')
-                     ->where('folders', 0);
+                     ->where(function ($query) {
+                        $query->whereNull('folders')
+                              ->orWhere('folders', 0);
+                    });
                     //  ->get();
                     //  dd($query);
         // Filtrage et tri des fichiers en fonction des paramètres de la requête

@@ -62,6 +62,57 @@ use App\Http\Controllers\OperationCouranteController;
 use App\Http\Middleware\SetSocieteId;
 use App\Http\Controllers\BalanceController;
 use App\Http\Controllers\OperationCaisseBanqueController;
+use App\Http\Controllers\PdfController;
+use App\Http\Controllers\ExerciceComptableController;
+use App\Http\Controllers\NotificationController;
+
+Route::get('/operation-courante/select-folder', [OperationCouranteController::class, 'selectFolder']);
+
+// routes/web.php
+Route::put('/notifications/supprimer-notification-sous-dossier/{id}', [NotificationController::class, 'supprimerNotificationSousDossier']);
+Route::put('/notifications/supprimer-notification-fichier/{id}', [NotificationController::class, 'supprimerNotificationFichier']);
+Route::put('/notifications/supprimer-notification-solde/{id}', [NotificationController::class, 'supprimerNotificationSolde']);
+Route::put('/notifications/supprimer-notification-dossier/{id}', [NotificationController::class, 'supprimerNotificationDossier']);
+Route::put('/notifications/supprimer-notification-message/{id}', [NotificationController::class, 'supprimerNotificationMessage']);
+Route::get('/notifications/unread', [MessageController::class, 'unreadMessages']);
+
+Route::post('/cloturer-exercice', [ExerciceComptableController::class, 'cloturerExercice']);
+
+Route::get('/operation_courante/{piece}/edit', [OperationCouranteController::class, 'edit'])->name('operation_courante.edit');
+Route::get('/api/operation_courante/by-piece/{piece}', [OperationCouranteController::class, 'apiByPiece']);
+
+
+Route::get('/grand-livre', [GrandLivreController::class, 'index'])->name('grandlivre.index');
+Route::get('/get-comptes-plan', [GrandLivreController::class, 'getComptesPlan'])->name('grandlivre.getcomptesplan');
+Route::get('/grandlivre/filter', [GrandLivreController::class, 'filter'])->name('grandlivre.filter');
+Route::get('/popup-modification', function () {
+    return view('popupModification');
+})->name('popupModification');
+Route::post('/upload-attachment', [EtatDeCaisseController::class, 'upload'])->name('upload.attachment');
+Route::get('/attachments/{filename}', [EtatDeCaisseController::class, 'view'])->name('attachments.view');
+
+Route::get('/contact', [MessageController::class, 'showForm'])->name('contact.form');
+Route::post('/contact', [MessageController::class, 'sendEmail'])->name('contact.send');
+
+// routes/api.php
+Route::get('/pdf/{pdf}/rows', [PdfController::class,'rows']);
+Route::post('/upload-pdf', [PdfController::class, 'upload'])->name('pdf.upload');
+Route::post('/merge-files', [FileController::class, 'mergeFiles'])->name('mergeFiles');
+Route::post('/extract-pdf', [PdfController::class, 'extractData']);
+Route::get('/operation-courante-banque', [OperationCaisseBanqueController::class, 'getBanque']);
+
+Route::post('/operation-courante-banque', [OperationCaisseBanqueController::class, 'storeBanque']);
+Route::post('/operation-courante-caisse', [OperationCaisseBanqueController::class, 'store']);
+
+Route::delete('/operation-courante-caisse', [OperationCaisseBanqueController::class, 'destroy']);
+Route::get('/operation-courante-caisse', [OperationCaisseBanqueController::class, 'get']);
+
+ Route::get('/files/{filename}', [OperationCouranteController::class, 'download'])->name('files.download');
+
+Route::get('Charger-document', function () {
+    return view('Charger-document');
+})->name('Charger-document');
+Route::get('/getAllPlanComptable', [OperationCaisseBanqueController::class, 'getAllPlanComptable']);
 
 Route::get('/caisseop', [OperationCaisseBanqueController::class, 'index'])->name('caisseop');
 
@@ -188,7 +239,17 @@ Route::group(['middleware' => 'auth'], function () {
 
 // Nouvelle route utilisant la méthode existante :
 Route::get('/journaux', [OperationCouranteController::class, 'getJournauxACH'])->name('journaux.get');
-
+ 
+ 
+Route::post('/set-dossier-session', function (\Illuminate\Http\Request $request) {
+    $dossier = \App\Models\Dossier::find($request->id);
+    if ($dossier) {
+        session(['dossierName' => $dossier->name]);
+        return response()->json(['success' => true]);
+    }
+    return response()->json(['success' => false], 404);
+})->name('set.dossier.session');
+ 
         Route::get('/journaux-ventes', [OperationCouranteController::class, 'getJournauxVTE']);
         Route::get('/journaux-Banque', [OperationCouranteController::class, 'getJournauxBanque']);
         Route::get('/journaux-Caisse', [OperationCouranteController::class, 'getJournauxCaisse']);
@@ -209,7 +270,7 @@ Route::get('/journaux', [OperationCouranteController::class, 'getJournauxACH'])-
         Route::get('export-plan-comptable', [ExportController::class, 'export'])->name('export.plan_comptable');
         Route::get('/plan-comptable/excel', [PlanComptableController::class, 'exportExcel'])->name('plan.comptable.excel');
         Route::post('/cloturer-solde', [SoldeMensuelController::class, 'cloturerSolde']);
-            Route::post('/delete-transaction', [TransactionController::class, 'delete'])->name('transaction.delete');
+        Route::post('/delete-transaction', [TransactionController::class, 'delete'])->name('transaction.delete');
         Route::post('/save-solde', [SoldeMensuelController::class, 'saveSolde'])->name('save-solde');
         Route::put('/update-transaction/{id}', [EtatDeCaisseController::class, 'update'])->name('update-transaction');
         Route::get('/etat-caisse/{id}/edit', [EtatDeCaisseController::class, 'edit'])->name('etat-caisse.edit');
@@ -223,7 +284,7 @@ Route::get('/journaux', [OperationCouranteController::class, 'getJournauxACH'])-
         Route::post('/Douvrir/upload', [DouvrirController::class, 'uploadFile'])->name('Douvrir.upload');
         Route::post('/Douvrir/create', [DouvrirController::class, 'create'])->name('Douvrir.create');
         Route::delete('/dossier/{id}/delete', [DossierController::class, 'destroy'])->name('dossier.delete');
-        Route::post('/messages/reply/{parentMessageId}', [MessageController::class, 'replyToMessage'])->name('messages.reply');
+        // Route::post('/messages/reply/{parentMessageId}', [MessageController::class, 'replyToMessage'])->name('messages.reply');
         Route::post('/messages/update/{id}', [MessageController::class, 'update'])->name('messages.update');
         Route::delete('/messages/delete/{id}', [MessageController::class, 'destroy']);
         Route::get('/folderDossier_permanant/{id}', [FolderDossierPermanantController::class, 'index']);
@@ -234,7 +295,8 @@ Route::get('/journaux', [OperationCouranteController::class, 'getJournauxACH'])-
         Route::get('/folderBanque/{id}', [FolderBanqueController::class, 'index']);
         Route::get('/folderVente/{id}', [FolderVenteController::class, 'index']);
         Route::post('/messages/updateStatus/{messageId}', [MessageController::class, 'updateStatus'])->name('messages.updateStatus');
-        Route::get('/messages/getMessages/{file_id}', [MessageController::class, 'getMessages']);        Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
+        Route::get('/messages/getMessages/{file_id}', [MessageController::class, 'getMessages']);        
+        Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
         Route::get('/achat/view/{fileId}', [AchatController::class, 'viewFile'])->name('achat.views');
         Route::post('/dossier', [DossierController::class, 'store'])->name('dossier.store');
         Route::middleware(['auth', 'permission:vue_tableau_de_board'])->get('/exercices/{societe_id}', [DossierController::class, 'show'])->name('exercices.show');
@@ -287,6 +349,7 @@ Route::get('/journaux', [OperationCouranteController::class, 'getJournauxACH'])-
         Route::get('/caisse', [CaisseController::class, 'index'])->name('caisse.view');
         Route::get('/impot', [ImpotController::class, 'index'])->name('impot.view');
         Route::get('/paie', [PaieController::class, 'index'])->name('paie.view');
+        Route::post('/uploadFusionner', [FileUploadController::class, 'uploadFusionner'])->name('uploadFusionner');
         Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('uploadFile');
         Route::post('/societes/import', [SocieteController::class, 'import'])->name('societes.import');
         Route::get('/rubriques-tva', [societeController::class, 'getRubriquesTva']);
@@ -322,9 +385,9 @@ Route::get('/journaux', [OperationCouranteController::class, 'getJournauxACH'])-
             })->name('profile');
 
 
-        Route::get('Grand_livre', function () {
-                return view('Grand_livre');
-            })->name('Grand_livre');
+        Route::get('Grand-livre', function () {
+                return view('Grand-livre');
+            })->name('Grand-livre');
         Route::get('static-sign-in', function () {
                 return view('static-sign-in');
             })->name('sign-in');

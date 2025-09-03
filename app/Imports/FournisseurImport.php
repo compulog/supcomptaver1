@@ -5,7 +5,7 @@ namespace App\Imports;
 use App\Models\Fournisseur;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithCalculatedFormulas; // <-- Ajout de cette interface
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Illuminate\Support\Facades\Log;
 
 class FournisseurImport implements ToCollection, WithCalculatedFormulas
@@ -15,11 +15,7 @@ class FournisseurImport implements ToCollection, WithCalculatedFormulas
     protected $mapping;
 
     /**
-     * Constructeur pour recevoir les paramètres d'import.
-     *
-     * @param int   $societe_id
-     * @param int   $nombre_chiffre_compte
-     * @param array $mapping
+     * Constructeur
      */
     public function __construct($societe_id, $nombre_chiffre_compte, array $mapping)
     {
@@ -29,79 +25,87 @@ class FournisseurImport implements ToCollection, WithCalculatedFormulas
     }
 
     /**
-     * Optionnel : Convertit les valeurs scientifiques en texte si nécessaire.
-     *
-     * @param mixed $value
-     * @return string|null
+     * Traitement brut de ICE : conserver les zéros à gauche
      */
     private function sanitizeIce($value)
     {
-        if (is_numeric($value)) {
-            return number_format($value, 0, '', '');
+        if (is_null($value)) {
+            return null;
         }
-        return $value;
+
+        return ltrim((string) $value, "\t\n\r\0\x0B"); // nettoie sans toucher aux zéros
     }
 
     /**
-     * Traite chaque ligne du fichier.
-     *
-     * @param Collection $rows
+     * Traitement des lignes Excel
      */
     public function collection(Collection $rows)
     {
         $processedAccounts = [];
 
         foreach ($rows as $index => $row) {
-            // Ignorer la première ligne (l'en-tête)
-            if ($index === 0) {
-                continue;
-            }
+            // Ignorer la première ligne (en-têtes)
+            if ($index === 0) continue;
 
-            // Récupérer les valeurs en fonction du mapping (les indices commencent à 0)
             $compteIndex = $this->mapping['colonne_compte'] - 1;
             $intituleIndex = $this->mapping['colonne_intitule'] - 1;
 
-            $compte = isset($row[$compteIndex]) ? trim($row[$compteIndex]) : null;
-            $intitule = isset($row[$intituleIndex]) ? trim($row[$intituleIndex]) : null;
+            $compte = isset($row[$compteIndex]) ? trim((string) $row[$compteIndex]) : null;
+            $intitule = isset($row[$intituleIndex]) ? trim((string) $row[$intituleIndex]) : null;
 
-            // Les autres colonnes optionnelles
             $identifiant_fiscal = (isset($this->mapping['colonne_identifiant_fiscal']) && $this->mapping['colonne_identifiant_fiscal'] !== null)
-                ? trim($row[$this->mapping['colonne_identifiant_fiscal'] - 1] ?? '')
-                : null;
-            $ice = (isset($this->mapping['colonne_ICE']) && $this->mapping['colonne_ICE'] !== null)
-                ? $this->sanitizeIce(trim($row[$this->mapping['colonne_ICE'] - 1] ?? ''))
-                : null;
-            $natureOperation = (isset($this->mapping['colonne_nature_operation']) && $this->mapping['colonne_nature_operation'] !== null)
-                ? trim($row[$this->mapping['colonne_nature_operation'] - 1] ?? '')
-                : null;
-            $rubrique_tva = (isset($this->mapping['colonne_rubrique_tva']) && $this->mapping['colonne_rubrique_tva'] !== null)
-                ? trim($row[$this->mapping['colonne_rubrique_tva'] - 1] ?? '')
-                : null;
-            $designation = (isset($this->mapping['colonne_designation']) && $this->mapping['colonne_designation'] !== null)
-                ? trim($row[$this->mapping['colonne_designation'] - 1] ?? '')
-                : null;
-            $contre_partie = (isset($this->mapping['colonne_contre_partie']) && $this->mapping['colonne_contre_partie'] !== null)
-                ? trim($row[$this->mapping['colonne_contre_partie'] - 1] ?? '')
+                ? trim((string) $row[$this->mapping['colonne_identifiant_fiscal'] - 1] ?? '')
                 : null;
 
-            // Vérifier la présence des champs obligatoires
+            $ice = (isset($this->mapping['colonne_ICE']) && $this->mapping['colonne_ICE'] !== null)
+                ? $this->sanitizeIce($row[$this->mapping['colonne_ICE'] - 1] ?? '')
+                : null;
+
+            $nature_map = [
+                '1' => 'Achat de biens d’équipement',
+                '2' => 'Achat de travaux',
+                '3' => 'Achat de services',
+                'Achat de biens d’équipement' => '1',
+                'Achat de travaux' => '2',
+                'Achat de services' => '3',
+            ];
+
+            $natureOperation = null;
+            if (!empty($this->mapping['colonne_nature_operation'])) {
+                $colIndex = $this->mapping['colonne_nature_operation'] - 1;
+                $val = trim((string) $row[$colIndex] ?? '');
+
+                if (array_key_exists($val, $nature_map)) {
+                    $natureOperation = in_array($val, ['1', '2', '3']) ? $val : $nature_map[$val];
+                } else {
+                    $natureOperation = $val;
+                }
+            }
+
+            $rubrique_tva = (isset($this->mapping['colonne_rubrique_tva']) && $this->mapping['colonne_rubrique_tva'] !== null)
+                ? trim((string) $row[$this->mapping['colonne_rubrique_tva'] - 1] ?? '')
+                : null;
+
+            $designation = (isset($this->mapping['colonne_designation']) && $this->mapping['colonne_designation'] !== null)
+                ? trim((string) $row[$this->mapping['colonne_designation'] - 1] ?? '')
+                : null;
+
+            $contre_partie = (isset($this->mapping['colonne_contre_partie']) && $this->mapping['colonne_contre_partie'] !== null)
+                ? trim((string) $row[$this->mapping['colonne_contre_partie'] - 1] ?? '')
+                : null;
+
+            // Champs obligatoires
             $missingFields = [];
-            if (empty($compte)) {
-                $missingFields[] = 'compte';
-            }
-            if (empty($intitule)) {
-                $missingFields[] = 'intitule';
-            }
+            if (empty($compte)) $missingFields[] = 'compte';
+            if (empty($intitule)) $missingFields[] = 'intitule';
             $highlight = !empty($missingFields) ? 'highlight-yellow' : null;
 
-            // Pour éviter les doublons si le même compte apparaît plusieurs fois
             if (!in_array($compte, $processedAccounts)) {
                 $processedAccounts[] = $compte;
 
                 $compteLength = strlen($compte ?? '');
                 $isInvalid = $compteLength !== (int) $this->nombre_chiffre_compte;
 
-                // Vérifier si le fournisseur existe déjà pour cette société
                 $fournisseur = Fournisseur::where('compte', $compte)
                     ->where('societe_id', $this->societe_id)
                     ->first();
@@ -117,6 +121,7 @@ class FournisseurImport implements ToCollection, WithCalculatedFormulas
                     'invalid' => $isInvalid ? 1 : 0,
                     'highlight' => $highlight,
                 ];
+
                 Log::info("Traitement de la ligne $index pour le compte $compte", $dataToUpdate);
 
                 try {

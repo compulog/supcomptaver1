@@ -184,6 +184,10 @@ public function operations()
     }
 
 
+public function exercices()
+{
+    return $this->hasMany(ExerciceComptable::class, 'id_societe');
+}
 
 }
 

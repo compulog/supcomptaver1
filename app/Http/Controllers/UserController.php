@@ -68,25 +68,51 @@ public function destroy($id)
 public function index()
 {
     $databaseName = DB::getDatabaseName();
-    $droits = DroitDacces::all(); // Récupère tous les droits d'accès
+    $droits = DroitDacces::all();
     $societeId = session('societeId');
 
-    // Récupération des utilisateurs et rendre 'raw_password' visible
-    $users = User::where('baseName', $databaseName)
-                ->where('societe_id',$societeId)
-                 ->get()
-                 ->makeVisible('raw_password');  // Inclure raw_password dans la réponse
- 
-    return view('utilisateurs', compact('users','droits'));
+    if (!$societeId) {
+        // Si aucun societeId dans la session, récupérer tous les utilisateurs
+        $users = User::where('baseName', $databaseName)
+                     ->get()
+                     ->makeVisible('raw_password');
+    } else {
+        // Si societeId est défini
+        $users = User::where('baseName', $databaseName)
+                     ->where(function ($query) use ($societeId) {
+                         $query->whereIn('type', ['admin', 'utilisateur'])
+                               ->orWhere(function ($subQuery) use ($societeId) {
+                                   $subQuery->where('type', 'interlocuteurs')
+                                            ->where('societe_id', $societeId);
+                               });
+                     })
+                     ->get()
+                     ->makeVisible('raw_password');
+    }
+
+    return view('utilisateurs', compact('users', 'droits'));
 }
 
+// public function index()
+// {
+//     $databaseName = DB::getDatabaseName();
+//     $droits = DroitDacces::all(); // Récupère tous les droits d'accès
+//     $societeId = session('societeId');
 
+//     // Récupération des utilisateurs et rendre 'raw_password' visible
+//     $users = User::where('baseName', $databaseName)
+//                 // ->where('societe_id',$societeId)
+//                  ->get()
+//                  ->makeVisible('raw_password');  // Inclure raw_password dans la réponse
  
+//     return view('utilisateurs', compact('users','droits'));
+// }
+
 public function store(Request $request)
 {
     $societeId = session('societeId');
   
-      // Hacher le mot de passe
+    // Hacher le mot de passe
     $hashedPassword = Hash::make($request->password);
 
     // Créer un nouvel utilisateur
@@ -107,11 +133,14 @@ public function store(Request $request)
     // Récupérer l'ID de l'utilisateur créé
     $userId = $user->id;
 
-    // Ajouter les droits d'accès pour cet utilisateur
-    foreach ($request->droits as $droitId) {
+    // Récupérer tous les droits d'accès disponibles
+    $droits = DroitDacces::all(); // Assurez-vous que le modèle Droit est importé
+
+    // Ajouter tous les droits d'accès pour cet utilisateur
+    foreach ($droits as $droit) {
         DB::table('droit_dacces_user')->insert([
             'user_id' => $userId,
-            'droit_dacces_id' => $droitId,
+            'droit_dacces_id' => $droit->id,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

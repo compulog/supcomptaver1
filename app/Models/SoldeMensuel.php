@@ -28,8 +28,14 @@ class SoldeMensuel extends Model
         'societe_id',  
         'code_journal',
         'cloturer',
+         'updated_by',
     ];
 
     // Pour éviter l'auto-gestion des timestamps (created_at, updated_at) si vous ne les utilisez pas
     public $timestamps = true;
+    public function updatedBy()
+{
+    return $this->belongsTo(User::class, 'updated_by');
+}
+
 }

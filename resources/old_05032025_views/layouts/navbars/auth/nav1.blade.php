@@ -84,10 +84,10 @@
             <span class="nav-link-text ms-1">Mon Profil</span> 
         </a>
 
-        <!-- Sign Out link with icon -->
+        <!-- Déconnexion link with icon -->
         <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
+            <i class="fas fa-sign-out-alt"></i> <!-- Déconnexion icon -->
+            <span class="d-sm-inline d-none">Déconnexion</span>
         </a>
     </div>
     
@@ -109,10 +109,10 @@
             <span class="nav-link-text ms-1">Mon Profil</span> 
         </a>
 
-        <!-- Sign Out link with icon -->
+        <!-- Déconnexion link with icon -->
         <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
+            <i class="fas fa-sign-out-alt"></i> <!-- Déconnexion icon -->
+            <span class="d-sm-inline d-none">Déconnexion</span>
         </a>
     </div>
     @elseif(Auth::user()->type === 'utilisateur')
@@ -129,10 +129,10 @@
             <span class="nav-link-text ms-1">Mon Profil</span> 
         </a>
 
-        <!-- Sign Out link with icon -->
+        <!-- Déconnexion link with icon -->
         <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
+            <i class="fas fa-sign-out-alt"></i> <!-- Déconnexion icon -->
+            <span class="d-sm-inline d-none">Déconnexion</span>
         </a>
     </div>
 
@@ -144,10 +144,10 @@
             <span class="nav-link-text ms-1">Mon Profil</span> 
         </a>
 
-        <!-- Sign Out link with icon -->
+        <!-- Déconnexion link with icon -->
         <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
+            <i class="fas fa-sign-out-alt"></i> <!-- Déconnexion icon -->
+            <span class="d-sm-inline d-none">Déconnexion</span>
         </a>
     </div>
     @endif

@@ -3,126 +3,232 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Transaction;  
-use App\Models\SoldeMensuel; 
-use App\Models\journal; 
+use App\Models\Transaction;
+use App\Models\SoldeMensuel;
+use App\Models\journal;
+use Illuminate\Support\Facades\File;
+
+use Illuminate\Support\Facades\Auth;
 class EtatDeCaisseController extends Controller
 {
 
-    // Méthode pour afficher la page de l'état de caisse
-    public function index()
+
+
+ public function upload(Request $request)
     {
-        // Récupérer l'ID de la société à partir de la session
-        $societeId = session('societeId');
-    
-        // Vérifier si l'ID de la société est défini
-        if (!$societeId) {
-            return response()->json(['success' => false, 'message' => 'Aucune société définie dans la session.'], 400);
+        if ($request->hasFile('file') && $request->has('transaction_id')) {
+            $file = $request->file('file');
+            $transactionId = $request->input('transaction_id');
+
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $destinationPath = public_path('uploads');
+
+            if (!File::exists($destinationPath)) {
+                File::makeDirectory($destinationPath, 0755, true);
+            }
+
+            $file->move($destinationPath, $filename);
+
+            $url = url('uploads/' . $filename);
+
+            $transaction = Transaction::find($transactionId);
+            if ($transaction) {
+                $transaction->attachment_url = $url;
+                $transaction->attachmentName = $filename; // Ou original name
+                $transaction->save();
+            }
+
+            return response()->json([
+                'success' => true,
+                'filename' => $filename,
+                'url' => $url,
+            ]);
         }
-    
-        // Récupérer toutes les transactions pour la société
-        $transactions = Transaction::where('societe_id', $societeId)
-        ->orderBy('created_at', 'asc') // Remplacez 'created_at' par le champ de tri souhaité
-        ->get();
-    
-        // Récupérer tous les soldes mensuels pour la société
-        $soldesMensuels = SoldeMensuel::where('societe_id', $societeId)->get();
-        $journauxCaisse = Journal::where('societe_id', $societeId)
+
+        return response()->json(['success' => false, 'message' => 'Fichier ou transaction manquant'], 400);
+    }
+
+    public function view($filename)
+    {
+    $path = storage_path('app/public/uploads/' . $filename);
+
+        if (!file_exists($path)) {
+            abort(404, 'Fichier non trouvé.');
+        }
+
+        return response()->file($path);
+    }
+
+
+
+    // Méthode pour afficher la page de l'état de caisse
+
+public function index()
+{
+    // Récupérer l'ID de la société à partir de la session
+    $societeId = session('societeId');
+
+    // Vérifier si l'ID de la société est défini
+    if (!$societeId) {
+        return response()->json(['success' => false, 'message' => 'Aucune société définie dans la session.'], 400);
+    }
+
+    // Charger la relation updatedBy pour avoir le nom de l'utilisateur
+    $transactions = Transaction::with('updatedBy')
+        ->where('societe_id', $societeId)
+        ->orderBy('created_at', 'asc')
+        ->get()
+        ->map(function($transaction) {
+            return [
+                'id' => $transaction->id,
+                'date' => $transaction->date,
+                'reference' => $transaction->reference,
+                'libelle' => $transaction->libelle,
+                'recette' => $transaction->recette,
+                'depense' => $transaction->depense,
+                'societe_id' => $transaction->societe_id,
+                'code_journal' => $transaction->code_journal,
+                // 1) clé created_at pour la date de création de la transaction
+                'created_at'       => $transaction->created_at
+                                         ? $transaction->created_at->toDateTimeString()
+                                         : null,
+
+                // 2) clé updated_at pour la date de dernière modification
+                'updated_at'       => $transaction->updated_at
+                                         ? $transaction->updated_at->toDateTimeString()
+                                         : null,
+                'updated_by' => $transaction->updatedBy ? $transaction->updatedBy->name : 'Inconnu',
+
+                'attachment_url' => $transaction->attachment_url ?? null,
+                'attachmentName' => $transaction->attachmentName ?? null,
+            ];
+        });
+
+    // Récupérer tous les soldes mensuels pour la société
+    $soldesMensuels = SoldeMensuel::where('societe_id', $societeId)->get();
+    $journauxCaisse = Journal::where('societe_id', $societeId)
         ->where('type_journal', 'caisse')
         ->get();
-        // Passer les données à la vue
-        return view('etat_de_caisse', compact('transactions', 'soldesMensuels', 'journauxCaisse'));
-    }
-    
-    public function save(Request $request)
-{
-    // Vérifier les données reçues
-    \Log::info($request->all()); 
-    $societeId = session('societeId'); 
-    \Log::info('Societe ID : ' . $societeId);
 
-  
+    // Passer les données à la vue
+    return view('etat_de_caisse', [
+        'transactions' => $transactions,
+        'soldesMensuels' => $soldesMensuels,
+        'journauxCaisse' => $journauxCaisse,
+    ]);
+}
+
+
+public function save(Request $request)
+{
+    $societeId = session('societeId');
+
     $request->validate([
-        'date' => ' required|date',
+        'date' => 'required|date',
         'ref' => 'nullable|string|max:50',
         'libelle' => 'nullable|string',
         'recette' => 'nullable|numeric',
         'depense' => 'nullable|numeric',
-        'journal_code' => 'nullable|string|max:10', 
-        'user_response' => 'nullable|string', 
+        'journal_code' => 'nullable|string|max:10',
+        'user_response' => 'nullable|string',
+        'file' => 'nullable|file|max:10240', // 10 MB max
     ]);
 
     try {
-        // Vérifier si la transaction existe déjà avec la même référence et societe_id
-        $transaction = Transaction::where('reference', $request->input('ref'))
-                                   ->where('societe_id', $societeId)
-                                   ->first();
+        $ref = $request->input('ref');
+        $isRefValid = !empty($ref) && $ref !== '0';
 
-        // Vérifier la valeur de user_response
-        if ($request->input('user_response') === 'continue') {
-            // Si la réponse est "continue", on crée une nouvelle transaction
-            Transaction::create([
-                'date' => $request->input('date'),
-                'reference' => $request->input('ref'),
-                'libelle' => $request->input('libelle'),
-                'recette' => $request->input('recette', 0),
-                'depense' => $request->input('depense', 0),
-                'societe_id' => $societeId, // Insertion du societe_id
-                'code_journal' => $request->input('journal_code'), // Insertion du code journal
-            ]);
+        // 🧩 Traitement du fichier (s’il existe)
+        $attachmentUrl = null;
+        $attachmentName = null;
 
-            return response()->json(['success' => true, 'message' => 'Transaction créée avec succès.']);
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $attachmentName = time() . '_' . $file->getClientOriginalName();
+            $destinationPath = public_path('uploads');
+
+            if (!File::exists($destinationPath)) {
+                File::makeDirectory($destinationPath, 0755, true);
+            }
+
+            $file->move($destinationPath, $attachmentName);
+            $attachmentUrl = url('uploads/' . $attachmentName);
         }
-        //  elseif ($request->input('user_response') === 'update' && $transaction) {
-        //     // Si la réponse est "update" et que la transaction existe, on la met à jour
-        //     $transaction->update([
-        //         'date' => $request->input('date'),
-        //         'libelle' => $request->input('libelle'),
-        //         'recette' => $request->input('recette', 0),
-        //         'depense' => $request->input('depense', 0),
-        //         'code_journal' => $request->input('journal_code'), // Mettre à jour le code journal
-        //     ]);
 
-        //     return response()->json(['success' => true, 'message' => 'Transaction mise à jour avec succès.']);
-        // } 
+        $data = [
+            'date' => $request->input('date'),
+            'reference' => $isRefValid ? $ref : null,
+            'libelle' => $request->input('libelle'),
+            'recette' => $request->input('recette', 0),
+            'depense' => $request->input('depense', 0),
+            'societe_id' => $societeId,
+            'code_journal' => $request->input('journal_code'),
+            'updated_by' => auth()->id(),
+        ];
+
+        // Ajouter les infos fichier si présent
+        if ($attachmentUrl) {
+            $data['attachment_url'] = $attachmentUrl;
+            $data['attachmentName'] = $attachmentName;
+        }
+
+        if ($request->input('user_response') === 'continue') {
+            Transaction::create($data);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaction créée avec succès.',
+                'attachment_url' => $attachmentUrl,
+                'attachmentName' => $attachmentName,
+            ]);
+        }
+
         elseif ($request->input('user_response') === '0') {
-            // Si la réponse est "0", vérifier si la transaction existe
+            if (!$isRefValid) {
+                Transaction::create($data);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Transaction créée (sans référence).',
+                    'attachment_url' => $attachmentUrl,
+                    'attachmentName' => $attachmentName,
+                ]);
+            }
+
+            $transaction = Transaction::where('reference', $ref)
+                                      ->where('societe_id', $societeId)
+                                      ->first();
+
             if ($transaction) {
-                // Mettre à jour la transaction existante
-                $transaction->update([
-                    'date' => $request->input('date'),
-                    'libelle' => $request->input('libelle'),
-                    'recette' => $request->input('recette', 0),
-                    'depense' => $request->input('depense', 0),
-                    'code_journal' => $request->input('journal_code'), // Mettre à jour le code journal
-                ]);
+                $transaction->update($data);
 
-                return response()->json(['success' => true, 'message' => 'Transaction mise à jour avec succès.']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Transaction mise à jour avec succès.',
+                    'attachment_url' => $attachmentUrl,
+                    'attachmentName' => $attachmentName,
+                ]);
             } else {
-                // Si la référence n'existe pas, créer une nouvelle transaction
-                Transaction::create([
-                    'date' => $request->input('date'),
-                    'reference' => $request->input('ref'),
-                    'libelle' => $request->input('libelle'),
-                    'recette' => $request->input('recette', 0),
-                    'depense' => $request->input('depense', 0),
-                    'societe_id' => $societeId, // Insertion du societe_id
-                    'code_journal' => $request->input('journal_code'), // Insertion du code journal
-                ]);
+                Transaction::create($data);
 
-                return response()->json(['success' => true, 'message' => 'Transaction créée avec succès.']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Transaction créée avec succès.',
+                    'attachment_url' => $attachmentUrl,
+                    'attachmentName' => $attachmentName,
+                ]);
             }
         } else {
-            // Si la réponse est "update" mais que la transaction n'existe pas
-            return response()->json(['success' => false, 'message' => 'Aucune transaction à mettre à jour.']);
+            return response()->json(['success' => false, 'message' => 'Aucune action définie.']);
         }
+
     } catch (\Exception $e) {
-        // Log l'erreur pour déboguer
-        \Log::error('Erreur lors de l\'enregistrement de la transaction', ['error' => $e->getMessage()]);
         return response()->json(['success' => false, 'message' => $e->getMessage()]);
     }
 }
-    
+
+
+
 public function edit($id)
 {
     $etatcaisse = Transaction::findOrFail($id);

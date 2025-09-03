@@ -47,7 +47,14 @@
               
         <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar"> 
             <div class="nav-link" style="margin-left: 750px;">
-                <span class="nav-link-text ms-1"> {{ Auth::user()->name }}</span>
+                <span class="nav-link-text ms-1"> {{ Auth::user()->name }}</span><br>
+<span class="nav-link-text ms-1" style="font-size:10px;">
+    @if(Auth::user()->type == 'admin')
+        Administrateur
+    @else
+        {{ Auth::user()->type }}
+    @endif
+</span>
             </div>
 
 
@@ -76,10 +83,10 @@
             <span class="nav-link-text ms-1">Mon Profil</span> 
         </a>
 
-        <!-- Sign Out link with icon -->
+        <!-- Déconnexion link with icon -->
         <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
+            <i class="fas fa-sign-out-alt"></i> <!-- Déconnexion icon -->
+            <span class="d-sm-inline d-none">Déconnexion</span>
         </a>
     </div>
     
@@ -101,10 +108,10 @@
             <span class="nav-link-text ms-1">Mon Profil</span> 
         </a>
 
-        <!-- Sign Out link with icon -->
+        <!-- Déconnexion link with icon -->
         <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
+            <i class="fas fa-sign-out-alt"></i> <!-- Déconnexion icon -->
+            <span class="d-sm-inline d-none">Déconnexion</span>
         </a>
     </div>
     @elseif(Auth::user()->type === 'utilisateur')
@@ -121,10 +128,10 @@
             <span class="nav-link-text ms-1">Mon Profil</span> 
         </a>
 
-        <!-- Sign Out link with icon -->
+        <!-- Déconnexion link with icon -->
         <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
+            <i class="fas fa-sign-out-alt"></i> <!-- Déconnexion icon -->
+            <span class="d-sm-inline d-none">Déconnexion</span>
         </a>
     </div>
 
@@ -136,10 +143,10 @@
             <span class="nav-link-text ms-1">Mon Profil</span> 
         </a>
 
-        <!-- Sign Out link with icon -->
+        <!-- Déconnexion link with icon -->
         <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
+            <i class="fas fa-sign-out-alt"></i> <!-- Déconnexion icon -->
+            <span class="d-sm-inline d-none">Déconnexion</span>
         </a>
     </div>
     @endif

@@ -13,14 +13,15 @@
     border-radius: 0.25rem; /* Coins arrondis pour un look plus moderne */
    height:40px;
 }
-#compte {
-    height: 40px;
-    border-radius: 0.25rem; /* Ajout de coins arrondis */
-}
+
 
 
 
 </style>
+<!-- #compte {
+    height: 40px;
+    border-radius: 0.25rem; /* Ajout de coins arrondis */
+} -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg">
@@ -28,9 +29,10 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
 
-
+<br>
 
 
 
@@ -44,7 +46,7 @@
         <button type="button" id="create-button" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
                 data-bs-toggle="modal" data-bs-target="#modal-saisie-manuel"
                 data-bs-toggle="tooltip" data-bs-placement="top" title="Créer"
-                style="color:#007bff; border-color: #007bff;">
+                style="color: #7A73D1; border-color: #7A73D1;">
           <i class="fas fa-plus icon-3d"></i>
           <span>Créer</span>
         </button>
@@ -108,14 +110,14 @@
 
 <!-- Modal pour le formulaire d'ajout manuel -->
 <div class="modal fade" id="modal-saisie-manuel" tabindex="-1" aria-labelledby="modalSaisieManuelLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="modalSaisieManuelLabel">Nouveau Client</h5>
-                <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+                <i class="fas fa-times" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></i>
 
             </div>
-            <div class="modal-body">
+            <div class="modal-body bg-light">
                 <form action="{{ route('client.store') }}" method="POST" id="form-saisie-manuel">
                     @csrf
 
@@ -126,7 +128,7 @@
                                 <label for="compte" class="form-label">Compte</label>
                                 <!-- Options pour choisir entre saisie et auto-incrémentation -->
                                 <div class="input-group">
-                                    <input type="text" class="form-control" name="compte" id="compte" value="3421" required>
+                                    <input type="text" name="compte" id="compte" value="3421"  class="form-control form-control-sm shadow-sm" required>
                                     <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
                                    
                                 </div>
@@ -138,7 +140,7 @@
                     <div class="row mb-3">
                         <div class="col-12">
                             <label for="intitule" class="form-label">Intitulé</label>
-                            <input type="text" class="form-control" name="intitule" required>
+                            <input type="text"  name="intitule"  class="form-control form-control-sm shadow-sm" required>
                         </div>
                     </div>
 
@@ -146,7 +148,7 @@
                     <div class="row mb-3">
                         <div class="col-12">
                             <label for="identifiant_fiscal" class="form-label">Identifiant Fiscal</label>
-                            <input type="text" id="identifiant_fiscal" name="identifiant_fiscal" class="form-control"
+                            <input type="text" id="identifiant_fiscal" name="identifiant_fiscal" class="form-control form-control-sm shadow-sm"
                                    pattern="^\d{7,8}$" maxlength="8" title="L'identifiant fiscal doit comporter 7 ou 8 chiffres"
                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                         </div>
@@ -156,7 +158,7 @@
                     <div class="row mb-3">
                         <div class="col-12">
                             <label for="ICE" class="form-label">ICE</label>
-                            <input type="text" id="ICE" name="ICE" class="form-control"
+                            <input type="text" id="ICE" name="ICE"  class="form-control form-control-sm shadow-sm"
                                    pattern="^\d{15}$" maxlength="15" title="L'ICE doit comporter exactement 15 chiffres"
                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                         </div>
@@ -166,7 +168,7 @@
                     <div class="row mb-3">
                         <div class="col-12">
                             <label for="type_client" class="form-label">Type client</label>
-                            <select class="form-control" name="type_client" required>
+                            <select  class="form-control form-control-sm shadow-sm" name="type_client" required>
                                 <option value="Null">Choisir une option</option>
                                 <option value="5.Entreprise de droit privé">5.Entreprise de droit privé</option>
                                 <option value="1.État">1.État</option>
@@ -178,13 +180,14 @@
                     </div>
 
                     <!-- Boutons -->
-                    <div class="d-flex justify-content-end">
+                    <div class="d-flex justify-content-between">
                         <!-- Bouton Réinitialiser avec marge très grande à droite -->
                         <button type="reset" class="btn btn-secondary me-8">
-                            <i class="fas fa-undo"></i>
+                            <i class="fas fa-undo"></i> Réinitialiser
+
                         </button>
                         <!-- Bouton Valider avec marge très grande à gauche -->
-                        <button type="submit" class="btn btn-primary ms-8" style="background-color:#007bff;">
+                        <button type="submit" class="btn btn-primary ms-8">
                             <i class="fas fa-check"></i> Valider
                         </button>
                     </div>
@@ -200,55 +203,128 @@
 
   <!-- Modal pour le formulaire d'importation Excel -->
   <div class="modal fade" id="modal-import-excel" tabindex="-1" aria-labelledby="modalImportExcelLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-primary">
                         <h5 class="modal-title" id="modalImportExcelLabel">Importer des Clients</h5>
-                        <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+                        <i class="fas fa-times" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></i>
                         </div>
                     <div class="modal-body">
                         <form action="{{ route('import.clients') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" name="societe_id" id="societe_id" value="{{ $societe->id }}">
 
-                            <div class="mb-3">
+                            <div class="form-group">
                                 <label for="file" class="form-label">Fichier Excel :</label>
-                                <input type="file" name="file" class="form-control" required>
+                                <input type="file" name="file" id="file" class="form-control form-control-lg shadow-sm" required>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="form-group">
                                 <label for="compte">Colonne Compte :</label>
-                                <input type="number" name="mapping[compte]" class="form-control">
+                                <input type="number" name="mapping[compte]"  class="form-control form-control-lg shadow-sm">
                             </div>
-                            <div class="mb-3">
+                            <div class="form-group">
                                 <label for="intitule">Colonne Intitulé :</label>
-                                <input type="number" name="mapping[intitule]" class="form-control">
+                                <input type="number" name="mapping[intitule]"  class="form-control form-control-lg shadow-sm">
                             </div>
-                            <div class="mb-3">
+                            <div class="form-group">
                                 <label for="identifiant_fiscal">Colonne Identifiant Fiscal :</label>
-                                <input type="number" name="mapping[identifiant_fiscal]" class="form-control">
+                                <input type="number" name="mapping[identifiant_fiscal]"  class="form-control form-control-lg shadow-sm">
                             </div>
-                            <div class="mb-3">
+                            <div class="form-group">
                                 <label for="ICE">Colonne ICE :</label>
-                                <input type="number" name="mapping[ICE]" class="form-control">
+                                <input type="number" name="mapping[ICE]"  class="form-control form-control-lg shadow-sm">
                             </div>
-                            <div class="mb-3">
+                            <div class="form-group">
                                 <label for="type_client">Colonne Type Client :</label>
-                                <input type="number" name="mapping[type_client]" class="form-control">
+                                <input type="number" name="mapping[type_client]"  class="form-control form-control-lg shadow-sm">
                             </div>
                                <!-- Bouton Réinitialiser avec marge très grande à droite -->
+                                <div class="d-flex justify-content-between">
                         <button type="reset" class="btn btn-secondary me-8">
-                            <i class="fas fa-undo"></i>
+                            <i class="fas fa-undo"></i> Réinitialiser
+
                         </button>
                             <button type="submit" class="btn btn-primary"><i class="fas fa-arrow-down"></i>
                             Importer</button>
+</div>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
 
+<script>
+  
+document.getElementById('file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
 
+    reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            raw: false,
+            defval: ''
+        });
+
+        if (rows.length > 1) {
+            const headers = rows[0];
+
+            if (headers.length < 2) {
+                alert("Le fichier Excel doit contenir au moins 2 colonnes.");
+                return;
+            }
+
+            const selectors = {
+                compte: document.querySelector('input[name="mapping[compte]"]'),
+                intitule: document.querySelector('input[name="mapping[intitule]"]'),
+                identifiantFiscal: document.querySelector('input[name="mapping[identifiant_fiscal]"]'),
+                ICE: document.querySelector('input[name="mapping[ICE]"]'),
+                typeClient: document.querySelector('input[name="mapping[type_client]"]'),
+            };
+
+            const columnOptions = headers.map((header, index) => ({
+                label: header || `Colonne ${index + 1}`,
+                value: index + 1
+            }));
+
+            Object.keys(selectors).forEach(key => {
+                const optionsHtml = columnOptions.map(option => `
+                    <option value="${option.value}">${option.label}</option>
+                `).join('');
+                selectors[key].setAttribute("list", `${key}-datalist`);
+                if (!document.getElementById(`${key}-datalist`)) {
+                    const dataList = document.createElement("datalist");
+                    dataList.id = `${key}-datalist`;
+                    dataList.innerHTML = optionsHtml;
+                    document.body.appendChild(dataList);
+                }
+            });
+
+            // Traitement spécifique ICE (zéros à gauche)
+            const iceColIndex = parseInt(selectors.ICE.value) - 1;
+            const iceValues = rows.slice(1).map(row => {
+                let val = row[iceColIndex];
+                return typeof val === 'number'
+                    ? val.toString().padStart(15, '0')
+                    : val.toString();
+            });
+
+            console.log("ICE avec zéros :", iceValues);
+
+        } else {
+            alert("Le fichier Excel semble être vide !");
+        }
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+</script>
 @if ($errors->any())
     <div class="alert alert-danger">
         <ul>
@@ -273,37 +349,37 @@
 @endforeach -->
 <!-- Modal pour la modification d'un client -->
 <div class="modal fade" id="editClientModal" tabindex="-1" role="dialog" aria-labelledby="editClientModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content border-0 shadow-lg">
             <form id="clientForm" method="POST" action="">
                 @csrf
                 @method('PUT')
-                <div class="modal-header">
+                <div class="modal-header bg-primary">
                     <h5 class="modal-title" id="editClientModalLabel">Modifier le Client</h5>
-                    <i class="fas fa-times" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></i>
+                    <i class="fas fa-times" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></i>
 
                     </button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body bg-light">
                     <div class="form-group">
                         <label for="compte">Compte</label>
-                        <input type="text" class="form-control" name="compte" required>
+                        <input type="text"  class="form-control form-control-sm shadow-sm" name="compte" required>
                     </div>
                     <div class="form-group">
                         <label for="intitule">Intitulé</label>
-                        <input type="text" class="form-control" name="intitule" required>
+                        <input type="text"  class="form-control form-control-sm shadow-sm" name="intitule" required>
                     </div>
                     <div class="form-group">
                         <label for="identifiant_fiscal">Identifiant Fiscal</label>
-                        <input type="text" class="form-control" name="identifiant_fiscal" required>
+                        <input type="text"  class="form-control form-control-sm shadow-sm" name="identifiant_fiscal" required>
                     </div>
                     <div class="form-group">
                         <label for="ICE">ICE</label>
-                        <input type="text" class="form-control" name="ICE" required>
+                        <input type="text"  class="form-control form-control-sm shadow-sm" name="ICE" required>
                     </div>
                     <div class="form-group">
                         <label for="type_client">Type Client</label>
-                        <select class="form-control" name="type_client" required>
+                        <select class="form-control form-control-sm shadow-sm" name="type_client" required>
                             <option value="5.Entreprise de droit privé">Entreprise de droit privé</option>
                             <option value="1.État">État</option>
                             <option value="2.Collectivités territoriales">Collectivités territoriales</option>
@@ -311,43 +387,21 @@
                             <option value="4.Autre organisme public">Autre organisme public</option>
                         </select>
                     </div>
-                </div>
-                <div class="modal-footer">
-                     <!-- Bouton Réinitialiser avec marge très grande à droite -->
-                     <button type="reset" class="btn btn-secondary me-8">
-                            <i class="fas fa-undo"></i>
+                      <div class="d-flex justify-content-between">
+                      <button type="reset" class="btn btn-secondary me-8">
+                            <i class="fas fa-undo"></i> Réinitialiser
+
                         </button>
                     <button type="submit" class="btn btn-primary">Modifier</button>
                 </div>
+                </div>
+              
             </form>
         </div>
     </div>
 </div>
 
-<script>
-$(document).ready(function () {
-    $('#modal-saisie-manuel').on('shown.bs.modal', function () {
-        // Logique pour déterminer le prochain compte
-        const comptes = table.getData().map(row => row.compte);
-        let comptePrefix = '3421'; // Préfixe
-        let compteLength = {{ $societe->nombre_chiffre_compte }}; // Longueur totale
-
-        // Logique pour déterminer le prochain compte
-        let newCompte = comptePrefix + '0'.repeat(compteLength - comptePrefix.length - 1) + '1'; // Valeur par défaut
-
-        if (comptes.length > 0) {
-            const numeraux = comptes.map(compte => parseInt(compte.substring(comptePrefix.length)));
-            numeraux.sort((a, b) => a - b);
-            newCompte = comptePrefix + (numeraux[numeraux.length - 1] + 1).toString().padStart(compteLength - comptePrefix.length , '0');
-        }
-
-        $('#compte').val(newCompte); // Mettre à jour le champ "compte"
-        var input = $('#compte')[0];
-        input.setSelectionRange(newCompte.length, newCompte.length); // Positionner le curseur à la fin
-        $('#compte').focus(); // Focus sur le champ "compte"
-    });
-});
-</script>
+ 
 
 <!-- CSS de Tabulator -->
 <link href="https://unpkg.com/tabulator-tables@5.4.3/dist/css/tabulator.min.css" rel="stylesheet">
@@ -401,6 +455,7 @@ var table = new Tabulator("#table-list", {
     data: @json($clients), // Chargement initial des données
     selectable: true,
     rowSelection: true,
+    height:670,
     initialSort: [
         { column: "compte", dir: "asc" }
     ],
@@ -650,9 +705,27 @@ $(document).ready(function () {
     let newCompte = comptePrefix + '0'.repeat(compteLength - comptePrefix.length - 1) + '1'; // Valeur par défaut
 
     if (comptes.length > 0) {
-        const numeraux = comptes.map(compte => parseInt(compte.substring(comptePrefix.length)));
+        const numeraux = comptes
+            .map(compte => parseInt(compte.substring(comptePrefix.length)))
+            .filter(num => !isNaN(num)); // Filtrer les valeurs non numériques
+
         numeraux.sort((a, b) => a - b);
-        newCompte = comptePrefix + (numeraux[numeraux.length - 1] + 1).toString().padStart(compteLength - comptePrefix.length, '0');
+
+        // Trouver le premier numéro manquant dans la séquence
+        let missingNumber = null;
+        for (let i = 0; i < numeraux.length; i++) {
+            if (numeraux[i] !== i + 1) {
+                missingNumber = i + 1;
+                break;
+            }
+        }
+
+        // Si un numéro manquant est trouvé, l'utiliser, sinon incrémenter le dernier numéro
+        if (missingNumber !== null) {
+            newCompte = comptePrefix + missingNumber.toString().padStart(compteLength - comptePrefix.length, '0');
+        } else {
+            newCompte = comptePrefix + (numeraux[numeraux.length - 1] + 1).toString().padStart(compteLength - comptePrefix.length, '0');
+        }
     }
 
     $('#compte').val(newCompte); // Mettre à jour le champ "compte"
@@ -662,63 +735,7 @@ $(document).ready(function () {
 });
 
     // Quand le bouton "auto-increment" est cliqué
-    $('#auto-increment').on('click', function () {
-        // Récupérer toutes les valeurs du champ "compte" dans le tableau Tabulator
-        const comptes = table.getData().map(row => row.compte);
-
-        // Logique pour déterminer le préfixe et la longueur du compte en fonction de "nombre_chiffres_compte"
-        let comptePrefix = initialValue;
-        let compteLength = nombreChiffresCompte;
-
-        // Si aucun compte n'existe dans le tableau
-        if (comptes.length === 0) {
-            // Si aucun compte n'est présent, initialiser à "34210001" ou "3421000001"
-            let initialCompte = comptePrefix + '0'.repeat(compteLength - comptePrefix.length - 1) + '1';
-            $('#compte').val(initialCompte); // Remplir automatiquement avec le compte de départ
-        } else {
-            // Filtrer et récupérer uniquement les comptes qui commencent par le préfixe
-            const comptesFiltrés = comptes.filter(compte => compte.startsWith(comptePrefix));
-
-            // Extraire les numéros des comptes après "3421" et les convertir en entiers
-            const numeraux = comptesFiltrés.map(compte => parseInt(compte.substring(comptePrefix.length)));
-
-            // Trier les numéros extraits par ordre croissant
-            numeraux.sort((a, b) => a - b);
-
-            // Recherche d'une valeur manquante (trou) dans la séquence
-            let newCompte = null;
-
-            // Chercher s'il y a des trous dans la séquence
-            for (let i = 0; i < numeraux.length - 1; i++) {
-                if (numeraux[i + 1] > numeraux[i] + 1) {
-                    // Trouvé un trou, on prend la valeur suivante manquante
-                    newCompte = numeraux[i] + 1;
-                    break;
-                }
-            }
-
-            // Si aucun trou n'est trouvé, on prend le numéro suivant après le plus grand
-            if (newCompte === null) {
-                newCompte = numeraux[numeraux.length - 1] + 1;
-            }
-
-            // Formater le nouveau compte avec le nombre de chiffres demandé
-            // On ajoute des zéros à gauche pour que le compte soit de la longueur correcte
-            let formattedCompte = comptePrefix + newCompte.toString().padStart(compteLength - comptePrefix.length, '0');
-
-            // Vérifier que la longueur du compte est correcte et ajuster si nécessaire
-            if (formattedCompte.length > compteLength) {
-                // Si la longueur dépasse la longueur attendue, on tronque le compte
-                formattedCompte = formattedCompte.slice(0, compteLength);
-            }
-
-            // Mettre à jour le champ "compte" avec la nouvelle valeur
-            $('#compte').val(formattedCompte); // Ajouter le préfixe "3421" et formater le numéro avec le nombre de chiffres spécifié
-        }
-
-        // Si vous souhaitez associer également l'ID de la société dans le compte généré, vous pouvez faire ceci :
-        console.log("ID de la société : ", societeId);  // Exemple de console log de l'ID de la société
-    });
+   
 
     // Vérification au focus si le champ 'compte' est vide, et initialiser si nécessaire
     $('#compte').on('focus', function() {

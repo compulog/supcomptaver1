@@ -60,9 +60,9 @@ class FolderBanqueController extends Controller
             // Récupérer les dossiers
             $folders = $folders->get();
     
-            // Récupérer les fichiers de type "achat"
+            // Récupérer les fichiers de type "banque"
             $achatFiles = File::where('societe_id', $societeId)
-                              ->where('type', 'achat') 
+                              ->where('type', 'banque') 
                               ->where('folders', $id);
     
             // Appliquer le filtrage et le tri sur les fichiers si des paramètres sont présents

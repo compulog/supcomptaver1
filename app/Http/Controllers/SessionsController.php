@@ -63,13 +63,13 @@ if ($user->type === 'interlocuteurs') {
 
     // Si une société existe pour cet utilisateur, rediriger vers l'exercice correspondant à l'ID de la société
     if ($societeId) {
-        return redirect("exercices/{$societeId}")->with(['success' => 'You are logged in.' . $dbName]);
+        return redirect("exercices/{$societeId}");
     } else {
         // Gérer le cas où l'utilisateur n'a pas de société associée
         return redirect('error')->with(['error' => 'No company associated with this user.']);
     }
 } else {
-    return redirect('dashboard')->with(['success' => 'You are logged in.' . $dbName]);
+    return redirect('dashboard');
 }
         }
         else{
@@ -101,6 +101,6 @@ if ($user->type === 'interlocuteurs') {
     public function destroy()
     {
         Auth::logout();
-        return redirect('/login')->with(['success' => 'You\'ve been logged out.']);
+        return redirect('/login');
     }
 }

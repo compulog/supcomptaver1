@@ -37,8 +37,12 @@ class AchatController extends Controller
         if ($societeId) {
             // Filtrage et tri des fichiers de type 'achat'
             $query = File::where('societe_id', $societeId)
-                         ->where('type', 'achat')
-                         ->where('folders', 0);
+            ->where('type', 'achat')
+            ->where(function ($q) {
+                $q->where('folders', 0)
+                  ->orWhereNull('folders');
+            });
+
     
             // Appliquer le filtre par nom ou date
             if ($request->has('filter_by')) {

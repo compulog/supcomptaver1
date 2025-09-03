@@ -16,7 +16,7 @@ class Folder extends Model
     protected $table = 'folders';
 
     // Définir les champs autorisés pour l'attribution de masse
-    protected $fillable = ['name', 'societe_id', 'folder_id', 'type_folder'];
+    protected $fillable = ['name', 'societe_id', 'folder_id', 'type_folder', 'updated_by'];
 
     public function parent()
     {
@@ -38,5 +38,13 @@ class Folder extends Model
         // Assurez-vous que la clé étrangère correspond à celle utilisée dans votre table 'files'
         return $this->hasMany(File::class, 'folders'); // Remplacer 'folders' par le nom de la colonne correcte
     }
-    
+     public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+ 
+
+
+
+
 }

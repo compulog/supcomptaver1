@@ -220,8 +220,10 @@
                         <div class="col-md-4 mb-3">
                             <label for="assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
                             <select class="form-control" name="assujettie_partielle_tva" id="assujettie_partielle_tva" >
-                                <option value="0">Non</option>
-                                <option value="1">Oui</option>
+                            <option value="">choisir une option</option>    
+                            <option value="1">Oui</option>    
+                            <option value="0">Non</option>
+                               
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">

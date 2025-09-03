@@ -13,16 +13,20 @@
         "php": "^8.1",
         "barryvdh/laravel-dompdf": "^3.0",
         "dompdf/dompdf": "^3.0",
-        "guzzlehttp/guzzle": "^7.4",
+        "guzzlehttp/guzzle": "^7.8",
         "illuminate/validation": "*",
         "intervention/image": "^3.9",
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.6",
         "maatwebsite/excel": "^3.1",
+        "openai-php/client": "^0.10.3",
         "phpoffice/phpspreadsheet": "^1.29",
         "phpoffice/phpword": "*",
-        "smalot/pdfparser": "^2.11",
+        "sendgrid/sendgrid": "^8.1",
+        "setasign/fpdi": "^2.6",
+        "smalot/pdfparser": "^2.12",
+        "thiagoalessio/tesseract_ocr": "^2.13",
         "yajra/laravel-datatables-oracle": "^11.1"
     },
     "require-dev": {
@@ -68,7 +72,10 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true

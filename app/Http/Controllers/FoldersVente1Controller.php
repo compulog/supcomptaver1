@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;  
 use App\Models\Folder;
-use App\Models\societe;
+use App\Models\Societe;
 use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
 use PhpOffice\PhpSpreadsheet\IOFactory as PhpSpreadsheetIOFactory;
@@ -33,96 +33,101 @@ class FoldersVente1Controller extends Controller
         });
     }
 
-    public function index($id)
-    {
-        // Récupérer le dossier avec l'ID stocké dans la session
-        $folder = Folder::find($id);
-    
-        $societeId = session('societeId'); 
-    
-        if ($societeId) {
-            // Récupérer les dossiers associés à la société
-            $foldersQuery = Folder::where('societe_id', $societeId)
-                                  ->where('folder_id', $id);
-    
-            // Appliquer les filtres et le tri pour les dossiers
-            if (request()->has('filter_by')) {
-                $filterBy = request('filter_by');
-                if ($filterBy == 'name') {
-                    $foldersQuery->orderBy('name', request('order_by', 'asc'));
-                } elseif ($filterBy == 'date') {
-                    $foldersQuery->orderBy('created_at', request('order_by', 'asc'));
-                }
-            } else {
-                $foldersQuery->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
-            }
-    
-            $folders = $foldersQuery->get();   
-    
-            // Récupérer les fichiers de type "achat"
-            $achatFilesQuery = File::where('societe_id', $societeId)
-                                   ->where('type', 'vente') 
-                                   ->where('folders', $id);
-    
-            // Appliquer les filtres et le tri pour les fichiers
-            if (request()->has('filter_by')) {
-                $filterBy = request('filter_by');
-                if ($filterBy == 'name') {
-                    $achatFilesQuery->orderBy('name', request('order_by', 'asc'));
-                } elseif ($filterBy == 'date') {
-                    $achatFilesQuery->orderBy('created_at', request('order_by', 'asc'));
-                }
-            } else {
-                $achatFilesQuery->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
-            }
-    
-            $achatFiles = $achatFilesQuery->get();
-    
-            // Enregistrer l'ID du dossier dans la session
-            session(['foldersId' => $id]);
-    
-            // Récupérer l'ID du dossier de la session
-            $foldersId = session('foldersId');
-    
-            // Liste des notifications pour les fichiers
-            $notifications = [];
-    
-            foreach ($achatFiles as $file) {
-                // Vérifier l'extension du fichier pour afficher une prévisualisation
-                $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
-    
-                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                    $file->preview = asset('storage/uploads/' . $file->name);
+   public function index($id)
+{
+    // Récupérer le dossier avec l'ID
+    $folder = Folder::find($id);
 
-                } elseif (in_array($extension, ['pdf'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
-                } elseif (in_array($extension, ['doc', 'docx'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Word'; // Word
-                } elseif (in_array($extension, ['xls', 'xlsx'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel'; // Excel
-                } else {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
-                }
-    
-                // Vérifier si un message existe pour ce fichier et si le champ 'is_read' est égal à 0
-                $unreadMessages = Message::where('file_id', $file->id)
-                                         ->where('is_read', 0)
-                                         ->get();
-    
-                // Si des messages non lus existent pour ce fichier, les ajouter aux notifications
-                if ($unreadMessages->count() > 0) {
-                    $notifications[$file->id] = $unreadMessages->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
-                }
-            }
-    
-            // Retourner la vue avec les fichiers, dossiers et notifications
-            return view('foldersVente1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'notifications'));
-        } else {
-            // Rediriger si aucune société n'est trouvée dans la session
-            return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
-        }
+    // Récupérer societeId depuis la session ou la requête
+    $societeId = session('societeId') ?? request()->get('societeId');
+
+    // Stocker dans la session si reçu par requête mais pas encore en session
+    if (!session()->has('societeId') && request()->has('societeId')) {
+        session(['societeId' => request()->get('societeId')]);
     }
-    
+$societe = Societe::find($societeId);
+
+    if ($societeId) {
+        // Sous-dossiers du dossier actuel
+        $foldersQuery = Folder::where('societe_id', $societeId)
+                              ->where('folder_id', $id);
+
+        // Tri et filtrage des dossiers
+        if (request()->has('filter_by')) {
+            $filterBy = request('filter_by');
+            $order = request('order_by', 'asc');
+
+            if ($filterBy === 'name') {
+                $foldersQuery->orderBy('name', $order);
+            } elseif ($filterBy === 'date') {
+                $foldersQuery->orderBy('created_at', $order);
+            }
+        } else {
+            $foldersQuery->orderBy('created_at', 'asc');
+        }
+
+        $folders = $foldersQuery->get();
+
+        // Fichiers de type "vente" dans le dossier
+        $achatFilesQuery = File::where('societe_id', $societeId)
+                               ->where('type', 'vente')
+                               ->where('folders', $id);
+
+        // Tri et filtrage des fichiers
+        if (request()->has('filter_by')) {
+            $filterBy = request('filter_by');
+            $order = request('order_by', 'asc');
+
+            if ($filterBy === 'name') {
+                $achatFilesQuery->orderBy('name', $order);
+            } elseif ($filterBy === 'date') {
+                $achatFilesQuery->orderBy('created_at', $order);
+            }
+        } else {
+            $achatFilesQuery->orderBy('created_at', 'asc');
+        }
+
+        $achatFiles = $achatFilesQuery->get();
+
+        // Sauvegarder le dossier ID courant
+        session(['foldersId' => $id]);
+        $foldersId = session('foldersId');
+
+        // Notifications
+        $notifications = [];
+
+        foreach ($achatFiles as $file) {
+            $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
+
+            if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                $file->preview = asset('storage/uploads/' . $file->name);
+            } elseif ($extension === 'pdf') {
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF';
+            } elseif (in_array($extension, ['doc', 'docx'])) {
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=Word';
+            } elseif (in_array($extension, ['xls', 'xlsx'])) {
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel';
+            } else {
+                $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier';
+            }
+
+            // Messages non lus
+            $unreadMessages = Message::where('file_id', $file->id)
+                                     ->where('is_read', 0)
+                                     ->get();
+
+            if ($unreadMessages->count() > 0) {
+                $notifications[$file->id] = $unreadMessages->count();
+            }
+        }
+
+        // Retourner la vue avec les données
+        return view('foldersVente1', compact('societe','achatFiles', 'folders', 'foldersId', 'folder', 'notifications'));
+    } else {
+        return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
+    }
+}
+
  
     // public function index($id)
     // {

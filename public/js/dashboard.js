@@ -351,7 +351,7 @@
                        var rowData = cell.getRow().getData();
                        return "<div class='action-icons'>" +
                        "<a href='/exercices/" + rowData.id + "' class='text-info mx-1'>" +
-                       "<i class='fas fa-door-open'></i></a>" +
+                    //    "<i class='fas fa-door-open'></i></a>" +
                        "<a href='#' class='text-primary mx-1' data-bs-toggle='modal' data-bs-target='#modifierSocieteModal' " +
                        "data-id='" + rowData.id + "' " +
                        "data-nom-entreprise='" + rowData.raison_sociale + "' " +
@@ -377,6 +377,14 @@
            }
        }
        });
+
+// Ajout : double-clic sur la ligne pour aller vers exercices
+table.on("rowDblClick", function(e, row) {
+    var rowData = row.getData();
+    if(rowData && rowData.id) {
+        window.location.href = "/exercices/" + rowData.id;
+    }
+});
    
    
        function toggleSelectAll() {
@@ -602,7 +610,7 @@ $(document).ready(function() {
         $('input[name="code_societe"]').focus();
         
         // Définir la valeur par défaut du champ "Prorata de Déduction" à 100
-        $('#prorata_de_deduction').val(100);
+        // $('#prorata_de_deduction').val(100);
     });
 
     // Lorsqu'on clique sur le bouton "Ajouter"

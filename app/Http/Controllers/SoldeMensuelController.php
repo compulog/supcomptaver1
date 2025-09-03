@@ -63,7 +63,7 @@ class SoldeMensuelController extends Controller
     }
 
     
-    public function cloturerSolde(Request $request)
+ public function cloturerSolde(Request $request)
 {
     // Validation des données envoyées
     $request->validate([
@@ -83,8 +83,9 @@ class SoldeMensuelController extends Controller
                          ->first();
 
     if ($solde) {
-        // Mettre à jour le champ cloturer
-        $solde->cloturer = true; // ou 1
+        // Marquer comme clôturé et enregistrer l'utilisateur qui l'a fait
+        $solde->cloturer = true;
+        $solde->updated_by = auth()->id(); // ID de l'utilisateur connecté
         $solde->save();
 
         return response()->json(['message' => 'Le solde a été clôturé avec succès !']);
@@ -92,6 +93,7 @@ class SoldeMensuelController extends Controller
         return response()->json(['message' => 'Aucun solde trouvé pour ce mois et cette année.'], 404);
     }
 }
+
 
 
 

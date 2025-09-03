@@ -216,7 +216,7 @@
 
                     <a href="{{ url('/logout')}}" class="nav-link">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span class="d-sm-inline d-none">Sign Out</span>
+                        <span class="d-sm-inline d-none">Déconnexion</span>
                     </a>
                 </div>
                 @elseif(Auth::user()->type === 'admin')
@@ -237,7 +237,7 @@
 
                     <a href="{{ url('/logout')}}" class="nav-link">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span class="d-sm-inline d-none">Sign Out</span>
+                        <span class="d-sm-inline d-none">Déconnexion</span>
                     </a>
                 </div>
                 @elseif(Auth::user()->type === 'utilisateur')
@@ -254,7 +254,7 @@
 
                     <a href="{{ url('/logout')}}" class="nav-link">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span class="d-sm-inline d-none">Sign Out</span>
+                        <span class="d-sm-inline d-none">Déconnexion</span>
                     </a>
                 </div>
 
@@ -267,7 +267,7 @@
 
                     <a href="{{ url('/logout')}}" class="nav-link">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span class="d-sm-inline d-none">Sign Out</span>
+                        <span class="d-sm-inline d-none">Déconnexion</span>
                     </a>
                 </div>
                 @endif

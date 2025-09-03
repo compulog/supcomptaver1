@@ -5,6 +5,7 @@ use App\Imports\ClientsImport;
 
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Client;
+use App\Models\PlanComptable;
 use App\Models\Societe;
 
 use Illuminate\Http\Request;
@@ -41,6 +42,16 @@ class ClientController extends Controller
     ]);
 
     try {
+        // Récupérer les clients avant de les supprimer pour obtenir les informations nécessaires
+        $clients = Client::whereIn('id', $request->ids)->get();
+
+        // Supprimer les entrées correspondantes dans la table plan_comptable
+        foreach ($clients as $client) {
+            PlanComptable::where('societe_id', $client->societe_id)
+                ->where('compte', $client->compte)
+                ->delete();
+        }
+
         // Supprimer les lignes avec les IDs reçus
         $deletedCount = Client::whereIn('id', $request->ids)->delete();
 
@@ -56,6 +67,7 @@ class ClientController extends Controller
         ]);
     }
 }
+
 
 
 
@@ -81,36 +93,42 @@ class ClientController extends Controller
     public function store(Request $request)
     {
         // Récupérer l'ID de la société depuis les données envoyées du formulaire
-    $societeId = $request->input('societe_id'); // Utilisez 'societe_id' ici
-    if (!$societeId) {
-        return response()->json(['success' => false, 'error' => 'Aucune société sélectionnée dans la session.']);
+        $societeId = $request->input('societe_id'); // Utilisez 'societe_id' ici
+        if (!$societeId) {
+            return redirect()->back()->with('error', 'Aucune société sélectionnée dans la session.');
+        }
+    
+        // Valider les données du formulaire
+        $validatedData = $request->validate([
+            'compte' => 'required|string|max:255',
+            'intitule' => 'required|string|max:255',
+            'identifiant_fiscal' => 'nullable|string|max:255',
+            'ICE' => 'nullable|string|max:255',
+            'type_client' => 'nullable|string|max:255',
+        ]);
+    
+        // Ajouter l'ID de la société aux données validées
+        $validatedData['societe_id'] = $societeId;
+    
+        try {
+            // Créez un nouveau client avec les données validées et l'ID de la société
+            $client = Client::create($validatedData);
+    
+            // Ajouter une entrée dans la table plan_comptable
+            PlanComptable::create([
+                'societe_id' => $societeId,
+                'compte' => $validatedData['compte'], // Utilisez le même compte que celui du client
+                'intitule' => $validatedData['intitule'], // Utilisez le même intitulé que celui du client
+            ]);
+    
+            // Rediriger avec un message de succès
+            return redirect()->route('clients.index')->with('success', 'Client ajouté avec succès.');
+            
+        } catch (\Exception $e) {
+            // Rediriger avec un message d'erreur
+            return redirect()->back()->with('error', 'Erreur lors de l\'ajout du client : ' . $e->getMessage());
+        }
     }
-
-    // Valider les données du formulaire
-    $validatedData = $request->validate([
-        'compte' => 'required|string|max:255',
-        'intitule' => 'required|string|max:255',
-        'identifiant_fiscal' => 'nullable|string|max:255',
-        'ICE' => 'nullable|string|max:255',
-        'type_client' => 'nullable|string|max:255',
-    ]);
-
-    // Ajouter l'ID de la société aux données validées
-    $validatedData['societe_id'] = $societeId;
-
-    try {
-        // Créez un nouveau client avec les données validées et l'ID de la société
-        $client = Client::create($validatedData);
-
-        // Retourner une réponse JSON avec le nouveau client
-        return response()->json(['success' => true, 'client' => $client]);
-        
-    } catch (\Exception $e) {
-        // Retourner une réponse JSON en cas d'erreur
-        return response()->json(['success' => false, 'error' => $e->getMessage()]);
-    }
-    }
-
 
     public function index()
     {
@@ -134,25 +152,32 @@ class ClientController extends Controller
 
 
 
-public function update(Request $request, $id)
-{
-    $client = Client::findOrFail($id);
-
-    // Validez les données
-    $request->validate([
-        'compte' => 'required|string|max:255',
-        'intitule' => 'required|string|max:255',
-        'identifiant_fiscal' => 'required|string|max:255',
-        'ICE' => 'nullable|string|max:15',
-        'type_client' => 'required|string|max:255',
-    ]);
-
-    // Mettez à jour le client
-    $client->update($request->all());
-
-    // Réponse JSON
-    return response()->json(['success' => true, 'client' => $client]);
-}
+   public function update(Request $request, $id)
+   {
+       $client = Client::findOrFail($id);
+   
+       // Validez les données
+       $validatedData = $request->validate([
+           'compte' => 'required|string|max:255',
+           'intitule' => 'required|string|max:255',
+           'identifiant_fiscal' => 'required|string|max:255',
+           'ICE' => 'nullable|string|max:15',
+           'type_client' => 'required|string|max:255',
+       ]);
+   
+       // Mettez à jour le client
+       $client->update($validatedData);
+   
+       // Mettez à jour l'entrée correspondante dans la table plan_comptable
+       PlanComptable::where('societe_id', $client->societe_id)
+           ->where('compte', $client->compte)
+           ->update([
+               'intitule' => $validatedData['intitule'], // Mettre à jour l'intitulé
+           ]);
+   
+       // Réponse JSON
+       return response()->json(['success' => true, 'client' => $client]);
+   }
 
 public function getNextCompteForClient($societeId)
 {
@@ -241,7 +266,14 @@ public function destroy($id)
 
     // Si le client existe, le supprimer
     if ($client) {
+        // Supprimer l'entrée correspondante dans la table plan_comptable
+        PlanComptable::where('societe_id', $client->societe_id)
+            ->where('compte', $client->compte)
+            ->delete();
+
+        // Supprimer le client
         $client->delete();
+
         return response()->json(['success' => true]); // Retour de la réponse JSON pour indiquer que la suppression a réussi
     }
 

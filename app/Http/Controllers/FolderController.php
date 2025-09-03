@@ -64,223 +64,227 @@ class FolderController extends Controller
 
     }
 
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-    
-        $folder = Folder::findOrFail($id);
-        $folder->name = $request->input('name');
-        $folder->save();
-    
-        return redirect()->back()->with('success', 'Dossier renommé avec succès.');
+ public function update(Request $request, $id)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+    ]);
+
+    $folder = Folder::findOrFail($id);
+    $folder->name = $request->input('name');
+    $folder->updated_by = auth()->id(); // Ajout de l'utilisateur connecté
+    $folder->is_read = 0;
+    $folder->save();
+
+    return redirect()->back()->with('success', 'Dossier renommé avec succès.');
+}
+
+
+  public function index($id, Request $request)
+{
+    // Récupérer le dossier
+    $folder = Folder::find($id);
+
+    $societeId = session('societeId');
+
+    if (!$societeId) {
+        return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
     }
 
-    public function index($id, Request $request)
-
-    {
-
-
-        // Récupérer le dossier avec l'ID passé en paramètre
-
-        $folder = Folder::find($id);
-
-        $societeId = session('societeId');
-
-
-
-        if ($societeId) {
-
-            // Filtrage et tri des dossiers associés à la société
-
-            $folders = Folder::where('societe_id', $societeId)
-
-                             ->where('folder_id', $id);
-
-
-
-            // Appliquer le filtre pour les dossiers
-
-            if ($request->has('filter_by')) {
-
-                $filterBy = $request->get('filter_by');
-
-                if ($filterBy == 'name') {
-
-                    $folders->orderBy('name', $request->get('order_by', 'asc'));  // Tri par nom
-
-                } elseif ($filterBy == 'date') {
-
-                    $folders->orderBy('created_at', $request->get('order_by', 'asc'));  // Tri par date
-
-                }
-
-            } else {
-
-                $folders->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
-
-            }
-
-
-
-            $folders = $folders->get();
-
-
-
-            // Filtrage et tri des fichiers de type "achat"
-
-            $query = File::where('societe_id', $societeId)
-
-                         ->where('type', 'achat')
-
-                         ->where('folders', $id);
-
-
-
-            // Appliquer le filtre pour les fichiers
-
-            if ($request->has('filter_by')) {
-
-                $filterBy = $request->get('filter_by');
-
-                if ($filterBy == 'name') {
-
-                    $query->orderBy('name', $request->get('order_by', 'asc'));  // Tri par nom
-
-                } elseif ($filterBy == 'date') {
-
-                    $query->orderBy('created_at', $request->get('order_by', 'asc'));  // Tri par date
-
-                }
-
-            } else {
-
-                $query->orderBy('created_at', 'asc');  // Par défaut, trier par date ascendante
-
-            }
-
-
-
-            $achatFiles = $query->get();
-
-
-
-            // Enregistrer l'ID du dossier dans la session
-
-            session(['foldersId' => $id]);
-
-
-
-            // Récupérer l'ID du dossier de la session
-
-            $foldersId = session('foldersId');
-
-
-
-            // Liste des notifications pour les dossiers
-
-            $folderNotifications = [];
-
-
-
-            // Vérifier les messages non lus dans le dossier
-
-            $unreadMessagesForFolder = Message::whereHas('file', function ($query) use ($foldersId) {
-
-                // Vérifier que le fichier est dans le dossier spécifié
-
-                $query->where('folders', $foldersId); // Vérifie que le fichier appartient au dossier
-
-            })
-
-            ->where('is_read', 0) // Filtrer pour les messages non lus
-
-            ->get();
-
-
-
-            // Si des messages non lus existent pour ce dossier, les ajouter aux notifications
-
-            if ($unreadMessagesForFolder->count() > 0) {
-
-                // Ajouter le nombre de messages non lus pour ce dossier
-
-                $folderNotifications['folder_'.$id] = $unreadMessagesForFolder->count();
-
-            }
-
-
-
-            // Liste des notifications pour les fichiers
-
-            $fileNotifications = [];
-
-
-
-            foreach ($achatFiles as $file) {
-
-
-
-                // Vérifier l'extension du fichier pour afficher une prévisualisation
-
-                $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
-
-
-
-                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                    $file->preview = asset($file->path);
-
-                } elseif (in_array($extension, ['pdf'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
-                } elseif (in_array($extension, ['doc', 'docx'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Word'; // Word
-                } elseif (in_array($extension, ['xls', 'xlsx'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel'; // Excel
-                } else {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
-                }
-
-
-
-                // Vérifier si un message existe pour ce fichier et si le champ 'is_read' est égal à 0
-
-                $unreadMessagesForFile = Message::where('file_id', $file->id)
-
-                                                ->where('is_read', 0)
-
-                                                ->get();
-
-
-
-                // Si des messages non lus existent pour ce fichier, les ajouter aux notifications
-
-                if ($unreadMessagesForFile->count() > 0) {
-
-                    $fileNotifications[$file->id] = $unreadMessagesForFile->count(); // Stocker le nombre de messages non lus avec l'ID du fichier
-
-                }
-
-            }
-
-
-
-            // Retourner la vue avec les fichiers, dossiers et notifications
-
-             return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications'));
-
+    // Récupérer un paramètre 'type' pour choisir la vue, ex : ?type=achat
+    $type = $request->query('type', null);
+
+    // Récupérer breadcrumb et clicked (le dossier cliqué) depuis la requête
+    $breadcrumb = $request->query('breadcrumb', null);
+    $clicked = $request->query('clicked', null);
+
+    // Construire le chemin (breadcrumbs) à partir du dossier courant (comme dans ta vue)
+    $currentFolder = $folder;
+    $breadcrumbs = [];
+    while ($currentFolder) {
+        $breadcrumbs[] = $currentFolder->name;  // juste les noms pour la logique
+        $currentFolder = $currentFolder->parent;
+    }
+    $breadcrumbs = array_reverse($breadcrumbs); // ordre du plus haut vers le plus bas
+
+    // Requête pour les dossiers liés
+    $foldersQuery = Folder::where('societe_id', $societeId)
+                          ->where('folder_id', $id);
+
+    // Filtrage/tris des dossiers
+    if ($request->has('filter_by')) {
+        $filterBy = $request->get('filter_by');
+        $orderBy = $request->get('order_by', 'asc');
+        if ($filterBy === 'name') {
+            $foldersQuery->orderBy('name', $orderBy);
+        } elseif ($filterBy === 'date') {
+            $foldersQuery->orderBy('created_at', $orderBy);
+        }
+    } else {
+        $foldersQuery->orderBy('created_at', 'asc');
+    }
+    $folders = $foldersQuery->get();
+
+    // Requête pour les fichiers liés
+    $filesQuery = File::where('societe_id', $societeId)
+                      ->where('folders', $id);
+
+    // Filtrage/tris des fichiers
+    if ($request->has('filter_by')) {
+        $filterBy = $request->get('filter_by');
+        $orderBy = $request->get('order_by', 'asc');
+        if ($filterBy === 'name') {
+            $filesQuery->orderBy('name', $orderBy);
+        } elseif ($filterBy === 'date') {
+            $filesQuery->orderBy('created_at', $orderBy);
+        }
+    } else {
+        $filesQuery->orderBy('created_at', 'asc');
+    }
+    $achatFiles = $filesQuery->get();
+
+    // Stocker l'ID du dossier dans la session
+    session(['foldersId' => $id]);
+    $foldersId = session('foldersId');
+
+    // Notifications messages non lus pour dossiers
+    $unreadMessagesForFolder = Message::whereHas('file', function ($q) use ($foldersId) {
+        $q->where('folders', $foldersId);
+    })->where('is_read', 0)->get();
+
+    $folderNotifications = [];
+    if ($unreadMessagesForFolder->count() > 0) {
+        $folderNotifications['folder_'.$id] = $unreadMessagesForFolder->count();
+    }
+
+    // Notifications messages non lus pour fichiers
+    $fileNotifications = [];
+    foreach ($achatFiles as $file) {
+        $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
+        if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+            $file->preview = asset($file->path);
+        } elseif ($extension === 'pdf') {
+            $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF';
+        } elseif (in_array($extension, ['doc', 'docx'])) {
+            $file->preview = 'https://via.placeholder.com/80x100.png?text=Word';
+        } elseif (in_array($extension, ['xls', 'xlsx'])) {
+            $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel';
         } else {
-
-            // Rediriger si aucune société n'est trouvée dans la session
-
-            return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
-
+            $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier';
         }
 
+        $unreadMessagesForFile = Message::where('file_id', $file->id)
+                                        ->where('is_read', 0)
+                                        ->get();
+
+        if ($unreadMessagesForFile->count() > 0) {
+            $fileNotifications[$file->id] = $unreadMessagesForFile->count();
+        }
     }
+//   dd($clicked,$type);
+    // Logique spéciale pour le type 'vente' selon le dossier cliqué
+ if ($type === 'vente' && $clicked !== null) {
+  
+
+    // Si le dossier cliqué est le premier du chemin
+    if ($clicked === $breadcrumbs[0]) {
+                return view('foldersVente1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+
+          // return view('foldersVente', compact('venteFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+    }
+    // Sinon (clicked dans le chemin mais pas premier)
+    elseif (in_array($clicked, $breadcrumbs)) {
+        return view('foldersVente1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+    }
+}else if ($type === 'banque' && $clicked !== null) {
+  
+
+    // Si le dossier cliqué est le premier du chemin
+    if ($clicked === $breadcrumbs[0]) {
+        //   $banqueFiles = $achatFiles; // Renommage logique
+        // dd($achatFiles);
+        // return view('folderbanque', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+           return view('foldersBanque1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+
+    }
+    // Sinon (clicked dans le chemin mais pas premier)
+    elseif (in_array($clicked, $breadcrumbs)) {
+        return view('foldersBanque1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+    }
+}else if ($type === 'impot' && $clicked !== null) {
+  
+
+    // Si le dossier cliqué est le premier du chemin
+    if ($clicked === $breadcrumbs[0]) {
+        //   $banqueFiles = $achatFiles; // Renommage logique
+        // dd($achatFiles);
+        // return view('foldersImpot', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+         return view('foldersImpot1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+
+    }
+    // Sinon (clicked dans le chemin mais pas premier)
+    elseif (in_array($clicked, $breadcrumbs)) {
+        return view('foldersImpot1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+    }
+}else if ($type === 'paie' && $clicked !== null) {
+  
+
+    // Si le dossier cliqué est le premier du chemin
+    if ($clicked === $breadcrumbs[0]) {
+        //   $banqueFiles = $achatFiles; // Renommage logique
+        // dd($achatFiles);
+        // return view('foldersPaie', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+            return view('foldersPaie1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+
+    }
+    // Sinon (clicked dans le chemin mais pas premier)
+    elseif (in_array($clicked, $breadcrumbs)) {
+        return view('foldersPaie1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+    }
+}else if ($type === 'dossier_permanant' && $clicked !== null) {
+  
+
+    // Si le dossier cliqué est le premier du chemin
+    if ($clicked === $breadcrumbs[0]) {
+        //   $banqueFiles = $achatFiles; // Renommage logique
+        // dd($achatFiles);
+        // return view('foldersDossierPermanant', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+            return view('foldersDossierPermanant1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+
+    }
+    // Sinon (clicked dans le chemin mais pas premier)
+    elseif (in_array($clicked, $breadcrumbs)) {
+        return view('foldersDossierPermanant1', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+    }
+} else if (!in_array($type, ['achat', 'vente', 'banque', 'impot', 'paie', 'dossier_permanent']) && $clicked !== null) {
+    return view('Douvrirsous', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb', 'type'));
+}
+// else if (!in_array($type, ['achat', 'vente', 'banque', 'impot', 'paie', 'dossier_permanent'])) {
+//     return view('Douvrir', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb', 'type'));
+// }
 
 
 
+
+    // Choix de la vue selon le paramètre 'type' (autres cas)
+    switch ($type) {
+        case 'achat':
+            return view('achat', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+        case 'vente':
+            return view('vente', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+        case 'banque':
+            return view('banque', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+        case 'impot':
+            return view('impot', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+        case 'paie':
+            return view('paie', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+        case 'dossier_permanent':
+            return view('dossier_permanent', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+        default:
+            // Vue par défaut
+            return view('folders', compact('achatFiles', 'folders', 'foldersId', 'folder', 'fileNotifications', 'folderNotifications', 'breadcrumb'));
+    }
+}
 
 
 
@@ -459,6 +463,7 @@ class FolderController extends Controller
             'folder_id' => $request->folders_id,
 
             'type_folder' => $request->type_folder,
+        'updated_by' => auth()->id(),
 
 
 
@@ -568,7 +573,8 @@ class FolderController extends Controller
 
        DB::connection('supcompta')->table('files')->where('id', $folder->id)->delete();
 
-
+    $folder->is_read = 0;
+    $folder->save();
 
        // Supprimer le dossier
 

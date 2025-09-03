@@ -1,14 +1,111 @@
-@extends('layouts.user_type.guest')
 
 
+ 
+ <!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>SUPCOMPTA BY COMPULOG</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
 
-@section('content')
+    .image-container {
+     margin-left:-20%;
+    }
+
+    .image-container img {
+    
+      display: block;
+    }
+
+@font-face {
+  font-family: 'Gagalin';
+  src: url('fonts/gagalin.woff2') format('woff2'),
+       url('fonts/gagalin.woff') format('woff'),
+       url('fonts/gagalin.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+.image-container .text-on-image {
+  position: absolute;
+  top: 75%;
+  left: 23%;
+  transform: translate(-50%, -50%);
+  color: #545397;
+  font-size: 18px;       /* Taille plus grande */
+  font-weight: normal;   /* Gagalin est souvent fine, pas forcément bold */
+  font-style: normal;    /* ou italic si tu veux */
+  font-family: 'Gagalin', cursive, sans-serif;
+  padding: 10px 15px;
+  border-radius: 10px;
+}
 
 
+    .form-section {
+      padding: 40px;
+      box-sizing: border-box;
+    }
+
+    .form-section h1 {
+      color: #545397;
+    }
+
+    .form-section h4 {
+      color: rgb(167, 167, 192);
+    }
+
+    .form-section p {
+      color: rgb(174, 174, 177);
+      font-size: 13px;
+    }
+
+    .form-section input[type="text"],
+    .form-section input[type="password"] {
+      width: 95%;
+      padding: 12px;
+      margin: 10px 0 20px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .form-section button {
+      width: 30%;
+      padding: 12px;
+      background-color: #545397;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .form-section button:hover {
+      background-color:rgb(92, 90, 172);
+    }
+    select{
+       width: 100%;
+       height: 40px;
+       color:rgb(174, 174, 177);
+       border-color:rgb(174, 174, 177);
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+
+</head>
+<body>
+      <img src="../assets/img/curved-images/SUPCOMPTALogoFinal.png" alt="Image" style="width:13%;margin-top:-35%;margin-left:-140px;z-index:9999;">
 
 <div id="loader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: white; display: flex; justify-content: center; align-items: center; z-index: 9999;">
 
-    <video autoplay muted loop style="max-width: 100%; max-height: 100%; object-fit: contain;">
+    <video autoplay muted loop style="max-width: 50%; max-height: 50%; object-fit: contain;">
 
         <source src="{{ asset('vidio/SupcomptaAnimation.mp4') }}" type="video/mp4">
 
@@ -21,78 +118,40 @@
 
 
 
+  <div class="image-container">
+    <img src="../assets/img/curved-images/template 001.png" alt="Image">
 
-  <main class="main-content mt-0">
+    <div class="text-on-image">
+     TELE-DÉCLARATION COMPTABILITÉ PAIE
+    </div>
+  </div>
 
-    <section>
+  <div class="form-section">
+    <h1>Connexion</h1>
+    <h4>Bienvenue sur votre espace sécurisé.</h4>
+    <p>
+      Veuillez vous connecter pour continuer. Vos informations sont protégées <br>
+      et utilisées uniquement pour vous offrir une expérience personnalisée.
+    </p>
+<form role="form" method="POST" action="/session" id="loginForm">
+  @csrf
+                      <input type="text" class="form-control" name="name" id="name"  placeholder="✉ Nom d'utilisateur"value="" aria-label="name" aria-describedby="name-addon">
 
-      <div class="page-header min-vh-75">
+                      <input type="password" class="form-control" name="password" id="password" placeholder="⚿ Mot de passe" value="secret" aria-label="Password" aria-describedby="password-addon">
 
-        <div class="container">
+  <div class="mb-3" id="databaseSelectContainer" style="display: none;">
 
-          <div class="row">
-
-            <div class="col-xl-4 col-lg-5 col-md-6 d-flex flex-column mx-auto">
-
-              <div class="card card-plain mt-8">
-
-                <div class="card-header pb-0 text-left bg-transparent">
-
-                <h3 class="font-weight-bolder" style="color: #cb0c9f;">Bienvenue</h3>
-
-                </div>
-
-                <div class="card-body">
-
-                  <form role="form" method="POST" action="/session" id="loginForm">
-
-                    @csrf
-
-                    <label>Login</label>
-
-                    <div class="mb-3">
-
-                      <input type="text" class="form-control" name="name" id="name" placeholder="nom" value="" aria-label="name" aria-describedby="name-addon">
-
-                      @error('name')
-
-                        <p class="text-danger text-xs mt-2">{{ $message }}</p>
-
-                      @enderror
-
-                    </div>
-
-                    <label>Mot de passe</label>
-
-                    <div class="mb-3">
-
-                      <input type="password" class="form-control" name="password" id="password" placeholder="Password" value="secret" aria-label="Password" aria-describedby="password-addon">
-
-                      @error('password')
-
-                        <p class="text-danger text-xs mt-2">{{ $message }}</p>
-
-                      @enderror
-
-                    </div>
-
-
-
-                    <!-- Initially hidden select -->
-
-                    <div class="mb-3" id="databaseSelectContainer" style="display: none;">
-
-                      <select name="database" class="form-control" id="databaseSelect">
+                      <select name="database" class="form-control" id="databaseSelect"  style="color:rgb(91 89 162);">
 
                         
 
-                      <option value="">choisire une option</option>
+                      <option value="" style="color:rgb(91 89 162);">choisire une option</option>
 
                         @foreach ($dbNames as $dbName)
 
                        
 
-                            <option value="{{ $dbName }}">{{ $dbName }}</option>
+                            <option value="{{ $dbName }}" style="color:rgb(91 89 162);">{{ $dbName }}</option>
 
                         @endforeach
 
@@ -100,71 +159,16 @@
 
                     </div>
 
+      <p>
+        <input class="form-check-input" type="checkbox" id="rememberMe" checked style="background-color:#568BAC;">
+        Souviens-toi de moi
+      </p>
+      <br>
+      <button type="submit" class="btn">Connexion</button>
+    </form>
+  </div>
 
 
-                    <div class="form-check form-switch">
-
-                      <input class="form-check-input" type="checkbox" id="rememberMe" checked=""/>
-
-                      <label class="form-check-label" for="rememberMe">Souvenez-vous de moi</label>
-
-                    </div>
-
-                    <div class="text-center">
-
-                       <button type="submit" class="btn" style="background-color: #cb0c9f; color: white; width: 100%; margin-top: 1rem; margin-bottom: 0;">Connexion</button>
-
-
-
-                    </div>
-
-                  </form>
-
-                </div>
-
-                <!-- <div class="card-footer text-center pt-0 px-lg-2 px-1">
-
-                  <small class="text-muted">Forgot your password? Reset it 
-
-                    <a href="/login/forgot-password" class="text-info text-gradient font-weight-bold">here</a>
-
-                  </small>
-
-                  <p class="mb-4 text-sm mx-auto">
-
-                    Don't have an account?
-
-                    <a href="register" class="text-info text-gradient font-weight-bold">Sign up</a>
-
-                  </p>
-
-                </div> -->
-
-              </div>
-
-            </div>
-
-            <div class="col-md-6">
-
-              <div class="oblique position-absolute top-0 h-100 d-md-block d-none me-n8">
-
-                <div class="oblique-image bg-cover position-absolute fixed-top ms-auto h-100 z-index-0 ms-n6" style="background-image:url('../assets/img/curved-images/5362163.jpg')"></div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-  </main>
-
-@endsection
 
 <script>
 
@@ -178,7 +182,7 @@
 
       document.getElementById('loginPage').style.display = 'block';  // Afficher la page de login
 
-    }, 1000);  // Délai de 1 secondes
+    }, 2000);  // Délai de 1 secondes
 
   });
 
@@ -242,3 +246,10 @@
 
 </script>
 
+
+ 
+
+
+</body>
+</html>
+ 

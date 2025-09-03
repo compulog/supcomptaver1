@@ -4,12 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Message extends Model
 {
     use HasFactory;
+    use SoftDeletes; // Active les suppressions douces
 
-    protected $fillable = ['text_message', 'user_id', 'file_id', 'societe_id', 'folder_id', 'is_read', 'parent_id'];
+    protected $fillable = ['text_message', 'user_id', 'file_id', 'societe_id', 'folder_id', 'is_read', 'parent_id', 'commentaire'];
 
     // Relations
     public function user()

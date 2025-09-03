@@ -63,12 +63,54 @@
 
 @section('content')
 
-
+{{-- Affichage du flash message --}}
 @if(session('success'))
+    <div id="flash-message" class="alert alert-success">
+        {{ session('success') }}
+    </div>
+
+    {{-- CSS pour l’animation de clignotement --}}
+    <style>
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0; }
+        }
+        .blink {
+            animation: blink 0.5s step-start infinite;
+        }
+    </style>
+
+    {{-- JS pour lancer le clignotement et cacher après 2 s --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const flash = document.getElementById('flash-message');
+            if (!flash) return;
+
+            // Ajouter la classe de clignotement
+            flash.classList.add('blink');
+
+            // Après 2 s, arrêter le clignotement et masquer l’alerte
+            setTimeout(() => {
+                flash.classList.remove('blink');
+                // Option 1 : masquer complètement
+                flash.style.display = 'none';
+                // Option 2 : si tu préfères un fondu, décommente :
+                // flash.style.transition = 'opacity 0.5s';
+                // flash.style.opacity = '0';
+            }, 2000);
+        });
+    </script>
+@endif
+
+
+
+
+
+{{-- @if(session('success'))
     <div class="alert alert-success">
         {{ session('success') }}
     </div>
-@endif
+@endif --}}
 
 @if(session('error'))
     <div class="alert alert-danger">
@@ -160,33 +202,14 @@
 
 
 
-<p style="font-size: 14px; color: black; margin-top: 10px;">
-    <span style="background-color: rgba(233, 233, 13, 0.838); /* Jaune clair/orangé */
-                 color: black;
-                 padding: 2px 4px;
-                 border-radius: 4px;
-                 text-align:center;
-                 border: 1px solid black;
-                 display: inline-block;
-                 width: 20px;
-                 height: 20px;">
-    </span>
-    Champ Manquant Obligatoire
-</p>
-
-<p style="font-size: 14px; color: black; margin-top: 10px;">
-    <span style="background-color: rgba(228, 20, 20, 0.453);
-                 color: black;
-                 padding: 2px 4px;
-                 border-radius: 4px;
-                 border: 1px solid black;
-                 display: inline-block;
-                 width: 20px;
-                 height: 20px;">
-    </span>
-    Compte Erroné
-</p>
-
+<div>
+    <span style="background-color: rgba(233,233,13,0.838); display:inline-block; width:20px; height:20px; border:1px solid black; border-radius:4px;"></span>
+    Informations Obligatoires Manquantes
+</div>
+<div>
+    <span style="background-color: rgba(228,20,20,0.453); display:inline-block; width:20px; height:20px; border:1px solid black; border-radius:4px;"></span>
+    Informations Erronées
+</div>
 
 
 <!-- Formulaire d'importation Excel -->
@@ -415,6 +438,8 @@
                             <div class="form-group">
                                 <label for="editCompte">Compte</label>
                                 <input type="text" class="form-control form-control-lg shadow-sm" id="editCompte" required>
+                                {{-- <button id="autoIncrementEditBtn" type="button">Auto-incrément</button> --}}
+
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -544,8 +569,36 @@
     layout: "fitColumns",
     height: "600px", // Hauteur du tableau
     selectable: true, // Permet de sélectionner les lignes
+     // Formatter de ligne pour le surlignage
+     rowFormatter: function(row) {
+      var data = row.getData();
+
+      var missingCompte    = data.missing_compte === 1 || !data.compte;
+      var missingIntitule  = data.missing_intitule === 1 || !data.intitule;
+      var invalidPrefix    = data.invalid_compte_format === 1 || (data.compte && !data.compte.startsWith("4411"));
+      var invalidLength    = data.invalid_length_compte === 1;
+
+      // Rouge pour chaque erreur de format ou de longueur
+      if (invalidPrefix) {
+        row.getElement().style.backgroundColor = 'rgba(228,20,20,0.45)';
+        return;
+      }
+      if (invalidLength) {
+        row.getElement().style.backgroundColor = 'rgba(228,20,20,0.45)';
+        return;
+      }
+
+      // Jaune pour compte ou intitulé vide
+      if (missingCompte || missingIntitule) {
+        row.getElement().style.backgroundColor = 'rgba(233,233,13,0.5)';
+      }
+    },
+
+
+
     initialSort: [
         { column: "compte", dir: "asc" } // Tri initial
+
     ],
     columns: [
         {
@@ -564,21 +617,51 @@
             },
         },
         {
-            title: "Compte",
-            field: "compte",
-            editor: "input",
-            headerFilter: "input",
-            headerHozAlign: "center", // Centrer le titre
-            headerFilterParams: {
-                elementAttributes: {
-                    style: "width: 90px; height: 22px;"
-                }
-            },
-        },
+  title: "Compte",
+  field: "compte",
+
+  // 1) désactive totalement l’édition
+  editable: false,
+
+  // 2) affiche la valeur sans <input>
+  formatter: "plaintext",
+
+  // 3) garde le filtre en en-tête
+  headerFilter: "input",
+  headerHozAlign: "center",
+  headerFilterParams: {
+    elementAttributes: {
+      style: "width: 90px; height: 22px;"
+    }
+
+  },
+
+  // 4) force la possibilité de sélectionner du texte dans la cellule
+  cellStyled: function(cell){
+    let el = cell.getElement();
+    el.style.userSelect        = "text";
+    el.style.webkitUserSelect  = "text";
+    el.style.MozUserSelect     = "text";
+  },
+
+  // 5) comportement « click-to-select » : dès qu’on clique sur la cellule, on sélectionne tout son contenu
+  cellClick: function(e, cell){
+    let el = cell.getElement();
+    let selection = window.getSelection();
+    let range = document.createRange();
+    selection.removeAllRanges();
+    range.selectNodeContents(el);
+    selection.addRange(range);
+  },
+},
+
+
+
         {
             title: "Intitulé",
             field: "intitule",
-            headerFilter: "input",
+            editor: "input",
+          headerFilter: "input",
             headerHozAlign: "center", // Centrer le titre
             headerFilterParams: {
                 elementAttributes: {
@@ -589,6 +672,8 @@
         {
             title: "Identifiant Fiscal",
             field: "identifiant_fiscal",
+            editor: "input",
+
             headerFilter: "input",
             headerHozAlign: "center", // Centrer le titre
             headerFilterParams: {
@@ -598,8 +683,9 @@
             },
         },
         {
-            title: "ICE",
-            field: "ICE",
+                    title: 'ICE',
+                    field: 'ICE',
+
             headerFilter: "input",
             headerHozAlign: "center", // Centrer le titre
             headerFilterParams: {
@@ -607,7 +693,18 @@
                     style: "width: 90px; height: 22px;"
                 }
             },
-        },
+                    formatter: function(cell) {
+                        var value = cell.getValue();
+                        var status = cell.getData().highlight_ice;
+                        var el = cell.getElement();
+                        if (status === 'missing') {
+                            el.style.backgroundColor = 'rgba(233,233,13,0.838)';
+                        } else if (status === 'invalid') {
+                            el.style.backgroundColor = 'rgba(228,20,20,0.453)';
+                        }
+                        return value;
+                    }
+                },
         {
             title: "Nature de l'opération",
             field: "nature_operation",
@@ -862,70 +959,111 @@ function remplirContrePartie(selectId, selectedValue = null, callback = null) {
 
 
 
+  // Récupération des éléments
+  const $form      = $("#fournisseurFormAdd");
+  const $compte    = $form.find("#compte");
+  const socId      = $form.find("#societe_id").val();
+  const $submitBtn = $form.find('button[type="submit"]');
 
-// Soumission du formulaire d'ajout
-$("#fournisseurFormAdd").on("submit", function (e) {
-    e.preventDefault();
-    var designationValue = $('#designation').val();
+  // 1) Vérification d’unicité au blur (alert bloquante)
+  function checkCompteUnique() {
+    const val = $compte.val().trim();
+    if (!val || !socId) return;
 
-    if (designationValue === '') {
-        var contrePartieIntitule = $('#contre_partie').find('option:selected').text();
-        var intitule = contrePartieIntitule.split('-')[1]?.trim();
-        if (intitule) {
-            $('#designation').val(intitule);
+    $.ajax({
+      url: "/verifier-compte",   // <-- ajustez à l'URI exact de votre route
+      method: "GET",
+      data: { compte: val, societe_id: socId },
+      dataType: "json",
+      async: false,              // rend l'appel bloquant pour le blur
+      success(data) {
+        if (data.exists) {
+          alert(data.message || "Ce compte existe déjà !");
+
+          $compte.val("").focus();
+          genererCompteAuto(socId, "#compte");
+
+          $submitBtn.prop("disabled", true);
+
+        } else {
+          $submitBtn.prop("disabled", false);
         }
+      },
+      error(xhr, status, err) {
+        console.error("Erreur check-compte:", status, err);
+      }
+    });
+  }
+
+  $compte.on("blur", checkCompteUnique);
+
+  // 2) Réactivation du bouton si l'utilisateur corrige
+  $compte.on("focus", function() {
+    $("#compte-error").hide();
+    $submitBtn.prop("disabled", false);
+  });
+
+  // 3) Interception de la soumission
+  $form.on("submit", function(e) {
+    e.preventDefault();
+
+    // Empêche si compte vide (vide suite à l'alerte)
+    if (!$compte.val().trim()) {
+      $compte.focus();
+      return;
     }
 
+    // Remplissage automatique de 'designation' si vide
+    var designationValue = $('#designation').val();
+    if (!designationValue) {
+      var cpText   = $('#contre_partie option:selected').text();
+      var intitule = cpText.split('-')[1]?.trim();
+      if (intitule) $('#designation').val(intitule);
+    }
+
+    // Envoi AJAX
     envoyerDonnees();
-});
+  });
 
-// Masquer le message d'erreur lors du clic dans le champ "compte"
-$("#compte").on("click", function () {
-    $("#compte-error").hide();
-});
-
-// Envoi des données via AJAX
-function envoyerDonnees() {
+  // 4) Fonction d’envoi des données
+  function envoyerDonnees() {
     $.ajax({
-        url: "/fournisseurs",
-        type: "POST",
-        data: {
-            compte: $("#compte").val(),
-            intitule: $("#intitule").val(),
-            identifiant_fiscal: $("#identifiant_fiscal").val(),
-            ICE: $("#ICE").val(),
-            nature_operation: $("#nature_operation").val(),
-            rubrique_tva: $("#rubrique_tva option:selected").text(),
-            designation: $("#designation").val(),
-            contre_partie: $("#contre_partie").val(),
-            societe_id: $("#societe_id").val(),
-            _token: '{{ csrf_token() }}'
-        },
-        success: function (response) {
-            // Si succès, actualiser la table, fermer la modal et réinitialiser le formulaire
-            table.setData("/fournisseurs/data");
-            $("#fournisseurModaladd").modal("hide");
-            $("#fournisseurFormAdd")[0].reset();
-            $("#compte-error").hide();
-        },
-        error: function (xhr) {
-            // Vérification du code d'erreur 422 pour l'unicité du compte
-            if (xhr.status === 422) {
-                var response = xhr.responseJSON;
-                if (response && response.error) {
-                    $("#compte-error").text(response.error).show();
-                    // On peut aussi éventuellement positionner le focus sur le champ "compte"
-                    $("#compte").focus();
-                }
-            } else {
-                console.error("Erreur lors de l'envoi des données:", xhr.responseText);
-            }
+      url: "/fournisseurs",
+      type: "POST",
+      data: {
+        compte:               $compte.val(),
+        intitule:             $("#intitule").val(),
+        identifiant_fiscal:   $("#identifiant_fiscal").val(),
+        ICE:                  $("#ICE").val(),
+        nature_operation:     $("#nature_operation").val(),
+        rubrique_tva:         $("#rubrique_tva option:selected").text(),
+        designation:          $("#designation").val(),
+        contre_partie:        $("#contre_partie").val(),
+        societe_id:           socId,
+        _token:               '{{ csrf_token() }}'
+      },
+      success(response) {
+        table.setData("/fournisseurs/data");
+        $("#fournisseurModaladd").modal("hide");
+        $form[0].reset();
+        $submitBtn.prop("disabled", false);
+
+      },
+      error(xhr) {
+        if (xhr.status === 422) {
+          var resp = xhr.responseJSON;
+          if (resp && resp.error) {
+            alert(resp.error);
+
+            $compte.focus();
+
+          }
+        } else {
+          console.error("Erreur lors de l'envoi :", xhr.responseText);
         }
+      }
     });
-}
-
-
-
+  }
 // Remplir les rubriques TVA
 function remplirRubriquesTva(selectId, selectedValue = null) {
     $.ajax({
@@ -1010,13 +1148,13 @@ function remplirRubriquesTva(selectId, selectedValue = null) {
     });
 }
 
-    // edit
 // Gestion du formulaire de modification
 $("#fournisseurFormEdit").on("submit", function(e) {
     e.preventDefault();
     var fournisseurId = $("#editFournisseurId").val();
     var url = "/fournisseurs/" + fournisseurId;
 
+    // Si designation vide, on génère depuis la contre-partie
     var designationValue = $('#editDesignation').val();
     if (designationValue === '') {
         var contrePartieIntitule = $('#editContrePartie').find('option:selected').text();
@@ -1035,7 +1173,7 @@ $("#fournisseurFormEdit").on("submit", function(e) {
             identifiant_fiscal: $("#editIdentifiantFiscal").val(),
             ICE: $("#editICE").val(),
             nature_operation: $("#editNatureOperation").val(),
-            rubrique_tva: $("#editRubriqueTVA option:selected").text(), // Texte complet récupéré
+            rubrique_tva: $("#editRubriqueTVA").val(),
             designation: $("#editDesignation").val(),
             contre_partie: $("#editContrePartie").val(),
             _token: '{{ csrf_token() }}'
@@ -1044,6 +1182,8 @@ $("#fournisseurFormEdit").on("submit", function(e) {
             table.setData("/fournisseurs/data");
             $("#fournisseurModaledit").modal("hide");
             $("#fournisseurFormEdit")[0].reset();
+            // réactive le champ pour la prochaine édition
+            $("#editCompte").prop('disabled', false);
         },
         error: function(xhr) {
             alert("Erreur lors de l'enregistrement des données !");
@@ -1051,22 +1191,72 @@ $("#fournisseurFormEdit").on("submit", function(e) {
     });
 });
 
+// Fonction pour générer le compte automatique selon la société
+function genererCompteAuto(societeId, inputSelector) {
+    $.ajax({
+        url: `/get-next-compte/${societeId}`,
+        type: 'GET',
+        success: function (response) {
+            if (response.success) {
+                $(inputSelector).val(response.nextCompte);
+            } else {
+                alert('Erreur lors de la génération du compte.');
+            }
+        }
+    });
+}
+
 // Remplissage du formulaire pour modification
 function editFournisseur(data) {
     $("#editFournisseurId").val(data.id);
-    $("#editCompte").val(data.compte);
     $("#editIntitule").val(data.intitule);
     $("#editIdentifiantFiscal").val(data.identifiant_fiscal);
     $("#editICE").val(data.ICE);
     $("#editNatureOperation").val(data.nature_operation);
-    // remplirRubriquesTva("editRubriqueTVA", data.rubrique_tva);
-     $("#editRubriqueTVA option:selected").text(data.rubrique_tva); // Texte complet récupéré
 
+    remplirRubriquesTva("editRubriqueTVA", data.rubrique_tva);
     remplirContrePartie("editContrePartie", data.contre_partie);
     $("#editDesignation").val(data.designation);
+
+    // Configuration dynamique selon la société
+    var societeId = $("#societe_id").val();
+    // Appliquer maxlength si nécessaire
+    var nombreChiffres = parseInt($('#nombre_chiffre_compte').val());
+    $("#editCompte").attr('maxlength', nombreChiffres);
+
+    // Gérer le champ compte: autoincrément et désactivation
+    var $compte = $("#editCompte");
+    if (data.compte) {
+        // si déjà présent, on désactive
+        $compte.val(data.compte).prop('disabled', true);
+    } else {
+        // sinon, on génère automatiquement
+        genererCompteAuto(societeId, '#editCompte');
+        $compte.prop('disabled', false);
+    }
+
+    // Vérification existence de compte au blur
+    $compte.off('blur').on('blur', function() {
+        var val = $(this).val();
+        if (!val) return;
+        $.ajax({
+            url: '/fournisseurs/check-compte',
+            type: 'GET',
+            data: { compte: val },
+            success: function(res) {
+                if (res.exists) {
+                    alert('Ce compte existe déjà. Un nouveau compte sera généré.');
+                    genererCompteAuto(societeId, '#editCompte');
+                }
+            },
+            error: function() {
+                console.warn('Vérification du compte impossible');
+            }
+        });
+    });
+
     $("#fournisseurModaledit").modal("show");
 }
-
 //gestion add
 $(document).ready(function () {
     // Variables initiales
@@ -1487,7 +1677,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-
 // excel
 document.getElementById('file').addEventListener('change', function(e) {
     const file = e.target.files[0];
@@ -1497,20 +1686,22 @@ document.getElementById('file').addEventListener('change', function(e) {
         const data = new Uint8Array(event.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
 
-        const sheetName = workbook.SheetNames[0]; // Sélection de la première feuille
+        const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // Lecture ligne par ligne
+        const rows = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            raw: false,
+            defval: ''
+        });
 
         if (rows.length > 1) {
-            const headers = rows[0]; // La première ligne comme en-têtes de colonnes
+            const headers = rows[0];
 
-            // Vérifier si le fichier contient des colonnes suffisantes
             if (headers.length < 2) {
                 alert("Le fichier Excel doit contenir au moins 2 colonnes.");
                 return;
             }
 
-            // Références vers les sélecteurs pour lier les colonnes avec des champs
             const selectors = {
                 compte: document.querySelector('input[name="colonne_compte"]'),
                 intitule: document.querySelector('input[name="colonne_intitule"]'),
@@ -1522,13 +1713,11 @@ document.getElementById('file').addEventListener('change', function(e) {
                 contrePartie: document.querySelector('input[name="colonne_contre_partie"]'),
             };
 
-            // Génération des listes de colonnes disponibles
             const columnOptions = headers.map((header, index) => ({
-                label: header || `Colonne ${index + 1}`, // Nom de la colonne ou défaut
-                value: index + 1 // Numéro de colonne (1-indexé)
+                label: header || `Colonne ${index + 1}`,
+                value: index + 1
             }));
 
-            // Associer chaque champ de sélection à une liste de colonnes
             Object.keys(selectors).forEach(key => {
                 const optionsHtml = columnOptions.map(option => `
                     <option value="${option.value}">${option.label}</option>
@@ -1541,6 +1730,56 @@ document.getElementById('file').addEventListener('change', function(e) {
                     document.body.appendChild(dataList);
                 }
             });
+
+            // === LOGIQUE SUPPLÉMENTAIRE POUR ICE ===
+            const iceColIndex = parseInt(selectors.ICE.value) - 1;
+            const iceValues = rows.slice(1).map(row => {
+                let val = row[iceColIndex];
+                return typeof val === 'number'
+                    ? val.toString().padStart(15, '0')
+                    : val.toString();
+            });
+
+            // === LOGIQUE POUR natureOperation (texte ou numéro) ===
+            const natureColIndex = parseInt(selectors.natureOperation.value) - 1;
+
+            const natureMap = {
+                "1": "Achat de biens d’équipement",
+                "2": "Achat de travaux",
+                "3": "Achat de services",
+                "Achat de biens d’équipement": "1",
+                "Achat de travaux": "2",
+                "Achat de services": "3"
+            };
+
+            const natureOperations = rows.slice(1).map(row => {
+                const val = row[natureColIndex].toString().trim();
+
+                // Si c’est un numéro, on cherche l’intitulé
+                if (["1", "2", "3"].includes(val)) {
+                    return {
+                        numero: val,
+                        intitule: natureMap[val]
+                    };
+                }
+
+                // Si c’est un texte, on cherche le numéro
+                if (natureMap[val]) {
+                    return {
+                        numero: natureMap[val],
+                        intitule: val
+                    };
+                }
+
+                // Valeur invalide
+                return {
+                    numero: '',
+                    intitule: ''
+                };
+            });
+
+            console.log("ICE avec zéros :", iceValues);
+            console.log("Nature opérations interprétées :", natureOperations);
         } else {
             alert("Le fichier Excel semble être vide !");
         }
@@ -1548,30 +1787,6 @@ document.getElementById('file').addEventListener('change', function(e) {
 
     reader.readAsArrayBuffer(file);
 });
-
-
-
-document.getElementById('resetModal').addEventListener('click', function () {
-    const form = document.getElementById('importForm');
-    form.reset(); // Réinitialise tous les champs du formulaire
-});
-// Navigation avec la touche Entrée
-document.getElementById('importForm').addEventListener('keydown', function (event) {
-    if (event.key === 'Enter') {
-        event.preventDefault(); // Empêche le comportement par défaut (soumission du formulaire)
-
-        const formElements = Array.from(event.target.form.elements); // Récupère tous les champs du formulaire
-        const index = formElements.indexOf(event.target); // Trouve l'index du champ actuel
-
-        // Déplace le focus au champ suivant si disponible
-        if (index > -1 && index < formElements.length - 1) {
-            formElements[index + 1].focus();
-        }
-    }
-});
-
-
-
 
   // Fonction pour supprimer un fournisseur
   function deleteFournisseur(id) {

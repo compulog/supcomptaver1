@@ -155,16 +155,28 @@
             </ul> -->
         </div>
      
-        <div class="nav-link">
-                    <span class="nav-link-text ms-1"> {{ Auth::user()->name }}</span>
-                </div>
+       
+          <a href="javascript:;" id="dropdownListButton">
+<div class="nav-link" style="margin-right:-10px; margin-top:3px; border: 1px solid #4D55CC; border-radius: 5px; padding: 5px 10px;">
+    <span class="nav-link-text ms-1" style="display: block; line-height: 1;color:#4D55CC;">
+        {{ Auth::user()->name }}
+    </span>
+    <span class="nav-link-text ms-1" style="font-size: 10px; display: block; line-height: 1.2;">
+        @if(Auth::user()->type == 'admin')
+            Administrateur
+        @else
+            {{ Auth::user()->type }}
+        @endif
+    </span>
+</div>
+               
                <!-- Liste déroulante avec icône -->
                  
 <!-- Liste déroulante avec icône -->
-<li class="nav-item d-flex align-items-center" style="position: relative;margin-top:-50px;">
-                <a href="javascript:;" class="nav-link text-white p-0" id="dropdownListButton">
+<li class="nav-item d-flex align-items-center" style="position: relative;">
+                <!-- <a href="javascript:;" class="nav-link text-white p-0" id="dropdownListButton">
                     <i class="fas fa-user-circle" style="font-size:22px;color:black;"></i>
-                </a>
+                </a> -->
 
                 <!-- Vérification du type d'utilisateur et affichage du menu approprié -->
                 @if(Auth::user()->type === 'SuperAdmin')
@@ -181,14 +193,14 @@
 
                     <a href="{{ url('/logout')}}" class="nav-link">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span class="d-sm-inline d-none">Sign Out</span>
+                        <span class="d-sm-inline d-none">Déconnexion</span>
                     </a>
                 </div>
                 @elseif(Auth::user()->type === 'admin')
                 <div class="dropdown-list" id="dropdownList">
                     <a class="nav-link {{ (Request::is('Admin') ? 'active' : '') }}" href="{{ url('Admin') }}">
                         <i class="fas fa-cogs"></i>
-                        <span class="nav-link-text ms-1">Admin</span>
+                        <span class="nav-link-text ms-1">Utilisateurs</span>
                     </a>
                     <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
                         <i class="fas fa-cogs"></i>
@@ -202,7 +214,7 @@
 
                     <a href="{{ url('/logout')}}" class="nav-link">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span class="d-sm-inline d-none">Sign Out</span>
+                        <span class="d-sm-inline d-none">Déconnexion</span>
                     </a>
                 </div>
                 @elseif(Auth::user()->type === 'utilisateur')
@@ -219,7 +231,7 @@
 
                     <a href="{{ url('/logout')}}" class="nav-link">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span class="d-sm-inline d-none">Sign Out</span>
+                        <span class="d-sm-inline d-none">Déconnexion</span>
                     </a>
                 </div>
 
@@ -232,7 +244,7 @@
 
                     <a href="{{ url('/logout')}}" class="nav-link">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span class="d-sm-inline d-none">Sign Out</span>
+                        <span class="d-sm-inline d-none">Déconnexion</span>
                     </a>
                 </div>
                 @endif

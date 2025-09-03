@@ -36,8 +36,11 @@ class BanqueController extends Controller
         if ($societeId) {
             // Initialiser la requête pour les fichiers de type 'banque'
             $query = File::where('societe_id', $societeId)
-                         ->where('type', 'banque');
-    
+                         ->where('folders', 0)
+                            ->where(function($query) {
+                                                        $query->where('folders', 0)
+                                                            ->orWhereNull('folders');
+                                                    });    
             // Filtrage et tri des fichiers en fonction des paramètres de la requête
             if ($request->has('filter_by')) {
                 $filterBy = $request->get('filter_by');

@@ -4,54 +4,397 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\OperationCourante;
-use App\Models\racine;
+use App\Models\Racine;
 use App\Models\Societe;
 use App\Models\PlanComptable;
 use App\Models\Fournisseur;
 use App\Models\Journal;
 use App\Models\Client;
 use App\Models\File; // Assurez-vous d'importer le modèle File
-
+use App\Models\Folder; 
 use Carbon\Carbon;
 use Complex\Operations;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use OpenAI\Laravel\Facades\OpenAI;  // 👈 the Laravel facade
 
 use Illuminate\Support\Facades\Session;
-
+use Smalot\PdfParser\Parser;
+use GuzzleHttp\Client as GuzzleClient;
 
 
 class OperationCouranteController extends Controller
 {
-    public function index()
-{
-    // Récupérer l'ID de la société depuis la session
-    $societeId = session('societeId'); 
-    
-    // Initialiser la variable $files
-    $files = null;
 
-    if ($societeId) {
-        // Récupérer tous les fichiers associés à la société (filtrés par societe_id)
-        $files = File::where('societe_id', $societeId)
-        ->where('type', 'caisse')
-        ->get();
 
-        $files_banque = File::where('societe_id', $societeId)
-        ->where('type', 'banque')
-        ->get();
-        $files_achat = File::where('societe_id', $societeId)
-        ->where('type', 'achat')
-        ->get();
-        $files_vente = File::where('societe_id', $societeId)
-        ->where('type', 'vente')
-        ->get();
+/**
+     * Clôture de l'exercice donné
+     *
+     * Attendu en requête :
+     *   - "annee": ex. "2025"
+     *   - "societe_id": récupéré depuis la session
+     *   - "code_journal": facultatif si vous souhaitez ne clore qu'un seul journal (ex. "ac3", "ach7", etc.)
+     *
+     * Cette méthode solde tous les comptes de charge (classe 6) et produits (classe 7),
+     * calcule le résultat net et le transfert au compte 120 ou 129, puis marque l'exercice comme clôturé.
+     */
+    public function closeExercice(Request $request)
+    {
+        $societeId = session('societeId');
+        if (!$societeId) {
+            return response()->json(['error' => 'Aucune société en session'], 400);
+        }
 
+        $annee = $request->input('annee');
+        if (!$annee || !preg_match('/^\d{4}$/', $annee)) {
+            return response()->json(['error' => 'Année invalide'], 400);
+        }
+
+        // (Optionnel) Ne clore qu’un journal spécifique :
+        $codeJournal = $request->input('code_journal'); // ex. "ac3" ou "ach7"
+
+        // Démarre une transaction pour atomicité
+        DB::beginTransaction();
+        try {
+            // 1) Récupérer toutes les opérations de l’exercice pour la société
+            $query = OperationCourante::where('societe_id', $societeId)
+                ->whereYear('date', $annee);
+            if ($codeJournal) {
+                $query->where('type_journal', $codeJournal);
+            }
+            $operations = $query->get();
+
+            // 2) Séparer les montants par compte : classe 6 = charges, 7 = produits
+            // On suppose que le champ "compte" commence par "6" ou "7" selon le Plan Comptable
+            $totalCharges = 0.0;
+            $totalProduits = 0.0;
+
+            // Nous allons sommer par compte pour générer les écritures de clôture
+            $chargesParCompte = [];  // ex. ["6xxxx" => somme]
+            $produitsParCompte = []; // ex. ["7xxxx" => somme]
+
+            foreach ($operations as $op) {
+                $compte = $op->compte;
+                $montant = floatval($op->debit) - floatval($op->credit);
+                // En classe 6, le solde du compte est débité (charges)
+                if (strpos($compte, '6') === 0) {
+                    $chargesParCompte[$compte] = ($chargesParCompte[$compte] ?? 0) + $montant;
+                    $totalCharges += $montant;
+                }
+                // En classe 7, le solde du compte est crédité (produits)
+                elseif (strpos($compte, '7') === 0) {
+                    // Attention : en classe 7, base est en "credit" (op->credit) – "débit"
+                    $soldeProduit = floatval($op->credit) - floatval($op->debit);
+                    $produitsParCompte[$compte] = ($produitsParCompte[$compte] ?? 0) + $soldeProduit;
+                    $totalProduits += $soldeProduit;
+                }
+            }
+
+            // 3) Calculer le résultat net
+            // En compta OHADA/Morocco : Résultat = Produits – Charges
+            $resultNet = $totalProduits - $totalCharges;
+
+            // 4) Générer les écritures de clôture
+            $ecrituresCloture = [];
+
+            // 4.1) Pour chaque compte de produits (classe 7), on le "débéte" pour revenir à 0
+            foreach ($produitsParCompte as $compteProd => $montantProd) {
+                if ($montantProd <= 0) continue; // ignore comptes soldés à 0 ou négatifs
+                $ecrituresCloture[] = [
+                    'date'               => Carbon::createFromDate($annee, 12, 31)->format('Y-m-d H:i:s'),
+                    'date_livr'               => Carbon::createFromDate($annee, 12, 31)->format('Y-m-d H:i:s'),
+
+                    'numero_facture'     => 'CL' . $annee,       // convention de clôture
+                    'compte'             => $compteProd,
+                    'debit'              => $montantProd,        // solder le crédit sur compte 7 par un débit
+                    'credit'             => 0,
+                    'contre_partie'      => null,                // sera précisé plus bas sur ligne Résultat
+                    'rubrique_tva'       => null,
+                    'compte_tva'         => null,
+                    'type_journal'       => 'CL',                // journal spécial « Clôture »
+                    'categorie'          => 'Clôture',
+                    'prorat_de_deduction'=> null,
+                    'piece_justificative'=> null,                // sera mis à jour dans updatePieceJustificative
+                    'libelle'            => "Clôture compte $compteProd",
+                    'filtre_selectionne' => null,
+                    'societe_id'         => $societeId,
+                    'numero_piece'       => null,                // sera ignoré ou généré via Controller store()
+                ];
+            }
+
+            // 4.2) Pour chaque compte de charges (classe 6), on le "crédite" pour revenir à 0
+            foreach ($chargesParCompte as $compteCh => $montantCh) {
+                if ($montantCh <= 0) continue;
+                $ecrituresCloture[] = [
+                    'date'               => Carbon::createFromDate($annee, 12, 31)->format('Y-m-d H:i:s'),
+                    'numero_facture'     => 'CL' . $annee,
+                    'compte'             => $compteCh,
+                    'debit'              => 0,
+                    'credit'             => $montantCh,       // solder le compte 6 par un crédit
+                    'contre_partie'      => null,
+                    'rubrique_tva'       => null,
+                    'compte_tva'         => null,
+                    'type_journal'       => 'CL',
+                    'categorie'          => 'Clôture',
+                    'prorat_de_deduction'=> null,
+                    'piece_justificative'=> null,
+                    'libelle'            => "Clôture compte $compteCh",
+                    'filtre_selectionne' => null,
+                    'societe_id'         => $societeId,
+                    'numero_piece'       => null,
+                ];
+            }
+
+            // 4.3) Écriture du résultat net, direction selon signe
+            if ($resultNet !== 0) {
+                if ($resultNet > 0) {
+                    // Bénéfice → créditer le compte 120 et débiter la somme totale des soldes de comptes 7
+                    $ecrituresCloture[] = [
+                        'date'               => Carbon::createFromDate($annee, 12, 31)->format('Y-m-d H:i:s'),
+                        'numero_facture'     => 'CL' . $annee,
+                        'compte'             => '120',             // compte Résultat de l’exercice (bénéfice)
+                        'debit'              => 0,
+                        'credit'             => $resultNet,
+                        'contre_partie'      => null,
+                        'rubrique_tva'       => null,
+                        'compte_tva'         => null,
+                        'type_journal'       => 'CL',
+                        'categorie'          => 'Clôture',
+                        'prorat_de_deduction'=> null,
+                        'piece_justificative'=> null,
+                        'libelle'            => "Bénéfice exercice $annee",
+                        'filtre_selectionne' => null,
+                        'societe_id'         => $societeId,
+                        'numero_piece'       => null,
+                    ];
+                } else {
+                    // Perte (résultat < 0) → débiter le compte 129 et créditer la somme totale des soldes de comptes 6
+                    $montantPerte = abs($resultNet);
+                    $ecrituresCloture[] = [
+                        'date'               => Carbon::createFromDate($annee, 12, 31)->format('Y-m-d H:i:s'),
+                        'numero_facture'     => 'CL' . $annee,
+                        'compte'             => '129',             // compte Perte de l’exercice
+                        'debit'              => $montantPerte,
+                        'credit'             => 0,
+                        'contre_partie'      => null,
+                        'rubrique_tva'       => null,
+                        'compte_tva'         => null,
+                        'type_journal'       => 'CL',
+                        'categorie'          => 'Clôture',
+                        'prorat_de_deduction'=> null,
+                        'piece_justificative'=> null,
+                        'libelle'            => "Perte exercice $annee",
+                        'filtre_selectionne' => null,
+                        'societe_id'         => $societeId,
+                        'numero_piece'       => null,
+                    ];
+                }
+            }
+
+            // 5) Insérer toutes les écritures de clôture en base
+            foreach ($ecrituresCloture as $ligneCloture) {
+                OperationCourante::create($ligneCloture);
+            }
+
+            // 6) Mettre à jour le statut de clôture (vous pouvez créer un champ supplémentaire dans votre table exercices)
+            // Par exemple, si vous avez un modèle Exercice avec un champ "cloture" :
+            // Exercice::where('societe_id', $societeId)->where('annee', $annee)->update(['cloture' => true]);
+
+            DB::commit();
+            return response()->json([
+                'message'       => "Exercice $annee clôturé avec succès.",
+                'totalCharges'  => $totalCharges,
+                'totalProduits' => $totalProduits,
+                'resultNet'     => $resultNet,
+            ], 200);
+        }
+        catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Erreur lors de la clôture de l’exercice $annee : " . $e->getMessage());
+            return response()->json([
+                'error' => "Impossible de clore l’exercice : " . $e->getMessage()
+            ], 500);
+        }
     }
 
-    // Passer la variable $files à la vue avec compact()
-    return view('Operation_Courante', compact('files')); // Chemin de votre vue Blade
+
+
+ /**
+     * Upload, parse PDF page par page, extraire avec l'IA,
+     * puis persister directement dans operation_courante.
+     */
+    public function extractPdf(Request $request, Parser $parser)
+    {
+        // 1) Validation
+        $request->validate([
+            'pdf' => 'required|file|mimes:pdf|max:10240',
+        ]);
+
+        // 2) Store temporarily
+        $path = $request->file('pdf')->store('pdfs');
+        $file = storage_path("app/{$path}");
+
+        // 3) Retrieve current company ID
+        $socId = Session::get('societeId');
+        if (! $socId) {
+            return response()->json(['error' => 'Société non définie'], 400);
+        }
+
+        // 4) Instantiate Guzzle for OpenAI
+        $guzzle = new GuzzleClient([
+            'base_uri' => config('services.openai.base_uri', 'https://api.openai.com'),
+            'timeout'  => config('services.openai.timeout', 60),
+        ]);
+
+        $created = [];
+
+        // 5) Parse PDF and loop pages
+        $pdf = $parser->parseFile($file);
+        $pages = $pdf->getPages();
+
+        foreach ($pages as $page) {
+            // Take up to first 3000 chars per page
+            $chunk = mb_substr($page->getText(), 0, 3000);
+
+            // 6) Call OpenAI chat/completions
+            $response = $guzzle->post('/v1/chat/completions', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . config('services.openai.key'),
+                    'Content-Type'  => 'application/json',
+                ],
+                'json' => [
+                    'model'       => 'gpt-4',
+                    'temperature' => 0.0,
+                    'messages'    => [
+                        [
+                            'role'    => 'system',
+                            'content' => 'Extrait JSON de lignes de facture : date, numero_facture, compte, libelle, debit, credit, contre_partie, rubrique_tva.'
+                        ],
+                        [
+                            'role'    => 'user',
+                            'content' => $chunk,
+                        ],
+                    ],
+                ],
+            ]);
+
+            $body = (string) $response->getBody();
+            $json = json_decode($body, true);
+
+            // Extract content field
+            $content = $json['choices'][0]['message']['content'] ?? '[]';
+            $rows = json_decode($content, true) ?: [];
+
+            // 7) Persist each extracted line
+            foreach ($rows as $r) {
+                $record = OperationCourante::create([
+                    'date'           => $r['date']           ?? now()->format('Y-m-d H:i:s'),
+                    'numero_facture' => $r['numero_facture'] ?? null,
+                    'compte'         => $r['compte']         ?? null,
+                    'libelle'        => $r['libelle']        ?? null,
+                    'debit'          => $r['debit']          ?? 0,
+                    'credit'         => $r['credit']         ?? 0,
+                    'contre_partie'  => $r['contre_partie']  ?? null,
+                    'rubrique_tva'   => $r['rubrique_tva']   ?? null,
+                    'type_journal'   => 'Achats',
+                    'categorie'      => 'Achat',
+                    'societe_id'     => $socId,
+                ]);
+
+                $created[] = $record;
+            }
+        }
+
+        // 8) Return created records
+        return response()->json($created);
+    }
+
+
+
+//     public function selectFolder(Request $request)
+// {
+
+//     $folderId = $request->query('id');
+//     $societeId = session('societeId');
+
+//     // Optionnel : récupération réelle du dossier
+//     // $folder = Folder::find($folderId);
+//     $folder = Folder::where('societe_id', $societeId)->where('folder_id', $folderId)->first();
+//     if (!$folder) {
+//         abort(404, 'Dossier introuvable.');
+//     }
+
+//     // Récupération des fichiers où le champ folders est égal à l'ID du dossier
+//     $files = File::where('societe_id', $societeId)->where('folders', $folderId)->get();
+// dd($files);
+//     // Traitement ou affichage
+//     $folders_banque = [$folder];
+//     $files_banque = $files;
+// }
+
+public function selectFolder(Request $request)
+{
+    $folderId = $request->query('id');
+    $societeId = session('societeId');
+
+    // Vérification du dossier parent
+    $parentFolder = Folder::where('societe_id', $societeId)->where('id', $folderId)->first();
+    if (!$parentFolder) {
+        return response()->json(['error' => 'Dossier introuvable.'], 404);
+    }
+
+    // Récupération des sous-dossiers du dossier sélectionné
+    $folders_banque = Folder::where('societe_id', $societeId)
+                            ->where('folder_id', $folderId)
+                            ->get();
+
+    // Récupération des fichiers du dossier sélectionné
+    $files_banque = File::where('societe_id', $societeId)
+                        ->where('folders', $folderId)
+                        ->get();
+
+    return response()->json([
+        'folders_banque' => $folders_banque,
+        'files_banque' => $files_banque
+    ]);
+}
+
+
+   public function index(Request $request)
+{
+    // 1) Récupérer l'ID de la société depuis la session
+    $societeId = session('societeId');
+$folders_banque = Folder::where('societe_id', $societeId)->where('type_folder', 'banque')->get();
+
+    // 2) Récupérer l'id à éditer depuis la query-string (ou null)
+    $editId = $request->query('edit');
+
+    // 3) Tes requêtes existantes
+    $planComptable = collect();
+    $files         = collect();
+    $files_banque  = collect();
+    $files_achat   = collect();
+    $files_vente   = collect();
+
+    if ($societeId) {
+        $planComptable = PlanComptable::where('societe_id', $societeId)->get();
+
+        $files        = File::where('societe_id', $societeId)->where('type', 'caisse')->get();
+        $files_banque = File::where('societe_id', $societeId)->where('type', 'banque')->get();
+        $files_achat  = File::where('societe_id', $societeId)->where('type', 'achat')->get();
+        $files_vente  = File::where('societe_id', $societeId)->where('type', 'vente')->get();
+    }
+return view('Operation_Courante', compact(
+    'files',
+    'planComptable',
+    'files_banque',
+    'files_achat',
+    'files_vente',
+    'editId',
+    'folders_banque'
+));
+
 }
 
 
@@ -122,167 +465,163 @@ class OperationCouranteController extends Controller
 
 
 
-
 public function store(Request $request)
 {
     Log::info('Début de la sauvegarde des lignes');
 
-    // Récupération de l'ID de la société depuis la session
     $societeId = session('societeId');
     Log::info("ID société: $societeId");
 
-    if (!$societeId) {
-        Log::error('Aucune société sélectionnée dans la session');
-        return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+    if (! $societeId) {
+        Log::error('Aucune société sélectionnée en session');
+        return response()->json(['error' => 'Aucune société sélectionnée en session'], 400);
     }
 
-    // Validation des données, ajout du champ "categorie"
+    // 1️⃣ Validation du payload
     $validatedData = $request->validate([
-        'lignes'                         => 'required|array',
-        'lignes.*.id'                    => 'nullable',
-        'lignes.*.date'                  => 'nullable|date',
-        'lignes.*.numero_dossier'        => 'nullable|string',
-
-        'lignes.*.numero_facture'        => 'nullable|string',
-        'lignes.*.compte'                => 'nullable|string',
-        'lignes.*.debit'                 => 'nullable|numeric|min:0',
-        'lignes.*.credit'                => 'nullable|numeric|min:0',
-        'lignes.*.contre_partie'         => 'nullable|string',
-        'lignes.*.rubrique_tva'          => 'nullable|string',
-        'lignes.*.compte_tva'            => 'nullable|string',
-        'lignes.*.type_journal'          => 'nullable|string',
-        'lignes.*.categorie'             => 'nullable|string', // Nouveau champ pour la catégorie
-        'lignes.*.prorat_de_deduction'    => 'nullable|string',
-        'lignes.*.piece_justificative'    => 'nullable|string',
-        'lignes.*.libelle'               => 'nullable|string',
-        'lignes.*.filtre_selectionne'    => 'nullable|string|in:libre,contre-partie',
+        'lignes'                       => 'required|array',
+        'lignes.*.id'                  => 'nullable|integer',
+        'lignes.*.date'                => 'nullable|date',
+        'lignes.*.date_livr'           => 'nullable|date',
+        'lignes.*.numero_dossier'      => 'nullable|string',
+        'lignes.*.numero_facture'      => 'nullable|string',
+        'lignes.*.compte'              => 'nullable|string',
+        'lignes.*.debit'               => 'nullable|numeric|min:0',
+        'lignes.*.credit'              => 'nullable|numeric|min:0',
+        'lignes.*.contre_partie'       => 'nullable|string',
+        'lignes.*.rubrique_tva'        => 'nullable|string',
+        'lignes.*.compte_tva'          => 'nullable|string',
+        'lignes.*.type_journal'        => 'nullable|string',
+        'lignes.*.categorie'           => 'nullable|string',
+        'lignes.*.prorat_de_deduction' => 'nullable|string',
+        'lignes.*.libelle'             => 'nullable|string',
+        'lignes.*.filtre_selectionne'  => 'nullable|string|in:libre,contre-partie',
+        'lignes.*.piece_justificative' => 'nullable|string',
     ]);
 
     Log::info('Validation des données réussie');
 
+    $responseData = [];
+
     try {
-        $responseData = [];
         foreach ($validatedData['lignes'] as $ligneData) {
             Log::info('Traitement de la ligne', $ligneData);
 
-            // Traitement de la date
-            $lineDateObj = null;
-            if (!empty($ligneData['date'])) {
-                try {
-                    $lineDateObj = Carbon::parse($ligneData['date']);
-                } catch (\Exception $e) {
-                    $lineDateObj = Carbon::now();
-                }
-            } else {
-                $lineDateObj = Carbon::now();
-            }
+            // 2️⃣ Préparation de la date principale
+            $lineDateObj = !empty($ligneData['date'])
+                ? \Carbon\Carbon::parse($ligneData['date'])
+                : \Carbon\Carbon::now();
 
-            // Vérification de la ligne vide (optionnelle)
-            if ($lineDateObj &&
-                $lineDateObj->format('Y-m-d') === Carbon::now()->format('Y-m-d') &&
-                (empty($ligneData['numero_facture']) || $ligneData['numero_facture'] === 'N/A') &&
-                empty($ligneData['compte']) &&
-                (((isset($ligneData['debit']) ? $ligneData['debit'] : 0)) == 0) &&
-                (((isset($ligneData['credit']) ? $ligneData['credit'] : 0)) == 0)
+            // 2a) Ignorer les lignes vides du jour
+            if (
+                $lineDateObj->format('Y-m-d') === \Carbon\Carbon::now()->format('Y-m-d')
+                && (empty($ligneData['numero_facture']) || $ligneData['numero_facture'] === 'N/A')
+                && empty($ligneData['compte'])
+                && ((isset($ligneData['debit'])  ? $ligneData['debit']  : 0) == 0)
+                && ((isset($ligneData['credit']) ? $ligneData['credit'] : 0) == 0)
             ) {
                 Log::info("Ligne vide ignorée");
-                continue; // Ne pas insérer cette ligne
-            }
-
-            // Génération du numéro de pièce
-            $mois = $lineDateObj->format('m'); // Mois au format MM
-            // Récupérer le code journal depuis le champ type_journal (ou autre, selon votre logique)
-            $codeJournal = $ligneData['type_journal'];
-            $numeroFacture = $ligneData['numero_facture'] ?? null;
-
-            // Récupérer le dernier numéro de pièce utilisé pour le même numéro de facture et mois
-            $lastRecord = OperationCourante::where('societe_id', $societeId)
-                ->where('numero_facture', $numeroFacture)
-                ->whereMonth('date', $mois)
-                ->orderBy('id', 'desc')
-                ->first();
-
-            $increment = $lastRecord ? (intval(substr($lastRecord->numero_piece, -4)) + 1) : 1;
-            $numeroPiece = 'P' . $mois . $codeJournal . str_pad($increment, 4, '0', STR_PAD_LEFT);
-
-            // Préparation des données à enregistrer, avec le champ "categorie"
-            $data = [
-                'numero_facture'      => $numeroFacture,
-                'numero_dossier'              => $ligneData['numero_dossier'] ?? null,
-
-                'compte'              => $ligneData['compte'] ?? null,
-                'debit'               => $ligneData['debit'] ?? 0,
-                'credit'              => $ligneData['credit'] ?? 0,
-                'contre_partie'       => $ligneData['contre_partie'] ?? null,
-                'rubrique_tva'        => $ligneData['rubrique_tva'] ?? null,
-                'compte_tva'          => $ligneData['compte_tva'] ?? null,
-                'type_journal'        => $ligneData['type_journal'] ?? null,
-                'categorie'           => $ligneData['categorie'] ?? null, // Enregistrement de la catégorie
-                'prorat_de_deduction' => $ligneData['prorat_de_deduction'] ?? null,
-                'piece_justificative' => $ligneData['piece_justificative'] ?? null,
-                'libelle'             => $ligneData['libelle'] ?? null,
-                'filtre_selectionne'  => $ligneData['filtre_selectionne'] ?? null,
-                'societe_id'          => $societeId,
-                'numero_piece'        => $numeroPiece,
-            ];
-
-            // Formatage de la date pour l'insertion en base (format MySQL)
-            $data['date'] = $lineDateObj->format('Y-m-d H:i:s');
-
-            // Vérifier si la ligne a déjà été enregistrée dans la session
-            $sessionLines = session('lignes_en_cours', []);
-            $isDuplicate = false;
-            foreach ($sessionLines as $existingLine) {
-                if ($existingLine['numero_facture'] === $data['numero_facture'] && $existingLine['compte'] === $data['compte']) {
-                    $isDuplicate = true;
-                    break;
-                }
-            }
-            if ($isDuplicate) {
-                Log::info("Ligne déjà saisie, pas de réenregistrement.");
                 continue;
             }
 
-            // Ajouter la ligne dans la session pour éviter le double enregistrement
-            $sessionLines[] = $data;
-            session(['lignes_en_cours' => $sessionLines]);
+            // 3️⃣ Construction du tableau de données
+            $data = [
+                'numero_facture'      => $ligneData['numero_facture']      ?? null,
+                'compte'              => $ligneData['compte']              ?? null,
+                'debit'               => $ligneData['debit']               ?? 0,
+                'credit'              => $ligneData['credit']              ?? 0,
+                'contre_partie'       => $ligneData['contre_partie']       ?? null,
+                'numero_dossier'      => $ligneData['numero_dossier']      ?? null,
+                'rubrique_tva'        => $ligneData['rubrique_tva']        ?? null,
+                'compte_tva'          => $ligneData['compte_tva']          ?? null,
+                'prorat_de_deduction' => $ligneData['prorat_de_deduction'] ?? null,
+                'type_journal'        => $ligneData['type_journal']        ?? null,
+                'categorie'           => $ligneData['categorie']           ?? null,
+                'piece_justificative' => $ligneData['piece_justificative'] ?? null,
+                'libelle'             => $ligneData['libelle']             ?? null,
+                'filtre_selectionne'  => $ligneData['filtre_selectionne']  ?? null,
+                'societe_id'          => $societeId,
+                'date'                => $lineDateObj->format('Y-m-d H:i:s'),
+                'date_livr'           => $ligneData['date_livr']
+                                          ? \Carbon\Carbon::parse($ligneData['date_livr'])->format('Y-m-d H:i:s')
+                                          : $lineDateObj->format('Y-m-d H:i:s'),
+            ];
 
-            // Insérer ou mettre à jour la ligne dans la base de données
-            $existingLigne = OperationCourante::where('societe_id', $societeId)
-                ->where('numero_facture', $data['numero_facture'])
-                ->where('compte', $data['compte'])
-                ->where('debit', $data['debit'])
-                ->where('credit', $data['credit'])
-                ->where('date', $data['date'])
-                ->first();
+            // 4️⃣ Opérations Diverses spécifiques
+            if (($data['categorie'] ?? '') === "Opérations Diverses") {
+                $existing = \App\Models\OperationCourante::where([
+                    ['societe_id',    $societeId],
+                    ['numero_facture',$data['numero_facture']],
+                    ['compte',        $data['compte']],
+                ])->get();
 
-            if ($existingLigne) {
-                $existingLigne->update($data);
-                $record = $existingLigne;
-            } else {
-                $record = OperationCourante::create($data);
+                if ($existing->count() >= 2) {
+                    Log::info("Deux lignes 'Opérations Diverses' existantes, ignorée.");
+                    continue;
+                }
+
+                Log::info("Création directe Opérations Diverses");
+                $record = \App\Models\OperationCourante::create($data);
+                $record->date     = \Carbon\Carbon::parse($record->date)->format('d/m/Y');
+                $record->piece_justificative = $data['piece_justificative'];
+                $responseData[] = $record;
+                continue;
             }
 
-            // Reformater la date pour l'affichage
-            $record->date = Carbon::parse($record->date)->format('d/m/Y');
-            $responseData[] = $record;
+            // 5️⃣ Gestion doublons en session
+            $sessionLines = session('lignes_en_cours', []);
+            $isDuplicate  = collect($sessionLines)->contains(fn($existing) =>
+                ($existing['numero_facture'] ?? '') === ($data['numero_facture'] ?? '') &&
+                ($existing['compte']         ?? '') === ($data['compte'] ?? '')
+            );
+
+            if ($isDuplicate) {
+                Log::info("Doublon détecté en session, ignoré.");
+                continue;
+            }
+
+            $sessionLines[]             = $data;
+            session(['lignes_en_cours' => $sessionLines]);
+
+            // 6️⃣ Création ou mise à jour en base (sans date_livr dans le where)
+            $existingLigne = \App\Models\OperationCourante::where([
+                ['societe_id',    $societeId],
+                ['numero_facture',$data['numero_facture']],
+                ['compte',        $data['compte']],
+                ['debit',         $data['debit']],
+                ['credit',        $data['credit']],
+                ['date',          $data['date']],
+            ])->first();
+
+            if ($existingLigne) {
+                // Mise à jour y compris date_livr
+                $existingLigne->update([
+                    'date_livr'           => $data['date_livr'],
+                    'piece_justificative' => $data['piece_justificative'],
+                ]);
+                $record = $existingLigne;
+            } else {
+                $record = \App\Models\OperationCourante::create($data);
+            }
+
+            // 7️⃣ Formatage pour réponse
+            $record->date     = \Carbon\Carbon::parse($record->date)->format('d/m/Y');
+            $record->piece_justificative = $data['piece_justificative'];
+            $responseData[]  = $record;
         }
 
         Log::info('Opérations enregistrées avec succès');
+        return response()->json(['data' => $responseData], 200);
 
-        return response()->json($responseData, 200);
     } catch (\Exception $e) {
-        Log::error('Erreur lors de la sauvegarde des lignes: ' . $e->getMessage());
-        return response()->json(['error' => 'Une erreur est survenue lors de la sauvegarde des lignes.'], 500);
+        Log::error('Erreur sauvegarde lignes: '.$e->getMessage());
+        Log::error($e->getTraceAsString());
+        return response()->json([
+            'error'   => 'Erreur lors de la sauvegarde des lignes.',
+            'details' => $e->getMessage(),
+        ], 500);
     }
 }
-
-
-
-
-
-
-
 
 public function getOperations(Request $request)
 {
@@ -291,20 +630,27 @@ public function getOperations(Request $request)
         return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
     }
 
-    $mois = $request->input('mois');
+    // 🔧 Séparer mois et année si nécessaire
+    $moisInput = $request->input('mois');
     $annee = $request->input('annee');
     $codeJournal = $request->input('code_journal');
-    $operationType = $request->input('operation_type'); // "Achats" ou "Ventes"
+    $operationType = $request->input('operation_type');
 
-    // Initialisation de la requête de base
+    // 🔁 Si mois contient un tiret (ex : "02-2025"), on découpe
+    $mois = $moisInput;
+    if (strpos($moisInput, '-') !== false) {
+        [$mois, $anneeFromMois] = explode('-', $moisInput);
+        if (!$annee) $annee = $anneeFromMois;
+    }
+    // dd($mois);
+
+    // 🔍 Requête de base
     $query = OperationCourante::where('societe_id', $societeId);
 
-    // Filtrage par type d'opération (catégorie)
     if ($operationType) {
         $query->where('categorie', $operationType);
     }
 
-    // Filtrer par code_journal, mois et année selon les conditions existantes
     if ($codeJournal && (!$mois || !$annee)) {
         $query->where('type_journal', $codeJournal);
     } elseif ($mois && $annee && !$codeJournal) {
@@ -317,17 +663,19 @@ public function getOperations(Request $request)
 
     $operations = $query->get();
 
-    // Ajouter une ligne vide en tête si nécessaire
+    // ✅ Ajouter ligne vide en tête
     $operations->prepend([
-         'id' => '',
-         'date' => '',
-         'debit' => '',
-         'credit' => '',
-         'type_journal' => '',
+        'id' => '',
+        'date' => '',
+        'date_livr' => '',
+        'debit' => '',
+        'credit' => '',
+        'type_journal' => '',
     ]);
 
     return response()->json($operations);
 }
+
 
 
 public function deleteRows(Request $request)
@@ -362,28 +710,34 @@ public function getContreParties(Request $request)
 
 public function getContrePartiesVentes(Request $request)
 {
-    $codeJournal = $request->query('code_journal');
+    // Récupérer le code journal (optionnel)
+    $codeJournal = trim($request->query('code_journal'));
 
-    if (!$codeJournal) {
-        return response()->json(['error' => 'Code journal manquant.'], 400);
+    // Récupération des contre-parties depuis les journaux (type "Ventes")
+    $journalQuery = \App\Models\Journal::query();
+    $journalQuery->where('type_journal', 'Ventes');
+    if ($codeJournal !== "") {
+        $journalQuery->where('code_journal', $codeJournal);
     }
+    $journalCP = $journalQuery->distinct()
+                    ->pluck('contre_partie')
+                    ->filter()
+                    ->values();
 
-    // Récupérer les valeurs distinctes de contre_partie pour le code journal et type "Ventes"
-    $contreParties = Journal::where('code_journal', $codeJournal)
-        ->where('type_journal', 'Ventes')
-        ->distinct()
-        ->pluck('contre_partie')
-        ->filter()      // Supprime les valeurs nulles
-        ->values();     // Réindexe la collection pour retourner un tableau simple
+    // Récupération des comptes du plan comptable commençant par "7"
+    $planCP = \App\Models\PlanComptable::where('compte', 'like', '7%')
+                    ->distinct()
+                    ->pluck('compte')
+                    ->filter()
+                    ->values();
 
-    return response()->json($contreParties);
+    // Fusion des deux listes en supprimant les doublons
+    $merged = $journalCP->merge($planCP)->unique()->values();
+
+    Log::info("Contre-parties retournées :", $merged->toArray());
+
+    return response()->json($merged);
 }
-
-
-
-
-
-
 
 
 
@@ -439,7 +793,7 @@ public function getJournauxBanque()
     }
 
     // Filtrer par type_journal 'banque'
-    $journaux = Journal::select('code_journal', 'intitule', 'type_journal')
+    $journaux = Journal::select('code_journal', 'intitule', 'type_journal', 'contre_partie')
     ->where('societe_id', $societeId)
 
         ->where('type_journal', 'Banque') // Filtrer par type_journal
@@ -615,8 +969,8 @@ public function getRubriquesTVAVente() {
     // $numRacinesAutorises = ['120', '121', '122', '123', '124', '125', '126', '127', '128', '129'];
 
     // Récupérer les rubriques TVA pour les ventes, incluant les num_racines spécifiques
-    $rubriques = Racine::select('Num_racines','categorie', 'Nom_racines', 'Taux' )
-        ->where('type', 'vente')
+    $rubriques = Racine::select('Num_racines','categorie', 'Nom_racines', 'Taux','compte_tva')
+        ->where('type', 'Ca imposable')
         // ->whereIn('Num_racines')  // Ajouter la condition pour les num_racines autorisés
 
         ->get();
@@ -628,6 +982,7 @@ public function getRubriquesTVAVente() {
             'Nom_racines' => $rubrique->Nom_racines,
             'Num_racines' => $rubrique->Num_racines,
             'Taux' => $rubrique->Taux,
+            'compte_tva' => $rubrique->compte_tva,
         ];
     }
 
@@ -636,27 +991,64 @@ public function getRubriquesTVAVente() {
 }
 
     // Récupère les rubriques TVA pour un type d'opération 'Achat'
-    public function getRubriquesTva()
+   public function getRubriquesTva()
 {
-    // Liste des numéros de racines à exclure
-    $exclusions = ['190', '182', '200', '201', '205'];
+    // 1) Numéros de racines à exclure
+    $exclusions = ['147', '151', '152', '148', '144'];
 
-    $rubriques = Racine::select('Num_racines','categorie', 'Nom_racines', 'Taux' )
-        ->where('type', 'Achat')
-        ->whereNotIn('Num_racines', $exclusions)  // Exclure les numéros de racines spécifiés
+    // 2) Récupération des rubriques dans l'ordre inversé de la base
+    $rubriques = Racine::select('Num_racines', 'categorie', 'Nom_racines', 'Taux','compte_tva')
+        ->where('type', 'Les déductions')
+        ->whereNotIn('Num_racines', $exclusions)
+        ->orderBy('categorie', 'desc') // Inverser l'ordre de la base
         ->get();
 
-    $rubriquesParCategorie = [];
+    // 3) Regroupement par catégorie principale
+    $categoriesTemp = [];
     foreach ($rubriques as $rubrique) {
-        $rubriquesParCategorie[$rubrique->categorie]['rubriques'][] = [
-            'Nom_racines' => $rubrique->Nom_racines,
+        [$main, $sub] = array_map('trim', explode('/', $rubrique->categorie) + [1 => null]);
+
+        if (!isset($categoriesTemp[$main])) {
+            $categoriesTemp[$main] = [
+                'subCategories' => [],
+                'rubriques'     => []
+            ];
+        }
+
+        if ($sub && !in_array($sub, $categoriesTemp[$main]['subCategories'])) {
+            $categoriesTemp[$main]['subCategories'][] = $sub;
+        }
+
+        $categoriesTemp[$main]['rubriques'][] = [
             'Num_racines' => $rubrique->Num_racines,
-            'Taux' => $rubrique->Taux,
+            'Nom_racines' => $rubrique->Nom_racines,
+            'Taux'        => $rubrique->Taux,
+            'compte_tva' => $rubrique->compte_tva,
+
         ];
     }
 
-    return response()->json(['rubriques' => $rubriquesParCategorie]);
+    // 4) Numérotation et préparation de la structure finale dans l'ordre inversé
+    $categories = [];
+    $counter = 1;
+    // Parcours des clés dans l'ordre obtenu (déjà inversé)
+    foreach (array_keys($categoriesTemp) as $name) {
+        $data = $categoriesTemp[$name];
+        $categories[] = [
+            'categoryId'   => $counter,
+            'categoryName' => "$counter. $name",
+            'subCategories'=> $data['subCategories'],
+            'rubriques'    => $data['rubriques'],
+        ];
+        $counter++;
+    }
+
+    // 5) Retour de la réponse JSON
+    return response()->json([
+        'categories' => $categories
+    ]);
 }
+
 
 public function getTva(Request $request)
 {
@@ -675,6 +1067,60 @@ public function getTva(Request $request)
 
     return response()->json(['taux' => $rubrique->Taux]);
 }
+
+
+public function getPlanComptable(Request $request)
+{
+    // Récupération de l'identifiant de la société depuis la query string
+    $societeId = $request->query('societe_id');
+
+    if (!$societeId) {
+        return response()->json(['error' => 'Aucune société sélectionnée'], 400);
+    }
+
+    try {
+        // Récupérer tous les comptes du plan comptable pour la société donnée
+        $comptes = PlanComptable::where('societe_id', $societeId)
+            ->select('compte')
+            ->distinct() // Pour obtenir uniquement des comptes uniques
+            ->get();
+
+        // Vérifier si des comptes sont trouvés
+        if ($comptes->isEmpty()) {
+            return response()->json(['error' => 'Aucun compte trouvé pour cette société'], 404);
+        }
+
+        return response()->json($comptes, 200);
+    } catch (\Exception $e) {
+        Log::error('Erreur lors de la récupération des comptes : ' . $e->getMessage());
+        return response()->json(['error' => 'Erreur serveur lors de la récupération des comptes'], 500);
+    }
+}
+
+public function getFiles(Request $request)
+{
+    $societeId = session('societeId');
+
+    if (!$societeId) {
+        return response()->json(['error' => 'Aucune société trouvée dans la session'], 404);
+    }
+
+    // Exemple de filtrage similaire à votre code
+    $query = File::where('societe_id', $societeId)
+                 ->where('type', 'achat');
+
+
+
+    $files = $query->get();
+    return response()->json($files);
+}
+
+
+
+
+
+
+
 
 
     // Récupère les comptes de la société depuis le plan comptable
@@ -714,7 +1160,6 @@ public function getTva(Request $request)
 
     return response()->json($contreParties);
 }
-
 
 public function getDetailsParCompte(Request $request)
 {
@@ -807,33 +1252,49 @@ public function getComptes(Request $request)
 
 public function getCompteTvaAch(Request $request)
 {
-    // Récupérer les comptes TVA pour les achats, ceux qui commencent par '4456'
-    $ComptesTva = PlanComptable::where('compte', 'like', '4455%')  // Comptes d'achats commençant par '4456'
-        ->get(['compte', 'intitule']); // Récupérer le compte et son intitulé
+    $societe_id = $request->get('societe_id');
 
-    // Vérifier si des comptes ont été trouvés
+    if (!$societe_id) {
+        return response()->json(['error' => 'ID de société manquant'], 400);
+    }
+
+    // Facultatif : log pour debug
+    logger("Requête comptes TVA achats pour societe_id = $societe_id");
+
+    // Récupérer les comptes TVA pour les achats qui commencent par '4455'
+    $ComptesTva = PlanComptable::where('societe_id', $societe_id)
+        ->where('compte', 'like', '4455%')
+        ->get(['compte', 'intitule']);
+
     if ($ComptesTva->isEmpty()) {
         return response()->json(['error' => 'Aucun compte TVA pour les achats trouvé'], 404);
     }
 
-    // Retourner les comptes sous forme de JSON
     return response()->json($ComptesTva);
 }
 
+
 public function getCompteTvaVente(Request $request)
 {
-    // Récupérer les comptes TVA pour les ventes, ceux qui commencent par '3455'
-    $ComptesTva = PlanComptable::where('compte', 'like', '3455%')  // Comptes de ventes commençant par '3455'
-        ->get(['compte', 'intitule']); // Récupérer le compte et son intitulé
+    $societe_id = $request->get('societe_id');
+    if (!$societe_id) {
+        return response()->json(['error' => 'ID de société manquant'], 400);
+    }
 
-    // Vérifier si des comptes ont été trouvés
+    // Debug temporaire
+    logger("Requête pour societe_id = $societe_id");
+
+    $ComptesTva = PlanComptable::where('compte', 'like', '3455%')
+        ->where('societe_id', $societe_id)
+        ->get(['compte', 'intitule']);
+
     if ($ComptesTva->isEmpty()) {
         return response()->json(['error' => 'Aucun compte TVA pour les ventes trouvé'], 404);
     }
 
-    // Retourner les comptes sous forme de JSON
     return response()->json($ComptesTva);
 }
+
 
 
 
@@ -889,79 +1350,59 @@ public function getTypeJournal(Request $request)
         }
     }
 
+public function getFournisseursAvecDetails(Request $request)
+{
+    $societeId = session('societeId');
 
-    public function getFournisseursAvecDetails(Request $request)
-    {
-        // Récupère le paramètre 'societe_id' depuis la query string (GET)
-        $societeId = session('societeId');
-
-        // Si le paramètre n'est pas présent, retourne une erreur
-        if (!$societeId) {
-            return response()->json(['error' => 'Aucune société sélectionnée'], 400);
-        }
-
-        try {
-            // Récupère les fournisseurs de la société donnée dont le compte commence par '44'
-            $fournisseurs = Fournisseur::where('societe_id', $societeId)
-                ->where('compte', 'LIKE', '44%')
-                ->get(['compte', 'intitule', 'contre_partie', 'rubrique_tva']);
-
-            // Pour chaque fournisseur, ajoute le taux de TVA correspondant
-            $fournisseursAvecDetails = $fournisseurs->map(function ($fournisseur) {
-                $rubriqueTva = $fournisseur->rubrique_tva;
-                // Recherche dans la table Racine le taux de TVA associé à la rubrique
-                $racine = Racine::where('num_racines', $rubriqueTva)->first();
-                $tauxTva = $racine ? $racine->Taux : 0;
-                $fournisseur->taux_tva = $tauxTva;
-                return $fournisseur;
-            });
-
-            return response()->json($fournisseursAvecDetails);
-        } catch (\Exception $e) {
-            // En cas d'erreur, retourne le message d'erreur
-            return response()->json(['error' => 'Erreur lors de la récupération des fournisseurs : ' . $e->getMessage()], 500);
-        }
+    if (!$societeId) {
+        return response()->json(['error' => 'Aucune société sélectionnée'], 400);
     }
 
+    try {
+        $fournisseurs = Fournisseur::where('societe_id', $societeId)
+            ->where('compte', 'LIKE', '44%')
+            ->get(['compte', 'intitule', 'contre_partie', 'rubrique_tva']);
 
-public function getTransactions()
-{
-    $societeId = Session::get('societe_id'); // Récupération du societe_id depuis la session
-    $prorataDeduction = Societe::where('id', $societeId)->value('prorata_de_deduction'); // Récupération de prorata_de_deduction
+        $fournisseursAvecDetails = $fournisseurs->map(function ($f) {
+            // Valeurs par défaut
+            $f->taux_tva = 0;
+            $f->compte_tva = null;
 
-    $transactions = OperationCourante::query()
-        ->when(
-            request('prorata') === 'OUI' && request('type_journal') === 'Achats',
-            function ($query) use ($prorataDeduction) {
-                $query->whereNotNull('rubrique_tva')
-                    ->whereNotNull('compte_tva')
-                    ->selectRaw('((credit / (1 + taux_tva)) * taux_tva) * ?', [$prorataDeduction]);
+            if (empty($f->rubrique_tva)) {
+                // Aucun traitement si rubrique TVA manquante
+                return $f;
             }
-        )
-        ->when(
-            request('prorata') === 'OUI' && request('type_journal') === 'Ventes',
-            function ($query) use ($prorataDeduction) {
-                $query->selectRaw('((debit / (1 + taux_tva)) * taux_tva) * ?', [$prorataDeduction]);
-            }
-        )
-        ->when(
-            (empty(request('prorata')) || request('prorata') === 'NON') && request('type_journal') === 'Achats',
-            function ($query) {
-                $query->whereNull('rubrique_tva')
-                    ->whereNull('compte_tva')
-                    ->selectRaw('credit * taux_tva');
-            }
-        )
-        ->when(
-            (empty(request('prorata')) || request('prorata') === 'NON') && request('type_journal') === 'Ventes',
-            function ($query) {
-                $query->selectRaw('debit * taux_tva');
-            }
-        )
-        ->get();
 
-    return response()->json($transactions);
+            // Extraire le numéro depuis la rubrique_tva (ex: "140: Service" => 140)
+            $split = explode(':', $f->rubrique_tva);
+            $code_rubrique = isset($split[0]) ? trim(preg_replace('/[^\d]/', '', $split[0])) : null;
+
+            if (!$code_rubrique) {
+                // Rubrique TVA mal formatée
+                return $f;
+            }
+
+            // Rechercher dans la table racines
+            $racine = Racine::where('num_racines', $code_rubrique)->first();
+
+            if ($racine) {
+                $f->taux_tva = (float) $racine->Taux;
+                $f->compte_tva = $racine->compte_tva; // ✅ ici on récupère `compte_tva` et non `num_racines`
+            }
+
+            return $f;
+        });
+
+        return response()->json($fournisseursAvecDetails);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Erreur lors de la récupération des fournisseurs : ' . $e->getMessage()
+        ], 500);
+    }
 }
+
+
+
 
 public function updateRow(Request $request, $id)
     {
@@ -1033,6 +1474,63 @@ public function deleteOperations(Request $request)
     }
 }
 
+
+
+// OperationCouranteController.php
+
+public function edit(string $piece)
+{
+    $societeId = session('societeId');
+    if (! $societeId) {
+        abort(403, "Société non définie en session.");
+    }
+
+    // 1) charger vos planComptable, files, etc. comme avant...
+    $planComptable = PlanComptable::where('societe_id', $societeId)->get();
+    $files         = File::where('societe_id', $societeId)->where('type','caisse')->get();
+    $files_banque  = File::where('societe_id', $societeId)->where('type','banque')->get();
+    $files_achat   = File::where('societe_id', $societeId)->where('type','achat')->get();
+    $files_vente   = File::where('societe_id', $societeId)->where('type','vente')->get();
+
+    // 2) récupérer toutes les lignes de cette pièce
+    $lignes = OperationCourante::where('societe_id', $societeId)
+                ->where('piece_justificative', $piece)
+                ->orderBy('date')
+                ->get();
+
+    if ($lignes->isEmpty()) {
+        abort(404, "Aucune écriture pour la pièce “{$piece}”.");
+    }
+
+    // 3) extraire les codes journaux uniques
+    $journaux = $lignes->pluck('type_journal')->unique()->values();
+
+    return view('Operation_Courante', [
+        'planComptable' => $planComptable,
+        'files'         => $files,
+        'files_banque'  => $files_banque,
+        'files_achat'   => $files_achat,
+        'files_vente'   => $files_vente,
+        'lignesPiece'   => $lignes,
+              'journaux'      => $journaux,
+        'editPiece'     => $piece,
+    ]);
+}
+
+public function apiByPiece(string $piece)
+{
+    $societeId = session('societeId');
+    if (! $societeId) {
+        return response()->json([], 403);
+    }
+
+    $lignes = OperationCourante::where('societe_id', $societeId)
+                ->where('piece_justificative', $piece)
+                ->orderBy('date')
+                ->get();
+
+    return response()->json($lignes);
+}
 
 
 

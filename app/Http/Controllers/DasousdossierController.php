@@ -15,52 +15,82 @@ use Illuminate\Support\Facades\Validator;
 
 class DasousdossierController extends Controller
 {
+public function upload(Request $request)
+{
+    //   dd($request->all());
+    $request->validate([
+        'files.*' => 'required|file|mimes:jpg,png,pdf,docx,xlsx,doc', 
+        'type' => 'required|string',
+        'folders' => 'nullable|string', 
+        'societe_id' => 'required|integer',
+        'exercice_debut' => 'nullable|date',
+        'exercice_fin' => 'nullable|date',
+    ]);
 
-    public function upload(Request $request)
-    {
-        // dd($request);
+    $dbName = session('database');
+    $societeId = $request->input('societe_id');
+    $force = $request->input('force');
 
-        // Validation des fichiers uploadés
-        $request->validate([
-            'file' => 'required|file|mimes:jpg,png,pdf,docx,xlsx,doc', // Types de fichiers acceptés
-            'type' => 'nullable|string', // Le type (Achat, Vente, etc.)
-            'folders' => 'nullable|string', // Le type (Achat, Vente, etc.)
-            'societe_id' => 'required|integer', // Validation pour societe_id
-            
-        ]);
-    
-        // Vérifier si un fichier a été téléchargé
-        if ($request->hasFile('file')) {
-            $file = $request->file('file');
-    
-            // Créer un nom unique pour le fichier
-            $filename =  $file->getClientOriginalName();
-    
-             // Vérifiez si le répertoire 'uploads' existe dans 'public/storage' et créez-le si nécessaire
-             if (!file_exists(public_path('storage/uploads'))) {
-                mkdir(public_path('storage/uploads'), 0777, true);
-            }
-    
-            // Déplacer le fichier téléchargé dans 'public/storage/uploads'
-            $file->move(public_path('storage/uploads'), $filename);
-    
-            // Sauvegarder les informations du fichier dans la base de données
-            $fileRecord = new File();
-            $fileRecord->name = $filename;  // Nom du fichier
-            $fileRecord->path = 'storage/uploads/' . $filename;  // Le chemin est relatif à 'public'
-            $fileRecord->type = $request->input('type');  // Type du fichier (Achat, Vente, etc.)
-            $fileRecord->societe_id = $request->input('societe_id');  // ID de la société
-            $fileRecord->folders = $request->input('folders_id');  // ID de la société
-            $fileRecord->save();  // Sauvegarde dans la base de données
-    
-            return back()->with('success', 'Fichier téléchargé avec succès!');
-        } else {
-            return back()->withErrors(['file' => 'Aucun fichier téléchargé.']);
-        }
+    // Récupère tous les noms de fichiers existants pour cette société
+    $existingNames = File::withTrashed()
+        ->where('societe_id', $societeId)
+        ->pluck('name')
+        ->toArray();
+
+    $dbPath = public_path('storage/uploads/' . $dbName);
+    if (!file_exists($dbPath)) {
+        mkdir($dbPath, 0777, true);
     }
 
-    
+    foreach ($request->file('files') as $file) {
+        $originalFilename = $file->getClientOriginalName();
+        $filenameWithoutExt = pathinfo($originalFilename, PATHINFO_FILENAME);
+        $extension = pathinfo($originalFilename, PATHINFO_EXTENSION);
 
+        $exists = in_array($originalFilename, $existingNames);
+
+        if ($exists && !$force) {
+            return response()->json([
+                'exists' => true,
+                'name' => $originalFilename
+            ]);
+        }
+
+        $finalName = $originalFilename;
+        if ($exists && $force) {
+            $existingFileCount = 1;
+            do {
+                $finalName = $filenameWithoutExt . " ($existingFileCount)." . $extension;
+                $existingFileCount++;
+            } while (in_array($finalName, $existingNames));
+        }
+
+        $fileRecord = new File();
+        $fileRecord->name = $finalName;
+        $fileRecord->type = $request->input('type');
+        $fileRecord->societe_id = $societeId;
+        $fileRecord->folders = $request->input('folders');
+        $fileRecord->exercice_debut = $request->input('exercice_debut');
+
+        $fileRecord->exercice_fin = $request->input('exercice_fin');
+        $fileRecord->path = '';
+        $fileRecord->updated_by = auth()->id();
+        $fileRecord->save();
+
+        $filenameWithIdInPath = $fileRecord->id . '_' . $finalName;
+        $file->move($dbPath, $filenameWithIdInPath);
+
+        $fileRecord->path = 'storage/uploads/' . $dbName . '/' . $filenameWithIdInPath;
+        $fileRecord->save();
+
+        // Ajoute le nouveau nom à la liste pour la prochaine itération
+        $existingNames[] = $finalName;
+    }
+
+    return response()->json(['success' => true]);
+}
+
+ 
 //     public function download($fileId)
 // {
 //     // Récupérer le fichier depuis la base de données

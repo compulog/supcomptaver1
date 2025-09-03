@@ -117,6 +117,7 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
 
     public function index()
     {
+        session()->forget('societeId');
 
         $societes = Societe::all();
 

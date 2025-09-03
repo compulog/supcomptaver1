@@ -18,11 +18,13 @@
                         @include('layouts.navbars.auth.sidebar') <!-- Inclure la sidebar par défaut -->
                     </div>
                     <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg {{ (Request::is('rtl') ? 'overflow-hidden' : '') }}">
-                        <nav class="navbar">
+                        <nav class="navbar" style="background-color:#ffffff; z-index: 1030;">
                             @if(isset($societe))         
-                                <button id="menuToggle" class="navbar-toggler d-none d-lg-block" type="button" style="padding: 0; border: none; background: transparent;">
-                                    <p style="font-size:15px;color:black;"><i class="fas fa-bars"></i></p>
-                                </button>
+                                <button id="menuToggle" class="navbar-toggler d-none d-lg-block" style="padding: 0; border: none; background: transparent;display: flex; align-items: center; border: 1px solid black; border-radius: 5px; transition: background-color 0.3s;">
+ <i class="fas fa-bars" style="font-size: 20px; color: black; padding: 5px;"></i>
+    
+    <!-- Texte Menu -->
+    <span id="menuText" style="font-size: 15px; color: black;">Menu</span>                                </button>
                             @endif
                             @include('layouts.navbars.auth.nav1') <!-- Navbar par défaut -->
                         </nav>

@@ -89,7 +89,7 @@ class FournisseurController extends Controller
 
     if ($existingFournisseur) {
         return response()->json([
-            'error' => 'Le fournisseur avec ce compte existe déjà pour la société sélectionnée.'
+            'error' => 'Ce compte existe déjà, vous ne pouvez pas le créer.'
         ], 422);
     }
 
@@ -116,21 +116,38 @@ class FournisseurController extends Controller
     }
 }
 
+// public function checkCompte(Request $request)
+// {
+//     $request->validate([
+//         'compte' => 'required|string',
+//         'societe_id' => 'required|integer'
+//     ]);
+
+//     $exists = Fournisseur::where('societe_id', $request->societe_id)
+//                 ->where('compte', $request->compte)
+//                 ->exists();
+
+//                 if ($exists) {
+//                     return response()->json([
+//                         'exists'  => true,
+//                         'message' => 'Ce compte existe déjà, vous ne pouvez pas le créer.'
+//                     ], 200);
+//                 }
+//     return response()->json(['exists' => $exists]);
+// }
+
+
 public function checkCompte(Request $request)
 {
-    $request->validate([
-        'compte' => 'required|string',
-        'societe_id' => 'required|integer'
-    ]);
-
     $exists = Fournisseur::where('societe_id', $request->societe_id)
                 ->where('compte', $request->compte)
                 ->exists();
 
-    return response()->json(['exists' => $exists]);
+    return response()->json([
+        'exists'  => $exists,
+        'message' => $exists ? 'Ce compte existe déjà pour, vous ne pouvez pas le créer' : ''
+    ]);
 }
-
-
 
 
 
@@ -329,52 +346,63 @@ public function getComptes()
      * Gère l'importation du fichier Excel
      */
     public function import(Request $request)
-{
-    // Valider le fichier et les paramètres de colonnes
-    $request->validate([
-        'file' => 'required|file|mimes:xlsx,xls,csv',
-        'colonne_compte' => 'required|integer|min:1',
-        'colonne_intitule' => 'required|integer|min:1',
-        // Les autres colonnes sont optionnelles mais doivent être entières si renseignées
-        'colonne_identifiant_fiscal' => 'nullable|integer|min:1',
-        'colonne_ICE' => 'nullable|integer|min:1',
-        'colonne_nature_operation' => 'nullable|integer|min:1',
-        'colonne_rubrique_tva' => 'nullable|integer|min:1',
-        'colonne_designation' => 'nullable|integer|min:1',
-        'colonne_contre_partie' => 'nullable|integer|min:1',
-    ]);
+    {
+        // Validation du fichier et des indices de colonnes
+        $request->validate([
+            'file'                         => 'required|file|mimes:xlsx,xls,csv',
+            'colonne_compte'               => 'required|integer|min:1',
+            'colonne_intitule'             => 'required|integer|min:1',
+            'colonne_identifiant_fiscal'   => 'nullable|integer|min:1',
+            'colonne_ICE'                  => 'nullable|integer|min:1',
+            'colonne_nature_operation'     => 'nullable|integer|min:1',
+            'colonne_rubrique_tva'         => 'nullable|integer|min:1',
+            'colonne_designation'          => 'nullable|integer|min:1',
+            'colonne_contre_partie'        => 'nullable|integer|min:1',
+        ]);
 
-    try {
-        // Récupérer l'ID de la société et le nombre de chiffres du compte depuis la session
-        $societe_id = session('societeId');
-        $societe = Societe::findOrFail($societe_id);
-        $nombre_chiffre_compte = $societe->nombre_chiffre_compte;
+        try {
+            // Récupération de l’ID de la société en session et de son paramètre nombre de chiffres
+            $societe_id = session('societeId');
+            $societe = Societe::findOrFail($societe_id);
+            $nombre_chiffre_compte = $societe->nombre_chiffre_compte;
 
-        // Récupérer le mapping des colonnes depuis le formulaire
-        $mapping = [
-            'colonne_compte'            => (int)$request->input('colonne_compte'),
-            'colonne_intitule'          => (int)$request->input('colonne_intitule'),
-            'colonne_identifiant_fiscal'=> $request->input('colonne_identifiant_fiscal') ? (int)$request->input('colonne_identifiant_fiscal') : null,
-            'colonne_ICE'               => $request->input('colonne_ICE') ? (int)$request->input('colonne_ICE') : null,
-            'colonne_nature_operation'  => $request->input('colonne_nature_operation') ? (int)$request->input('colonne_nature_operation') : null,
-            'colonne_rubrique_tva'      => $request->input('colonne_rubrique_tva') ? (int)$request->input('colonne_rubrique_tva') : null,
-            'colonne_designation'       => $request->input('colonne_designation') ? (int)$request->input('colonne_designation') : null,
-            'colonne_contre_partie'     => $request->input('colonne_contre_partie') ? (int)$request->input('colonne_contre_partie') : null,
-        ];
+            // Préparation du mapping des colonnes
+            $mapping = [
+                'colonne_compte'            => (int) $request->input('colonne_compte'),
+                'colonne_intitule'          => (int) $request->input('colonne_intitule'),
+                'colonne_identifiant_fiscal'=> $request->filled('colonne_identifiant_fiscal')
+                                                ? (int) $request->input('colonne_identifiant_fiscal')
+                                                : null,
+                'colonne_ICE'               => $request->filled('colonne_ICE')
+                                                ? (int) $request->input('colonne_ICE')
+                                                : null,
+                'colonne_nature_operation'  => $request->filled('colonne_nature_operation')
+                                                ? (int) $request->input('colonne_nature_operation')
+                                                : null,
+                'colonne_rubrique_tva'      => $request->filled('colonne_rubrique_tva')
+                                                ? (int) $request->input('colonne_rubrique_tva')
+                                                : null,
+                'colonne_designation'       => $request->filled('colonne_designation')
+                                                ? (int) $request->input('colonne_designation')
+                                                : null,
+                'colonne_contre_partie'     => $request->filled('colonne_contre_partie')
+                                                ? (int) $request->input('colonne_contre_partie')
+                                                : null,
+            ];
 
-        // Lancer l'import en passant le mapping et les paramètres
-        Excel::import(new FournisseurImport(
-            $societe_id,
-            $nombre_chiffre_compte,
-            $mapping
-        ), $request->file('file'));
+            // Lancement de l’import avec updateOrCreate pour ne pas dupliquer
+            Excel::import(
+                new FournisseurImport($societe_id, $nombre_chiffre_compte, $mapping),
+                $request->file('file')
+            );
 
-        return back()->with('success', 'Importation réussie!');
-    } catch (\Exception $e) {
-        return back()->with('error', 'Erreur lors de l\'importation: ' . $e->getMessage());
+            return redirect()->back()->with('success', 'Importation réussie !');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                             ->withInput()
+                             ->with('error', 'Erreur lors de l’import : ' . $e->getMessage());
+        }
     }
-}
-
     /**
      * Parse le fichier Excel (en ignorant la première ligne).
      */

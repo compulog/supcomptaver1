@@ -57,20 +57,29 @@ class InterlocuteursController extends Controller
 
 
 
-    public function index()
+public function index()
 {
     // Récupérer le nom de la base de données connectée
     $databaseName = DB::getDatabaseName();
 
-    // Récupérer les utilisateurs dont la colonne 'baseName' correspond au nom de la base de données actuelle
-    // et dont le type est 'utilisateur'
-    $users = User::where('baseName', $databaseName)
-                 ->where('type', 'interlocuteurs')
-                 ->get()
-                 ->makeVisible(['password', 'raw_password']); // Rendre 'raw_password' et 'password' visibles
-// dd($users);
+    // Récupérer l'ID de la société depuis la session
+    $societeId = session('societeId');
+
+    // Construction de la requête de base
+    $query = User::where('baseName', $databaseName)
+                 ->where('type', 'interlocuteurs');
+
+    // Si une société est définie dans la session, filtrer par societe_id
+    if ($societeId) {
+        $query->where('societe_id', $societeId);
+    }
+
+    // Exécuter la requête et rendre les champs visibles
+    $users = $query->get()->makeVisible(['password', 'raw_password']);
+
     // Retourner la vue avec les utilisateurs filtrés
     return view('interlocuteurs', compact('users'));
 }
+
 
 }

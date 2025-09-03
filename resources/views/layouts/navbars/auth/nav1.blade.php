@@ -33,43 +33,75 @@
 </head>
 
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
+<nav class="navbar navbar-expand-lg navbar-dark px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true" >
 
-  <div class="container-fluid py-1 px-3" style="margin-left:-50%;">
-                 <!-- Icône et texte "supcompta" sur la même ligne -->
-                <a class="align-items-center d-flex m-0 navbar-brand text-wrap" href="{{ route('dashboard') }}" style="padding:20px;">
-                    <img src="../assets/img/acc.png" class="navbar-brand-img h-100" alt="..." style="width:30px">
-                    <span class="ms-3 font-weight-bold" style="font-size:20px">supcompta</span>
+                  <!-- Icône et texte "supcompta" sur la même ligne -->
+              <a class="align-items-center d-flex m-0 navbar-brand text-wrap" href="{{ route('dashboard') }}" >
+
+                      <img src="../assets/img/curved-images/navlogo.png" alt="Image" style="width:30%;">
+
                 </a>
+  
                 </div>
                 <!-- Nom de la société -->
                 @if(isset($societe))
-                <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5" style="margin-left:-60%;">
+                <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5" style="margin-left:-80%;">
                     <li class="breadcrumb-item text-sm active text-capitalize" aria-current="page">
                         {{ $societe->raison_sociale }}
                        {{ $societe->forme_juridique }} 
                     </li>
                 </ol>
+ <a href="javascript:;" id="dropdownListButton">
+<div class="nav-link" style="margin-left:3100px; margin-top:3px; border: 1px solid #4D55CC; border-radius: 5px; padding: 5px 10px;">
+    <span class="nav-link-text ms-1" style="display: block; line-height: 1;color:#4D55CC;">
+        {{ Auth::user()->name }}
+    </span>
+    <span class="nav-link-text ms-1" style="font-size: 10px; display: block; line-height: 1.2;">
+        @if(Auth::user()->type == 'admin')
+            Administrateur
+        @else
+            {{ Auth::user()->type }}
+        @endif
+    </span>
+</div>
+           
 
-                @endif
+        <!-- <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar">  -->
+   
+ @else
 
-        <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar"> 
-            <div class="nav-link" style="margin-left: 20%;">
-                <span class="nav-link-text ms-1"> {{ Auth::user()->name }}</span>
-            </div>
-
+              <a href="javascript:;" id="dropdownListButton">
+<div class="nav-link" style="margin-left:550px; margin-top:3px; border: 1px solid #4D55CC; border-radius: 5px; padding: 5px 10px;">
+    <span class="nav-link-text ms-1" style="display: block; line-height: 1;color:#4D55CC;">
+        {{ Auth::user()->name }}
+    </span>
+    <span class="nav-link-text ms-1" style="font-size: 10px; display: block; line-height: 1.2;">
+        @if(Auth::user()->type == 'admin')
+            Administrateur
+        @else
+            {{ Auth::user()->type }}
+        @endif
+    </span>
+</div>
+            
+     @endif
 
 <!-- Liste déroulante avec icône -->
 <li class="nav-item d-flex align-items-center" style="position: relative;">
-    <a href="javascript:;" class="nav-link text-white p-0" id="dropdownListButton">
+    <!-- <a href="javascript:;" class="nav-link text-white p-0" id="dropdownListButton">
         <i class="fas fa-user-circle" style="font-size:22px;color:black;"></i>  
-    </a>
+    </a> -->
 
     <!-- Vérification du type d'utilisateur et affichage du menu approprié -->
     @if(Auth::user()->type === 'SuperAdmin')
     <div class="dropdown-list" id="dropdownList">
        
-
+   @if(isset($societe->id))
+    <a class="nav-link {{ Request::is('exercices/'.$societe->id) ? 'active' : '' }}" href="{{ url('exercices/'.$societe->id) }}">
+        <i class="fas fa-tachometer-alt"></i>
+        <span class="nav-link-text ms-1">Tableau de bord</span>
+    </a>
+@endif
         <!-- Utilisateurs link with icon -->
         <a class="nav-link {{ (Request::is('utilisateurs') ? 'active' : '') }}" href="{{ url('utilisateurs') }}">
             <i class="fas fa-users"></i> <!-- Users icon -->
@@ -84,57 +116,102 @@
             <span class="nav-link-text ms-1">Mon Profil</span> 
         </a>
 
-        <!-- Sign Out link with icon -->
+        <!-- Déconnexion link with icon -->
         <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
+            <i class="fas fa-sign-out-alt"></i> <!-- Déconnexion icon -->
+            <span class="d-sm-inline d-none">Déconnexion</span>
         </a>
     </div>
     
-    @elseif(Auth::user()->type === 'Admin')
-    <div class="dropdown-list" id="dropdownList">
-      <!-- Admin link with icon -->
-      <a class="nav-link {{ (Request::is('Admin') ? 'active' : '') }}" href="{{ url('Admin') }}">
-            <i class="fas fa-cogs"></i> <!-- Admin icon -->
-            <span class="nav-link-text ms-1">Admin</span>  
-        </a>
-     <!-- interlocuteurs link with icon -->
-     <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
-            <i class="fas fa-cogs"></i> <!-- interlocuteurs icon -->
-            <span class="nav-link-text ms-1">interlocuteurs</span>  
-        </a>
-        <!-- Mon Profil link with icon -->
-        <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
-            <i class="fas fa-user"></i> <!-- Profile icon -->
-            <span class="nav-link-text ms-1">Mon Profil</span> 
-        </a>
+      @elseif(Auth::user()->type === 'admin')
 
-        <!-- Sign Out link with icon -->
-        <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
-        </a>
-    </div>
-    @elseif(Auth::user()->type === 'utilisateur')
-    <div class="dropdown-list" id="dropdownList">
-      <!-- interlocuteurs link with icon -->
-      <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
-            <i class="fas fa-cogs"></i> <!-- interlocuteurs icon -->
-            <span class="nav-link-text ms-1">interlocuteurs</span>  
-        </a>
+                <div class="dropdown-list" id="dropdownList">
+  @if(isset($societe->id))
+    <a class="nav-link {{ Request::is('exercices/'.$societe->id) ? 'active' : '' }}" href="{{ url('exercices/'.$societe->id) }}">
+        <i class="fas fa-tachometer-alt"></i>
+        <span class="nav-link-text ms-1">Tableau de bord</span>
+    </a>
+@endif
 
-        <!-- Mon Profil link with icon -->
-        <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
-            <i class="fas fa-user"></i> <!-- Profile icon -->
-            <span class="nav-link-text ms-1">Mon Profil</span> 
-        </a>
+                    <a class="nav-link {{ (Request::is('Admin') ? 'active' : '') }}" href="{{ url('Admin') }}">
 
-        <!-- Sign Out link with icon -->
-        <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
-        </a>
-    </div>
+                        <i class="fas fa-cogs"></i>
+
+                        <span class="nav-link-text ms-1">Utilisateurs</span>
+
+                    </a>
+
+                    <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
+
+                        <i class="fas fa-cogs"></i>
+
+                        <span class="nav-link-text ms-1">Interlocuteurs</span>
+
+                    </a>
+
+
+
+                    <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
+
+                        <i class="fas fa-user"></i>
+
+                        <span class="nav-link-text ms-1">Mon Profil</span>
+
+                    </a>
+
+
+
+                    <a href="{{ url('/logout')}}" class="nav-link">
+
+                        <i class="fas fa-sign-out-alt"></i>
+
+                        <span class="d-sm-inline d-none">Déconnexion</span>
+
+                    </a>
+
+                </div>
+
+                @elseif(Auth::user()->type === 'utilisateur')
+
+                <div class="dropdown-list" id="dropdownList">
+ @if(isset($societe->id))
+    <a class="nav-link {{ Request::is('exercices/'.$societe->id) ? 'active' : '' }}" href="{{ url('exercices/'.$societe->id) }}">
+        <i class="fas fa-tachometer-alt"></i>
+        <span class="nav-link-text ms-1">Tableau de bord</span>
+    </a>
+@endif
+
+                    <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
+
+                        <i class="fas fa-cogs"></i>
+
+                        <span class="nav-link-text ms-1">interlocuteurs</span>
+
+                    </a>
+
+
+
+                    <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
+
+                        <i class="fas fa-user"></i>
+
+                        <span class="nav-link-text ms-1">Mon Profil</span>
+
+                    </a>
+
+
+
+                    <a href="{{ url('/logout')}}" class="nav-link">
+
+                        <i class="fas fa-sign-out-alt"></i>
+
+                        <span class="d-sm-inline d-none">Déconnexion</span>
+
+                    </a>
+
+                </div>
+
+
 
     @else
     <div class="dropdown-list" id="dropdownList">
@@ -144,16 +221,16 @@
             <span class="nav-link-text ms-1">Mon Profil</span> 
         </a>
 
-        <!-- Sign Out link with icon -->
+        <!-- Déconnexion link with icon -->
         <a href="{{ url('/logout')}}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> <!-- Sign out icon -->
-            <span class="d-sm-inline d-none">Sign Out</span>
+            <i class="fas fa-sign-out-alt"></i> <!-- Déconnexion icon -->
+            <span class="d-sm-inline d-none">Déconnexion</span>
         </a>
     </div>
     @endif
 </li>
 
-            
+
            
         </div>
     </div>

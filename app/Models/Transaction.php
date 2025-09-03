@@ -9,6 +9,11 @@ class Transaction extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    protected $fillable = ['date', 'reference', 'libelle', 'recette', 'depense', 'societe_id', 'code_journal'];
+    protected $fillable = ['date', 'reference', 'libelle', 'recette', 'depense', 'societe_id', 'code_journal','attachment_url',  'updated_by'];
+
+public function updatedBy()
+{
+    return $this->belongsTo(\App\Models\User::class, 'updated_by');
+}
 }
 

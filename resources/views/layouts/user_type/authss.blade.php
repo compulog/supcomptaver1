@@ -25,7 +25,7 @@
 
         @elseif (\Request::is('profile'))
             @include('layouts.navbars.auth.sidebar')
-            <div class="main-content position-relative bg-gray-100 max-height-vh-100 h-100">
+            <div class="main-content position-relative bg-gray-100 max-height-vh-100 h-100" style="background-color:#ffffff; z-index: 1030;">
                 @include('layouts.navbars.auth.nav1')
                 @yield('content')
             </div>

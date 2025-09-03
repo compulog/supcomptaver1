@@ -28,71 +28,69 @@ class VenteController extends Controller
             return $next($request);
         });
     }
-    public function index(Request $request)
-    {
-        $societeId = session('societeId'); // Récupère l'ID de la société depuis la session
-        $folders = Folder::where('societe_id', $societeId)
-                         ->whereNull('folder_id')
-                         ->where('type_folder', 'vente')
-                         ->get();
-    
-        if ($societeId) {
-            // Initialiser la requête pour les fichiers de type 'vente'
-            $query = File::where('societe_id', $societeId)
-                         ->where('type', 'vente');
-    
-            // Filtrage et tri des fichiers en fonction des paramètres de la requête
-            if ($request->has('filter_by')) {
-                $filterBy = $request->get('filter_by');
-                if ($filterBy == 'name') {
-                    $query->orderBy('name', $request->get('order_by', 'asc')); // Tri par nom
-                } elseif ($filterBy == 'date') {
-                    $query->orderBy('created_at', $request->get('order_by', 'asc')); // Tri par date
-                }
-            } else {
-                $query->orderBy('created_at', 'asc'); // Par défaut, trier par date ascendante
-            }
-    
-            $files = $query->get();
-    
-            // Traitement des notifications et des aperçus de fichiers
-            $notifications = [];
-            foreach ($files as $file) {
-                $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
-    
-                // Déterminer l'aperçu en fonction du type de fichier
-             
-                if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                    $file->preview = asset('storage/uploads/' . $file->name);
+  public function index(Request $request)
+{
+    // Récupérer l'ID de la société à partir de la session ou de la requête
+    $societeId = session('societeId') ?? $request->get('societeId');
 
-                } elseif (in_array($extension, ['pdf'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF'; // PDF
-                } elseif (in_array($extension, ['doc', 'docx'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Word'; // Word
-                } elseif (in_array($extension, ['xls', 'xlsx'])) {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel'; // Excel
-                } else {
-                    $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier'; // Fichier générique
-                }
-    
-                // Récupérer les messages non lus associés à chaque fichier
-                $unreadMessages = Message::where('file_id', $file->id)
-                                         ->where('is_read', 0)
-                                         ->get();
-    
-                // Ajouter le nombre de messages non lus aux notifications
-                if ($unreadMessages->count() > 0) {
-                    $notifications[$file->id] = $unreadMessages->count();
-                }
-            }
-    
-            // Retourner la vue avec les fichiers et les dossiers
-            return view('vente', compact('files', 'folders', 'notifications'));
+    if (!$societeId) {
+        return redirect()->route('home')->with('error', 'Aucune société spécifiée.');
+    }
+
+    // Récupère les dossiers
+    $folders = Folder::where('societe_id', $societeId)
+                     ->whereNull('folder_id')
+                     ->where('type_folder', 'vente')
+                     ->get();
+
+    // Initialiser la requête pour les fichiers de type 'vente'
+    $query = File::where('societe_id', $societeId)
+                 ->where('type', 'vente');
+
+    // Filtrage et tri des fichiers en fonction des paramètres de la requête
+    if ($request->has('filter_by')) {
+        $filterBy = $request->get('filter_by');
+        if ($filterBy == 'name') {
+            $query->orderBy('name', $request->get('order_by', 'asc')); // Tri par nom
+        } elseif ($filterBy == 'date') {
+            $query->orderBy('created_at', $request->get('order_by', 'asc')); // Tri par date
+        }
+    } else {
+        $query->orderBy('created_at', 'asc'); // Par défaut, trier par date ascendante
+    }
+
+    $files = $query->get();
+
+    // Traitement des notifications et des aperçus de fichiers
+    $notifications = [];
+    foreach ($files as $file) {
+        $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
+
+        // Déterminer l'aperçu en fonction du type de fichier
+        if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+            $file->preview = asset('storage/uploads/' . $file->name);
+        } elseif (in_array($extension, ['pdf'])) {
+            $file->preview = 'https://via.placeholder.com/80x100.png?text=PDF';
+        } elseif (in_array($extension, ['doc', 'docx'])) {
+            $file->preview = 'https://via.placeholder.com/80x100.png?text=Word';
+        } elseif (in_array($extension, ['xls', 'xlsx'])) {
+            $file->preview = 'https://via.placeholder.com/80x100.png?text=Excel';
         } else {
-            return redirect()->route('home')->with('error', 'Aucune société trouvée dans la session');
+            $file->preview = 'https://via.placeholder.com/80x100.png?text=Fichier';
+        }
+
+        // Récupérer les messages non lus
+        $unreadMessages = Message::where('file_id', $file->id)
+                                 ->where('is_read', 0)
+                                 ->get();
+
+        if ($unreadMessages->count() > 0) {
+            $notifications[$file->id] = $unreadMessages->count();
         }
     }
-    
+
+    return view('vente', compact('files', 'folders', 'notifications'));
+}
 
 
 
