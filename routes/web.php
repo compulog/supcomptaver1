@@ -57,7 +57,8 @@ use App\Http\Controllers\PlanComptableController;
 use App\Http\Controllers\JournalController;
 use App\Http\Controllers\ExportController;
 use App\Exports\FournisseursExport;
-use App\Http\Controllers\racineController;
+// use App\Http\Controllers\racineController;
+use App\Http\Controllers\RacineController;
 use App\Http\Controllers\OperationCouranteController;
 use App\Http\Middleware\SetSocieteId;
 use App\Http\Controllers\BalanceController;
@@ -65,6 +66,131 @@ use App\Http\Controllers\OperationCaisseBanqueController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\ExerciceComptableController;
 use App\Http\Controllers\NotificationController;
+
+use App\Http\Controllers\ReleveBancaireController;
+
+
+Route::group(['middleware' => 'auth'], function () {
+
+    Route::post('/achats/update-row', [OperationCouranteController::class, 'updateRow'])
+    ->name('achats.updateRow');
+
+    Route::get('/api/file/{fileId}', [OperationCaisseBanqueController::class, 'getFileUrl']);
+
+    Route::get('/files/{id}', [OperationCouranteController::class, 'preview']);
+
+ Route::put('/notifications/mark-as-read/{type}/{id}', [NotificationController::class, 'markAsReadbg']);
+
+Route::post('/operation-courante-achat-store', [OperationCouranteController::class, 'storeAchatOperation'])
+     ->name('operation-courante-achat.store');
+
+     Route::get('/get-plan-comptable', [OperationCouranteController::class, 'getPlanComptable'])->name('get.plan.comptable');
+
+     Route::get('/operation-courante/existing-comptes', function() {
+    return response()->json(\App\Models\OperationCourante::pluck('compte')->unique()->toArray());
+});
+ Route::get('/plancomptable', [JournalController::class, 'listPlanComptable'])->name('plancomptable.list'); // ?q= recherche
+    Route::post('/plancomptable', [JournalController::class, 'storePlanComptable'])->name('plancomptable.store');
+Route::post('/operation-courante/replace-accounts', [OperationCouranteController::class, 'replaceAccounts'])
+    ->name('operation-courante.replace-accounts');
+
+Route::get('/plan-comptable/search', [PlanComptableController::class, 'search'])
+    ->name('plan-comptable.search');
+Route::post('/operation-courante/{id}/update-field', [OperationCouranteController::class, 'updateField']);
+
+
+Route::post('/operation-courante/transfer-journal-ach', [OperationCouranteController::class, 'transferJournalACH'])
+    ->name('operation-courante.transfer-ach');
+      Route::post('/operation-courante/transfer-journal-vte', [OperationCouranteController::class, 'transferJournalVTE'])
+    ->name('operation-courante.transfer-vte');
+Route::post('/operation-courante/transfer-journal-op', [OperationCouranteController::class, 'transferJournalOP'])
+    ->name('operation-courante.transfer-op');
+    Route::get('/plan-comptable/for-societe', [\App\Http\Controllers\PlanComptableController::class, 'forSociete']);
+Route::get('/clients/data', [ClientController::class, 'getData'])->name('clients.data');
+
+
+
+
+
+
+    Route::get('/soldeActuel', [OperationCaisseBanqueController::class, 'getSoldeActuel']);
+
+Route::post('/modifier-tous-compte-caise', [OperationCaisseBanqueController::class, 'modifierTousCompteCaisse']);
+Route::post('/modifier-tous-compte-banque', [OperationCaisseBanqueController::class, 'modifierTousCompteBanque']);
+
+Route::get('/api/solde-initial', [OperationCaisseBanqueController::class, 'getSoldeInitialCaisse']);
+
+    Route::post('/transfere-banque', [OperationCaisseBanqueController::class, 'transfereBanque'])->name('transfere.banque');
+     Route::post('/transfere-caisse', [OperationCaisseBanqueController::class, 'transfereCaisse'])->name('transfere.caisse');
+
+    Route::post('/importer-operation-courante-caisse', [OperationCaisseBanqueController::class, 'importerOperationCouranteCaisse'])
+    ->name('importerOperationCouranteCaisse');
+    Route::get('//etat-de-caisse/view', [ReleveBancaireController::class, 'viewFilecaisse'])->name('etatcaisse.view');
+
+    Route::post('/operation-courante-caisse-store', [OperationCaisseBanqueController::class, 'storeCaisse']);
+
+Route::get('/racine-tva/{num?}', [OperationCouranteController::class, 'getTVAop']);
+
+    Route::post('/operations/diverses', [OperationCouranteController::class, 'storeOperationDiverses'])->name('operations.diverses.store');
+Route::get('/get-nfacturelettreeOP', [OperationCouranteController::class, 'searchFactureOP']);
+Route::get('/get-nfacturelettree', [OperationCaisseBanqueController::class, 'searchFacture']);
+
+Route::get('/fichiers/{id}', [OperationCouranteController::class, 'preview'])->name('files.preview');
+Route::post('/operation-courante/assign-file', [App\Http\Controllers\OperationCouranteController::class, 'assignFile'])
+     ->name('operation.assign-file');
+Route::post('/fichiers', [App\Http\Controllers\OperationCouranteController::class, 'storeFile'])
+     ->name('files.store');
+
+     Route::get('piece/last', [OperationCouranteController::class, 'getLastNumeroPiece']);
+
+        Route::post('/pieces/check-exists', [OperationCouranteController::class, 'checkExists']);
+Route::get('/check-numero-facture', [OperationCouranteController::class, 'checkNumeroFacture']);
+    Route::get('/rubriques-tva-vente', [JournalController::class, 'getRubriquesTVAVente']);
+Route::get('/select-folder-achat',  [OperationCouranteController::class, 'selectFolderAchat']);
+Route::get('/select-folder-vente',  [OperationCouranteController::class, 'selectFolderVente']);
+
+
+
+
+Route::post('/update-banque-operation', [OperationCaisseBanqueController::class, 'updateBanqueOperation']);
+
+Route::put('/banque/{id}', [OperationCaisseBanqueController::class, 'updateBanque'])->name('banque.update');
+
+Route::get('/get-nfacturelettree', [OperationCaisseBanqueController::class, 'searchFacture']);
+
+Route::post('/importer-operation-courante-banque', [OperationCaisseBanqueController::class, 'importerOperationCouranteBanque'])
+    ->name('importerOperationCouranteBanque');
+Route::get('/releve-bancaire/view', [ReleveBancaireController::class, 'viewFile'])->name('releve.view');
+
+Route::post('/upload-releve-bancaire', [ReleveBancaireController::class, 'upload'])
+    ->name('releve-bancaire.upload');
+Route::post('/upload-etat-de-caisse', [ReleveBancaireController::class, 'uploadetatdecaisse'])
+    ->name('upload-etat-de-caisse.upload');
+// Route pour afficher le formulaire de création d'une nouvelle racine
+Route::get('/racines/create', [RacineController::class, 'create'])->name('racines.create');
+Route::get('/racines/{id}/edit', [RacineController::class, 'edit'])->name('racines.edit');
+
+// Route pour enregistrer une nouvelle racine
+Route::post('/racines', [RacineController::class, 'store'])->name('racines.store');
+    Route::get('/racines', [RacineController::class, 'index']);
+// Route::put('/racines/{id}', [RacineController::class, 'update'])->name('racines.update');
+Route::put('/racines/{id}', [RacineController::class, 'update']);
+
+
+Route::get('/racines/{id}/check-fournisseurs', [RacineController::class, 'checkFournisseurs'])
+         ->name('racines.checkFournisseurs');
+    // Suppression RESTful
+    Route::delete('/racines/{id}', [RacineController::class, 'destroy'])
+         ->name('racines.destroy');
+Route::post('/racines/toggle-visibility/{id}', [RacineController::class, 'toggleVisibility']);
+ Route::get('/search-plan-comptable', [RacineController::class, 'searchPlanComptable']);
+Route::post('/close-exercice', [OperationCouranteController::class, 'closeExercice']);
+    Route::post('/plan-comptable', [RacineController::class, 'storePlanComptable']);
+
+    Route::get('/get-compte-tva-type', [RacineController::class, 'getCompteTvaType']);
+
+ 
+    Route::get('/get-categories', [RacineController::class, 'getCategories']);
 
 Route::get('/operation-courante/select-folder', [OperationCouranteController::class, 'selectFolder']);
 
@@ -117,7 +243,7 @@ Route::get('/getAllPlanComptable', [OperationCaisseBanqueController::class, 'get
 Route::get('/caisseop', [OperationCaisseBanqueController::class, 'index'])->name('caisseop');
 
 Route::get('/caisseop', [OperationCaisseBanqueController::class, 'showView'])->name('caisseop');
-Route::group(['middleware' => 'auth'], function () {
+
     Route::put('/file/{id}', [FileController::class, 'update'])->name('file.update');
     Route::put('/folder/{id}', [FolderController::class, 'update'])->name('folder.update');
     Route::get('/balance', [BalanceController::class, 'index'])->name('balance.index');

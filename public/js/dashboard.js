@@ -37,21 +37,31 @@
     });
 
     // Écouter l'événement de soumission du formulaire
-    $('#societe-form').on('submit', function(event) {
-        event.preventDefault();  // Empêcher la soumission réelle du formulaire
+   $('#societe-form').on('submit', function(event) {
+    event.preventDefault();  // Empêcher la soumission réelle du formulaire
 
-        // Récupérer les valeurs des champs
-        const raisonSociale = $('input[name="raison_sociale"]').val();
-        const exerciceDebut = $('input[name="exercice_social_debut"]').val();
-        const exerciceFin = $('input[name="exercice_social_fin"]').val();
+    // Récupérer les valeurs des champs
+    const raisonSociale = $('input[name="raison_sociale"]').val();
+    const exerciceDebut = $('input[name="exercice_social_debut"]').val();
+    const exerciceFin = $('input[name="exercice_social_fin"]').val();
 
-        // Afficher l'alerte avec les données du formulaire
-        alert('La société ' + raisonSociale + ', Exercice du ' + exerciceDebut + ' au ' + exerciceFin + ' créé avec succès');
-        alert("Le compte d'accès interlocuteur généré avec succès !!\nMerci de consulter son profil sur la rubrique Interlocuteurs");
-
-        // Soumettre le formulaire après les alertes
-        this.submit();  // Soumettre le formulaire après avoir affiché les alertes
+    // Afficher les alertes SweetAlert2 de façon enchaînée
+    Swal.fire({
+        icon: 'success',
+        title: 'Société créée',
+        text: 'La société ' + raisonSociale + ', Exercice du ' + exerciceDebut + ' au ' + exerciceFin + ' créé avec succès',
+    }).then(() => {
+        return Swal.fire({
+            icon: 'success',
+            title: "Compte d'accès interlocuteur",
+            text: "Le compte d'accès interlocuteur généré avec succès !!\nMerci de consulter son profil sur la rubrique Interlocuteurs",
+        });
+    }).then(() => {
+        // Soumettre le formulaire après la fermeture des alertes
+        this.submit();
     });
+});
+
 });
 
      

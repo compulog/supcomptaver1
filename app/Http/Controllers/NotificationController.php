@@ -88,4 +88,50 @@ public function supprimerNotificationSousDossier($id)
     }
 }
 
+
+
+public function markAsReadbg($type, $id)
+{
+    $modelMap = [
+        'message' => Message::class,
+        'dossier' => Dossier::class,
+        'solde' => SoldeMensuel::class,
+        'file' => File::class,
+        'oldfile' => File::class,
+        'renamefile' => File::class,
+        'folder' => Folder::class,
+        'oldfolder' => Folder::class,
+        'renamefolder' => Folder::class,
+        'olddossier' => Dossier::class,
+        'renamedossier' => Dossier::class,
+    ];
+
+    if (!isset($modelMap[$type])) {
+        return response()->json(['error' => 'Type inconnu'], 400);
+    }
+
+    $modelClass = $modelMap[$type];
+    $notification = $modelClass::withTrashed()->find($id);
+
+    if (! $notification) {
+        return response()->json(['error' => 'Notification non trouvée'], 404);
+    }
+
+    // Mise à jour directe via le query builder pour éviter updated_at et les règles de mass-assignment
+    $instance = new $modelClass;
+    $table = $instance->getTable();
+
+    $updated = \DB::table($table)->where('id', $id)->update(['notif_bg_color' => 1]);
+
+    if ($updated) {
+        // actualiser l'objet si besoin
+        $notification = $modelClass::withTrashed()->find($id);
+        return response()->json(['success' => true, 'notif_bg_color' => $notification->notif_bg_color]);
+    }
+
+    return response()->json(['error' => 'Échec de la mise à jour'], 500);
+}
+ 
+
+
 }

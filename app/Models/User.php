@@ -130,6 +130,9 @@ public function folders()
 {
     return $this->hasMany(Folder::class, 'updated_by');
 }
-
+public function lettrages()
+{
+    return $this->hasMany(Lettrage::class, 'id_user');
+}
 }
 

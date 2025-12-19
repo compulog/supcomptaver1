@@ -72,7 +72,7 @@
         <!-- Utilisateurs link with icon -->
         <a class="nav-link {{ (Request::is('utilisateurs') ? 'active' : '') }}" href="{{ url('utilisateurs') }}">
             <i class="fas fa-users"></i> <!-- Users icon -->
-            <span class="nav-link-text ms-1">Utilisateurs</span>  
+            <span class="nav-link-text ms-1">Utilisateur</span>  
         </a>
 
      
@@ -100,7 +100,7 @@
      <!-- interlocuteurs link with icon -->
      <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
             <i class="fas fa-cogs"></i> <!-- interlocuteurs icon -->
-            <span class="nav-link-text ms-1">interlocuteurs</span>  
+            <span class="nav-link-text ms-1">Interlocuteur</span>  
         </a>
         <!-- Mon Profil link with icon -->
         <a class="nav-link {{ (Request::is('user-profile') ? 'active' : '') }} " href="{{ url('user-profile') }}">
@@ -119,7 +119,7 @@
       <!-- interlocuteurs link with icon -->
       <a class="nav-link {{ (Request::is('interlocuteurs') ? 'active' : '') }}" href="{{ url('interlocuteurs') }}">
             <i class="fas fa-cogs"></i> <!-- interlocuteurs icon -->
-            <span class="nav-link-text ms-1">interlocuteurs</span>  
+            <span class="nav-link-text ms-1">Interlocuteur</span>  
         </a>
 
         <!-- Mon Profil link with icon -->

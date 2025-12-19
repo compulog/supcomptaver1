@@ -1939,7 +1939,12 @@ function addFileBanque() {
                 <input type="hidden" name="type" value="caisse">
                 <input type="file" name="file" id="file-caisse" style="display: none;" onchange="handleFileSelect(event, 'caisse')">
                 <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
-
+           <a 
+    href="{{ route('etat_de_caisse') }}" 
+    class="btn btn-light btn-sm" 
+    style="background-color: #dc3545; border: 1px solid white; border-radius: 10px; color: white; width:100px;">
+    Charger
+</a>
                 <!-- Dropdown personnalisé sans flèche -->
                 <div class="dropdown">
                    <a 
@@ -3634,7 +3639,7 @@ function addFilePaie() {
             <h5 style="color: white; font-size: 12px;">Dossier permanent</h5>
             <form id="form-FusionDocuments" action="{{ route('uploadFile') }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <input type="hidden" name="type" value="dossier permanent">
+                <input type="hidden" name="type" value="Dossier_permanant">
 <input type="file" name="files[]" id="file-FusionDocuments" style="display: none;" multiple onchange="handleFileSelect(event, 'FusionDocuments')">
                 <input type="hidden" name="societe_id" value="{{ session()->get('societeId') }}">
                 <input type="hidden" name="folders_id" value="0">
@@ -3996,7 +4001,7 @@ const safeFileName = fileNameBase.substring(0, 100).replace(/[^\w\-]/g, '_');
 
 formData.append('file', blob, `${safeFileName}_${Date.now()}.pdf`);
          formData.append('societe_id', '{{ session()->get('societeId') }}');
-         formData.append('type', 'dossier permanent');
+         formData.append('type', 'Dossier_permanant');
 
          const response = await fetch('/uploadFusionner', {
              method: 'POST',

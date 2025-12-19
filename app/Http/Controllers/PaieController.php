@@ -34,6 +34,7 @@ class PaieController extends Controller
         if ($societeId) {
             // Initialiser la requête pour les fichiers de type 'paie'
             $query = File::where('societe_id', $societeId)
+                         ->whereNull('folders')
                          ->where('type', 'paie');
     
             // Filtrage et tri des fichiers en fonction des paramètres de la requête

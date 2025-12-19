@@ -1,39 +1,55 @@
+@extends('layouts.user_type.auth')
+
+@section('content')
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des comptes</title>
 
-    <!-- Liens CSS et JS externes -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://unpkg.com/tabulator-tables@5.0.7/dist/css/tabulator.min.css" rel="stylesheet">
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- CSS externes (une seule inclusion par lib) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/tabulator-tables@6.1.0/dist/css/tabulator.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/tabulator-tables@5.0.7/dist/js/tabulator.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-    <!-- Styles personnalisés -->
-    <style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 
+    <!-- Styles personnalisés (conservés / respectés) -->
+    <style>
+    /* clignote 3 fois, 0.5s par cycle */
+    .blink-short { animation: blinker 0.5s linear 3; }
+    @keyframes blinker { 50% { opacity: 0; } }
+
+    .icon-3d {
+      font-size: 1.2rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+    .icon-3d:hover {
+      transform: translateY(-2px);
+      box-shadow: 3px 3px 6px rgba(0,0,0,0.4);
+    }
     </style>
 </head>
 <body>
-@extends('layouts.user_type.auth')
 
-@section('content')
+@if(session('success'))
+    <div class="alert alert-success blink-short">
+        {{ session('success') }}
+    </div>
+@endif
 
+@if(session('error'))
+    <div class="alert alert-danger blink-short">
+        {{ session('error') }}
+    </div>
+@endif
 
+<br>
 <div class="container my-3">
     <!-- Ligne de titre et actions -->
     <div class="row align-items-center mb-2">
@@ -46,36 +62,30 @@
                   id="addPlanComptableBtn"
                   data-bs-toggle="modal"
                   data-bs-target="#planComptableModalAdd"
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="top"
                   title="Ajouter">
             <i class="fas fa-plus icon-3d"></i>
             <span>Ajouter</span>
           </button>
+
           <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
                   id="importPlanComptableBtn"
                   data-bs-toggle="modal"
                   data-bs-target="#importModal"
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="top"
                   title="Importer">
             <i class="fas fa-file-import icon-3d"></i>
             <span>Importer</span>
           </button>
+
           <a href="{{ route('plan.comptable.excel') }}"
              class="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
-             data-bs-toggle="tooltip"
-             data-bs-placement="top"
              title="Exporter en Excel">
             <i class="fas fa-file-export icon-3d"></i>
             <span>Excel</span>
           </a>
+
           <form action="{{ route('export.plan_comptable') }}" method="GET" class="d-inline">
-            <input type="hidden" name="societe_id" value="{{ session('societe_id') }}">
-            <button type="submit" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="top"
-                    title="Exporter en PDF">
+            <input type="hidden" id="societe_id" value="{{ session('societeId') }}">
+            <button type="submit" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1" title="Exporter en PDF">
               <i class="fas fa-file-pdf icon-3d"></i>
               <span>PDF</span>
             </button>
@@ -86,181 +96,111 @@
 
     <!-- Statistiques -->
     <span id="select-stats" class="text-muted"></span>
-
+<select id="classeFilter">
+    <option value="">Toutes</option>
+    <option value="1">Classe 1</option>
+    <option value="2">Classe 2</option>
+    <option value="3">Classe 3</option>
+    <option value="4">Classe 4</option>
+    <option value="5">Classe 5</option>
+    <option value="6">Classe 6</option>
+    <option value="7">Classe 7</option>
+    <option value="8">Classe 8</option>
+    <option value="clients">Clients</option>
+    <option value="fournisseurs">Fournisseurs</option>
+</select>
     <!-- Tableau des plans comptables -->
     <div id="plan-comptable-table" class="border rounded shadow-sm bg-white p-2" style="font-size: 0.8rem;"></div>
   </div>
 
-  <!-- Styles personnalisés pour l'effet 3D -->
-  <style>
-    .icon-3d {
-      font-size: 1.2rem;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-    }
-    .icon-3d:hover {
-      transform: translateY(-2px);
-      box-shadow: 3px 3px 6px rgba(0,0,0,0.4);
-    }
-  </style>
+  <div class="mt-3">
+    <span style="background-color: rgba(233,233,13,0.838); display:inline-block; width:20px; height:20px; border:1px solid black; border-radius:4px;"></span>
+    Informations Obligatoires Manquantes
+  </div>
+  <div>
+    <span style="background-color: rgba(228,20,20,0.453); display:inline-block; width:20px; height:20px; border:1px solid black; border-radius:4px;"></span>
+    Informations Erronées
+  </div>
 
-  <!-- Initialisation des tooltips Bootstrap -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-      });
-    });
-  </script>
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+  <div class="modal-dialog shadow-lg">
+    <div class="modal-content">
+      <div class="modal-header d-flex justify-content-between align-items-center bg-dark text-white">
+        <h5 class="modal-title" id="importModalLabel">Importation du Plan Comptable</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+       <form id="importForm"
+      action="{{ route('plancomptable.import') }}"
+      method="POST"
+      enctype="multipart/form-data"
+      data-expected-length="{{ $societe ? $societe->nombre_chiffre_compte : '' }}">
+  @csrf
+          <input type="hidden" name="societe_id" value="{{ session('societeId') }}">
 
-@if (session('success'))
-    <div class="alert alert-success" role="alert">
-        {{ session('success') }}
-    </div>
-@endif
+          {{-- Fichier --}}
+          <div class="mb-3">
+            <label for="file" class="form-label">Fichier Excel</label>
+            <input type="file" class="form-control" id="file" name="file" accept=".xls,.xlsx,.csv" required>
+          </div>
 
-@if (session('error'))
-    <div class="alert alert-danger" role="alert">
-        {{ session('error') }}
-    </div>
-@endif
-<!-- Modal d'importation du plan comptable -->
-<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
-    <div class="modal-dialog shadow-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header d-flex justify-content-between align-items-center">
-                <h5 class="modal-title" id="importModalLabel">Importation du Plan Comptable</h5>
-                <button type="button" class="btn-close text-white bg-dark shadow" data-bs-dismiss="modal" aria-label="Close"></button>
+          {{-- Sélections dynamiques --}}
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="colonne_compte" class="form-label">Colonne Compte</label>
+              <select id="colonne_compte" name="colonne_compte" class="form-select" required>
+                <option value="">-- Sélectionnez --</option>
+              </select>
             </div>
-            <div class="modal-body">
-                <form id="importForm" action="{{ route('plancomptable.import') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
-
-                    <!-- Chargement du fichier -->
-                    <div class="mb-3">
-                        <label for="file" class="form-label">Fichier Excel</label>
-                        <input type="file" class="form-control shadow-sm" name="file" id="file" accept=".xls,.xlsx" required>
-                    </div>
-
-                    <!-- Sélection des colonnes -->
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="colonne_compte" class="form-label">Colonne Compte</label>
-                            <select class="form-control shadow-sm" name="colonne_compte" id="colonne_compte" required>
-                                <option value="">-- Sélectionnez une colonne --</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="colonne_intitule" class="form-label">Colonne Intitulé</label>
-                            <select class="form-control shadow-sm" name="colonne_intitule" id="colonne_intitule" required>
-                                <option value="">-- Sélectionnez une colonne --</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Tableau de prévisualisation -->
-                    <div class="mt-3">
-                        <h6>Prévisualisation des données</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered" id="previewTable">
-                                <thead class="table-dark">
-                                    <tr id="previewHeader">
-                                        <!-- Les en-têtes seront insérés ici -->
-                                    </tr>
-                                </thead>
-                                <tbody id="previewBody">
-                                    <!-- Les lignes seront insérées ici -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Boutons d'action -->
-                    <div class="d-flex justify-content-between mt-3">
-                        <button type="reset" class="btn btn-light d-flex align-items-center">
-                            <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
-                        </button>
-                        <button type="submit" class="btn btn-primary d-flex align-items-center ms-2">
-                            <i class="bi bi-upload me-1"></i> Importer
-                        </button>
-                    </div>
-                </form>
+            <div class="col-md-6">
+              <label for="colonne_intitule" class="form-label">Colonne Intitulé</label>
+              <select id="colonne_intitule" name="colonne_intitule" class="form-select" required>
+                <option value="">-- Sélectionnez --</option>
+              </select>
             </div>
-        </div>
+          </div>
+
+          {{-- Aperçu --}}
+          <div class="mb-3">
+            <h6>Aperçu (5 premières lignes)</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered" id="previewTable" style="display:none;">
+                <thead class="table-dark">
+                  <tr id="previewHeader"></tr>
+                </thead>
+                <tbody id="previewBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          {{-- Loader --}}
+          <div id="importSpinner" class="text-center my-3 d-none">
+            <div class="spinner-border" role="status" style="width:2rem; height:2rem;"></div>
+            <span class="ms-2">Importation en cours...</span>
+          </div>
+
+          {{-- Boutons --}}
+          <div class="d-flex justify-content-between">
+            <button type="reset" id="resetBtn" class="btn btn-light">
+              <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
+            </button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-upload me-1"></i> Importer
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
-
-<script>
-document.getElementById('file').addEventListener('change', function (e) {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-
-    reader.onload = function (event) {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-
-        const sheetName = workbook.SheetNames[0]; // Prendre la première feuille
-        const worksheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // Lire toutes les lignes
-
-        const previewHeader = document.getElementById('previewHeader');
-        const previewBody = document.getElementById('previewBody');
-        const compteSelect = document.getElementById('colonne_compte');
-        const intituleSelect = document.getElementById('colonne_intitule');
-
-        // Réinitialiser les options et la prévisualisation
-        compteSelect.innerHTML = '<option value="">-- Sélectionnez une colonne --</option>';
-        intituleSelect.innerHTML = '<option value="">-- Sélectionnez une colonne --</option>';
-        previewHeader.innerHTML = '';
-        previewBody.innerHTML = '';
-
-        if (rows.length > 0) {
-            const headers = rows[0]; // Première ligne pour les en-têtes
-
-            // Ajouter les en-têtes au tableau
-            headers.forEach((header, index) => {
-                const th = document.createElement('th');
-                th.textContent = header;
-                previewHeader.appendChild(th);
-
-                // Ajouter des options pour les colonnes
-                const option = new Option(header, index + 1);
-                compteSelect.add(option);
-                intituleSelect.add(option.cloneNode(true));
-            });
-
-            // Ajouter les données (5 premières lignes) au tableau
-            const previewLimit = Math.min(5, rows.length - 1); // Limiter à 5 lignes
-            for (let i = 1; i <= previewLimit; i++) {
-                const row = rows[i];
-                if (row) {
-                    const tr = document.createElement('tr');
-                    row.forEach((cell) => {
-                        const td = document.createElement('td');
-                        td.textContent = cell !== undefined ? cell : '';
-                        tr.appendChild(td);
-                    });
-                    previewBody.appendChild(tr);
-                }
-            }
-        } else {
-            alert('Le fichier est vide ou ne contient pas de données.');
-        }
-    };
-
-    reader.readAsArrayBuffer(file);
-});
-
-</script>
 
 <!-- Modal Ajouter -->
 <div class="modal fade" id="planComptableModalAdd" tabindex="-1" role="dialog" aria-labelledby="planComptableModalLabel" aria-hidden="true">
     <div class="modal-dialog shadow-lg" role="document">
         <div class="modal-content">
             <div class="modal-header d-flex justify-content-between align-items-center">
-                <h5 class="modal-title" id="planComptableModalLabel">Ajouter Plan Comptable</h5>
+                <h5 class="modal-title" id="planComptableModalLabel">Ajouter Compte</h5>
                 <button type="button" class="btn-close text-white bg-dark shadow" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -280,7 +220,7 @@ document.getElementById('file').addEventListener('change', function (e) {
                         <button type="reset" class="btn btn-light d-flex align-items-center">
                             <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
                         </button>
-                        <button type="submit" class="btn btn-primary d-flex align-items-center ms-2">
+                        <button type="submit" class="btn btn-primary d-flex align-items-center ms-2" id="addSubmitBtn">
                             <i class="bi bi-plus-circle me-1"></i> Ajouter
                         </button>
                     </div>
@@ -316,7 +256,7 @@ document.getElementById('file').addEventListener('change', function (e) {
                         <button type="reset" class="btn btn-light d-flex align-items-center">
                             <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
                         </button>
-                        <button type="submit" class="btn btn-primary d-flex align-items-center ms-2">
+                        <button type="submit" class="btn btn-primary d-flex align-items-center ms-2" id="editSubmitBtn">
                             <i class="bi bi-check-circle me-1"></i> Modifier
                         </button>
                     </div>
@@ -327,379 +267,527 @@ document.getElementById('file').addEventListener('change', function (e) {
 </div>
 
 
+<!-- Scripts JS (une inclusion par lib) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://unpkg.com/tabulator-tables@6.1.0/dist/js/tabulator.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+    const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const societeId = document.getElementById('societe_id') ? document.getElementById('societe_id').value : '{{ session("societeId") }}';
+    const nombreChiffresCompteRaw = @json($societe ? $societe->nombre_chiffre_compte : null);
+    const nombreChiffresCompte = (nombreChiffresCompteRaw !== null) ? parseInt(nombreChiffresCompteRaw, 10) : null;
 
-$(document).ready(function () {
-    var nombreChiffresCompte = {{ $societe->nombre_chiffre_compte }}; // Longueur exacte du compte
-    var societeId = $('#societe_id').val(); // ID de la société
+    // si config manquante -> alerte et disable controls
+    if (! nombreChiffresCompte || isNaN(nombreChiffresCompte) || nombreChiffresCompte <= 0) {
+        Swal.fire({
+            title: 'Société / configuration manquante',
+            html: 'Le paramètre <b>nombre_chiffre_compte</b> est absent ou invalide pour la société en session.<br>Merci de sélectionner une société correctement configurée.',
+            icon: 'warning'
+        });
+        document.querySelectorAll('button, input, select').forEach(el => el.disabled = true);
+        return;
+    }
 
-    // Limiter la longueur du champ "compte" pour qu'il respecte le nombre de chiffres
+    function filterByClasse(data, filterValue) {
+    const compte = data.compte.toString();
+
+    if(filterValue === "fournisseurs") {
+        return compte.startsWith("4411");
+    } else if(filterValue === "clients") {
+        return compte.startsWith("3421");
+    } else {
+        // filterValue est un chiffre de 1 à 8
+        return compte.startsWith(filterValue.toString());
+    }
+}
+    // appliquer maxlength côté client (UI)
     $('#compte').attr('maxlength', nombreChiffresCompte);
+    $('#editCompte').attr('maxlength', nombreChiffresCompte);
 
-    // Variable pour éviter la répétition d'alertes bloquantes
-    let validationEnCours = false;
+    // importForm expected length
+    const importForm = document.getElementById('importForm');
+    importForm.dataset.expectedLength = nombreChiffresCompte;
 
-    // Mettre le focus sur le champ "compte" à l'ouverture du modal
-    $('#planComptableModalAdd').on('shown.bs.modal', function () {
-        $('#compte').focus();
-    });
-
-    // Validation du champ "compte" uniquement lors de la soumission du formulaire
-    $("#planComptableFormAdd").on("submit", function (e) {
-        e.preventDefault();
-
-        var compte = $("#compte").val().trim();
-        var intitule = $("#intitule").val().trim();
-
-        // Vérification du compte : doit avoir la bonne longueur
-        if (compte.length !== nombreChiffresCompte) {
-            alert(`Le compte doit comporter exactement ${nombreChiffresCompte} chiffres.`);
-            $("#compte").focus(); // Retourner le focus sur le champ "compte"
-            return; // Empêcher l'envoi du formulaire tant que le compte n'est pas correct
-        }
-
-        // Vérifier si le compte existe déjà
-        var comptesExistants = table.getData().map(row => row.compte);
-        if (comptesExistants.includes(compte)) {
-            alert("Ce compte existe déjà !");
-            $("#compte").focus();
-            return; // Empêcher l'envoi du formulaire si le compte existe déjà
-        }
-
-        // Vérifier que le champ "intitule" est rempli
-        if (!intitule) {
-            alert("Le champ Intitulé est obligatoire.");
-            $("#intitule").focus();
-            return; // Empêcher l'envoi si l'intitulé est vide
-        }
-
-        // Soumettre les données au serveur via AJAX
-        $.ajax({
-            url: "/plancomptable",
-            type: "POST",
-            data: {
-                compte: compte,
-                intitule: intitule,
-                societe_id: societeId,
-                _token: '{{ csrf_token() }}'
-            },
-            beforeSend: function () {
-                $("#planComptableFormAdd button").text("En cours...").prop("disabled", true);
-            },
-            success: function (response) {
-                if (response.success) {
-                    alert("Plan comptable ajouté avec succès !");
-                    table.setData("/plancomptable/data"); // Rafraîchir le tableau
-                    $("#planComptableFormAdd")[0].reset(); // Réinitialiser le formulaire
-                    $("#planComptableModalAdd").modal("hide"); // Fermer le modal
-                } else {
-                    alert(response.error || "Une erreur s'est produite.");
-                }
-            },
-            error: function (xhr) {
-                console.error("Erreur:", xhr.responseText);
-                alert("Erreur lors de l'ajout du plan comptable.");
-            },
-            complete: function () {
-                $("#planComptableFormAdd button").text("Ajouter").prop("disabled", false);
-            }
-        });
-    });
-
-    // Vérification lorsque l'utilisateur quitte le champ "compte"
-    $('#compte').on('blur', function () {
-        var compteValue = $(this).val().trim();
-
-        // Si la longueur est incorrecte, on l'informe seulement une fois
-        if (compteValue.length > 0 && compteValue.length !== nombreChiffresCompte) {
-            alert(`Le compte doit comporter exactement ${nombreChiffresCompte} chiffres.`);
-            $(this).val(''); // Réinitialiser le champ si incorrect
-            $(this).focus(); // Mettre le focus de nouveau sur le champ
-        }
-    });
-
-    // Nettoyer les classes résiduelles après fermeture du modal
-    $("#planComptableModalAdd").on("hidden.bs.modal", function () {
-        $(".modal-backdrop").remove();
-        $("body").removeClass("modal-open").css("padding-right", "");
-    });
-});
-
-
-
- // Fonction pour gérer la modification des plans comptables
-   // Configuration AJAX pour inclure automatiquement le token CSRF dans chaque requête
-   $.ajaxSetup({
-    headers: {
-        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-    }
-});
-
-// Soumission du formulaire de modification
-$("#planComptableFormEdit").on("submit", function(e) {
-    e.preventDefault();
-
-    var planComptableId = $("#editPlanComptableId").val();
-
-    // Envoi de la requête AJAX pour mettre à jour le plan comptable
-    $.ajax({
-        url: "/plancomptable/" + planComptableId,
-        type: "PUT",
-        data: {
-            compte: $("#editCompte").val(),
-            intitule: $("#editIntitule").val(),
-        },
-        beforeSend: function() {
-            // Indiquer le début de la requête, par exemple en affichant un spinner
-            $("#planComptableModalEdit .btn-primary").text("En cours...").prop("disabled", true);
-        },
-        success: function(response) {
-            // Mise à jour de la table Tabulator
-            table.setData("/plancomptable/data");
-
-            // Masquer le modal et réinitialiser le formulaire
-            $("#planComptableModalEdit").modal("hide");
-            $("#planComptableFormEdit")[0].reset();
-            $("#editPlanComptableId").val("");
-
-            // Message de succès (optionnel)
-            alert("Plan comptable mis à jour avec succès !");
-        },
-        error: function(xhr) {
-            // Gestion des erreurs
-            var errorMessage = "Erreur lors de l'enregistrement des données.";
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                errorMessage = xhr.responseJSON.message;
-            }
-            alert(errorMessage);
-        },
-        complete: function() {
-            // Rétablir le bouton après la requête
-            $("#planComptableModalEdit .btn-primary").text("Modifier").prop("disabled", false);
-        }
-    });
-});
-
-// Fonction pour ouvrir le formulaire de modification avec les données existantes
-function editPlanComptable(data) {
-    $("#editPlanComptableId").val(data.id);
-    $("#editCompte").val(data.compte);
-    $("#editIntitule").val(data.intitule);
-    $("#planComptableModalEdit").modal("show");
-}
-
-
-
-    // Fonction pour supprimer un plan comptable
-    function deletePlanComptable(id) {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce plan comptable ?")) {
-        $.ajax({
-            url: "/plancomptable/" + id,
-            type: "DELETE",
-            data: {
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                // Recharger les données pour refléter la suppression
-                table.setData("/plancomptable/data");
-                alert("Plan comptable supprimé avec succès !");
-            },
-            error: function(xhr) {
-                alert("Erreur lors de la suppression du plan comptable. Veuillez réessayer.");
-            }
-        });
-    }
-}
-
-// Initialiser le tableau avec Tabulator
-
-
+    // --- Tabulator init ---
+  // ==================== TABLEAU PLAN COMPTABLE ====================
 var table = new Tabulator("#plan-comptable-table", {
-    ajaxURL: "/plancomptable/data", // Votre route pour récupérer les données
-    height: "600px",
+   ajaxURL: "/plancomptable/data", // Appelle automatiquement getData()
+        ajaxConfig: "GET",
+    height: "600px", // ✅ pour afficher toutes les lignes sans pagination
     layout: "fitColumns",
     selectable: true,
+    ajaxResponse: function(url, params, response) {
+    // Ici 'response' peut être { data: [...], meta: ..., expected_length: ... }
+    return response.data; // Tabulator ne prend que le tableau
+},
+
+    // ajaxResponse: function(url, params, response) {
+    //     console.log('Réponse PlanComptable:', response);
+
+    //     // Si le backend renvoie un objet { data, expected_length, meta }
+    //     let rows = Array.isArray(response.data) ? response.data : response;
+
+    //     // Afficher total lignes si meta disponible
+    //     if (response.meta) {
+    //         document.getElementById('select-stats').textContent =
+    //             `Total: ${rows.length} | ins:${response.meta.inserted || 0} upd:${response.meta.updated || 0} conf:${response.meta.conflicts || 0}`;
+    //     } else {
+    //         document.getElementById('select-stats').textContent = `Total: ${rows.length}`;
+    //     }
+
+    //     return rows;
+    // },
     columns: [
         {
-            title: `
-                <input type='checkbox' id='select-all' />
-                <i class="fas fa-trash-alt" id="delete-all-icon" style="cursor: pointer;" title="Supprimer les lignes sélectionnées"></i>
-            `,
+            title: `<input type='checkbox' id='select-all' />
+                    <i class="fas fa-trash-alt" id="delete-all-icon" style="cursor: pointer;" title="Supprimer les lignes sélectionnées"></i>`,
             field: "select",
             formatter: "rowSelection",
             headerSort: false,
             hozAlign: "center",
             width: 60,
-            cellClick: function(e, cell) {
-                cell.getRow().toggleSelect();
-            }
+            cellClick: function(e, cell) { cell.getRow().toggleSelect(); }
         },
-        {
-            title: "Compte",
-            field: "compte",
-            editor: "input",
-            headerFilter: "input",
-            headerHozAlign: "center",  // Centre le titre de colonne
-            headerFilterParams: {
-                elementAttributes: {
-                    style: "width: 260px; height: 22px;"
-                }
-            }
-        },
-        {
-            title: "Intitulé",
-            field: "intitule",
-            editor: "input",
-            headerFilter: "input",
-            headerHozAlign: "center",  // Centre le titre de colonne
-            headerFilterParams: {
-                elementAttributes: {
-                    style: "width: 260px; height: 22px;"
-                }
-            }
-        },
+        { title: "Compte", field: "compte", editor: "input", headerFilter: "input", headerHozAlign: "center" },
+        { title: "Intitulé", field: "intitule", editor: "input", headerFilter: "input", headerHozAlign: "center" },
+        { title: "État", field: "etat", headerHozAlign: "center", hozAlign: "center",visible:false },
         {
             title: "Actions",
             field: "action-icons",
             formatter: function() {
                 return `
-                    <i class='fas fa-edit text-primary edit-icon' style='cursor: pointer;'></i>
+                    <i class='fas fa-edit text-primary edit-icon' style='cursor: pointer; margin-right:8px;'></i>
                     <i class='fas fa-trash-alt text-danger delete-icon' style='cursor: pointer;'></i>
                 `;
             },
             cellClick: function(e, cell) {
-                var row = cell.getRow();
-                if (e.target.classList.contains('edit-icon')) {
-                    var rowData = row.getData();
-                    editPlanComptable(rowData);
-                } else if (e.target.classList.contains('delete-icon')) {
-                    var rowData = row.getData();
-                    deletePlanComptable(rowData.id);
-                }
+                const row = cell.getRow();
+                if (e.target.classList.contains('edit-icon')) editPlanComptable(row.getData());
+                if (e.target.classList.contains('delete-icon')) deletePlanComptable(row.getData().id);
             },
-            hozAlign: "center",         // Centre le contenu de la colonne actions
-            headerHozAlign: "center",    // Centre le titre de la colonne actions
+            hozAlign: "center",
+            headerHozAlign: "center",
             headerSort: false,
         }
     ],
 
-    rowSelected: function(row) {
-        row.getElement().classList.add("bg-light");
+    rowFormatter: function(row) {
+        const { etat } = row.getData();
+        const el = row.getElement();
+
+        if (etat === "manquant") {
+            el.style.backgroundColor = "rgba(233,233,13,0.8)";
+        } else if (etat === "erreur") {
+            el.style.backgroundColor = "rgba(228,20,20,0.45)";
+            el.style.color = "#721c24";
+        } else {
+            el.style.backgroundColor = "";
+            el.style.color = "";
+        }
     },
-    rowDeselected: function(row) {
-        row.getElement().classList.remove("bg-light");
-    }
+    rowSelected: function(row) { row.getElement().classList.add("bg-light"); },
+    rowDeselected: function(row) { row.getElement().classList.remove("bg-light"); }
 });
 
+    table.setFilter(filterByClasse, "1");
 
-document.addEventListener("DOMContentLoaded", function() {
-    // Sélectionner/Désélectionner toutes les lignes
-    document.getElementById("select-all").addEventListener("change", function() {
-        if (this.checked) {
-            // Sélectionner toutes les lignes
-            table.getRows().forEach(row => row.select());
-        } else {
-            // Désélectionner toutes les lignes
-            table.getRows().forEach(row => row.deselect());
-        }
+    // sauvegarde automatique quand édition inline (PUT)
+    table.on("cellEdited", function(cell){
+        const rowData = cell.getRow().getData();
+        if (!rowData.id) return;
+
+        const payload = { compte: rowData.compte, intitule: rowData.intitule };
+
+        fetch('/plancomptable/' + rowData.id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.ok ? res.json() : res.json().then(j => Promise.reject(j)))
+        .then(data => {
+            if (data.success) {
+                Toastify({ text: data.message || "Mis à jour ✔", duration: 2200 }).showToast();
+                if (data.row) cell.getRow().update(data.row);
+            } else {
+                Swal.fire('Erreur', data.error || 'Échec mise à jour', 'error');
+                table.replaceData("/plancomptable/data");
+            }
+        })
+        .catch(err => {
+            console.error('Erreur update:', err);
+            Swal.fire('Erreur', (err && err.message) || 'Erreur réseau', 'error');
+            table.replaceData("/plancomptable/data");
+        });
     });
 
-    // Fonction pour supprimer les lignes sélectionnées
-    document.getElementById("delete-all-icon").addEventListener("click", function() {
-        var selectedRows = table.getSelectedRows(); // Récupérer les lignes sélectionnées
+    // select-all handling
+    document.addEventListener("change", function (e) {
+      if (e.target && e.target.id === 'select-all') {
+        const checked = e.target.checked;
+        const allRows = table.getRows();
+        allRows.forEach(r => checked ? r.select() : r.deselect());
+      }
+    });
 
+    // suppression multiple
+    document.addEventListener("click", function (e) {
+      if (e.target && e.target.id === 'delete-all-icon') {
+        const selectedRows = table.getSelectedRows();
         if (selectedRows.length === 0) {
-            alert("Aucune ligne sélectionnée.");
+          Toastify({ text: "Aucune ligne sélectionnée.", duration: 3000 }).showToast();
+          return;
+        }
+        const idsToDelete = selectedRows.map(r => r.getData().id);
+
+        Swal.fire({
+          title: `Supprimer ${idsToDelete.length} ligne(s) ?`,
+          text: "Les lignes sélectionnées seront supprimées définitivement.",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Oui, supprimer'
+        }).then((result) => {
+          if (!result.isConfirmed) return;
+
+          Swal.fire({ title: 'Suppression en cours...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+         // suppression multiple (remplace l'ancien fetch /plancomptable/deleteSelected)
+fetch('/plancomptable/deleteSelected', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+    body: JSON.stringify({ ids: idsToDelete })
+})
+.then(res => {
+    if (res.status === 204) return { ok: true, body: {} }; // no content -> treat as success
+    return res.json().then(body => ({ ok: res.ok, body }));
+})
+.then(({ ok, body }) => {
+    Swal.close();
+    // Accept either { success: true } or { status: 'success' } or ok===true
+    const isSuccess = (body && body.success === true) || (body && body.status === 'success') || ok && (body && Object.keys(body).length === 0);
+
+    if (isSuccess) {
+        const msg = (body && (body.message || body.msg)) || 'Suppression effectuée.';
+        Toastify({ text: msg, duration: 3000 }).showToast();
+        table.replaceData("/plancomptable/data");
+        const selectAll = document.getElementById('select-all'); if (selectAll) selectAll.checked = false;
+    } else {
+        const errMsg = (body && (body.error || body.message)) ? (body.error || body.message) : 'Échec de la suppression';
+        Swal.fire('Erreur', errMsg, 'error');
+    }
+})
+.catch(err => {
+    Swal.close();
+    console.error('Erreur deleteSelected:', err);
+    Swal.fire('Erreur', 'Erreur serveur lors de la suppression', 'error');
+});
+ });
+      }
+    });
+
+    table.on("rowSelectionChanged", function(data, rows) {
+        document.getElementById("select-stats").innerHTML = rows.length; // Afficher le nombre de lignes sélectionnées
+    });
+
+    // ----------------- Ajout (modal) -----------------
+    $('#planComptableModalAdd').on('shown.bs.modal', function () {
+        $('#compte').focus();
+    });
+
+    $("#planComptableFormAdd").on("submit", function (e) {
+        e.preventDefault();
+
+        const addSubmitBtn = document.getElementById('addSubmitBtn');
+        const compte = $("#compte").val().trim();
+        const intitule = $("#intitule").val().trim();
+
+        if (compte.length !== nombreChiffresCompte) {
+            Swal.fire('Erreur', `Le compte doit comporter exactement ${nombreChiffresCompte} chiffres.`, 'warning');
+            $('#compte').focus();
+            return;
+        }
+        if (!intitule) {
+            Swal.fire('Erreur', 'Le champ Intitulé est obligatoire.', 'warning');
+            $('#intitule').focus();
             return;
         }
 
-        // Récupérer les IDs des lignes sélectionnées
-        var idsToDelete = selectedRows.map(function(row) {
-            return row.getData().id;
-        });
-
-        if (confirm("Voulez-vous vraiment supprimer les lignes sélectionnées ?")) {
-            fetch('/plancomptable/deleteSelected', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content') // CSRF token pour Laravel
-                },
-                body: JSON.stringify({ ids: idsToDelete })  // Envoi des IDs à supprimer
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    // Supprimer les lignes du tableau après la suppression côté serveur
-                    selectedRows.forEach(row => row.delete()); // Supprimer les lignes du tableau
-                    alert("Les lignes sélectionnées ont été supprimées.");
-
-                    // Recharger les données pour mettre à jour l'affichage
-                    table.replaceData("/plancomptable/data");  // Charger les données mises à jour
-                } else {
-                    alert("Erreur lors de la suppression.");
-                }
-            })
-            .catch(error => console.error('Erreur:', error));
+        // vérif doublon local rapide
+        const comptesExistants = table.getData().map(row => row.compte);
+        if (comptesExistants.includes(compte)) {
+            Swal.fire('Erreur', 'Ce compte existe déjà !', 'warning');
+            $('#compte').focus();
+            return;
         }
-    });
-});
 
-table.on("rowSelectionChanged", function(data, rows) {
-    document.getElementById("select-stats").innerHTML = rows.length; // Afficher le nombre de lignes sélectionnées
-});
+        addSubmitBtn.disabled = true;
+        addSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> En cours...';
 
+        fetch('/plancomptable', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify({ compte: compte, intitule: intitule, societe_id: societeId })
+        })
+        .then(res => res.json().then(j => ({ ok: res.ok, body: j })))
+        .then(({ ok, body }) => {
+            addSubmitBtn.disabled = false;
+            addSubmitBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i> Ajouter';
 
-</script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.2/xlsx.full.min.js">
-</script>
-<script>
-    document.getElementById('file').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-
-        reader.onload = function(event) {
-            const data = new Uint8Array(event.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-
-            const sheetName = workbook.SheetNames[0]; // Prendre la première feuille
-            const worksheet = workbook.Sheets[sheetName];
-            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // Lire toutes les lignes
-
-            if (rows.length > 1) {
-                // Remplir les options avec les en-têtes de colonnes
-                const headers = rows[0]; // Utiliser la première ligne comme en-têtes
-                const compteSelect = document.querySelector('input[name="colonne_compte"]');
-                const intituleSelect = document.querySelector('input[name="colonne_intitule"]');
-
-                compteSelect.value = ''; // Réinitialiser
-                intituleSelect.value = ''; // Réinitialiser
-
-                // Afficher les colonnes disponibles dans les champs de sélection
-                // Mettre les indices de colonnes en options
-                for (let i = 0; i < headers.length; i++) {
-                    const option = new Option(headers[i], i + 1); // Les indices de colonnes sont à partir de 1
-                    compteSelect.add(option);
-                    intituleSelect.add(option.cloneNode(true));
-                }
+            if (!ok) {
+                // afficher message détaillé si disponible
+                const msg = body && (body.error || body.message) ? (body.error || body.message) : ('Erreur lors de l\'ajout (code ' + (body && body.code ? body.code : '??') + ')');
+                Swal.fire('Erreur', msg, 'error');
+                return;
             }
-        };
 
+            if (body.success) {
+                // Fermer le modal proprement
+                const modalEl = document.getElementById('planComptableModalAdd');
+                const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modal.hide();
+
+                // enlever backdrop s'il reste (safety)
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+
+                Toastify({ text: body.message || "Plan comptable ajouté ✔", duration: 2500 }).showToast();
+
+                // reset form et rafraîchir table
+                $("#planComptableFormAdd")[0].reset();
+                table.replaceData("/plancomptable/data");
+            } else {
+                Swal.fire('Erreur', body.error || 'Une erreur est survenue.', 'error');
+            }
+        })
+        .catch(err => {
+            addSubmitBtn.disabled = false;
+            addSubmitBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i> Ajouter';
+            console.error('Erreur add:', err);
+            Swal.fire('Erreur', 'Erreur serveur lors de l\'ajout. Voir console.', 'error');
+        });
+    });
+
+    // ----------------- Edit (modal) -----------------
+    $("#planComptableFormEdit").on("submit", function(e) {
+        e.preventDefault();
+        const editSubmitBtn = document.getElementById('editSubmitBtn');
+        const id = $("#editPlanComptableId").val();
+        const compte = $("#editCompte").val().trim();
+        const intitule = $("#editIntitule").val().trim();
+
+        if (!id) return Swal.fire('Erreur', 'ID manquant', 'error');
+        if (compte.length !== nombreChiffresCompte) { Swal.fire('Erreur', `Le compte doit comporter exactement ${nombreChiffresCompte} chiffres.`, 'warning'); return; }
+        if (!intitule) { Swal.fire('Erreur', 'Le champ Intitulé est obligatoire.', 'warning'); return; }
+
+        editSubmitBtn.disabled = true;
+        editSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> En cours...';
+
+        fetch('/plancomptable/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            body: JSON.stringify({ compte: compte, intitule: intitule })
+        })
+        .then(res => res.json().then(j => ({ ok: res.ok, body: j })))
+        .then(({ ok, body }) => {
+            editSubmitBtn.disabled = false;
+            editSubmitBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Modifier';
+
+            if (!ok) {
+                const msg = body && (body.error || body.message) ? (body.error || body.message) : 'Erreur lors de la mise à jour';
+                Swal.fire('Erreur', msg, 'error');
+                return;
+            }
+
+            if (body.success) {
+                const modalEl = document.getElementById('planComptableModalEdit');
+                const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modal.hide();
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+
+                Toastify({ text: body.message || "Mis à jour ✔", duration: 2200 }).showToast();
+                $("#planComptableFormEdit")[0].reset();
+                $("#editPlanComptableId").val("");
+                table.replaceData("/plancomptable/data");
+            } else {
+                Swal.fire('Erreur', body.error || 'Erreur mise à jour', 'error');
+            }
+        })
+        .catch(err => {
+            editSubmitBtn.disabled = false;
+            editSubmitBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Modifier';
+            console.error(err);
+            Swal.fire('Erreur', 'Erreur serveur lors de la mise à jour', 'error');
+        });
+    });
+
+    // ouvrir modal edit
+    window.editPlanComptable = function(data) {
+        $("#editPlanComptableId").val(data.id);
+        $("#editCompte").val(data.compte);
+        $("#editIntitule").val(data.intitule);
+        const modalEl = document.getElementById('planComptableModalEdit');
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.show();
+    };
+
+    // suppression simple - fetch + messages détaillés
+    window.deletePlanComptable = function(id) {
+        Swal.fire({
+            title: 'Supprimer ce plan comptable ?',
+            text: "Cette action est irréversible et supprimera aussi les clients/fournisseurs liés.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, supprimer'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            Swal.fire({ title: 'Suppression en cours...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            fetch('/plancomptable/' + id, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                body: JSON.stringify({})
+            })
+            .then(res => res.json().then(j => ({ ok: res.ok, body: j })))
+            .then(({ ok, body }) => {
+                Swal.close();
+                if (!ok) {
+                    const msg = body && (body.error || body.message) ? (body.error || body.message) : 'Erreur suppression';
+                    Swal.fire('Erreur', msg, 'error');
+                    return;
+                }
+                if (body.success) {
+                    Toastify({ text: body.message || "Plan comptable supprimé ✔", duration: 2200 }).showToast();
+                    table.replaceData("/plancomptable/data");
+                } else {
+                    Swal.fire('Erreur', body.error || 'Erreur suppression', 'error');
+                }
+            })
+            .catch(err => {
+                Swal.close();
+                console.error('Erreur delete:', err);
+                Swal.fire('Erreur', 'Une erreur est survenue lors de la suppression. Voir console.', 'error');
+            });
+        });
+    };
+
+    // ----------------- Import XLSX preview and submit -----------------
+    const fileInput = document.getElementById('file');
+    const selectCompte = document.getElementById('colonne_compte');
+    const selectIntitule = document.getElementById('colonne_intitule');
+    const previewTable = document.getElementById('previewTable');
+    const previewHeader = document.getElementById('previewHeader');
+    const previewBody = document.getElementById('previewBody');
+    const importSpinner = document.getElementById('importSpinner');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function resetPreview() {
+        selectCompte.innerHTML = '<option value="">-- Sélectionnez --</option>';
+        selectIntitule.innerHTML = '<option value="">-- Sélectionnez --</option>';
+        previewHeader.innerHTML = "";
+        previewBody.innerHTML = "";
+        previewTable.style.display = "none";
+    }
+    resetBtn.addEventListener("click", resetPreview);
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return resetPreview();
+
+        const reader = new FileReader();
+        reader.onload = ({ target }) => {
+            const wb = XLSX.read(new Uint8Array(target.result), { type: 'array' });
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+
+            resetPreview();
+            if (!rows.length) return;
+
+            rows[0].forEach((h, i) => {
+                const txt = h || `Col ${i+1}`;
+                selectCompte.append(new Option(txt, i+1));
+                selectIntitule.append(new Option(txt, i+1));
+                const th = document.createElement("th");
+                th.textContent = txt;
+                previewHeader.appendChild(th);
+            });
+
+            rows.slice(1, 6).forEach(r => {
+                const tr = document.createElement("tr");
+                rows[0].forEach((_, i) => {
+                    const td = document.createElement("td");
+                    td.textContent = r[i] ?? "";
+                    tr.appendChild(td);
+                });
+                previewBody.appendChild(tr);
+            });
+
+            previewTable.style.display = "table";
+        };
         reader.readAsArrayBuffer(file);
     });
+
+    importForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        importSpinner.classList.remove("d-none");
+
+        fetch(importForm.action, {
+            method: "POST",
+            body: new FormData(importForm),
+            headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRF-TOKEN": csrf }
+        })
+        .then(res => res.json().then(j => ({ ok: res.ok, body: j })))
+        .then(({ ok, body }) => {
+            importSpinner.classList.add("d-none");
+            if (!ok || !body.success) {
+                const msg = body && (body.error || body.message) ? (body.error || body.message) : 'Erreur import';
+                return Swal.fire("Erreur", msg, "error");
+            }
+
+            // rafraîchir depuis backend pour garder cohérence
+            table.replaceData("/plancomptable/data");
+
+            Swal.fire({ icon: "success", title: "Importation réussie", html: body.message || '', timer: 2000, showConfirmButton: false });
+
+            // fermer modal proprement
+            const modalEl = document.getElementById("importModal");
+            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modal.hide();
+            document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
+            document.body.classList.remove("modal-open");
+
+            importForm.reset();
+            resetPreview();
+        })
+        .catch(err => {
+            importSpinner.classList.add("d-none");
+            console.error('Erreur import:', err);
+            Swal.fire("Erreur serveur", "Impossible de traiter le fichier.", "error");
+        });
+    });
+
+    // Cleanup backdrop when manual hide
+    document.getElementById('importModal').addEventListener('hidden.bs.modal', function () {
+        document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
+        document.body.classList.remove("modal-open");
+    });
+    document.getElementById("classeFilter").addEventListener("change", function(){
+    var val = this.value;
+    if(val === "") {
+        table.clearFilter();
+    } else {
+        table.setFilter(filterByClasse, val);
+    }
+});
+
+}); // DOMContentLoaded
 </script>
-
-
-
-
-
-
-
-<!-- Bootstrap JS (optionnel) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>
 @endsection
-

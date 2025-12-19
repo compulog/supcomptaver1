@@ -1,38 +1,56 @@
-<?php
-
-namespace App\Imports;
-
-use App\Models\PlanComptable;
-use Maatwebsite\Excel\Concerns\ToModel;
-use Maatwebsite\Excel\Concerns\WithStartRow;
-
-class PlanComptableImport implements ToModel, WithStartRow
-{
-    protected $societeId;
-    protected $colonneCompte;
-    protected $colonneIntitule;
-
-    public function __construct($societeId, $colonneCompte, $colonneIntitule)
-    {
-        $this->societeId = $societeId;
-        $this->colonneCompte = $colonneCompte;
-        $this->colonneIntitule = $colonneIntitule;
-    }
-
-    // Spécifie que l'importation commence à la ligne 2
-    public function startRow(): int
-    {
-        return 2;
-    }
-
-    public function model(array $row)
-    {
-        return new PlanComptable([
-            'societe_id' => $this->societeId,
-            'compte' => $row[$this->colonneCompte - 1], // Les index commencent à 0, donc on soustrait 1
-            'intitule' => $row[$this->colonneIntitule - 1], // Idem pour le champ intitule
-        ]);
-    }
-}
-
-
+<?php
+
+namespace App\Imports;
+
+use App\Models\PlanComptable;
+use Illuminate\Support\Collection;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithStartRow;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+
+class PlanComptableImport implements ToCollection, WithStartRow, WithChunkReading, ShouldQueue
+{
+    protected $societeId;
+    protected $colonneCompte;
+    protected $colonneIntitule;
+
+    public function __construct($societeId, $colonneCompte, $colonneIntitule)
+    {
+        $this->societeId       = $societeId;
+        $this->colonneCompte   = $colonneCompte;
+        $this->colonneIntitule = $colonneIntitule;
+    }
+
+    /** Commence à la ligne 2 (ignore l’en‑tête) */
+    public function startRow(): int
+    {
+        return 2;
+    }
+
+    /**
+     * On reçoit une Collection de toutes les lignes,
+     * que l’on trie numériquement sur “compte”
+     */
+    public function collection(Collection $rows)
+    {
+        $rows
+            ->sortBy(function ($row) {
+                // cast numérique pour trier “1, 2, 10” dans le bon ordre
+                return (float) str_replace(',', '.', $row[$this->colonneCompte - 1]);
+            })
+            ->each(function ($row) {
+                PlanComptable::create([
+                    'societe_id' => $this->societeId,
+                    'compte'     => $row[$this->colonneCompte - 1],
+                    'intitule'   => $row[$this->colonneIntitule - 1],
+                ]);
+            });
+    }
+
+    /** Taille de chaque chunk (à ajuster selon vos besoins) */
+    public function chunkSize(): int
+    {
+        return 1000;
+    }
+}

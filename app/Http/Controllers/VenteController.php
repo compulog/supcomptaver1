@@ -44,8 +44,13 @@ class VenteController extends Controller
                      ->get();
 
     // Initialiser la requête pour les fichiers de type 'vente'
-    $query = File::where('societe_id', $societeId)
-                 ->where('type', 'vente');
+            $query = File::where('societe_id', $societeId)
+                        ->where(function($q) {
+                            $q->whereNull('folders')
+                            ->orWhere('folders', 0);
+                        })
+                        ->where('type', 'vente');
+
 
     // Filtrage et tri des fichiers en fonction des paramètres de la requête
     if ($request->has('filter_by')) {

@@ -187,17 +187,19 @@
 }
 
 </style>
-
-<nav class="mb-3">
-    <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}">Tableau de bord</a>
-<i class="fas fa-chevron-right nav-arrow"></i>
-    <a href="#">État de caisse Mensuel</a>
-</nav>
+<br>    
+<a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}"
+   style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;">
+   Tableau De Board
+</a>  <a href="#" style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;"> 
+   ➢ État de caisse Mensuel</a>
+ 
+<br>
 
 <div class="form-group">
     <label for="journal-select">Code :</label>
     <select id="journal-select">
-        <option value="Null">Choisir une option</option>
+        <!-- <option value="Null">Choisir une option</option> -->
         @foreach ($journauxCaisse as $journal)
             <option value="{{ $journal->code_journal }}" data-intitule="{{ $journal->intitule }}">{{ $journal->code_journal }}</option>
         @endforeach
@@ -212,7 +214,7 @@
     <!-- Sélecteur de mois et d'année -->
     <label for="month-select" style="margin-right: 10px;">Période :</label>
     <select id="month-select" style="margin-right: 10px;">
-        <option value="Null">Choisir une option</option>
+        <!-- <option value="Null">Choisir une option</option> -->
         <option value="01">Janvier {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
         <option value="02">Février {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
         <option value="03">Mars {{ \Carbon\Carbon::parse($societe->exercice_social_debut)->year }}</option>
@@ -361,5 +363,8 @@
 console.log('transaction:', JSON.stringify(transactions, null, 2));
 </script>
 <script src="{{ asset('js/etat_de_caisse.js') }}"></script>
+<div id="session-data" data-societe-raison_sociale="{{ $societe->raison_sociale }}"></div>
+<div id="session-data1" data-societe-forme_juridique="{{ $societe->forme_juridique }}"></div>
+<div id="session-data2" data-societe-identifiant_fiscal="{{ $societe->identifiant_fiscal }}"></div>
 
 @endsection

@@ -16,6 +16,7 @@
 <link
   href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator_bootstrap5.min.css"
   rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
   <!-- Bootstrap CSS (dernière version Bootstrap 5.3.0) -->
@@ -54,6 +55,9 @@
 <!-- Aucun script JS chargé par défaut -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.11/jspdf.plugin.autotable.min.js"></script>
+
+
+
 
  <style>
 
@@ -429,7 +433,7 @@
 
         <div class="tabs" style="display: flex; gap: 5px; margin-bottom: 10px; border-bottom: 2px solid #ccc;">
             <!-- Onglet Achats -->
-            <div class="tab active" data-tab="achats"
+          <div class="tab active" data-tab="achats"
             tabindex="0" style="font-size: 9px; padding: 4px 8px; cursor: pointer; border: 1px solid #ccc; border-radius: 5px; background-color: #007bff; transition: background-color 0.3s, border-color 0.3s; box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);">
                 Achats
             </div>
@@ -461,7 +465,7 @@
             </div>
         </div>
 
-
+<!-- 
 <script>
 // Fonction pour charger dynamiquement un script JS
 function loadScript(scriptUrl) {
@@ -491,6 +495,7 @@ function loadScriptExclusive(scriptUrl) {
     if (activeTab) {
       var tabName = activeTab.getAttribute('data-tab');
       if (["achats", "ventes", "operations-diverses"].includes(tabName)) {
+        console.log('tab active: achat');
         loadScriptExclusive('js/Operation_Courante.js');
       }
       if (tabName === "Banque") {
@@ -527,7 +532,52 @@ function loadScriptExclusive(scriptUrl) {
       });
     });
   });
+</script> -->
+<!-- <script>
+    let currentScript = null;
+
+    function loadScriptWithCallback(src, callbackName) {
+        if (currentScript) {
+            currentScript.remove();
+            currentScript = null;
+            console.log("Ancien script supprimé");
+        }
+
+        const script = document.createElement('script');
+        script.src = src + '?v=' + Date.now(); // force le rechargement
+        script.type = 'text/javascript';
+        script.async = false; // IMPORTANT : synchronise le chargement
+        script.onload = () => {
+            console.log("Script chargé :", src);
+            if (typeof window[callbackName] === 'function') {
+                window[callbackName](); // appelle la fonction du script
+            } else {
+                console.error(`Fonction ${callbackName} non trouvée`);
+            }
+        };
+
+        document.body.appendChild(script);
+        currentScript = script;
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            const tabName = tab.getAttribute('data-tab').toLowerCase();
+
+            if (tabName === 'banque') {
+                loadScriptWithCallback('js/Operation_Banque.js');
+            } else if (tabName === 'caisse') {
+                loadScriptWithCallback('js/Operation_Banque.js');
+            } else {
+                loadScriptWithCallback('js/Operation_Courante.js', 'afficherCourant');
+            }
+        });
+    });
 </script>
+ -->
 
 <!-- Onglet Achats -->
 <div id="achats" class="tab-content active" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 10px; color: #333; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
@@ -535,15 +585,15 @@ function loadScriptExclusive(scriptUrl) {
 
     <!-- Code et Journal -->
     <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-      <label for="journal-achats" style="font-size: 11px; font-weight: bold;">Code journal:</label>
+      <label for="journal-achats" style="font-size: 11px; font-weight: bold;">journal:</label>
       <select id="journal-achats" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
       <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
       <input type="text" id="filter-intitule-achats" readonly placeholder="Journal" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;" />
     </div>
+      <label for="filter-achats" style="font-size: 11px; font-weight: bold;">Saisie par:</label>
 
     <!-- Saisie par -->
     <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-      <label for="filter-achats" style="font-size: 11px; font-weight: bold;">Saisie par :</label>
       <div class="form-check form-check-inline" style="font-size: 9px;">
         <input class="formR" type="radio" name="filter-achats" id="filter-contre-partie-achats" value="contre-partie" checked>
         <label class="form-check-label" for="filter-contre-partie-achats" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Contre Partie Auto</label>
@@ -555,6 +605,7 @@ function loadScriptExclusive(scriptUrl) {
     </div>
 
     <!-- Période -->
+    <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
 
       <div class="form-check form-check-inline" style="font-size: 9px;">
         <input class="formR " type="radio" name="filter-period-achats" id="filter-mois-achats" value="mois" checked>
@@ -564,8 +615,10 @@ function loadScriptExclusive(scriptUrl) {
         <input class="formR" type="radio" name="filter-period-achats" id="filter-exercice-achats" value="exercice">
         <label class="form-check-label" for="filter-exercice-achats" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
       </div>
-          <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-      <label for="periode-achats" style="font-size: 11px; font-weight: bold;">Période :</label>
+</div>
+      <label for="periode-achats" style="font-size: 11px; font-weight: bold;">Période:</label>
+
+    <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
       <select id="periode-achats" style="font-size: 10px; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
         <option value="selectionner un mois">Sélectionner un mois</option>
       </select>
@@ -586,14 +639,14 @@ function loadScriptExclusive(scriptUrl) {
       <button id="delete-row-btnAch" class="icon-button border-0 bg-transparent" title="Supprimer">
         <i class="fas fa-trash-alt text-danger" style="font-size:14px;"></i>
       </button>
-      <a id="print-table" href="#" class="text-dark" title="Imprimer">
+      <!-- <a id="print-table" href="#" class="text-dark" title="Imprimer">
         <i class="fa fa-print" style="font-size:16px;"></i>
-      </a>
+      </a> -->
     </div>
   </div>
 
   <!-- Conteneur Tabulator Achats -->
-  <!-- <div id="table-achats" style="height:400px;"></div> -->
+  <div id="table-achats" style="height:400px;"></div>
   <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
 
 
@@ -686,7 +739,7 @@ function loadScriptExclusive(scriptUrl) {
     <div class="filter-container" style="display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
         <!-- Code et Journal -->
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-            <label for="journal-ventes" style="font-size: 11px; font-weight: bold;">Code journal :</label>
+            <label for="journal-ventes" style="font-size: 11px; font-weight: bold;">journal:</label>
             <select id="journal-ventes" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
             <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
 
@@ -694,22 +747,23 @@ function loadScriptExclusive(scriptUrl) {
         </div>
 
         <!-- Saisie par -->
+                     <label style="font-size: 11px; font-weight: bold;">Saisie par:</label>
+
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-            <label style="font-size: 11px; font-weight: bold;">Saisie par :</label>
             <div class="form-check form-check-inline" style="font-size: 9px;">
                 <input class="formR" type="radio" name="filter-ventes" id="filter-contre-partie-ventes" value="contre-partie" checked>
                 <label class="form-check-label" for="filter-contre-partie-ventes" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Contre Partie Auto</label>
             </div>
-        </div>
+     
             <div class="form-check form-check-inline" style="font-size: 9px;">
                 <input class="formR" type="radio" name="filter-ventes" id="filter-libre-ventes" value="libre">
                 <label class="form-check-label" for="filter-libre-ventes" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Libre</label>
             </div>
-
+   </div>
 
         <!-- Période -->
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
 
-            <div style="display: flex; gap: 8px; align-items: center;">
                 <div class="form-check form-check-inline" style="font-size: 9px;">
                     <input class="formR" type="radio" name="filter-period-ventes" id="filter-mois-ventes" value="mois" checked>
                     <label class="form-check-label" for="filter-mois-ventes" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
@@ -718,9 +772,12 @@ function loadScriptExclusive(scriptUrl) {
                     <input class="formR" type="radio" name="filter-period-ventes" id="filter-exercice-ventes" value="exercice">
                     <label class="form-check-label" for="filter-exercice-ventes" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
                 </div>
+                </div>
                 <!-- Mois Sélection -->
+                             <div style="display: flex; gap: 8px; align-items: center;">
+            <label for="filter-period-ventes" style="font-size: 11px; font-weight: bold;">Période:</label>
+
                      <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-            <label for="filter-period-ventes" style="font-size: 11px; font-weight: bold;">Période :</label>
                 <select id="periode-ventes" style="font-size: 10px; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
                     <option value="selectionner un mois">Sélectionner un mois</option>
                 </select>
@@ -743,9 +800,9 @@ function loadScriptExclusive(scriptUrl) {
             <button id="delete-row-btnVte"  class="icon-button border-0 bg-transparent" title="Supprimer">
               <i class="fas fa-trash-alt text-danger" style="font-size:14px;"></i>
             </button>
-            <a      id="print-tableV"       href="#" class="text-dark" title="Imprimer la table">
+            <!-- <a      id="print-tableV"       href="#" class="text-dark" title="Imprimer la table">
               <i class="fa fa-print" style="font-size:16px;"></i>
-            </a>
+            </a> -->
           </div>
 
           <!-- Input caché pour sélectionner le fichier Excel Ventes -->
@@ -773,7 +830,7 @@ function loadScriptExclusive(scriptUrl) {
     <div class="filter-container" style="display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
 <!-- Code et Journal -->
 <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-    <label for="journal-Caisse" style="font-size: 11px; font-weight: bold;">Code journal :</label>
+    <label for="journal-Caisse" style="font-size: 11px; font-weight: bold;">journal:</label>
     <select id="journal-Caisse" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;">
         <option value="">Sélectionner un journal</option> <!-- Option par défaut -->
     </select>
@@ -782,8 +839,9 @@ function loadScriptExclusive(scriptUrl) {
 </div>
 
         <!-- Saisie par -->
+                     <label style="font-size: 11px; font-weight: bold;">Saisie par:</label>
+
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-            <label style="font-size: 11px; font-weight: bold;">Saisie par :</label>
             <div class="form-check form-check-inline" style="font-size: 9px;">
                 <input class="formR" type="radio" name="filter-Caisse" id="filter-contre-partie-Caisse" value="contre-partie" checked>
                 <label class="form-check-label" for="filter-contre-partie-Caisse" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Contre Partie Auto</label>
@@ -799,6 +857,8 @@ function loadScriptExclusive(scriptUrl) {
 
 
     <!-- Choix du type de période -->
+             <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+
     <div class="form-check form-check-inline" style="font-size: 9px;">
         <input class="formR" type="radio" name="filter-period-Caisse" id="filter-mois-Caisse" value="mois" checked>
         <label class="form-check-label" for="filter-mois-Caisse" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
@@ -807,10 +867,11 @@ function loadScriptExclusive(scriptUrl) {
         <input class="formR" type="radio" name="filter-period-Caisse" id="filter-exercice-Caisse" value="exercice">
         <label class="form-check-label" for="filter-exercice-Caisse" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
     </div>
-
+</div>
     <!-- Liste déroulante pour les mois -->
+         <label for="periode-Caisse" style="font-size: 11px; font-weight: bold;">Période:</label>
+
     <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-    <label for="periode-Caisse" style="font-size: 11px; font-weight: bold;">Période :</label>
     <select id="periode-Caisse" style="font-size: 10px; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
         <option value="selectionner un mois">Sélectionner un mois</option>
         <option value="1">Janvier {{ date('Y', strtotime($societe->exercice_social_debut)) }}</option>
@@ -849,12 +910,20 @@ function loadScriptExclusive(scriptUrl) {
             <button class="icon-button border-0 bg-transparent" id="delete-row-btn-caisse" title="Supprimer">
                 <i class="fas fa-trash-alt text-danger" style="font-size: 14px;"></i>
             </button>
+<i class="fas fa-share" id="transfereCaisse"></i>
 
-            <button class="icon-button border-0 bg-transparent" id="print-btn" title="Impression" onclick="printTable();">
+            <button class="icon-button border-0 bg-transparent" id="modifier-compte-caisse" title="Remplacer comptes">
+                    <i class="fas fa-exchange-alt"></i>    
+                    <!-- modifier compte -->
+            </button>
+            <!-- <button class="icon-button border-0 bg-transparent" id="print-btn" title="Impression" onclick="printTable();">
     <i class="fas fa-print text-info" style="font-size: 14px;"></i>
-</button>
+</button> -->
 
         </div>
+        <label for="solde-actuel-Caisse">Solde Actuel:</label>
+                <input type="text" id="solde-actuel-Caisse" disabled style="width:20px;"/>
+
     </div>
 
     <!-- Table de la caisse -->
@@ -894,10 +963,9 @@ function loadScriptExclusive(scriptUrl) {
 <!-- Onglet Banque -->
 <div id="Banque" class="tab-content" style="padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: 10px; color: #333; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
     <div class="filter-container" style="display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
-
         <!-- Code et Journal -->
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-            <label for="journal-Banque" style="font-size: 11px; font-weight: bold;">Code journal :</label>
+            <label for="journal-Banque" style="font-size: 11px; font-weight: bold;">journal:</label>
             <select id="journal-Banque" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;">
             <option value="">Sélectionner un journal</option>
 
@@ -908,8 +976,9 @@ function loadScriptExclusive(scriptUrl) {
         </div>
 
         <!-- Saisie par -->
+                     <label style="font-size: 11px; font-weight: bold;">Saisie par:</label>
+
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-            <label style="font-size: 11px; font-weight: bold;">Saisie par :</label>
             <div class="form-check form-check-inline" style="font-size: 9px;">
                 <input class="formR" type="radio" name="filter-Banque" id="filter-contre-partie-Banque" value="contre-partie" checked>
                 <label class="form-check-label" for="filter-contre-partie-Banque" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Contre Partie Auto</label>
@@ -924,6 +993,7 @@ function loadScriptExclusive(scriptUrl) {
 
 
     <!-- Choix du type de période -->
+    <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
     <div class="form-check form-check-inline" style="font-size: 9px;">
         <input class="formR" type="radio" name="filter-period-Banque" id="filter-mois-Banque" value="mois" checked>
         <label class="form-check-label" for="filter-mois-Banque" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Mois</label>
@@ -932,10 +1002,10 @@ function loadScriptExclusive(scriptUrl) {
         <input class="formR" type="radio" name="filter-period-Banque" id="filter-exercice-Banque" value="exercice">
         <label class="form-check-label" for="filter-exercice-Banque" style="font-size: 9px; font-weight: 600; margin-left: 5px;">Exercice entier</label>
     </div>
-
+</div>
     <!-- Liste déroulante pour les mois -->
+         <label for="periode-Banque" style="font-size: 11px; font-weight: bold;">Période:</label>
     <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-    <label for="periode-Banque" style="font-size: 11px; font-weight: bold;">Période :</label>
     <select id="periode-Banque" style="font-size: 10px; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
         <option value="selectionner un mois">Sélectionner un mois</option>
         <option value="1">Janvier {{ date('Y', strtotime($societe->exercice_social_debut)) }}</option>
@@ -974,11 +1044,20 @@ function loadScriptExclusive(scriptUrl) {
             <button class="icon-button border-0 bg-transparent" id="delete-row-btn_Banque" title="Supprimer">
                 <i class="fas fa-trash-alt text-danger" style="font-size: 14px;"></i>
             </button>
+            <i class="fas fa-share" id="transfereBanque"></i>
+
+            
+            <button class="icon-button border-0 bg-transparent" id="modifier-compte-banque" title="Remplacer comptes">
+              <i class="fas fa-exchange-alt"></i>    
+            <!-- modifier compte -->
+            </button>
             <!-- <button class="icon-button border-0 bg-transparent" id="print-btn" title="Impression" onclick="window.print();">
         <i class="fas fa-print text-info" style="font-size: 14px;"></i>
     </button> -->
 
         </div>
+        <label for="solde-actuel">Solde Actuel:</label>
+        <input type="text" id="solde-actuel" disabled style="width:20px;"/>
     </div>
 
     <!-- Table de la banque -->
@@ -993,7 +1072,7 @@ function loadScriptExclusive(scriptUrl) {
     <div class="filter-container" style="display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
         <!-- Code et Journal -->
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-            <label for="journal-operations-diverses" style="font-size: 11px; font-weight: bold;">Code journal :</label>
+            <label for="journal-operations-diverses" style="font-size: 11px; font-weight: bold;">journal:</label>
             <select id="journal-operations-diverses" style="padding: 4px; width: 110px; border: 1px solid #ccc; border-radius: 5px; font-size: 10px;"></select>
             <input type="hidden" name="societe_id" id="societe_id" value="{{ session('societeId') }}">
             <input type="text" id="filter-intitule-operations-diverses" readonly placeholder="Journal"
@@ -1001,8 +1080,8 @@ function loadScriptExclusive(scriptUrl) {
         </div>
 
         <!-- Saisie par -->
-        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-            <label style="font-size: 11px; font-weight: bold;">Saisie par :</label>
+                     <label style="font-size: 11px; font-weight: bold;">Saisie par:</label>
+
               <!-- Filtres -->
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
             <div class="form-check form-check-inline" style="font-size: 9px;">
@@ -1016,6 +1095,8 @@ function loadScriptExclusive(scriptUrl) {
                        style="font-size: 9px; font-weight: 600; margin-left: 5px;">Libre</label>
             </div>
         </div>
+                <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+
             <div class="form-check form-check-inline" style="font-size: 9px;">
                 <input class="formR" type="radio" name="filter-period-operations-diverses" value="mois" id="filter-mois-operations-diverses" checked>
                 <label class="form-check-label" for="filter-mois-operations-diverses"
@@ -1030,8 +1111,8 @@ function loadScriptExclusive(scriptUrl) {
         </div>
 
         <!-- Période ou Année pour Opérations Diverses -->
+                     <label for="periode-operations-diverses" style="font-size: 11px; font-weight: bold;">Période:</label>
         <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
-            <label for="periode-operations-diverses" style="font-size: 11px; font-weight: bold;">Période :</label>
             <select id="periode-operations-diverses" style="padding: 5px; width: 150px; border: 1px solid #ccc; border-radius: 5px;">
                 <option value="selectionner un mois">Sélectionner un mois</option>
             </select>
@@ -1055,9 +1136,9 @@ function loadScriptExclusive(scriptUrl) {
             <button class="icon-button border-0 bg-transparent" id="delete-row-btnOD" title="Supprimer">
                 <i class="fas fa-trash-alt text-danger" style="font-size: 14px;"></i>
             </button>
-            <a id="print-tableOp" href="#" title="Imprimer la table" class="text-dark">
+            <!-- <a id="print-tableOp" href="#" title="Imprimer la table" class="text-dark">
                 <i class="fa fa-print" style="font-size: 16px;"></i>
-            </a>
+            </a> -->
         </div>
     </div>
 
@@ -1157,613 +1238,11 @@ function loadScriptExclusive(scriptUrl) {
     </div>
 </div>
 
-<style>
-  #files_banque_Modal.modal {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    left: 0; top: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.45);
-    justify-content: center; align-items: center;
-    transition: background 0.3s;
-  }
-  #files_banque_Modal .modal-content {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-    max-width: 400px;
-    width: 90vw;
-    font-size: 1em;
-    color: #34495e;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(44,62,80,0.07);
-    transition: background 0.2s, color 0.2s;
-    width: 100%; text-align: left;
-    display: flex; align-items: center;
-    gap: 10px;
-  }
-  #files_banque_Modal .file-button:hover, #files_banque_Modal .file-button.selected {
-    background: #e3f2fd;
-    color: #1976d2;
-  }
-  #files_banque_Modal .file-button i {
-    font-size: 1.2em; color: #1976d2;
-  }
-  #files_banque_Modal .modal-footer {
-    display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;
-  }
-  #files_banque_Modal .cancel-btn, #files_banque_Modal .confirm-btn {
-    background: #1976d2;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 18px;
-    font-size: 1em;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  #files_banque_Modal .cancel-btn {
-    background: #b0bec5;
-    color: #37474f;
-  }
-  #files_banque_Modal .cancel-btn:hover {
-    background: #78909c;
-  }
-  #files_banque_Modal .confirm-btn:hover {
-    background: #1565c0;
-  }
-  @media (max-width: 600px) {
-    #files_banque_Modal .modal-content { max-width: 98vw; padding: 18px 6vw; }
-  }
- 
-.modal-content {
-  overflow-y: auto;
-  flex-grow: 1;
-}
-
-</style>
-<div id="files_banque_Modal" class="modal" style="display: none;">
-  <div class="modal-content" style="width: 80%; max-width: 1000px;height: 80%; height-width: 1000px; margin: 5% auto; padding: 20px; border-radius: 10px; background-color: #fff;">
-<!-- POP-UP -->
-<div id="myPopup">
-    <span class="close-btn" style="float: right; font-size: 24px; cursor: pointer;">&times;</span>
- </div>
-
-<script>
-    // Fermer le pop-up au clic sur le bouton
-    document.querySelector('.close-btn').addEventListener('click', function () {
-        document.getElementById('myPopup').style.display = 'none';
-    });
-</script>
-    <!-- <h2 style="margin-top: 0;">Choisir un fichier ou un dossier</h2> -->
-    
-    <div class="modal-body">
-  <nav id="banqueBreadcrumb" style="margin-bottom: 1rem; font-size: 14px; color: #1976d2;"></nav>
-  <h3>Dossiers</h3>
-  <ul id="folderList" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding-left: 0; margin: 0;">
-        @if(isset($folders_banque) && $folders_banque->count() > 0)
-          @foreach($folders_banque as $folder)
-            <li style="list-style-type: none;">
-              <button 
-                class="folder-button" 
-                data-folderid="{{ $folder->id }}" 
-                data-foldername="{{ $folder->name }}"
-                style="padding: 0.5rem; background-color: #ffc107; border-radius: 17px; color: #fff; border: none; width: 100%; height: 100%;"
-              >
-                <i class="fas fa-folder"></i> {{ $folder->name }}
-              </button>
-            </li>
-          @endforeach
-        @else
-          <li style="list-style-type: none;">Aucun dossier disponible</li>
-        @endif
-      </ul>
-
-      <h3 style="margin-top: 2rem;">Fichiers</h3>
-      <div id="fileListBanque" style="padding-left: 0; margin: 0;">
-        @if(isset($files_banque) && $files_banque->count() > 0)
-          <div class="row row-cols-4 g-3">
-          @foreach($files_banque as $file)
-            <div class="col" ondblclick="viewFile({{ $file->id }})" style="padding-bottom: 32px;padding-right:200px;">
-              <div class="card shadow-sm" style="width: 13rem; height: 250px; padding-bottom: 16px;">
-                <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">
-                  @if(in_array(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif']))
-                    <img src="{{ asset($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2" style="height: 200px">
-                  @elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'pdf')
-                    <canvas id="pdf-preview-{{ $file->id }}" class="img-fluid mb-2" style="height: 200px"></canvas>
-                  @elseif(in_array(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)), ['xls', 'xlsx']))
-                    <div id="excel-preview-{{ $file->id }}" class="excel-preview" style="height: 200px"></div>
-                  @elseif(in_array(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)), ['doc', 'docx']))
-                    <img src="https://via.placeholder.com/80x100.png?text=Word" class="img-fluid mb-2" style="height: 200px">
-                  @else
-                    <img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2" style="height: 200px">
-                  @endif
-
-                  <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;">{{ $file->name }}</h5>
-                  <!-- <div style="font-size: 0.8rem; color: #888; margin-top: 4px;">
-                    Dernière modification : {{ \Carbon\Carbon::parse($file->updated_at)->format('d/m/Y H:i') }}<br>par : {{ $file->updatedBy ? $file->updatedBy->name : ($file->user ? $file->user->name : 'Inconnu') }}
-                  </div> -->
-                </div>
-              </div>
-              <script>
-                document.addEventListener("DOMContentLoaded", function() {
-                  @if(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'pdf')
-                    var url = '{{ asset($file->path) }}';
-                    var canvas = document.getElementById
-                    <img src="{{ asset($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2" style="height: 200px">
-                  @elseif(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'pdf')
-                    <canvas id="pdf-preview-{{ $file->id }}" class="img-fluid mb-2" style="height: 200px"></canvas>
-                  @elseif(in_array(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)), ['xls', 'xlsx']))
-                    <div id="excel-preview-{{ $file->id }}" class="excel-preview" style="height: 200px"></div>
-                  @elseif(in_array(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)), ['doc', 'docx']))
-                    <img src="https://via.placeholder.com/80x100.png?text=Word" class="img-fluid mb-2" style="height: 200px">
-                  @else
-                    <img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2" style="height: 200px">
-                  @endif
-
-                  <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;">{{ $file->name }}</h5>
-                  <!-- <div style="font-size: 0.8rem; color: #888; margin-top: 4px;">
-                    Dernière modification : {{ \Carbon\Carbon::parse($file->updated_at)->format('d/m/Y H:i') }}<br>par : {{ $file->updatedBy ? $file->updatedBy->name : ($file->user ? $file->user->name : 'Inconnu') }}
-                  </div> -->
-                </div>
-              </div>
-              <script>
-                document.addEventListener("DOMContentLoaded", function() {
-                  @if(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)) == 'pdf')
-                    var url = '{{ asset($file->path) }}';
-                    var canvas = document.getElementById('pdf-preview-{{ $file->id }}');
-                    if (canvas && window['pdfjsLib']) {
-                      var ctx = canvas.getContext('2d');
-                      pdfjsLib.getDocument(url).promise.then(function(pdf) {
-                        pdf.getPage(1).then(function(page) {
-                          var scale = 0.5;
-                          var viewport = page.getViewport({ scale: scale });
-                          canvas.height = viewport.height;
-                          canvas.width = viewport.width;
-                          page.render({ canvasContext: ctx, viewport: viewport });
-                        });
-                      });
-                    }
-                  @elseif(in_array(strtolower(pathinfo($file->name, PATHINFO_EXTENSION)), ['xls', 'xlsx']))
-                    var url = '{{ asset($file->path) }}';
-                    var previewElement = document.getElementById('excel-preview-{{ $file->id }}');
-                    fetch(url)
-                      .then(response => response.arrayBuffer())
-                      .then(data => {
-                        var workbook = XLSX.read(data, { type: 'array' });
-                        var sheet = workbook.Sheets[workbook.SheetNames[0]];
-                        var html = XLSX.utils.sheet_to_html(sheet, { id: 'excel-preview', editable: false, className: 'excel-preview' });
-                        previewElement.innerHTML = html;
-                      });
-                  @endif
-                });
-              </script>
-            </div>
-          @endforeach
-          </div>
-        @else
-          <p>Aucun fichier disponible.</p>
-        @endif
-      </div>
-    </div>
-
-    <!-- <div class="modal-footer" style="margin-top: 2rem; text-align: right;">
-      <button class="cancel-btn" style="padding: 0.5rem 1rem; margin-right: 10px;">Annuler</button>
-      <button id="confirmBtn_Banque" class="confirm-btn" style="padding: 0.5rem 1rem; background-color: #28a745; color: #fff; border: none; border-radius: 5px;">Confirmer</button>
-    </div> -->
-  </div>
-</div>
-
-<!-- ✅ Script JavaScript pour gérer le double-clic -->
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  // Gestion du breadcrumb
-  let folderPath = [];
-
-  function updateFolderAndFileLists(response) {
-    console.log(response);
-    renderBreadcrumb();
-    // Mise à jour des dossiers
-    $('#folderList').html('');
-    if (response.folders_banque.length > 0) {
-      response.folders_banque.forEach(folder => {
-        $('#folderList').append(`
-            <li style="list-style-type: none;">
-            <button class="folder-button"    style="padding: 0.5rem; background-color: #ffc107; border-radius: 17px; color: #fff; border: none; width: 100%; height: 100%;"
- data-folderid="${folder.id}" data-foldername="${folder.name}">
-              <i class="fas fa-folder"></i> ${folder.name}
-            </button>
-          </li>
-        `);
-      });
-    } else {
-      $('#folderList').append('<li>Aucun dossier disponible</li>');
-    }
-
-    // Mise à jour des fichiers
-      $('#fileListBanque').html('');
-      if (response.files_banque.length > 0) {
-    let filesHtml = '<div class="row row-cols-4 g-3">';
-        response.files_banque.forEach(file => {
-          let ext = file.name.split('.').pop().toLowerCase();
-          let previewHtml = '';
-          if (["jpg","jpeg","png","gif"].includes(ext)) {
-            previewHtml = `<img src="${file.path}" alt="${file.name}" class="img-fluid mb-2" style="height: 200px">`;
-          } else if (ext === "pdf") {
-            previewHtml = `<canvas id="pdf-preview-${file.id}" class="img-fluid mb-2" style="height: 200px"></canvas>`;
-          } else if (["xls","xlsx"].includes(ext)) {
-            previewHtml = `<div id="excel-preview-${file.id}" class="excel-preview" style="height: 200px"></div>`;
-          } else if (["doc","docx"].includes(ext)) {
-            previewHtml = `<img src="https://via.placeholder.com/80x100.png?text=Word" class="img-fluid mb-2" style="height: 200px">`;
-          } else {
-            previewHtml = `<img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2" style="height: 200px">`;
-          }
-          filesHtml += `
-            <div class="col" ondblclick="viewFile(${file.id})" style="padding-bottom: 32px;padding-right:200px;">
-              <div class="card shadow-sm" style="width: 13rem; height: 250px; padding-bottom: 16px;">
-                <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">
-                  ${previewHtml}
-                  <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;">${file.name}</h5>
-                </div>
-              </div>
-            </div>
-          `;
-        });
-        filesHtml += '</div>';
-        $('#fileListBanque').html(filesHtml);
-        // Initialiser les aperçus PDF/Excel
-        response.files_banque.forEach(file => {
-          let ext = file.name.split('.').pop().toLowerCase();
-          if (ext === "pdf" && window['pdfjsLib']) {
-            let url = file.path;
-            let canvas = document.getElementById('pdf-preview-' + file.id);
-            if (canvas) {
-              let ctx = canvas.getContext('2d');
-              pdfjsLib.getDocument(url).promise.then(function(pdf) {
-                pdf.getPage(1).then(function(page) {
-                  let scale = 0.5;
-                  let viewport = page.getViewport({ scale: scale });
-                  canvas.height = viewport.height;
-                  canvas.width = viewport.width;
-                  page.render({ canvasContext: ctx, viewport: viewport });
-                });
-              });
-            }
-          } else if (["xls","xlsx"].includes(ext)) {
-            let url = file.path;
-            let previewElement = document.getElementById('excel-preview-' + file.id);
-            if (previewElement) {
-              fetch(url)
-                .then(response => response.arrayBuffer())
-                .then(data => {
-                  var workbook = XLSX.read(data, { type: 'array' });
-                  var sheet = workbook.Sheets[workbook.SheetNames[0]];
-                  var html = XLSX.utils.sheet_to_html(sheet, { id: 'excel-preview', editable: false, className: 'excel-preview' });
-                  previewElement.innerHTML = html;
-                });
-            }
-          }
-        });
-      } else {
-        $('#fileListBanque').html('<p>Aucun fichier disponible.</p>');
-      }
-
-    // Réattacher les événements
-    attachFolderEvents();
-  }
-
-  function renderBreadcrumb() {
-    const nav = document.getElementById('banqueBreadcrumb');
-    if (!folderPath.length) {
-      nav.innerHTML = '<span style="cursor:pointer;" id="breadcrumb-root">Banque</span>';
-    } else {
-      let html = '<span style="cursor:pointer;" id="breadcrumb-root">Banque</span>';
-      folderPath.forEach((folder, idx) => {
-        html += ' / <span style="cursor:pointer;" class="breadcrumb-folder" data-idx="' + idx + '" data-id="' + folder.id + '">' + folder.name + '</span>';
-      });
-      nav.innerHTML = html;
-    }
-    // Attache les événements pour revenir en arrière
-    document.getElementById('breadcrumb-root').onclick = function() {
-      folderPath = [];
-      // Requête AJAX pour la Banque
-      $.ajax({
-        type: 'GET',
-        url: '/operation-courante/select-folder',
-        data: { id: 0 },
-        success: function(response) {
-          updateFolderAndFileLists(response);
-        }
-      });
-    };
-    document.querySelectorAll('.breadcrumb-folder').forEach(el => {
-      el.onclick = function() {
-        const idx = parseInt(this.dataset.idx);
-        folderPath = folderPath.slice(0, idx + 1);
-        $.ajax({
-          type: 'GET',
-          url: '/operation-courante/select-folder',
-          data: { id: this.dataset.id },
-          success: function(response) {
-            updateFolderAndFileLists(response);
-          }
-        });
-      };
-    });
-  }
-
-  function attachFolderEvents() {
-    document.querySelectorAll(".folder-button").forEach(button => {
-      button.addEventListener("dblclick", function () {
-        const folderId = this.dataset.folderid;
-    const folderName = this.dataset.foldername;
-    folderPath.push({ id: folderId, name: folderName });
-        $.ajax({
-          type: 'GET',
-          url: '/operation-courante/select-folder',
-          data: { id: folderId },
-          success: updateFolderAndFileLists,
-          error: function(xhr) {
-            alert("Erreur : " + xhr.responseJSON?.error || "Une erreur est survenue.");
-          }
-        });
-      });
-    });
-  }
-
-  // Premier attachement initial
-  attachFolderEvents();
-  renderBreadcrumb();
-});
-
-</script>
 
 
 
 
 
-<!-- <div id="files_banque_Modal" class="modal" style="display: none;">
-  <div class="modal-content" style="width: 80%; max-width: 1000px; margin: 5% auto; padding: 20px; border-radius: 10px; background-color: #fff;">
-     <div id="myPopup">
-      <span class="close-btn" style="float: right; font-size: 24px; cursor: pointer;">&times;</span>
-    </div>
-
-    <script>
-      // Fermer le pop-up au clic sur le bouton
-      document.querySelector('.close-btn').addEventListener('click', function () {
-        document.getElementById('myPopup').style.display = 'none';
-      });
-    </script>
-
-    <div class="modal-body">
-      <nav id="banqueBreadcrumb" style="margin-bottom: 1rem; font-size: 14px; color: #1976d2;"></nav>
-      
-      <h3>Dossiers</h3>
-      <ul id="folderList" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding-left: 0; margin: 0;">
-        @if(isset($folders_banque) && $folders_banque->count() > 0)
-          @foreach($folders_banque as $folder)
-            <li style="list-style-type: none;">
-              <button 
-                class="folder-button" 
-                data-folderid="{{ $folder->id }}" 
-                data-foldername="{{ $folder->name }}"
-                style="padding: 0.5rem; background-color: #ffc107; border-radius: 17px; color: #fff; border: none; width: 100%; height: 100%;"
-              >
-                <i class="fas fa-folder"></i> {{ $folder->name }}
-              </button>
-            </li>
-          @endforeach
-        @else
-          <li style="list-style-type: none;">Aucun dossier disponible</li>
-        @endif
-      </ul>
-
-      <h3 style="margin-top: 2rem;">Fichiers</h3>
-      <div id="fileListBanque" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding-left: 0; margin: 0;">
-        @if(isset($files_banque) && $files_banque->count() > 0)
-          <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
-            @foreach($files_banque as $file)
-              <div class="col file-card" data-file-id="{{ $file->id }}" ondblclick="viewFile({{ $file->id }})" style="padding-bottom: 32px; padding-right: 200px;">
-                <div class="card shadow-sm" style="width: 13rem; height: 250px; padding-bottom: 16px;">
-                  <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">
-                    @php
-                      $ext = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
-                    @endphp
-                    @if(in_array($ext, ['jpg', 'jpeg', 'png', 'gif']))
-                      <img src="{{ asset($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2" style="height: 200px">
-                    @elseif($ext == 'pdf')
-                      <canvas id="pdf-preview-{{ $file->id }}" class="img-fluid mb-2" style="height: 200px"></canvas>
-                    @elseif(in_array($ext, ['xls', 'xlsx']))
-                      <div id="excel-preview-{{ $file->id }}" class="excel-preview" style="height: 200px"></div>
-                    @elseif(in_array($ext, ['doc', 'docx']))
-                      <img src="https://via.placeholder.com/80x100.png?text=Word" class="img-fluid mb-2" style="height: 200px">
-                    @else
-                      <img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2" style="height: 200px">
-                    @endif
-                    <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;">{{ $file->name }}</h5>
-                  </div>
-                </div>
-              </div>
-            @endforeach
-          </div>
-        @else
-          <p>Aucun fichier disponible.</p>
-        @endif
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  let folderPath = [];
-
-  function renderBreadcrumb() {
-    const nav = document.getElementById('banqueBreadcrumb');
-    if (!folderPath.length) {
-      nav.innerHTML = '<span style="cursor:pointer;" id="breadcrumb-root">Banque</span>';
-    } else {
-      let html = '<span style="cursor:pointer;" id="breadcrumb-root">Banque</span>';
-      folderPath.forEach((folder, idx) => {
-        html += ' / <span style="cursor:pointer;" class="breadcrumb-folder" data-idx="' + idx + '" data-id="' + folder.id + '">' + folder.name + '</span>';
-      });
-      nav.innerHTML = html;
-    }
-    document.getElementById('breadcrumb-root').onclick = function () {
-      folderPath = [];
-      fetchFolderContents(0);
-    };
-    document.querySelectorAll('.breadcrumb-folder').forEach(el => {
-      el.onclick = function () {
-        const idx = parseInt(this.dataset.idx);
-        folderPath = folderPath.slice(0, idx + 1);
-        fetchFolderContents(this.dataset.id);
-      };
-    });
-  }
-
-  // Fonction qui crée le HTML complet d’une carte fichier
-  function createFileCard(file) {
-    const ext = file.name.split('.').pop().toLowerCase();
-    let previewHtml = '';
-
-    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
-      previewHtml = `<img src="${file.path}" alt="${file.name}" class="img-fluid mb-2" style="height: 200px">`;
-    } else if (ext === 'pdf') {
-      previewHtml = `<canvas id="pdf-preview-${file.id}" class="img-fluid mb-2" style="height: 200px"></canvas>`;
-    } else if (['xls', 'xlsx'].includes(ext)) {
-      previewHtml = `<div id="excel-preview-${file.id}" class="excel-preview" style="height: 200px"></div>`;
-    } else if (['doc', 'docx'].includes(ext)) {
-      previewHtml = `<img src="https://via.placeholder.com/80x100.png?text=Word" class="img-fluid mb-2" style="height: 200px">`;
-    } else {
-      previewHtml = `<img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2" style="height: 200px">`;
-    }
-
-    return `
-      <div class="col file-card" ondblclick="viewFile(${file.id})" style="padding-bottom: 32px; padding-right: 200px;">
-        <div class="card shadow-sm" style="width: 13rem; height: 250px; padding-bottom: 16px;">
-          <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 0.5rem;">
-            ${previewHtml}
-            <h5 class="card-title text-truncate" style="font-size: 0.9rem; font-weight: bold;">${file.name}</h5>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function attachFolderEvents() {
-    document.querySelectorAll(".folder-button").forEach(button => {
-      button.addEventListener("dblclick", function () {
-        const folderId = this.dataset.folderid;
-        const folderName = this.dataset.foldername;
-        folderPath.push({ id: folderId, name: folderName });
-        fetchFolderContents(folderId);
-      });
-    });
-  }
-
-  function fetchFolderContents(folderId) {
-    $.ajax({
-      type: 'GET',
-      url: '/operation-courante/select-folder',
-      data: { id: folderId },
-      success: function (response) {
-        renderBreadcrumb();
-
-        // Dossiers
-        const folderList = document.getElementById('folderList');
-        folderList.innerHTML = '';
-        if (response.folders_banque.length > 0) {
-          response.folders_banque.forEach(folder => {
-            const li = document.createElement('li');
-            li.style.listStyleType = 'none';
-
-            const btn = document.createElement('button');
-            btn.className = 'folder-button';
-            btn.style.cssText = "padding: 0.5rem; background-color: #ffc107; border-radius: 17px; color: #fff; border: none; width: 100%; height: 100%;";
-            btn.dataset.folderid = folder.id;
-            btn.dataset.foldername = folder.name;
-            btn.innerHTML = `<i class="fas fa-folder"></i> ${folder.name}`;
-
-            li.appendChild(btn);
-            folderList.appendChild(li);
-          });
-        } else {
-          folderList.innerHTML = '<li style="list-style-type:none;">Aucun dossier disponible</li>';
-        }
-
-        // Fichiers
-        const fileList = document.getElementById('fileListBanque');
-        fileList.innerHTML = '';
-        if (response.files_banque.length > 0) {
-          // Création d’une div.row pour la grille
-          const rowDiv = document.createElement('div');
-          rowDiv.className = 'row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3';
-
-          response.files_banque.forEach(file => {
-            const fileCardHTML = createFileCard(file);
-            // Insère le HTML dans un élément temporaire pour convertir en node
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = fileCardHTML.trim();
-            rowDiv.appendChild(tempDiv.firstChild);
-          });
-          fileList.appendChild(rowDiv);
-
-          // Initialiser les aperçus PDF et Excel après l'ajout
-          initPreviews(response.files_banque);
-        } else {
-          fileList.innerHTML = '<p>Aucun fichier disponible.</p>';
-        }
-
-        attachFolderEvents();
-      },
-      error: function (xhr) {
-        alert("Erreur : " + (xhr.responseJSON?.error || "Une erreur est survenue."));
-      }
-    });
-  }
-
-  // Initialiser les aperçus PDF/Excel
-  function initPreviews(files) {
-    files.forEach(file => {
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (ext === 'pdf') {
-        const url = file.path;
-        const canvas = document.getElementById('pdf-preview-' + file.id);
-        if (canvas && window.pdfjsLib) {
-          const ctx = canvas.getContext('2d');
-          pdfjsLib.getDocument(url).promise.then(pdf => {
-            pdf.getPage(1).then(page => {
-              const scale = 0.5;
-              const viewport = page.getViewport({ scale: scale });
-              canvas.height = viewport.height;
-              canvas.width = viewport.width;
-              page.render({ canvasContext: ctx, viewport: viewport });
-            });
-          });
-        }
-      } else if (ext === 'xls' || ext === 'xlsx') {
-        const url = file.path;
-        const previewElement = document.getElementById('excel-preview-' + file.id);
-        if (previewElement) {
-          fetch(url)
-            .then(response => response.arrayBuffer())
-            .then(data => {
-              const workbook = XLSX.read(data, { type: 'array' });
-              const sheet = workbook.Sheets[workbook.SheetNames[0]];
-              const html = XLSX.utils.sheet_to_html(sheet, { id: 'excel-preview', editable: false, className: 'excel-preview' });
-              previewElement.innerHTML = html;
-            });
-        }
-      }
-    });
-  }
-
-  // Au chargement initial, attacher les events et afficher breadcrumb
-  attachFolderEvents();
-  renderBreadcrumb();
-});
-</script> -->
 
 <div id="file_achat_Modal" class="modal" style="display: none;">
     <div class="modal-content">
@@ -1833,6 +1312,1665 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
+
+<style>
+  /* Modal principal */
+  #files_banque_Modal.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.45);
+    justify-content: center; align-items: center;
+    transition: background 0.3s;
+  }
+
+  /* Contenu du modal */
+  #files_banque_Modal .modal-content {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    max-width: 1000px;
+    width: 80%;
+    height: 80%;
+    margin: 5% auto;
+    padding: 20px;
+    font-size: 1em;
+    color: #34495e;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Hover sur boutons */
+  #files_banque_Modal .file-button:hover,
+  #files_banque_Modal .file-button.selected {
+    background: #e3f2fd;
+    color: #1976d2;
+  }
+
+  /* Responsive mobile */
+  @media (max-width: 600px) {
+    #files_banque_Modal .modal-content {
+      max-width: 98vw;
+      padding: 18px 6vw;
+    }
+  }
+
+  /* Breadcrumbs */
+  #banqueBreadcrumb span {
+    cursor: pointer;
+    color: #1976d2;
+  }
+  #banqueBreadcrumb span:hover {
+    text-decoration: underline;
+  }
+
+  .folder-button {
+    padding: 0.5rem; 
+    background-color: #ffc107; 
+    border-radius: 17px;
+    color: #fff; 
+    border: none; 
+    width: 100%; 
+    height: 100%;
+    cursor: pointer;
+  }
+
+  .file-card img, .file-card canvas {
+    height: 200px;
+    object-fit: cover;
+  }
+  #fileListBanque {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    padding-left: 0;
+    margin: 0;
+  }
+  .file-card {
+    display: none; /* masqué par défaut, puis affiché via JS */
+  }
+  
+</style>
+
+<!-- ✅ Font Awesome pour les icônes -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div id="files_banque_Modal" class="modal">
+  <div class="modal-content">
+   <span id="closeModal" 
+          style="position: absolute; top: 10px; right: 15px; 
+                 font-size: 24px; font-weight: bold; cursor: pointer; color: #333;">
+      &times;
+    </span>
+    <!-- 🔹 Navigation Dashboard -->
+    <div style="margin-bottom:1rem;">
+      <a href="#" id="backToDashboard"
+         style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;">
+         <!-- Tableau De Board -->
+      </a>
+      <span style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;">
+        <!-- ➢ -->
+      </span>
+    </div>
+
+    <!-- Dashboard initial -->
+    <div id="dashboardSection" style="display: flex; flex-wrap: wrap; gap: 20px;">
+      <div id="TableauDeBordBanque" class="p-2 text-white"
+           style="background-color: #ffc107; border-radius: 15px; font-size: 0.75rem;
+                  height: 130px; cursor: pointer; width:30%; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+        <h4>Banque</h4>
+      </div>
+
+      <!-- Dossiers manuels -->
+      @if(isset($dossierManuel) && $dossierManuel->count() > 0)
+        @foreach($dossierManuel as $dossier)
+          <div class="dossierManuelItem text-white"
+               data-dossierid="{{ $dossier->id }}"
+               data-dossiername="{{ $dossier->name }}"
+               style="background-color: #17a2b8; border-radius: 15px;
+                      font-size: 0.75rem; height: 130px; width:30%;
+                      cursor: pointer; display:flex; align-items:center;
+                      justify-content:center; flex-direction:column;">
+            <h4>{{ $dossier->name }}</h4>
+          </div>
+        @endforeach
+      @else
+        <p>Aucun dossier manuel disponible.</p>
+      @endif
+    </div>
+
+    <!-- Contenu dynamique banque/dossier -->
+    <div id="banqueContent" style="display: none;">
+      <nav id="banqueBreadcrumb" style="margin-bottom: 1rem; font-size: 14px;"></nav>
+   
+      <div id="filterZone" 
+           style="display: flex; justify-content: flex-end; align-items: center; margin-top: 2rem; gap: 10px;">
+        <label for="sortFiles" style="font-weight: bold;">Trier par :</label>
+        <select id="sortFiles" 
+                style="padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+          <option value="name">Nom</option>
+          <option value="date">Date</option>
+        </select>
+
+        <button id="sortToggle"
+                title="Changer l’ordre de tri"
+                style="display: flex; align-items: center; gap: 6px; 
+                       background: #f8f9fa; border: 1px solid #ccc; border-radius: 6px;
+                       cursor: pointer; font-size: 16px; color: #007bff; 
+                       padding: 6px 12px; font-weight: bold; transition: all 0.3s;">
+          <i class="fas fa-sort-amount-up"></i> 
+          <span id="sortLabel">A → Z</span>
+        </button>
+
+        <!-- Icône de recherche -->
+        <i class="fa-solid fa-magnifying-glass search-icon" id="search-icon"></i>
+      </div>
+ 
+      <h3>Dossiers</h3>
+      <ul id="folderList" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding-left: 0; margin: 0;">
+        @foreach($folders_banque as $folder)
+          <li style="list-style-type: none;" data-typefolder="{{ $folder->type_folder }}">
+            <button class="folder-button"
+                    data-folderid="{{ $folder->id }}"
+                    data-foldername="{{ $folder->name }}">
+              <i class="fas fa-folder"></i> {{ $folder->name }}
+            </button>
+          </li>
+        @endforeach
+      </ul>
+
+      <h3 style="margin-top: 2rem;">Fichiers</h3>
+      <div id="fileListBanque" style="padding-left: 0; margin: 0;">
+        @foreach($files_banque as $file)
+          <div class="col file-card" data-type="{{ $file->type }}" 
+               style="padding-bottom:32px; display:none;">
+            <div class="card shadow-sm" 
+                 style="width:13rem;height:250px;padding-bottom:16px;" 
+                 data-fileid="{{ $file->id }}" 
+                 data-filepath="{{ asset($file->path) }}">
+              <div class="card-body text-center d-flex flex-column justify-content-between" 
+                   style="padding:0.5rem;">
+                @php $ext = strtolower(pathinfo($file->name, PATHINFO_EXTENSION)); @endphp
+                @if(in_array($ext, ['jpg','jpeg','png','gif']))
+                  <img src="{{ asset($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2">
+                @elseif($ext == 'pdf')
+                  <canvas class="img-fluid mb-2"></canvas>
+                @else
+                  <img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2">
+                @endif
+                <h5 class="card-title text-truncate" 
+                    style="font-size:0.9rem;font-weight:bold;">{{ $file->name }}</h5>
+              </div>
+            </div>
+          </div>
+        @endforeach
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("files_banque_Modal");
+  const tableau = document.getElementById("TableauDeBordBanque");
+  const banqueContent = document.getElementById("banqueContent");
+  const dashboardSection = document.getElementById("dashboardSection");
+  const backToDashboard = document.getElementById("backToDashboard");
+  const breadcrumb = document.getElementById("banqueBreadcrumb");
+  const folderList = document.getElementById("folderList");
+  const fileList = document.getElementById("fileListBanque");
+
+  let breadcrumbPath = [];
+
+  // 🔹 Réinitialiser modal
+  function resetModal() {
+    modal.style.display = "none"; // <- fermeture réelle du modal
+    dashboardSection.style.display = "flex";
+    banqueContent.style.display = "none";
+    breadcrumbPath = [];
+    breadcrumb.innerHTML = "";
+
+    // Réafficher dossiers manuels
+    document.querySelectorAll(".dossierManuelItem").forEach(el => el.style.display = "flex");
+
+    // Réinitialiser folders
+    folderList.innerHTML = '';
+    @foreach($folders_banque as $folder)
+      folderList.innerHTML += `<li style="list-style:none" data-typefolder="{{ $folder->type_folder }}">
+        <button class="folder-button" data-folderid="{{ $folder->id }}" data-foldername="{{ $folder->name }}">
+          <i class="fas fa-folder"></i> {{ $folder->name }}
+        </button>
+      </li>`;
+    @endforeach
+
+    // Réinitialiser files
+    fileList.innerHTML = '';
+    @foreach($files_banque as $file)
+      fileList.innerHTML += `<div class="col file-card" data-type="{{ $file->type }}" style="padding-bottom:32px; display:none;">
+        <div class="card shadow-sm" style="width:13rem;height:250px;padding-bottom:16px;" 
+             data-fileid="{{ $file->id }}" data-filepath="{{ asset($file->path) }}">
+          <div class="card-body text-center d-flex flex-column justify-content-between" style="padding:0.5rem;">
+            @php $ext = strtolower(pathinfo($file->name, PATHINFO_EXTENSION)); @endphp
+            @if(in_array($ext, ['jpg','jpeg','png','gif']))
+              <img src="{{ asset($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2">
+            @elseif($ext == 'pdf')
+              <canvas class="img-fluid mb-2"></canvas>
+            @else
+              <img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2">
+            @endif
+            <h5 class="card-title text-truncate" style="font-size:0.9rem;font-weight:bold;">{{ $file->name }}</h5>
+          </div>
+        </div>
+      </div>`;
+    @endforeach
+
+    // Réinitialiser tri
+    document.getElementById("sortFiles").value = "name";
+    const sortLabel = document.getElementById("sortLabel");
+    sortLabel.textContent = "A → Z";
+    const sortIcon = document.querySelector("#sortToggle i");
+    if(sortIcon) sortIcon.className = "fas fa-sort-amount-up";
+
+    attachEvents();
+  }
+
+  // 🔹 Mettre à jour breadcrumb
+  function updateBreadcrumb() {
+    breadcrumb.innerHTML = breadcrumbPath.map((name, index) => {
+      if(index < breadcrumbPath.length - 1){
+        return `<span class="breadcrumb-folder" data-index="${index}">${name}</span> ➢ `;
+      } else return `<span>${name}</span>`;
+    }).join('');
+
+    const tableauDeBoardSpan = document.createElement("span");
+    tableauDeBoardSpan.textContent = "Tableau de Board";
+    tableauDeBoardSpan.style.textDecoration = "underline";
+    breadcrumb.insertAdjacentElement("afterbegin", tableauDeBoardSpan);
+
+    document.querySelectorAll(".breadcrumb-folder").forEach(el => {
+      el.addEventListener("click", function(){
+        const idx = parseInt(this.dataset.index);
+        breadcrumbPath = breadcrumbPath.slice(0, idx + 1);
+        openContent(breadcrumbPath[breadcrumbPath.length-1]);
+      });
+    });
+  }
+
+  // 🔹 Ouvrir contenu
+  function openContent(typeName) {
+    dashboardSection.style.display = "none";
+    banqueContent.style.display = "block";
+
+    if(breadcrumbPath[breadcrumbPath.length-1] !== typeName) breadcrumbPath.push(typeName);
+    updateBreadcrumb();
+
+    document.querySelectorAll("#folderList li").forEach(li => {
+      li.style.display = li.dataset.typefolder === typeName ? 'block' : 'none';
+    });
+
+    let hasFiles = false;
+    document.querySelectorAll("#fileListBanque .file-card").forEach(f => {
+      if(f.dataset.type === typeName){
+        f.style.display = "block";
+        hasFiles = true;
+      } else f.style.display = "none";
+    });
+
+    fileList.querySelectorAll(".no-file-msg").forEach(el => el.remove());
+    if(!hasFiles){
+      const p = document.createElement("p");
+      p.textContent = "Aucun fichier disponible.";
+      p.classList.add("no-file-msg");
+      fileList.appendChild(p);
+    }
+  }
+
+  // 🔹 Charger sous-dossiers dynamiquement
+  function loadFolder(folderId, folderName) {
+    fileList.innerHTML = "<p>Chargement des fichiers...</p>";
+    folderList.innerHTML = "<p>Chargement des sous-dossiers...</p>";
+
+    fetch(`/operation-courante/select-folder?id=${folderId}`)
+      .then(response => response.json())
+      .then(data => {
+        breadcrumbPath.push(folderName);
+        updateBreadcrumb();
+
+        folderList.innerHTML = "";
+        if(data.folders_banque && data.folders_banque.length > 0){
+          data.folders_banque.forEach(folder => {
+            const li = document.createElement("li");
+            li.style.listStyleType = "none";
+            li.innerHTML = `<button class="folder-button" data-folderid="${folder.id}" data-foldername="${folder.name}">
+                              <i class="fas fa-folder"></i> ${folder.name}
+                            </button>`;
+            folderList.appendChild(li);
+            li.querySelector(".folder-button").addEventListener("dblclick", () => {
+              loadFolder(folder.id, folder.name);
+            });
+          });
+        } else folderList.innerHTML = "<p>Aucun sous-dossier.</p>";
+
+        fileList.innerHTML = "";
+        if(data.files_banque && data.files_banque.length > 0){
+          data.files_banque.forEach(file => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            let preview = "";
+            if(["jpg","jpeg","png","gif"].includes(ext)) preview = `<img src="/${file.path}" class="img-fluid mb-2">`;
+            else if(ext === "pdf") preview = `<canvas class="img-fluid mb-2"></canvas>`;
+            else preview = `<img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2">`;
+
+            const div = document.createElement("div");
+            div.className = "col file-card";
+            div.innerHTML = `<div class="card shadow-sm" style="width:13rem;height:250px;" data-fileid="${file.id}" data-filepath="/${file.path}">
+                              <div class="card-body text-center d-flex flex-column justify-content-between" style="padding:0.5rem;">
+                                ${preview}
+                                <h5 class="card-title text-truncate" style="font-size:0.9rem;font-weight:bold;">${file.name}</h5>
+                              </div>
+                            </div>`;
+            fileList.appendChild(div);
+          });
+        } else fileList.innerHTML = "<p>Aucun fichier disponible.</p>";
+
+        document.getElementById("sortToggle").click();
+        attachEvents();
+      })
+      .catch(err => console.error(err));
+  }
+
+  // 🔹 Attacher événements
+  function attachEvents() {
+    document.querySelectorAll(".folder-button").forEach(btn => {
+      btn.addEventListener("dblclick", function() {
+        loadFolder(this.dataset.folderid, this.dataset.foldername);
+      });
+    });
+
+    document.querySelectorAll(".file-card").forEach(cardWrapper => {
+      cardWrapper.addEventListener("dblclick", function () {
+        const innerCard = this.querySelector('.card');
+        const selectedFilePath = innerCard.dataset.filepath;
+        if(selectedFilePath) window.open(selectedFilePath, '_blank');
+      });
+    });
+  }
+
+  // 🔹 Ouverture modal
+  tableau.addEventListener("dblclick", () => {
+    modal.style.display = "flex";
+    breadcrumbPath = ['Banque'];
+    openContent('banque');
+  });
+
+  document.querySelectorAll(".dossierManuelItem").forEach(item => {
+    item.addEventListener("dblclick", function() {
+      const dossierName = this.dataset.dossiername;
+      modal.style.display = "flex";
+      breadcrumbPath = ['Banque', dossierName];
+      openContent(dossierName);
+    });
+  });
+
+  // 🔹 Boutons fermeture modal
+  backToDashboard.addEventListener("click", function(e){
+    e.preventDefault();
+    resetModal();
+  });
+
+  document.getElementById('closeModal').addEventListener('click', resetModal);
+  modal.addEventListener("click", e => { if(e.target === modal) resetModal(); });
+
+  attachEvents();
+});
+</script>
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+<style>
+  /* Styles inchangés, je te les copie tel quel */
+  #importModalBanque {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5); 
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  #importModalBanque .modal-content {
+    background-color: #fff;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    padding: 30px 40px;
+    box-sizing: border-box;
+    animation: fadeInScale 0.3s ease forwards;
+  }
+
+  @keyframes fadeInScale {
+    0% {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .modal-header {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 25px;
+    text-align: center;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+  }
+
+  #importForm label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #34495e;
+    margin-top: 15px;
+  }
+
+  #importForm select,
+  #importForm input[type="date"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.8px solid #bdc3c7;
+    border-radius: 5px;
+    font-size: 1rem;
+    color: #2c3e50;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+  }
+
+  #importForm select:focus,
+  #importForm input[type="date"]:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+  }
+
+  /* Flex container for two inputs per row */
+  #importForm .form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+  }
+
+  /* Each input+label group */
+  #importForm .form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .buttons {
+    margin-top: 30px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+  }
+
+  .buttons button {
+    padding: 10px 25px;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  #cancelBtn {
+    background-color: #e74c3c;
+    color: white;
+  }
+
+  #cancelBtn:hover {
+    background-color: #c0392b;
+    box-shadow: 0 3px 8px rgba(192, 57, 43, 0.6);
+  }
+
+  .buttons button[type="submit"] {
+    background-color: #3498db;
+    color: white;
+  }
+
+  .buttons button[type="submit"]:hover {
+    background-color: #2980b9;
+    box-shadow: 0 3px 8px rgba(41, 128, 185, 0.6);
+  }
+
+  @media (max-height: 600px) {
+    #importModalBanque {
+      align-items: flex-start;
+      padding-top: 40px;
+      padding-bottom: 40px;
+    }
+  }
+</style>
+ 
+
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+<div id="importModalBanque" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">Importation</div>
+ <form id="importForm" action="{{ route('importerOperationCouranteBanque') }}" method="POST" enctype="multipart/form-data">
+  @csrf      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="importFile">Fichier à importer</label>
+          <input type="file" id="importFile" name="importFile" accept=".csv, .xls, .xlsx" required />
+        </div>
+        <div class="form-group">
+          <label for="date">Date (colonne)</label>
+          <select id="date" name="date" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tous les autres champs comme avant, en select -->
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="modePaiement">Mode de paiement (colonne)</label>
+          <select id="modePaiement" name="modePaiement" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="compte">Compte (colonne)</label>
+          <select id="compte" name="compte" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="libelle">Libellé (colonne)</label>
+          <select id="libelle" name="libelle" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="debit">Débit (colonne)</label>
+          <select id="debit" name="debit" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="credit">Crédit (colonne)</label>
+          <select id="credit" name="credit" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="nFactureLettre">N° Facture Lettré (colonne)</label>
+          <select id="nFactureLettre" name="nFactureLettre" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="tauxRasTva">Taux RAS TVA (%) (colonne)</label>
+          <select id="tauxRasTva" name="tauxRasTva" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="natureOperation">Nature de l'opération (colonne)</label>
+          <select id="natureOperation" name="natureOperation" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="dateLettrage">Date de lettrage (colonne)</label>
+          <select id="dateLettrage" name="dateLettrage" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="contrePartie">Contre partie (colonne)</label>
+          <select id="contrePartie" name="contrePartie" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button type="button" id="cancelBtn">Annuler</button>
+        <button type="submit">Importer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+<style>
+  /* Styles pour le modal Caisse */
+  #importModalCaisse {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5); 
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  #importModalCaisse .modal-content {
+    background-color: #fff;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    padding: 30px 40px;
+    box-sizing: border-box;
+    animation: fadeInScale 0.3s ease forwards;
+  }
+
+  @keyframes fadeInScale {
+    0% {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .modal-header {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 25px;
+    text-align: center;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+  }
+
+  #importFormCaisse label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #34495e;
+    margin-top: 15px;
+  }
+
+  #importFormCaisse select,
+  #importFormCaisse input[type="date"],
+  #importFormCaisse input[type="file"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.8px solid #bdc3c7;
+    border-radius: 5px;
+    font-size: 1rem;
+    color: #2c3e50;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+  }
+
+  #importFormCaisse select:focus,
+  #importFormCaisse input[type="date"]:focus,
+  #importFormCaisse input[type="file"]:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+  }
+
+  #importFormCaisse .form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+  }
+
+  #importFormCaisse .form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .buttons {
+    margin-top: 30px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+  }
+
+  .buttons button {
+    padding: 10px 25px;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  #cancelBtnCaisse {
+    background-color: #e74c3c;
+    color: white;
+  }
+
+  #cancelBtnCaisse:hover {
+    background-color: #c0392b;
+    box-shadow: 0 3px 8px rgba(192, 57, 43, 0.6);
+  }
+
+  .buttons button[type="submit"] {
+    background-color: #3498db;
+    color: white;
+  }
+
+  .buttons button[type="submit"]:hover {
+    background-color: #2980b9;
+    box-shadow: 0 3px 8px rgba(41, 128, 185, 0.6);
+  }
+
+  @media (max-height: 600px) {
+    #importModalCaisse {
+      align-items: flex-start;
+      padding-top: 40px;
+      padding-bottom: 40px;
+    }
+  }
+</style>
+
+
+
+
+
+<div id="importModalCaisse" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">Importation - Caisse</div>
+    <form id="importFormCaisse" action="importerOperationCouranteCaisse" method="POST" enctype="multipart/form-data">
+      @csrf      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="importFileCaisse">Fichier à importer</label>
+          <input type="file" id="importFileCaisse" name="importFileCaisse" accept=".csv, .xls, .xlsx" required />
+        </div>
+        <div class="form-group">
+          <label for="dateCaisse">Date (colonne)</label>
+          <select id="dateCaisse" name="dateCaisse" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tous les autres champs comme avant, en select -->
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="modePaiementCaisse">Mode de paiement (colonne)</label>
+          <select id="modePaiementCaisse" name="modePaiementCaisse" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="compteCaisse">Compte (colonne)</label>
+          <select id="compteCaisse" name="compteCaisse" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="libelleCaisse">Libellé (colonne)</label>
+          <select id="libelleCaisse" name="libelleCaisse" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="debitCaisse">Débit (colonne)</label>
+          <select id="debitCaisse" name="debitCaisse" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="creditCaisse">Crédit (colonne)</label>
+          <select id="creditCaisse" name="creditCaisse" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="nFactureLettreCaisse">N° Facture Lettré (colonne)</label>
+          <select id="nFactureLettreCaisse" name="nFactureLettreCaisse" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="tauxRasTvaCaisse">Taux RAS TVA (%) (colonne)</label>
+          <select id="tauxRasTvaCaisse" name="tauxRasTvaCaisse" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="natureOperationCaisse">Nature de l'opération (colonne)</label>
+          <select id="natureOperationCaisse" name="natureOperationCaisse" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="dateLettrageCaisse">Date de lettrage (colonne)</label>
+          <select id="dateLettrageCaisse" name="dateLettrageCaisse" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="contrePartieCaisse">Contre partie (colonne)</label>
+          <select id="contrePartieCaisse" name="contrePartieCaisse" disabled>
+            <option>Importez un fichier pour voir les colonnes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button type="button" id="cancelBtnCaisse">Annuler</button>
+        <button type="submit">Importer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+
+
+(function(){
+  const css = `
+
+
+    
+    .pj-cell .pj-input { width: 100%; font-size: 13px; }
+  
+    
+     
+    
+
+   `;
+  const style = document.createElement('style');
+  style.appendChild(document.createTextNode(css));
+  document.head.appendChild(style);
+})();
+
+ 
+ 
+ 
+
+
+
+</script>
+
+<!-- SheetJS pour preview Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<!-- Modal pour afficher le fichier (preview) -->
+<div id="viewFileModal" class="modal" style="display:none;">
+  <div class="modal-content" style="width:80%; max-width:900px; margin:5% auto; padding:20px; border-radius:8px; background:#fff; position:relative;">
+    <span class="close" style="position:absolute; top:10px; right:20px; font-size:24px; cursor:pointer;">&times;</span>
+    <div class="modal-body">
+      <!-- Le fichier chargé via AJAX sera injecté ici -->
+    </div>
+  </div>
+</div>
+<script src="{{ asset('js/Operation_Courante.js') }}"></script>
+
+
+
+<style>
+  /* Modal principal */
+  #banqueModal_main.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.45);
+    justify-content: center; align-items: center;
+    transition: background 0.3s;
+  }
+
+  /* Contenu du modal */
+  #banqueModal_main .banqueModal_content {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    max-width: 1000px;
+    width: 80%;
+    height: 80%;
+    margin: 5% auto;
+    padding: 20px;
+    font-size: 1em;
+    color: #34495e;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Hover sur boutons */
+  #banqueModal_main .banqueModal_file-btn:hover,
+  #banqueModal_main .banqueModal_file-btn.selected {
+    background: #e3f2fd;
+    color: #1976d2;
+  }
+
+  /* Responsive mobile */
+  @media (max-width: 600px) {
+    #banqueModal_main .banqueModal_content {
+      max-width: 98vw;
+      padding: 18px 6vw;
+    }
+  }
+
+  /* Breadcrumbs */
+  #banqueModal_breadcrumb span {
+    cursor: pointer;
+    color: #1976d2;
+  }
+  #banqueModal_breadcrumb span:hover {
+    text-decoration: underline;
+  }
+
+  .banqueModal_folder-btn {
+    padding: 0.5rem; 
+    background-color: #ffc107; 
+    border-radius: 17px;
+    color: #fff; 
+    border: none; 
+    width: 100%; 
+    height: 100%;
+    cursor: pointer;
+  }
+
+  .banqueModal_file-card img, .banqueModal_file-card canvas {
+    height: 200px;
+    object-fit: cover;
+  }
+
+  #banqueModal_fileList {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    padding-left: 0;
+    margin: 0;
+  }
+
+  .banqueModal_file-card {
+    display: none; /* masqué par défaut, affiché via JS */
+  }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div id="banqueModal_main" class="modal">
+  <div class="banqueModal_content">
+
+    <div style="margin-bottom:1rem;">
+      <a href="#" id="banqueModal_backDashboard"
+         style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;">
+         Tableau De Board
+      </a>
+      <span style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;">➢</span>
+    </div>
+
+    <div id="banqueModal_dashboard" style="display: flex; flex-wrap: wrap; gap: 20px;">
+      <div id="banqueModal_tableau" class="banqueModal_dashboard-item p-2 text-white"
+           style="background-color: #ffc107; border-radius: 15px; font-size: 0.75rem;
+                  height: 130px; cursor: pointer; width:30%; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+        <h4>Banque</h4>
+      </div>
+
+      <!-- Dossiers manuels -->
+      @if(isset($dossierManuel) && $dossierManuel->count() > 0)
+        @foreach($dossierManuel as $dossier)
+          <div class="banqueModal_dossierManuel text-white"
+               data-dossierid="{{ $dossier->id }}"
+               data-dossiername="{{ $dossier->name }}"
+               style="background-color: #17a2b8; border-radius: 15px;
+                      font-size: 0.75rem; height: 130px; width:30%;
+                      cursor: pointer; display:flex; align-items:center;
+                      justify-content:center; flex-direction:column;">
+            <h4>{{ $dossier->name }}</h4>
+          </div>
+        @endforeach
+      @else
+        <p>Aucun dossier manuel disponible.</p>
+      @endif
+    </div>
+
+    <div id="banqueModal_contentSection" style="display: none;">
+      <nav id="banqueModal_breadcrumb" style="margin-bottom: 1rem; font-size: 14px;"></nav>
+
+      <div id="banqueModal_filterZone" 
+           style="display: flex; justify-content: flex-end; align-items: center; margin-top: 2rem; gap: 10px;">
+        <label for="banqueModal_sortFiles" style="font-weight: bold;">Trier par :</label>
+        <select id="banqueModal_sortFiles" 
+                style="padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+          <option value="name">Nom</option>
+          <option value="date">Date</option>
+        </select>
+
+        <button id="banqueModal_sortToggle"
+                title="Changer l’ordre de tri"
+                style="display: flex; align-items: center; gap: 6px; 
+                       background: #f8f9fa; border: 1px solid #ccc; border-radius: 6px;
+                       cursor: pointer; font-size: 16px; color: #007bff; 
+                       padding: 6px 12px; font-weight: bold; transition: all 0.3s;">
+          <i class="fas fa-sort-amount-up"></i> 
+          <span id="banqueModal_sortLabel">A → Z</span>
+        </button>
+
+        <i class="fa-solid fa-magnifying-glass banqueModal_search-icon" id="banqueModal_searchIcon"></i>
+      </div>
+
+      <h3>Dossiers</h3>
+      <ul id="banqueModal_folderList" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding-left: 0; margin: 0;">
+        @foreach($folders_banque as $folder)
+          <li style="list-style-type: none;" data-typefolder="{{ $folder->type_folder }}">
+            <button class="banqueModal_folder-btn"
+                    data-folderid="{{ $folder->id }}"
+                    data-foldername="{{ $folder->name }}">
+              <i class="fas fa-folder"></i> {{ $folder->name }}
+            </button>
+          </li>
+        @endforeach
+      </ul>
+
+      <h3 style="margin-top: 2rem;">Fichiers</h3>
+      <div id="banqueModal_fileList" style="padding-left: 0; margin: 0;">
+        @foreach($files_banque as $file)
+          <div class="col banqueModal_file-card" data-type="{{ $file->type }}" style="padding-bottom:32px; display:none;">
+            <div class="banqueModal_card card shadow-sm" 
+                 style="width:13rem;height:250px;padding-bottom:16px;" 
+                 data-fileid="{{ $file->id }}" 
+                 data-filepath="{{ asset($file->path) }}">
+              <div class="card-body text-center d-flex flex-column justify-content-between" style="padding:0.5rem;">
+                @php $ext = strtolower(pathinfo($file->name, PATHINFO_EXTENSION)); @endphp
+                @if(in_array($ext, ['jpg','jpeg','png','gif']))
+                  <img src="{{ asset($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2">
+                @elseif($ext == 'pdf')
+                  <canvas class="img-fluid mb-2"></canvas>
+                @else
+                  <img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2">
+                @endif
+                <h5 class="card-title text-truncate" style="font-size:0.9rem;font-weight:bold;">{{ $file->name }}</h5>
+              </div>
+            </div>
+          </div>
+        @endforeach
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("banqueModal_main");
+  const tableau = document.getElementById("banqueModal_tableau");
+  const contentSection = document.getElementById("banqueModal_contentSection");
+  const dashboardSection = document.getElementById("banqueModal_dashboard");
+  const backToDashboard = document.getElementById("banqueModal_backDashboard");
+  const breadcrumb = document.getElementById("banqueModal_breadcrumb");
+
+  let breadcrumbPath = [];
+
+  function showDashboard() {
+    dashboardSection.style.display = "flex";
+    contentSection.style.display = "none";
+    breadcrumbPath = [];
+    breadcrumb.innerHTML = "";
+    document.querySelectorAll("#banqueModal_folderList li, #banqueModal_fileList .banqueModal_file-card").forEach(el => el.style.display = "block");
+    document.querySelectorAll("#banqueModal_fileList .no-file-msg").forEach(el => el.remove());
+  }
+
+  function updateBreadcrumb() {
+    breadcrumb.innerHTML = breadcrumbPath.map((name, index) => {
+      if(index < breadcrumbPath.length - 1){
+        return `<span class="banqueModal_breadcrumb-folder" data-index="${index}">${name}</span> ➢ `;
+      } else return `<span>${name}</span>`;
+    }).join('');
+    document.querySelectorAll(".banqueModal_breadcrumb-folder").forEach(el => {
+      el.addEventListener("click", function(){
+        const idx = parseInt(this.dataset.index);
+        breadcrumbPath = breadcrumbPath.slice(0, idx + 1);
+        openContent(breadcrumbPath[breadcrumbPath.length-1]);
+      });
+    });
+  }
+
+  function openContent(typeName) {
+    dashboardSection.style.display = "none";
+    contentSection.style.display = "block";
+    if(breadcrumbPath[breadcrumbPath.length-1] !== typeName) breadcrumbPath.push(typeName);
+    updateBreadcrumb();
+
+    document.querySelectorAll("#banqueModal_folderList li").forEach(li => {
+      li.style.display = li.dataset.typefolder === typeName ? 'block' : 'none';
+    });
+
+    const files = document.querySelectorAll("#banqueModal_fileList .banqueModal_file-card");
+    let hasFiles = false;
+    files.forEach(f => {
+      if(f.dataset.type === typeName){
+        f.style.display = "block";
+        hasFiles = true;
+      } else f.style.display = "none";
+    });
+
+    const fileList = document.getElementById("banqueModal_fileList");
+    fileList.querySelectorAll(".no-file-msg").forEach(el => el.remove());
+    if(!hasFiles){
+      const p = document.createElement("p");
+      p.textContent = "Aucun fichier disponible.";
+      p.classList.add("no-file-msg");
+      fileList.appendChild(p);
+    }
+  }
+
+  tableau.addEventListener("dblclick", () => {
+    modal.style.display = "flex";
+    breadcrumbPath = ['Banque'];
+    openContent('banque');
+  });
+
+  document.querySelectorAll(".banqueModal_dossierManuel").forEach(item => {
+    item.addEventListener("dblclick", function() {
+      const dossierName = this.dataset.dossiername;
+      modal.style.display = "flex";
+      breadcrumbPath = ['Banque', dossierName];
+      openContent(dossierName);
+    });
+  });
+
+  backToDashboard.addEventListener("click", function(e){
+    e.preventDefault();
+    showDashboard();
+  });
+
+  modal.addEventListener("click", e => { if(e.target === modal) modal.style.display = "none"; });
+
+  document.querySelectorAll('.banqueModal_file-card').forEach(cardWrapper => {
+    cardWrapper.addEventListener('dblclick', function () {
+      const innerCard = this.querySelector('.banqueModal_card');
+      const selectedFilePath = innerCard.dataset.filepath;
+      if(selectedFilePath) window.open(selectedFilePath, '_blank');
+    });
+  });
+
+  document.querySelectorAll(".banqueModal_folder-btn").forEach(btn => {
+    btn.addEventListener("dblclick", function() {
+      loadFolder(this.dataset.folderid, this.dataset.foldername);
+    });
+  });
+
+  function loadFolder(folderId, folderName) {
+    const fileList = document.getElementById("banqueModal_fileList");
+    const folderList = document.getElementById("banqueModal_folderList");
+    fileList.innerHTML = "<p>Chargement des fichiers...</p>";
+    folderList.innerHTML = "<p>Chargement des sous-dossiers...</p>";
+
+    fetch(`/operation-courante/select-folder?id=${folderId}`)
+      .then(response => response.json())
+      .then(data => {
+        breadcrumbPath.push(folderName);
+        updateBreadcrumb();
+
+        folderList.innerHTML = "";
+        if (data.folders_banque && data.folders_banque.length > 0) {
+          data.folders_banque.forEach(folder => {
+            const li = document.createElement("li");
+            li.style.listStyleType = "none";
+            li.innerHTML = `<button class="banqueModal_folder-btn" data-folderid="${folder.id}" data-foldername="${folder.name}">
+                              <i class="fas fa-folder"></i> ${folder.name}
+                            </button>`;
+            folderList.appendChild(li);
+            li.querySelector(".banqueModal_folder-btn").addEventListener("dblclick", () => {
+              loadFolder(folder.id, folder.name);
+            });
+          });
+        } else folderList.innerHTML = "<p>Aucun sous-dossier.</p>";
+
+        fileList.innerHTML = "";
+        if (data.files_banque && data.files_banque.length > 0) {
+          data.files_banque.forEach(file => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            let preview = "";
+            if (["jpg","jpeg","png","gif"].includes(ext)) preview = `<img src="/${file.path}" class="img-fluid mb-2">`;
+            else if (ext === "pdf") preview = `<canvas class="img-fluid mb-2"></canvas>`;
+            else preview = `<img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2">`;
+
+            const div = document.createElement("div");
+            div.className = "col banqueModal_file-card";
+            div.innerHTML = `<div class="banqueModal_card card shadow-sm" style="width:13rem;height:250px;" data-fileid="${file.id}" data-filepath="/${file.path}">
+                              <div class="card-body text-center d-flex flex-column justify-content-between" style="padding:0.5rem;">
+                                ${preview}
+                                <h5 class="card-title text-truncate" style="font-size:0.9rem;font-weight:bold;">${file.name}</h5>
+                              </div>
+                            </div>`;
+            fileList.appendChild(div);
+
+            div.querySelector(".banqueModal_card").addEventListener("dblclick", () => {
+              window.open(`/${file.path}`, "_blank");
+            });
+          });
+        } else fileList.innerHTML = "<p>Aucun fichier disponible.</p>";
+
+        document.getElementById("banqueModal_sortToggle").click();
+      })
+      .catch(err => console.error(err));
+  }
+});
+</script>
+
+ 
+ 
+
+
+<style>
+  /* Modal principal Achat */
+  #achatModal_main.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.45);
+    justify-content: center; align-items: center;
+    transition: background 0.3s;
+  }
+  #achatModal_main .achatModal_content {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    max-width: 1000px;
+    width: 80%;
+    height: 80%;
+    margin: 5% auto;
+    padding: 20px;
+    font-size: 1em;
+    color: #34495e;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  #achatModal_main .achatModal_folder-btn {
+    padding: 0.5rem;
+    background-color: #ffc107;
+    border-radius: 17px;
+    color: #fff;
+    border: none;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+  #achatModal_fileList { display: grid; grid-template-columns: repeat(4, 1fr); gap:1rem; padding-left:0; margin:0; }
+  .achatModal_file-card img, .achatModal_file-card canvas { height:200px; object-fit:cover; }
+  .achatModal_file-card { display:none; }
+</style>
+
+ 
+<!-- Modal Achat -->
+<div id="achatModal_main" class="modal">
+  <div class="achatModal_content">
+
+    <div style="margin-bottom:1rem;">
+      <a href="#" id="achatModal_backDashboard"
+         style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;">
+         Tableau De Board
+      </a>
+      <span style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;">➢</span>
+    </div>
+
+    <div id="achatModal_dashboard" style="display:flex; flex-wrap:wrap; gap:20px;">
+      <div id="achatModal_tableau" class="achatModal_dashboard-item p-2 text-white"
+           style="background-color:#ffc107;border-radius:15px;font-size:0.75rem;height:130px;cursor:pointer;width:30%;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+        <h4>Achat</h4>
+      </div>
+
+      @if(isset($dossierManuel) && $dossierManuel->count() > 0)
+        @foreach($dossierManuel as $dossier)
+          <div class="achatModal_dossierManuel text-white"
+               data-dossierid="{{ $dossier->id }}"
+               data-dossiername="{{ $dossier->name }}"
+               style="background-color:#17a2b8;border-radius:15px;font-size:0.75rem;height:130px;width:30%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+            <h4>{{ $dossier->name }}</h4>
+          </div>
+        @endforeach
+      @else
+        <p>Aucun dossier manuel disponible.</p>
+      @endif
+    </div>
+
+    <div id="achatModal_contentSection" style="display:none;">
+      <nav id="achatModal_breadcrumb" style="margin-bottom:1rem;font-size:14px;"></nav>
+
+      <div id="achatModal_filterZone" style="display:flex;justify-content:flex-end;align-items:center;margin-top:2rem;gap:10px;">
+        <label for="achatModal_sortFiles" style="font-weight:bold;">Trier par :</label>
+        <select id="achatModal_sortFiles" style="padding:5px;border-radius:5px;border:1px solid #ccc;">
+          <option value="name">Nom</option>
+          <option value="date">Date</option>
+        </select>
+        <button id="achatModal_sortToggle" title="Changer l’ordre de tri" style="display:flex;align-items:center;gap:6px;background:#f8f9fa;border:1px solid #ccc;border-radius:6px;cursor:pointer;font-size:16px;color:#007bff;padding:6px 12px;font-weight:bold;">
+          <i class="fas fa-sort-amount-up"></i><span id="achatModal_sortLabel">A → Z</span>
+        </button>
+        <i class="fa-solid fa-magnifying-glass achatModal_search-icon" id="achatModal_searchIcon"></i>
+      </div>
+
+      <h3>Dossiers</h3>
+      <ul id="achatModal_folderList" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;padding-left:0;margin:0;">
+        @foreach($folders_achat ?? collect() as $folder)
+          <li style="list-style-type:none;" data-typefolder="{{ $folder->type_folder }}">
+            <button class="achatModal_folder-btn" data-folderid="{{ $folder->id }}" data-foldername="{{ $folder->name }}">
+              <i class="fas fa-folder"></i> {{ $folder->name }}
+            </button>
+          </li>
+        @endforeach
+      </ul>
+
+      <h3 style="margin-top:2rem;">Fichiers</h3>
+      <div id="achatModal_fileList" style="padding-left:0;margin:0;">
+        @foreach($files_achat ?? collect() as $file)
+          <div class="col achatModal_file-card" data-type="{{ $file->type }}" style="padding-bottom:32px; display:none;">
+            <div class="achatModal_card card shadow-sm" style="width:13rem;height:250px;padding-bottom:16px;" data-fileid="{{ $file->id }}" data-filepath="{{ asset($file->path) }}">
+              <div class="card-body text-center d-flex flex-column justify-content-between" style="padding:0.5rem;">
+                @php $ext = strtolower(pathinfo($file->name, PATHINFO_EXTENSION)); @endphp
+                @if(in_array($ext, ['jpg','jpeg','png','gif']))
+                  <img src="{{ asset($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2">
+                @elseif($ext == 'pdf')
+                  <canvas class="img-fluid mb-2"></canvas>
+                @else
+                  <img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2">
+                @endif
+                <h5 class="card-title text-truncate" style="font-size:0.9rem;font-weight:bold;">{{ $file->name }}</h5>
+              </div>
+            </div>
+          </div>
+        @endforeach
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("achatModal_main");
+  const tableau = document.getElementById("achatModal_tableau");
+  const contentSection = document.getElementById("achatModal_contentSection");
+  const dashboardSection = document.getElementById("achatModal_dashboard");
+  const backToDashboard = document.getElementById("achatModal_backDashboard");
+  const breadcrumb = document.getElementById("achatModal_breadcrumb");
+  const sortSelect = document.getElementById("achatModal_sortFiles");
+  const sortToggle = document.getElementById("achatModal_sortToggle");
+  const sortLabel = document.getElementById("achatModal_sortLabel");
+
+  let breadcrumbPath = [];
+
+  function showDashboard() {
+    dashboardSection.style.display = "flex";
+    contentSection.style.display = "none";
+    breadcrumbPath = [];
+    breadcrumb.innerHTML = "";
+    document.querySelectorAll("#achatModal_folderList li, #achatModal_fileList .achatModal_file-card").forEach(el => el.style.display = "block");
+    document.querySelectorAll("#achatModal_fileList .no-file-msg").forEach(el => el.remove());
+  }
+
+  function updateBreadcrumb() {
+    breadcrumb.innerHTML = breadcrumbPath.map((name, index) => {
+      if(index < breadcrumbPath.length - 1){
+        return `<span class="achatModal_breadcrumb-folder" data-index="${index}">${name}</span> ➢ `;
+      } else return `<span>${name}</span>`;
+    }).join('');
+    document.querySelectorAll(".achatModal_breadcrumb-folder").forEach(el => {
+      el.addEventListener("click", function(){
+        const idx = parseInt(this.dataset.index);
+        breadcrumbPath = breadcrumbPath.slice(0, idx + 1);
+        openContent(breadcrumbPath[breadcrumbPath.length-1]);
+      });
+    });
+  }
+
+  function openContent(typeName) {
+    dashboardSection.style.display = "none";
+    contentSection.style.display = "block";
+    if(breadcrumbPath[breadcrumbPath.length-1] !== typeName) breadcrumbPath.push(typeName);
+    updateBreadcrumb();
+
+    document.querySelectorAll("#achatModal_folderList li").forEach(li => {
+      li.style.display = li.dataset.typefolder === typeName ? 'block' : 'none';
+    });
+
+    const files = document.querySelectorAll("#achatModal_fileList .achatModal_file-card");
+    let hasFiles = false;
+    files.forEach(f => {
+      if(f.dataset.type === typeName){
+        f.style.display = "block";
+        hasFiles = true;
+      } else f.style.display = "none";
+    });
+
+    const fileList = document.getElementById("achatModal_fileList");
+    fileList.querySelectorAll(".no-file-msg").forEach(el => el.remove());
+    if(!hasFiles){
+      const p = document.createElement("p");
+      p.textContent = "Aucun fichier disponible.";
+      p.classList.add("no-file-msg");
+      fileList.appendChild(p);
+    }
+
+    sortAchatFiles();
+  }
+
+  tableau.addEventListener("dblclick", () => {
+    modal.style.display = "flex";
+    breadcrumbPath = ['Achat'];
+    openContent('achat');
+  });
+
+  document.querySelectorAll(".achatModal_dossierManuel").forEach(item => {
+    item.addEventListener("dblclick", function() {
+      const dossierName = this.dataset.dossiername;
+      modal.style.display = "flex";
+      breadcrumbPath = ['Achat', dossierName];
+      openContent(dossierName);
+    });
+  });
+
+  backToDashboard.addEventListener("click", function(e){
+    e.preventDefault();
+    showDashboard();
+  });
+
+  modal.addEventListener("click", e => { if(e.target === modal) modal.style.display = "none"; });
+
+
+  
+
+  document.querySelectorAll(".achatModal_folder-btn").forEach(btn => {
+    btn.addEventListener("dblclick", function() {
+      loadFolderAchat(this.dataset.folderid, this.dataset.foldername);
+    });
+  });
+
+  function loadFolderAchat(folderId, folderName) {
+    const fileList = document.getElementById("achatModal_fileList");
+    const folderList = document.getElementById("achatModal_folderList");
+    fileList.innerHTML = "<p>Chargement des fichiers...</p>";
+    folderList.innerHTML = "<p>Chargement des sous-dossiers...</p>";
+
+    fetch(`/select-folder-achat?id=${folderId}`)
+      .then(response => response.json())
+      .then(data => {
+        breadcrumbPath.push(folderName);
+        updateBreadcrumb();
+
+        folderList.innerHTML = "";
+        if (data.folders_achat && data.folders_achat.length > 0) {
+          data.folders_achat.forEach(folder => {
+            const li = document.createElement("li");
+            li.style.listStyleType = "none";
+            li.setAttribute("data-typefolder", folder.type_folder || "achat");
+            li.innerHTML = `<button class="achatModal_folder-btn" data-folderid="${folder.id}" data-foldername="${folder.name}">
+                              <i class="fas fa-folder"></i> ${folder.name}
+                            </button>`;
+            folderList.appendChild(li);
+            li.querySelector(".achatModal_folder-btn").addEventListener("dblclick", () => {
+              loadFolderAchat(folder.id, folder.name);
+            });
+          });
+        } else folderList.innerHTML = "<p>Aucun sous-dossier.</p>";
+
+        fileList.innerHTML = "";
+        if (data.files_achat && data.files_achat.length > 0) {
+          data.files_achat.forEach(file => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            let preview = "";
+            if (["jpg","jpeg","png","gif"].includes(ext)) preview = `<img src="/${file.path}" class="img-fluid mb-2">`;
+            else if (ext === "pdf") preview = `<canvas class="img-fluid mb-2"></canvas>`;
+            else preview = `<img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2">`;
+
+            const div = document.createElement("div");
+            div.className = "col achatModal_file-card";
+            div.setAttribute("data-type", file.type || "achat");
+            div.style.paddingBottom = "32px";
+            div.style.display = "none";
+
+            div.innerHTML = `<div class="achatModal_card card shadow-sm" 
+                                style="width:13rem;height:250px;" 
+                                data-fileid="${file.id}" 
+                                data-filepath="/${file.path}">
+                                <div class="card-body text-center d-flex flex-column justify-content-between" style="padding:0.5rem;">
+                                  ${preview}
+                                  <h5 class="card-title text-truncate" style="font-size:0.9rem;font-weight:bold;">${file.name}</h5>
+                                </div>
+                              </div>`;
+            fileList.appendChild(div);
+
+            div.querySelector(".achatModal_card").addEventListener("dblclick", () => {
+              window.open(`/${file.path}`, "_blank");
+            });
+          });
+        } else fileList.innerHTML = "<p>Aucun fichier disponible.</p>";
+
+        sortAchatFiles();
+      })
+      .catch(err => console.error(err));
+  }
+
+  // -----------------------
+  // TRI DES FICHIERS
+  // -----------------------
+  function sortAchatFiles() {
+    const fileList = document.getElementById("achatModal_fileList");
+    const mode = sortSelect.value;
+    const descending = sortLabel.textContent.includes("Z");
+
+    const cards = Array.from(fileList.querySelectorAll(".achatModal_file-card"))
+                  .filter(card => card.style.display !== "none");
+
+    cards.sort((a, b) => {
+      const nameA = a.querySelector(".card-title").textContent.trim().toLowerCase();
+      const nameB = b.querySelector(".card-title").textContent.trim().toLowerCase();
+
+      if (mode === "name") {
+        if (nameA < nameB) return descending ? 1 : -1;
+        if (nameA > nameB) return descending ? -1 : 1;
+        return 0;
+      }
+
+      // Mode DATE : on utilise fileid comme timestamp pour exemple
+      const dateA = parseInt(a.querySelector(".achatModal_card").dataset.fileid);
+      const dateB = parseInt(b.querySelector(".achatModal_card").dataset.fileid);
+      return descending ? dateB - dateA : dateA - dateB;
+    });
+
+    cards.forEach(c => fileList.appendChild(c));
+  }
+
+  sortSelect.addEventListener("change", sortAchatFiles);
+  sortToggle.addEventListener("click", () => {
+    sortLabel.textContent = sortLabel.textContent.includes("A") ? "Z → A" : "A → Z";
+    sortAchatFiles();
+  });
+});
+</script>
 
  
 

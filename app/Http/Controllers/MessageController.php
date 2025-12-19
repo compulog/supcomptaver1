@@ -205,13 +205,20 @@ public function unreadMessages()
 {
     try {
         $societeId = session('societeId');
-        
+
         if (!$societeId) {
             return response()->json(['error' => 'Société non définie'], 400);
         }
-// dd(auth()->user()->id);
+
+        // Fonction pour filtrer les "non lus"
+        $unreadCondition = function($query) {
+            $query->where('is_read', 0)
+                  ->orWhereNull('is_read')
+                  ->orWhere('is_read', '');
+        };
+
         // 1. Récupérer les messages non lus avec les fichiers et utilisateurs
-        $messages = Message::where('is_read', 0)
+        $messages = Message::where($unreadCondition)
             ->where('societe_id', $societeId)
             ->where('user_id', '!=', auth()->user()->id)
             ->with('file', 'user')
@@ -227,84 +234,86 @@ public function unreadMessages()
         // 4. Injecter le dossier dans chaque fichier lié au message
         foreach ($messages as $message) {
             if ($message->file) {
-                if (isset($dossiersByName[$message->file->type])) {
-                    $message->file->dossier = $dossiersByName[$message->file->type];
-                } else {
-                    $message->file->dossier = null;
-                }
+                $message->file->dossier = $dossiersByName[$message->file->type] ?? null;
             }
         }
 
         // Récupération des dossiers, soldes, fichiers, folders
         $dossiers = Dossier::with('user')
-            ->where('is_read', 0)
+            ->where($unreadCondition)
             ->where('societe_id', $societeId)
             ->where('updated_by', '!=', auth()->user()->id)
             ->latest()
             ->get();
+
         $olddossiers = Dossier::with('user')
             ->onlyTrashed()
-            ->where('is_read', 0)
+            ->where($unreadCondition)
             ->where('societe_id', $societeId)
             ->where('updated_by', '!=', auth()->id())
             ->latest()
             ->get();
-            $renamedossiers = Dossier::with('user')
-    ->where('is_read', 0)
-    ->where('societe_id', $societeId)
-    ->whereColumn('created_at', '!=', 'updated_at') // Ajout de cette condition
-    ->where('updated_by', '!=', auth()->id())
-    ->latest()
-    ->get();
+
+        $renamedossiers = Dossier::with('user')
+            ->where($unreadCondition)
+            ->where('societe_id', $societeId)
+            ->whereColumn('created_at', '!=', 'updated_at')
+            ->where('updated_by', '!=', auth()->id())
+            ->latest()
+            ->get();
 
         $folders = Folder::with('updatedBy')
-            ->where('is_read', 0)
+            ->where($unreadCondition)
             ->where('societe_id', $societeId)
             ->where('updated_by', '!=', auth()->id())
             ->latest()
             ->get();
-$oldfolders = Folder::with('updatedBy')
-        ->onlyTrashed()
-            ->where('is_read', 0)
+
+        $oldfolders = Folder::with('updatedBy')
+            ->onlyTrashed()
+            ->where($unreadCondition)
             ->where('societe_id', $societeId)
             ->where('updated_by', '!=', auth()->id())
             ->latest()
             ->get();
-$renamefolders = Folder::with('updatedBy')
-    ->where('is_read', 0)
-    ->where('societe_id', $societeId)
-    ->whereColumn('created_at', '!=', 'updated_at') // → Comparaison des dates
-    ->where('updated_by', '!=', auth()->id())
-    ->latest()
-    ->get();
+
+        $renamefolders = Folder::with('updatedBy')
+            ->where($unreadCondition)
+            ->where('societe_id', $societeId)
+            ->whereColumn('created_at', '!=', 'updated_at')
+            ->where('updated_by', '!=', auth()->id())
+            ->latest()
+            ->get();
 
         $soldes = SoldeMensuel::with('updatedBy')
             ->where('societe_id', $societeId)
-            ->where('is_read', 0)
+            ->where($unreadCondition)
             ->where('cloturer', true)
             ->where('updated_by', '!=', auth()->id())
             ->latest()
             ->get();
 
         $files = File::with(['societe', 'folder', 'updatedBy'])
-            ->where('is_read', 0)
-            ->where('updated_by', '!=', auth()->id())
+            ->where($unreadCondition)
             ->where('societe_id', $societeId)
+            ->where('updated_by', '!=', auth()->id())
             ->get();
+
         $renamefiles = File::with(['societe', 'folder', 'updatedBy'])
-    ->where('is_read', 0)
-    ->where('societe_id', $societeId)
-    ->whereColumn('updated_at', '!=', 'created_at') 
-    ->where('updated_by', '!=', auth()->id())
-    ->get();
+            ->where($unreadCondition)
+            ->where('societe_id', $societeId)
+            ->whereColumn('updated_at', '!=', 'created_at')
+            ->where('updated_by', '!=', auth()->id())
+            ->get();
 
-    $oldfiles = File::with(['societe', 'folder', 'updatedBy'])
-    ->onlyTrashed()
-    ->where('is_read', 0)
-    ->where('societe_id', $societeId)
-    ->where('updated_by', '!=', auth()->id())
-    ->get();
+        $oldfiles = File::with(['societe', 'folder', 'updatedBy'])
+            ->onlyTrashed()
+            ->where($unreadCondition)
+            ->where('societe_id', $societeId)
+            ->where('updated_by', '!=', auth()->id())
+            ->get();
 
+        // Injecter les dossiers dans les fichiers
         $types = $files->pluck('type')->unique()->filter()->values();
         $dossiers1 = Dossier::whereIn('name', $types)->get()->keyBy('name');
 
@@ -331,6 +340,7 @@ $renamefolders = Folder::with('updatedBy')
         return response()->json(['error' => 'Erreur serveur'], 500);
     }
 }
+
 
 
 }

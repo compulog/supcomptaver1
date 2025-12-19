@@ -5,6 +5,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 use App\Models\Societe;
 use Illuminate\Http\Request;
+use App\Models\Folder;
 
 use App\Imports\SocietesImport;
 use App\Models\racine; // Assurez-vous que le modèle Racine est importé
@@ -224,6 +225,28 @@ return response()->json(['rubriques' => $rubriquesParCategorie]);
         'user_id' => $userId,
         'droit_dacces_id' => 4, // ID du droit d'accès que vous souhaitez attribuer
     ]);
+
+ $foldersToCreate = [
+    "Impôt sur les Sociétés (IS)",
+    "Taxe sur la Valeur Ajoutée (TVA)",
+    "Droits de Timbres",
+    "TP Déclaration des Eléments Imposables",
+    "Délais de Paiement"
+];
+
+ foreach ($foldersToCreate as $folderName) {
+    Folder::create([
+        'name' => $folderName,
+        'societe_id' => $societe->id,  
+        'folder_id' => null,  
+        'is_read' => 1,  
+        'exercice_debut' => null,
+        'exercice_fin' => null,
+        'updated_by' => auth()->id(),  
+        'type_folder' => 'Impot',  
+    ]);
+}
+
     // Rediriger avec un message de succès
     return redirect()->route('societes.index');
 }

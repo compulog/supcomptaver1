@@ -1,96 +1,229 @@
 console.log(soldesMensuels);
-function filterSoldeInitial(month, year, journalCode) {
-    console.log(month, year, journalCode);
-    // Convertir le mois et l'année en entiers
-    var monthInt = parseInt(month);
-    var yearInt = parseInt(year);
-console.log("montint" + monthInt);
-    // Récupérer le solde du mois sélectionné
-    var soldeMensuel = soldesMensuels.find(function(solde) {
-        var moisComparaison = parseInt(solde.mois).toString().padStart(2, '0');
-        var anneeComparaison = parseInt(solde.annee).toString();
-        return moisComparaison === month && anneeComparaison === year && solde.code_journal === journalCode;
-    });
 
-    let initialBalanceValue = 0; // Default value
-     if (monthInt === 1) {
-        // Si c'est janvier, utiliser le solde initial du mois de janvier
-        if (soldeMensuel) {
-            console.log("soldmenseil" + soldeMensuel)
-            initialBalanceValue = soldeMensuel.solde_initial;
-            document.getElementById('initial-balance').value = initialBalanceValue; // Utiliser le solde initial du mois de janvier
+let userResponse = null;
+var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+document.addEventListener('DOMContentLoaded', function() {
+    var selectedMonth = document.getElementById('month-select').value;
+    var selectedYear = document.getElementById('year-select').value;
+    var selectedJournalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
+    filterSoldeInitial(selectedMonth, selectedYear, selectedJournalCode); // Appeler la fonction avec le code journal
+// Mettre le focus sur le sélecteur de code journal au chargement de la page
+document.getElementById('journal-select').focus();
 
-            // Vérifiez si le solde de janvier est clôturé
-            if (soldeMensuel.cloturer === 1) {
-                document.getElementById('initial-balance').disabled = true; // Désactiver le champ
-                Swal.fire({
-                    title: 'Alerte',
-                    text: 'Le solde de janvier est déjà clôturé.',
-                    icon: 'warning',
-                    confirmButtonText: 'OK'
-                });
-            } else {
-                document.getElementById('initial-balance').disabled = false; // Activer le champ si ce n'est pas clôturé
+
+});
+$(document).ready(function() {
+        var currentMonth = $('#month-select').val();
+        var currentYear = $('#year-select').val();
+        updateTableData(currentMonth, currentYear);
+});
+var table = new Tabulator("#example-table", {
+
+    // ajaxURL: "/etat_de_caisse", // URL qui retourne les données JSON complètes
+    height: 500,
+    layout: "fitColumns",
+    columns: [
+        {title: "Jour", field: "day", editor: customNumberEditor1 , editorPlaceholder: "jj", width: 65, headerFilter: "input", headerFilterParams: {
+            elementAttributes: {
+                style: "width: 55px; height: 20px;"
             }
-        } else {
-            document.getElementById('initial-balance').value = 0; // Si aucun solde trouvé, mettre à 0
-            document.getElementById('initial-balance').disabled = false; // Activer le champ
         }
-    } else {
-        // Pour les autres mois, récupérer le solde final du mois précédent
-        var previousMonth = monthInt - 1;
-        var previousYear = yearInt;
+    },
 
-        // Si le mois précédent est décembre, ajuster l'année
-        if (previousMonth === 0) {
-            previousMonth = 12;
-            previousYear -= 1;
-        }
+        {title: "Libellé", field: "libelle",   editor: genericTextEditor , editorPlaceholder: "Entrez le libellé", width: 417, headerFilter: "input", headerFilterParams: {
+            elementAttributes: {
+                style: "width: 400px; height: 20px;"
+            }
+        }},
+        {title: "Recette", field: "recette", editor: customNumberEditor, editorPlaceholder: "Entrez la recette", width: 200, formatter: formatNumber, bottomCalc: "sum", headerFilter: "input", headerFilterParams: {
+            elementAttributes: {
+                style: "width: 180px; height: 20px;"
+            }
+        }},
+        {title: "Dépense", field: "depense", editor: customNumberEditor, editorPlaceholder: "Entrez la dépense", width: 200, formatter: formatNumber, bottomCalc: "sum", headerFilter: "input", headerFilterParams: {
+            elementAttributes: {
+                style: "width: 180px; height: 20px;"
+            }
+        }},
+         {title: "N° Piéce", field: "ref",  editor: genericTextEditor , editorPlaceholder: "Entrez le N° Piéce", width: 200, headerFilter: "input", headerFilterParams: {
+            elementAttributes: {
+                style: "width: 190px; height: 20px;"
+            }
+        }},
 
-        // Trouver le solde du mois précédent
-        var previousSoldeMensuel = soldesMensuels.find(function(solde) {
-            return parseInt(solde.mois) === previousMonth && parseInt(solde.annee) === previousYear && solde.code_journal === journalCode;
-        });
+  {
+    title: `Action  <input type="checkbox" id="selectAllCheckbox" title="Tout sélectionner" style="cursor:pointer;">     <span id="select-stats" class="text-muted">0</span>`,
+    field: "actions",
+    hozAlign: "center",
+    width: 120,
+    formatter: function(cell) {
+        const row = cell.getRow();
 
-        // Si le solde du mois précédent existe, mettre à jour le solde initial
-        if (previousSoldeMensuel) {
-            initialBalanceValue = previousSoldeMensuel.solde_final;
-            document.getElementById('initial-balance').value = initialBalanceValue; // Utiliser le solde final du mois précédent
-        } else {
-            document.getElementById('initial-balance').value = 0; // Si aucun solde trouvé, mettre à 0
-        }
-    }
+        const data = row.getData();
 
-    // Set background color based on initial balance value
-    if (parseFloat(initialBalanceValue) >= 0) {
-        document.getElementById('initial-balance').style.backgroundColor = '#52b438'; // Green
-    } else {
-        document.getElementById('initial-balance').style.backgroundColor = 'red'; // Red
-    }
+        const container = document.createElement("div");
+        container.style.display = "flex";
+        container.style.alignItems = "center";
+        container.style.justifyContent = "space-around";
 
-    // Vérifiez si le solde est clôturé
-    if (soldeMensuel) {
-        if (soldeMensuel.cloturer === 1) {
-            Swal.fire({
-                title: 'Alerte',
-                text: 'Le solde pour ce mois est déjà clôturé.',
-                icon: 'warning',
-                confirmButtonText: 'OK'
-            });
-            // Désactiver le bouton "Clôturer"
-            document.getElementById('cloturer-button').disabled = true;
-        } else {
-            // Réactiver le bouton "Clôturer" si le mois n'est pas clôturé
-            document.getElementById('cloturer-button').disabled = false;
-        }
-    } else {
-        // Réactiver le bouton "Clôturer" si aucun solde n'est trouvé
-        document.getElementById('cloturer-button').disabled = false;
-    }
+        // 📎 Upload
+        const uploadLabel = document.createElement("label");
+        uploadLabel.textContent = "📎";
+        uploadLabel.title = "Joindre un fichier";
+        uploadLabel.style.cursor = "pointer";
 
-    updateShareIconVisibility();
-    document.getElementById('initial-balance').readOnly = false;
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.style.display = "none";
+        fileInput.accept = "*/*";
+        uploadLabel.appendChild(fileInput);
+        container.appendChild(uploadLabel);
+fileInput.addEventListener("change", function () {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    // Stocker le fichier temporairement dans la ligne
+    row.update({ selectedFile: file, attachmentName: file.name });
+
+    uploadLabel.title = file.name;
+    // alert("📎 Fichier prêt à être envoyé avec la transaction.");
+        viewBtn.focus();
+
+});
+
+
+        // 👁️ Voir
+       const viewBtn = document.createElement("span");
+viewBtn.innerHTML = "👁️";
+viewBtn.title = data.attachmentName || "Pas de fichier";
+viewBtn.tabIndex = 0; // ← rendre focusable
+
+if (data.attachment_url) {
+    viewBtn.style.cursor = "pointer";
+    viewBtn.style.color = "initial";
+} else {
+    viewBtn.style.cursor = "not-allowed";
+    viewBtn.style.color = "grey";
 }
+
+viewBtn.addEventListener("click", function () {
+    viewAttachment(row);
+});
+
+container.appendChild(viewBtn);
+
+// ✅ Checkbox
+const checkbox = document.createElement("input");
+checkbox.type = "checkbox";
+checkbox.style.cursor = "pointer";
+checkbox.checked = row.isSelected();
+
+checkbox.addEventListener("change", () => {
+    if (checkbox.checked) {
+        row.select();
+    } else {
+        row.deselect();
+    }
+});
+
+// Ajout : déclencher saveRow(row) si Entrée sur la checkbox cochée
+checkbox.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && checkbox.checked) {
+        e.preventDefault();
+        saveRow(row);
+    }
+});
+
+container.appendChild(checkbox);
+        return container;
+    }
+    },
+    {
+        title: "Dernière modification",
+        field: "updated_at",
+        width: 170,
+        formatter: function(cell) {
+            const value = cell.getValue();
+            return value ? new Date(value).toLocaleString('fr-FR') : "";
+        }, headerFilter: "input", headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 55px; height: 20px;"
+                }
+            }
+    },
+
+    {
+        title: "Modifié par",
+        field: "updated_by_name",
+        width: 150,
+        formatter: function(cell) {
+            return cell.getValue() ? cell.getValue() : "";
+        }, headerFilter: "input", headerFilterParams: {
+                elementAttributes: {
+                    style: "width: 55px; height: 20px;"
+                }
+            }
+    },
+        ],
+
+        // 🔄 Recharge les données existantes avec attachment_url et attachmentName
+        data: [],
+        selectable: true,  // Permet la sélection de lignes
+        cellEdited: function(cell) {
+            updateTotals($('#month-select').val(),  $('#year-select').val());
+            saveData();
+        }
+
+});
+
+table.on("cellEditing", function(cell) {
+    const rowIndex = cell.getRow().getPosition(true); // index absolu
+    const field = cell.getField();
+    localStorage.setItem("tabulatorFocus", JSON.stringify({ rowIndex, field }));
+});
+table.on("rowSelectionChanged", function(data, rows) {
+    document.getElementById("select-stats").innerHTML = rows.length; // Afficher le nombre de lignes sélectionnées
+});
+table.on("cellEdited", function(cell) {
+    var field = cell.getField();
+    var newValue = cell.getValue();
+    var rowData = cell.getRow().getData();
+
+    // Vérifiez si le champ modifié est la référence
+    if (field === "ref") {
+        var referenceCheck = checkReferenceExists(newValue, rowData.id);
+        if (referenceCheck.exists) {
+            // Afficher une alerte avec SweetAlert2
+            var period = referenceCheck.month + '/' + referenceCheck.year; // Format de la période
+            Swal.fire({
+                title: `La Piéce N° "${newValue}" existe déjà dans la période ${period}`,
+                text: "Voulez-vous continuer ?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Oui',
+                cancelButtonText: 'Non'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Si l'utilisateur choisit "Oui", accepter la modification et conserver la nouvelle valeur
+                    userResponse = 'continue'; // Stocker la réponse
+                } else {
+                    // Si l'utilisateur choisit "Non", réinitialiser la valeur de la cellule
+                    cell.setValue(rowData.ref); // Réinitialiser à l'ancienne valeur
+                    userResponse = 'cancel'; // Stocker la réponse
+                    location.reload();
+                }
+            });
+        }
+    }
+
+    // Sélectionner la ligne en cours après modification
+    table.deselectRow(); // Désélectionner toutes les lignes
+    cell.getRow().select(); // Sélectionner la ligne en cours
+     updateTotals($('#month-select').val(),  $('#year-select').val());
+
+    // Appeler saveData() après que les totaux ont été mis à jour
+    saveData();
+});
 
 $('#initial-balance').on('input', function() {
     // Update background color when the input changes
@@ -103,8 +236,41 @@ $('#initial-balance').on('input', function() {
     updateTotals($('#month-select').val(),  $('#year-select').val());
     saveData();
 });
+ document.addEventListener("visibilitychange", function() {
+    if (!document.hidden) {
+        setTimeout(restoreTabulatorFocus, 100); // petit délai pour que Tabulator soit prêt
+    }
+});
 
-// Écoutez le changement de sélection du mois
+ window.addEventListener("focus", function() {
+    setTimeout(restoreTabulatorFocus, 100);
+});
+
+$(document).on('keydown', function(e) {
+    if (e.key === "Enter") {
+        const selectedRows = table.getSelectedRows();
+        if (selectedRows.length > 0) {
+            selectedRows.forEach(function(row) {
+                const checkbox = row.getCell("actions").getElement().querySelector("input[type='checkbox']");
+                if (checkbox && checkbox.checked) {
+                    // Vérifiez si la ligne existe déjà dans les données du tableau
+                    const existingRow = table.getData().find(function(data) {
+                        return data.id === row.getData().id;
+                    });
+                    if (!existingRow) {
+                        saveRow(row);
+                    } else {
+                        console.log("La ligne existe déjà dans le tableau.");
+                    }
+                } else {
+                    console.log("La case à cocher n'est pas cochée pour la ligne :", row.getData());
+                }
+            });
+        } else {
+            console.log("Aucune ligne sélectionnée !");
+        }
+    }
+});
 
 document.getElementById('month-select').addEventListener('change', function() {
     var selectedMonth = parseInt(this.value, 10);
@@ -125,69 +291,69 @@ console.log(selectedMonth, selectedYear, selectedJournalCode);
     // Vérifier si le mois précédent est clôturé
     var prevClosed = isMonthClosed(prevMonthStr, prevYearStr, selectedJournalCode);
 
-    if (!prevClosed && selectedMonth !== 1) {
-        Swal.fire({
-            title: 'Attention',
-            text: 'Veuillez clôturer le mois précédent avant de continuer.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Clôturer',
-            cancelButtonText: 'Annuler'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Clôturer le mois précédent automatiquement
-                $.ajax({
-                    url: '/cloturer-solde',
-                    type: 'POST',
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        mois: prevMonthStr,
-                        annee: prevYearStr,
-                        journal_code: selectedJournalCode
-                    },
-                    success: function(response) {
-                        Swal.fire('Succès', 'Le mois précédent a été clôturé.', 'success');
-                        // Mettre à jour l'état local
-                        var soldeMensuel = soldesMensuels.find(function(solde) {
-                            return parseInt(solde.mois) === parseInt(prevMonthStr) &&
-                                   parseInt(solde.annee) === parseInt(prevYearStr) &&
-                                   solde.code_journal === selectedJournalCode;
-                        });
-                        if (soldeMensuel) {
-                            soldeMensuel.cloturer = 1;
-                        }
-                        // Relancer la sélection du mois courant pour rafraîchir l'affichage
-                        filterSoldeInitial(selectedMonth.toString().padStart(2, '0'), selectedYear, selectedJournalCode);
-                        if (selectedMonth !== 1) {
-                            document.getElementById('initial-balance').disabled = true;
-                        } else {
-                            document.getElementById('initial-balance').disabled = false;
-                        }
-                        // Désactiver le bouton "Clôturer" si le mois courant est clôturé
-                        if (isMonthClosed(selectedMonth.toString().padStart(2, '0'), selectedYear.toString(), selectedJournalCode)) {
-                            document.getElementById('cloturer-button').disabled = true;
-                        } else {
-                            document.getElementById('cloturer-button').disabled = false;
-                        }
-                        updateTotals($('#month-select').val(),  $('#year-select').val());
-                        saveData();
-                        updateTableData(selectedMonth.toString().padStart(2, '0'), selectedYear);
-                    },
-                    error: function(xhr, status, error) {
-                        Swal.fire('Erreur', 'Erreur lors de la clôture du mois précédent.', 'error');
-                    }
-                });
-            } else {
-                // Annuler la sélection du mois
-                // Optionnel : remettre l'ancien mois sélectionné si tu le stockes dans une variable
-                // Par exemple : document.getElementById('month-select').value = previousSelectedMonth;
-            }
-        });
-        return;
-    }else{ 
-    // Si tout va bien, continuer normalement
-    filterSoldeInitial(this.value, selectedYear, selectedJournalCode);
-    }
+    // if (!prevClosed && selectedMonth !== 1) {
+    //     Swal.fire({
+    //         title: 'Attention',
+    //         text: 'Veuillez clôturer le mois précédent avant de continuer.',
+    //         icon: 'warning',
+    //         showCancelButton: true,
+    //         confirmButtonText: 'Clôturer',
+    //         cancelButtonText: 'Annuler'
+    //     }).then((result) => {
+    //         if (result.isConfirmed) {
+    //             // Clôturer le mois précédent automatiquement
+    //             $.ajax({
+    //                 url: '/cloturer-solde',
+    //                 type: 'POST',
+    //                 data: {
+    //                     _token: $('meta[name="csrf-token"]').attr('content'),
+    //                     mois: prevMonthStr,
+    //                     annee: prevYearStr,
+    //                     journal_code: selectedJournalCode
+    //                 },
+    //                 success: function(response) {
+    //                     Swal.fire('Succès', 'Le mois précédent a été clôturé.', 'success');
+    //                     // Mettre à jour l'état local
+    //                     var soldeMensuel = soldesMensuels.find(function(solde) {
+    //                         return parseInt(solde.mois) === parseInt(prevMonthStr) &&
+    //                                parseInt(solde.annee) === parseInt(prevYearStr) &&
+    //                                solde.code_journal === selectedJournalCode;
+    //                     });
+    //                     if (soldeMensuel) {
+    //                         soldeMensuel.cloturer = 1;
+    //                     }
+    //                     // Relancer la sélection du mois courant pour rafraîchir l'affichage
+    //                     filterSoldeInitial(selectedMonth.toString().padStart(2, '0'), selectedYear, selectedJournalCode);
+    //                     if (selectedMonth !== 1) {
+    //                         document.getElementById('initial-balance').disabled = true;
+    //                     } else {
+    //                         document.getElementById('initial-balance').disabled = false;
+    //                     }
+    //                     // Désactiver le bouton "Clôturer" si le mois courant est clôturé
+    //                     if (isMonthClosed(selectedMonth.toString().padStart(2, '0'), selectedYear.toString(), selectedJournalCode)) {
+    //                         document.getElementById('cloturer-button').disabled = true;
+    //                     } else {
+    //                         document.getElementById('cloturer-button').disabled = false;
+    //                     }
+    //                     updateTotals($('#month-select').val(),  $('#year-select').val());
+    //                     saveData();
+    //                     updateTableData(selectedMonth.toString().padStart(2, '0'), selectedYear);
+    //                 },
+    //                 error: function(xhr, status, error) {
+    //                     Swal.fire('Erreur', 'Erreur lors de la clôture du mois précédent.', 'error');
+    //                 }
+    //             });
+    //         } else {
+    //             // Annuler la sélection du mois
+    //             // Optionnel : remettre l'ancien mois sélectionné si tu le stockes dans une variable
+    //             // Par exemple : document.getElementById('month-select').value = previousSelectedMonth;
+    //         }
+    //     });
+    //     return;
+    // }else{ 
+    // // Si tout va bien, continuer normalement
+    // filterSoldeInitial(this.value, selectedYear, selectedJournalCode);
+    // }
     // Désactiver le bouton "Clôturer" si le mois courant est clôturé
     if (isMonthClosed(this.value, selectedYear.toString(), selectedJournalCode)) {
         document.getElementById('cloturer-button').disabled = true;
@@ -288,10 +454,65 @@ const title = `Êtes-vous sûr de vouloir clôturer la période ${moisNoms[mois 
 
 document.getElementById('export-excel-icon').addEventListener('click', exportToExcel);
 
+document.getElementById('cloturer-button').addEventListener('click', function() {
+
+     updateShareIconVisibility();
+});
+
+
+document.getElementById('journal-select').addEventListener('keydown', function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault(); // Empêche le comportement par défaut
+        document.getElementById('month-select').focus(); // Focaliser le champ "Période"
+    }
+});
+
+document.getElementById('month-select').addEventListener('keydown', function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault(); // Empêche le comportement par défaut
+        var selectedMonth = this.value; // Récupérer le mois sélectionné
+        if (selectedMonth !== "01") {
+            // Si le mois n'est pas janvier, passer directement au tableau
+            const firstRow = table.getRows()[0];
+            if (firstRow) {
+                const firstCell = firstRow.getCells()[0];
+                firstCell.edit(); // Éditer la première cellule
+            }
+        } else {
+            // Si c'est janvier, focaliser le champ "Solde initial"
+            document.getElementById('initial-balance').focus(); // Focaliser le champ "Solde initial"
+        }
+    }
+});
+
+
+document.getElementById('initial-balance').addEventListener('keydown', function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault(); // Empêche le comportement par défaut
+        // Focaliser la première cellule du tableau
+        const firstRow = table.getRows()[0];
+        if (firstRow) {
+            const firstCell = firstRow.getCells()[0];
+            firstCell.edit(); // Éditer la première cellule
+        }
+    }
+});
+
+$('#initial-balance').on('input', function() {
+        updateTotals($('#month-select').val(),  $('#year-select').val());
+        saveData();
+});
 
 
 
-    function filterTransactions(month, year, journalCode) {
+$('#month-select, #year-select').on('change', function() {
+        var currentMonth = $('#month-select').val();
+        var currentYear =   $('#year-select').val();
+        updateTableData(currentMonth, currentYear);
+
+});
+
+function filterTransactions(month, year, journalCode) {
     return transactions.filter(function(transaction) {
         var transactionDate = new Date(transaction.date);
         return transactionDate.getMonth() + 1 === parseInt(month) &&
@@ -299,12 +520,102 @@ document.getElementById('export-excel-icon').addEventListener('click', exportToE
                transaction.code_journal === journalCode; // Filtrer par code journal
     });
 }
+function filterSoldeInitial(month, year, journalCode) {
+    console.log(month, year, journalCode);
+    // Convertir le mois et l'année en entiers
+    var monthInt = parseInt(month);
+    var yearInt = parseInt(year);
+console.log("montint" + monthInt);
+    // Récupérer le solde du mois sélectionné
+    var soldeMensuel = soldesMensuels.find(function(solde) {
+        var moisComparaison = parseInt(solde.mois).toString().padStart(2, '0');
+        var anneeComparaison = parseInt(solde.annee).toString();
+        return moisComparaison === month && anneeComparaison === year && solde.code_journal === journalCode;
+    });
 
-// Fonction de mise à jour du tableau avec condition de clôture du mois
+    let initialBalanceValue = 0; // Default value
+     if (monthInt === 1) {
+        // Si c'est janvier, utiliser le solde initial du mois de janvier
+        if (soldeMensuel) {
+            console.log("soldmenseil" + soldeMensuel)
+            initialBalanceValue = soldeMensuel.solde_initial;
+            document.getElementById('initial-balance').value = initialBalanceValue; // Utiliser le solde initial du mois de janvier
+
+            // Vérifiez si le solde de janvier est clôturé
+            if (soldeMensuel.cloturer === 1) {
+                document.getElementById('initial-balance').disabled = true; // Désactiver le champ
+                Swal.fire({
+                    title: 'Alerte',
+                    text: 'Le solde de janvier est déjà clôturé.',
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                });
+            } else {
+                document.getElementById('initial-balance').disabled = false; // Activer le champ si ce n'est pas clôturé
+            }
+        } else {
+            document.getElementById('initial-balance').value = 0; // Si aucun solde trouvé, mettre à 0
+            document.getElementById('initial-balance').disabled = false; // Activer le champ
+        }
+    } else {
+        // Pour les autres mois, récupérer le solde final du mois précédent
+        var previousMonth = monthInt - 1;
+        var previousYear = yearInt;
+
+        // Si le mois précédent est décembre, ajuster l'année
+        if (previousMonth === 0) {
+            previousMonth = 12;
+            previousYear -= 1;
+        }
+
+        // Trouver le solde du mois précédent
+        var previousSoldeMensuel = soldesMensuels.find(function(solde) {
+            return parseInt(solde.mois) === previousMonth && parseInt(solde.annee) === previousYear && solde.code_journal === journalCode;
+        });
+
+        // Si le solde du mois précédent existe, mettre à jour le solde initial
+        if (previousSoldeMensuel) {
+            initialBalanceValue = previousSoldeMensuel.solde_final;
+            document.getElementById('initial-balance').value = initialBalanceValue; // Utiliser le solde final du mois précédent
+        } else {
+            document.getElementById('initial-balance').value = 0; // Si aucun solde trouvé, mettre à 0
+        }
+    }
+
+    // Set background color based on initial balance value
+    if (parseFloat(initialBalanceValue) >= 0) {
+        document.getElementById('initial-balance').style.backgroundColor = '#52b438'; // Green
+    } else {
+        document.getElementById('initial-balance').style.backgroundColor = 'red'; // Red
+    }
+
+    // Vérifiez si le solde est clôturé
+    if (soldeMensuel) {
+        if (soldeMensuel.cloturer === 1) {
+            Swal.fire({
+                title: 'Alerte',
+                text: 'Le solde pour ce mois est déjà clôturé.',
+                icon: 'warning',
+                confirmButtonText: 'OK'
+            });
+            // Désactiver le bouton "Clôturer"
+            document.getElementById('cloturer-button').disabled = true;
+        } else {
+            // Réactiver le bouton "Clôturer" si le mois n'est pas clôturé
+            document.getElementById('cloturer-button').disabled = false;
+        }
+    } else {
+        // Réactiver le bouton "Clôturer" si aucun solde n'est trouvé
+        document.getElementById('cloturer-button').disabled = false;
+    }
+
+    updateShareIconVisibility();
+    document.getElementById('initial-balance').readOnly = false;
+}
 function updateTableData(month, year) {
     var journalCode = document.getElementById('journal-select').value;
     var filteredTransactions = filterTransactions(month, year, journalCode);
-
+  updateTotals(month, year);
     var tableData = filteredTransactions.map(function(transaction) {
         return {
             id: transaction.id,
@@ -336,52 +647,8 @@ function updateTableData(month, year) {
 
     table.setData(tableData); // recharge les données sans remplacer l'objet table
 
-    updateTotals(month, year);
+  
 }
-
-// function updateTableData(month, year) {
-//     var journalCode = document.getElementById('journal-select').value;
-//     var filteredTransactions = filterTransactions(month, year, journalCode);
-
-//     var tableData = filteredTransactions.map(function(transaction) {
-//         return {
-//             id: transaction.id,
-//             day: new Date(transaction.date).getDate(),
-//             ref: transaction.reference,
-//             libelle: transaction.libelle,
-//             recette: transaction.recette,
-//             depense: transaction.depense,
-//             attachment_url: transaction.attachment_url,
-//             attachmentName: transaction.attachmentName,
-//                     updated_at: transaction.updated_at,
-//                             updated_by_name: transaction.updated_by // <-- Ajoute cette ligne
-
-
-//         };
-//     });
-
-//     table.setData(tableData); // recharge les données sans remplacer l'objet table
-
-//     // Ajoute une ligne vide si le mois n'est pas clôturé
-//     if (!isMonthClosed(month, year, journalCode)) {
-//         table.addRow({
-//             day: "",
-//             libelle: "",
-//             recette: "",
-//             depense: "",
-//             ref: "",
-//             attachment_url: "",
-//             attachmentName: "",
-//             updated_by:""
-//         });
-//     }
-
-//     updateTotals(month, year);
-// }
-
-
-
-
 document.getElementById('journal-select').addEventListener('change', function() {
     var selectedMonth = document.getElementById('month-select').value;
     var selectedYear = document.getElementById('year-select').value;
@@ -391,16 +658,7 @@ document.getElementById('journal-select').addEventListener('change', function() 
     updateTotals($('#month-select').val(),  $('#year-select').val());
     saveData();
 });
-document.addEventListener('DOMContentLoaded', function() {
-    var selectedMonth = document.getElementById('month-select').value;
-    var selectedYear = document.getElementById('year-select').value;
-    var selectedJournalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
-    filterSoldeInitial(selectedMonth, selectedYear, selectedJournalCode); // Appeler la fonction avec le code journal
-// Mettre le focus sur le sélecteur de code journal au chargement de la page
-document.getElementById('journal-select').focus();
 
-
-});
 function saveRow(row) {
     const rowData = row.getData();
     const selectedMonth = $('#month-select').val();
@@ -482,6 +740,7 @@ function saveRow(row) {
             };
 
             table.addData([emptyRow], true);
+updateTotals(selectedMonth, selectedYear);
 
             saveData();
 
@@ -502,12 +761,6 @@ function saveRow(row) {
     });
 }
 
-
-
-
-
-
-// Fonction pour mettre à jour les soldes après l'ajout d'une transaction
 function updateBalancesAfterTransaction(month, year, recette, depense) {
     // Récupérer le solde initial actuel
     const initialBalance = parseFloat($('#initial-balance').val()) || 0;
@@ -530,189 +783,7 @@ function updateBalancesAfterTransaction(month, year, recette, depense) {
     // Enregistrer les nouveaux soldes
     saveData();
 }
-// Fonction pour vérifier si un mois est clôturé
-// Événement global pour intercepter "Entrée"
-$(document).on('keydown', function(e) {
-    if (e.key === "Enter") {
-        const selectedRows = table.getSelectedRows();
-        if (selectedRows.length > 0) {
-            selectedRows.forEach(function(row) {
-                const checkbox = row.getCell("actions").getElement().querySelector("input[type='checkbox']");
-                if (checkbox && checkbox.checked) {
-                    saveRow(row);
-                    
-                } else {
-                    console.log("La case à cocher n'est pas cochée pour la ligne :", row.getData());
-                }
-            });
-        } else {
-            console.log("Aucune ligne sélectionnée !");
-        }
-    }
-});
 
-var table = new Tabulator("#example-table", {
-
-    // ajaxURL: "/etat_de_caisse", // URL qui retourne les données JSON complètes
-    height: 500,
-    layout: "fitColumns",
-    columns: [
-        {title: "Jour", field: "day", editor: customNumberEditor1 , editorPlaceholder: "jj", width: 65, headerFilter: "input", headerFilterParams: {
-            elementAttributes: {
-                style: "width: 55px; height: 20px;"
-            }
-        }
-    },
-
-        {title: "Libellé", field: "libelle",   editor: genericTextEditor , editorPlaceholder: "Entrez le libellé", width: 417, headerFilter: "input", headerFilterParams: {
-            elementAttributes: {
-                style: "width: 400px; height: 20px;"
-            }
-        }},
-        {title: "Recette", field: "recette", editor: customNumberEditor, editorPlaceholder: "Entrez la recette", width: 200, formatter: formatNumber, bottomCalc: "sum", headerFilter: "input", headerFilterParams: {
-            elementAttributes: {
-                style: "width: 180px; height: 20px;"
-            }
-        }},
-        {title: "Dépense", field: "depense", editor: customNumberEditor, editorPlaceholder: "Entrez la dépense", width: 200, formatter: formatNumber, bottomCalc: "sum", headerFilter: "input", headerFilterParams: {
-            elementAttributes: {
-                style: "width: 180px; height: 20px;"
-            }
-        }},
-         {title: "N° Piéce", field: "ref",  editor: genericTextEditor , editorPlaceholder: "Entrez le N° Piéce", width: 200, headerFilter: "input", headerFilterParams: {
-            elementAttributes: {
-                style: "width: 190px; height: 20px;"
-            }
-        }},
-
-  {
-    title: `Action  <input type="checkbox" id="selectAllCheckbox" title="Tout sélectionner" style="cursor:pointer;">     <span id="select-stats" class="text-muted">0</span>`,
-    field: "actions",
-    hozAlign: "center",
-    width: 120,
-    formatter: function(cell) {
-        const row = cell.getRow();
-
-        const data = row.getData();
-
-        const container = document.createElement("div");
-        container.style.display = "flex";
-        container.style.alignItems = "center";
-        container.style.justifyContent = "space-around";
-
-        // 📎 Upload
-        const uploadLabel = document.createElement("label");
-        uploadLabel.textContent = "📎";
-        uploadLabel.title = "Joindre un fichier";
-        uploadLabel.style.cursor = "pointer";
-
-        const fileInput = document.createElement("input");
-        fileInput.type = "file";
-        fileInput.style.display = "none";
-        fileInput.accept = "*/*";
-        uploadLabel.appendChild(fileInput);
-        container.appendChild(uploadLabel);
-fileInput.addEventListener("change", function () {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    // Stocker le fichier temporairement dans la ligne
-    row.update({ selectedFile: file, attachmentName: file.name });
-
-    uploadLabel.title = file.name;
-    // alert("📎 Fichier prêt à être envoyé avec la transaction.");
-        viewBtn.focus();
-
-});
-
-
-        // 👁️ Voir
-       const viewBtn = document.createElement("span");
-viewBtn.innerHTML = "👁️";
-viewBtn.title = data.attachmentName || "Pas de fichier";
-viewBtn.tabIndex = 0; // ← rendre focusable
-
-if (data.attachment_url) {
-    viewBtn.style.cursor = "pointer";
-    viewBtn.style.color = "initial";
-} else {
-    viewBtn.style.cursor = "not-allowed";
-    viewBtn.style.color = "grey";
-}
-
-viewBtn.addEventListener("click", function () {
-    viewAttachment(row);
-});
-
-container.appendChild(viewBtn);
-
-        // ✅ Checkbox
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.style.cursor = "pointer";
-        checkbox.checked = row.isSelected();
-
-        checkbox.addEventListener("change", () => {
-            if (checkbox.checked) {
-                row.select();
-            } else {
-                row.deselect();
-            }
-        });
-
-        container.appendChild(checkbox);
-
-        return container;
-    }
-    },
-    {
-        title: "Dernière modification",
-        field: "updated_at",
-        width: 170,
-        formatter: function(cell) {
-            const value = cell.getValue();
-            return value ? new Date(value).toLocaleString('fr-FR') : "";
-        }, headerFilter: "input", headerFilterParams: {
-                elementAttributes: {
-                    style: "width: 55px; height: 20px;"
-                }
-            }
-    },
-
-    {
-        title: "Modifié par",
-        field: "updated_by_name",
-        width: 150,
-        formatter: function(cell) {
-            return cell.getValue() ? cell.getValue() : "";
-        }, headerFilter: "input", headerFilterParams: {
-                elementAttributes: {
-                    style: "width: 55px; height: 20px;"
-                }
-            }
-    },
-        ],
-
-        // 🔄 Recharge les données existantes avec attachment_url et attachmentName
-        data: [],
-        selectable: true,  // Permet la sélection de lignes
-        cellEdited: function(cell) {
-            updateTotals($('#month-select').val(),  $('#year-select').val());
-            saveData();
-        }
-
-});
-
- // ...existing code...
-
-// 1. Sauvegarder la cellule éditée à chaque édition
-table.on("cellEditing", function(cell) {
-    const rowIndex = cell.getRow().getPosition(true); // index absolu
-    const field = cell.getField();
-    localStorage.setItem("tabulatorFocus", JSON.stringify({ rowIndex, field }));
-});
-
-// 2. Restaurer le focus sur la cellule sauvegardée
 function restoreTabulatorFocus() {
     const focusData = localStorage.getItem("tabulatorFocus");
     if (focusData) {
@@ -725,23 +796,6 @@ function restoreTabulatorFocus() {
     }
 }
 
-// 3. Quand la page redevient visible, restaurer le focus
-document.addEventListener("visibilitychange", function() {
-    if (!document.hidden) {
-        setTimeout(restoreTabulatorFocus, 100); // petit délai pour que Tabulator soit prêt
-    }
-});
-
-// 4. Aussi au chargement initial
-window.addEventListener("focus", function() {
-    setTimeout(restoreTabulatorFocus, 100);
-});
-
-// ...existing code...
-
-table.on("rowSelectionChanged", function(data, rows) {
-    document.getElementById("select-stats").innerHTML = rows.length; // Afficher le nombre de lignes sélectionnées
-});
 function focusNextEditableCell(currentCell) {
     const row = currentCell.getRow();
     const cells = row.getCells();
@@ -770,126 +824,6 @@ function focusNextEditableCell(currentCell) {
         }
     }
 }
-// function genericTextEditor(cell, onRendered, success, cancel, editorParams) {
-//     const input = document.createElement("input");
-//     input.type = "text";
-//     input.style.width = "100%";
-//     input.style.height = "100%";
-//     input.value = cell.getValue() || "";
-
-//     onRendered(() => {
-//         input.focus();
-//     });
-
-//     input.addEventListener("blur", () => {
-//         success(input.value);
-//     });
-
-//     input.addEventListener("keydown", (e) => {
-//         if (e.key === "Enter") {
-//             e.preventDefault();
-//             success(input.value);
-
-//             // Si on est dans le champ N° Piéce (ref), enregistrer la ligne
-//             if (cell.getField() === "ref") {
-//                 // Sélectionner la ligne courante
-//                 table.deselectRow();
-//                 cell.getRow().select();
-
-//                 // Déclencher l'enregistrement comme dans l'événement global
-//                 var rowData = cell.getRow().getData();
-//                 var selectedMonth = $('#month-select').val();
-//                 var selectedYear = $('#year-select').val();
-//                 var formattedDate = selectedYear + '-' + selectedMonth + '-' + (rowData.day ? rowData.day.toString().padStart(2, '0') : '01');
-//                 var journalCode = document.getElementById('journal-select').value;
-//                 var userResponseToSend = userResponse ? userResponse : 0;
-
-//                 // Vérification des valeurs vides
-//                 if (!rowData.day) {
-//                     $('#error-message').text("Le jour ne peut pas être vide.");
-//                     return;
-//                 }
-//                 if (!rowData.depense && !rowData.recette) {
-//                     $('#error-message').text("Vous devez entrer soit une dépense soit une recette.");
-//                     return;
-//                 }
-//                 if (isMonthClosed(selectedMonth, selectedYear, journalCode)) {
-//                     $('#error-message').text("Le mois est déjà clôturé. Vous ne pouvez pas modifier des transactions.");
-//                     return;
-//                 }
-
-//                 // $.ajax({
-//                 //     url: '/save-transaction',
-//                 //     type: "POST",
-//                 //     data: {
-//                 //         _token: $('meta[name="csrf-token"]').attr('content'),
-//                 //         date: formattedDate,
-//                 //         libelle: rowData.libelle,
-//                 //         recette: rowData.recette,
-//                 //         depense: rowData.depense,
-//                 //         ref: rowData.ref,
-//                 //         attachment_url: rowData.attachment_url,
-//                 //         attachmentName: rowData.attachmentName,
-//                 //         journal_code: journalCode,
-//                 //         user_response: userResponseToSend
-//                 //     },
-//                 //     success: function(response) {
-//                 //         // Mettre à jour les totaux et le solde final
-//                 //         updateTotals($('#month-select').val(),  $('#year-select').val());
-
-//                 //         table.addData([{
-//                 //             id: response.id,
-//                 //             day: rowData.day,
-//                 //             libelle: rowData.libelle,
-//                 //             recette: rowData.recette,
-//                 //             depense: rowData.depense,
-//                 //             ref: rowData.ref,
-//                 //             attachment_url: rowData.attachment_url,
-//                 //             attachmentName: rowData.attachmentName,
-//                 //             updated_by: rowData.updated_by_name
-//                 //         }]); // Add to the end of the table (default behavior)
-
-//                 //         // Réinitialiser la ligne
-//                 //         cell.getRow().update({
-//                 //             day: '',
-//                 //             libelle: '',
-//                 //             recette: '',
-//                 //             depense: '',
-//                 //             ref: '',
-//                 //             attachment_url: '',
-//                 //             attachmentName: '',
-//                 //             updated_by: '',
-//                 //         });
-
-//                 //         saveData();
-
-//                 //         // Focus sur la première cellule de la nouvelle ligne vide
-//                 //         setTimeout(() => {
-//                 //             const newRow = table.getRows().find(row => row.getData().id === undefined); // Trouver la nouvelle ligne vide
-//                 //             if (newRow) {
-//                 //                 const firstCell = newRow.getCells()[0];
-//                 //                 if (firstCell) {
-//                 //                     firstCell.edit(); // Mettre le focus sur la première cellule
-//                 //                 }
-//                 //             }
-//                 //         }, 50);
-//                 //     },
-//                 //     error: function(xhr, status, error) {
-//                 //         console.error("Erreur lors de l'envoi des données :", error);
-//                 //         console.log(xhr.responseText);
-//                 //     }
-//                 // });
-
-//             } else {
-//                 setTimeout(() => {
-//                     focusNextEditableCell(cell);
-//                 }, 50);
-//             }
-//         }
-//     });
-
-//     return input;
-// }
 
 function genericTextEditor(cell, onRendered, success, cancel, editorParams) {
     const input = document.createElement("input");
@@ -1031,9 +965,6 @@ function genericTextEditor(cell, onRendered, success, cancel, editorParams) {
     return input;
 }
 
-
-
-
 /**
  * Ajoute la navigation par la touche Enter à l'élément d'édition.
  * @param {HTMLElement} editorElement - L'élément de l'éditeur (input, textarea, etc.).
@@ -1059,10 +990,6 @@ function addEnterNavigation(editorElement, cell, successCallback, cancelCallback
         }
     });
 }
-
-
-
-
 
 function customNumberEditor1(cell, onRendered, success, cancel) {
     const input = document.createElement("input");
@@ -1103,9 +1030,9 @@ function customNumberEditor1(cell, onRendered, success, cancel) {
         isValidating = false; // Réinitialiser le drapeau
     }
 
-    input.addEventListener("blur", function() {
-        validateAndCommit();
-    });
+    // input.addEventListener("blur", function() {
+    //     validateAndCommit();
+    // });
 
     input.addEventListener("keydown", function(e) {
         if (e.key === "Enter") {
@@ -1138,21 +1065,21 @@ function customNumberEditor(cell, onRendered, success, cancel) {
     });
 
     // Fonction de validation : ici, nous validons simplement en retournant la valeur de l'input
-    function validateAndCommit() {
+    function validateAndCommit1() {
         // Vous pouvez ajouter des validations supplémentaires si besoin
         success(input.value);
     }
 
     // Lors du blur, valider la saisie
     input.addEventListener("blur", function() {
-        validateAndCommit();
+        validateAndCommit1();
     });
 
     // Intercepter la touche Entrée pour valider et naviguer
     input.addEventListener("keydown", function(e) {
         if (e.key === "Enter") {
             e.preventDefault();
-            validateAndCommit();
+            validateAndCommit1();
             // Passer à la cellule éditable suivante
             setTimeout(function() {
                 focusNextEditableCell(cell);
@@ -1189,7 +1116,6 @@ setTimeout(() => {
 }, 500); // délai pour s'assurer que le DOM est prêt
 
 
-// Fonction pour sélectionner toutes les lignes et cocher toutes les cases
 function selectAllCheckbox() {
     // Vérifier si toutes les lignes sont déjà sélectionnées
     var allRowsSelected = table.getRows().every(function(row) {
@@ -1216,9 +1142,6 @@ function selectAllCheckbox() {
         });
     }
 }
-
-
-
  function deleteTransaction(transactionId) {
     var mois = $('#month-select').val();
     var annee = $('#year-select').val(); // Utilise le bon champ pour l’année
@@ -1269,10 +1192,7 @@ function selectAllCheckbox() {
         }
     });
 }
-
-
-    // Fonction pour supprimer les lignes sélectionnées
-   function deleteSelectedRows() {
+ function deleteSelectedRows() {
     var selectedRows = table.getSelectedRows();
 
     if (selectedRows.length === 0) {
@@ -1298,11 +1218,8 @@ function selectAllCheckbox() {
         });
     }
 }
- 
 
-    var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-    function saveData() {
+function saveData() {
         var mois = $('#month-select').val();
                 var year = $('#year-select').val();
 
@@ -1331,8 +1248,8 @@ function selectAllCheckbox() {
                 console.error(xhr.responseText);
             }
         });
-    }
-    function updateSubsequentBalances(month, year, journalCode, newBalance) {
+}
+function updateSubsequentBalances(month, year, journalCode, newBalance) {
         var monthInt = parseInt(month);
         var yearInt = parseInt(year);
 
@@ -1377,9 +1294,9 @@ function selectAllCheckbox() {
                 });
             }
         }
-    }
+}
 
-    function updateTotals(month, year) {
+function updateTotals(month, year) {
     var totalRecette = 0;
     var totalDepense = 0;
     var filteredTransactions = filterTransactions(month, year, document.getElementById('journal-select').value);
@@ -1415,28 +1332,6 @@ function selectAllCheckbox() {
     saveData();
 
 }
-
-    $('#initial-balance').on('input', function() {
-        updateTotals($('#month-select').val(),  $('#year-select').val());
-        saveData();
-    });
-
-    $(document).ready(function() {
-        var currentMonth = $('#month-select').val();
-        var currentYear = $('#year-select').val();
-        updateTableData(currentMonth, currentYear);
-    });
-
-    $('#month-select, #year-select').on('change', function() {
-        var currentMonth = $('#month-select').val();
-        var currentYear =   $('#year-select').val();
-        updateTableData(currentMonth, currentYear);
-
-    });
-// Variable pour stocker la réponse de l'utilisateur
-let userResponse = null;
-
-// Fonction pour vérifier si la référence existe déjà dans le tableau
 function checkReferenceExists(reference, currentRowId) {
     const existingTransaction = transactions.find(function(transaction) {
         return transaction.reference === reference && transaction.id !== currentRowId;
@@ -1448,144 +1343,6 @@ function checkReferenceExists(reference, currentRowId) {
     } : { exists: false };
 }
 
-// Événement cellEdited pour vérifier la référence
-table.on("cellEdited", function(cell) {
-    var field = cell.getField();
-    var newValue = cell.getValue();
-    var rowData = cell.getRow().getData();
-
-    // Vérifiez si le champ modifié est la référence
-    if (field === "ref") {
-        var referenceCheck = checkReferenceExists(newValue, rowData.id);
-        if (referenceCheck.exists) {
-            // Afficher une alerte avec SweetAlert2
-            var period = referenceCheck.month + '/' + referenceCheck.year; // Format de la période
-            Swal.fire({
-                title: `La Piéce N° "${newValue}" existe déjà dans la période ${period}`,
-                text: "Voulez-vous continuer ou annuler ?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Oui',
-                cancelButtonText: 'Non'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Si l'utilisateur choisit "Oui", accepter la modification et conserver la nouvelle valeur
-                    userResponse = 'continue'; // Stocker la réponse
-                } else {
-                    // Si l'utilisateur choisit "Non", réinitialiser la valeur de la cellule
-                    cell.setValue(rowData.ref); // Réinitialiser à l'ancienne valeur
-                    userResponse = 'cancel'; // Stocker la réponse
-                    location.reload();
-                }
-            });
-        }
-    }
-
-    // Sélectionner la ligne en cours après modification
-    table.deselectRow(); // Désélectionner toutes les lignes
-    cell.getRow().select(); // Sélectionner la ligne en cours
-     updateTotals($('#month-select').val(),  $('#year-select').val());
-
-    // Appeler saveData() après que les totaux ont été mis à jour
-    saveData();
-});
-// Événement pour enregistrer les données lors de l'appui sur "Entrée"
-// $('#example-table').on('keydown', function(e) {
-//     if (e.key === "Enter") {
-//         var selectedRows = table.getSelectedRows();
-//         if (selectedRows.length > 0) {
-//             var rowData = selectedRows[0].getData();
-//             var selectedMonth = $('#month-select').val();
-//                         var selectedYear = $('#year-select').val();
-
-//             var formattedDate = selectedYear + '-' + selectedMonth + '-' + rowData.day.padStart(2, '0');
-//             var journalCode = document.getElementById('journal-select').value; // Récupérer le code journal sélectionné
-
-//             // Vérifier si userResponse est vide et le remplacer par 0
-//             var userResponseToSend = userResponse ? userResponse : 0;
-
-//             // Effacer les messages d'erreur précédents
-//             $('#error-message').text('');
-
-//             // Vérification des valeurs vides
-//             if (!rowData.day) {
-//                 $('#error-message').text("Le jour ne peut pas être vide.");
-//                 return;
-//             }
-//             if (!rowData.depense && !rowData.recette) {
-//                 $('#error-message').text("Vous devez entrer soit une dépense soit une recette.");
-//                 return;
-//             }
-//             if (isMonthClosed(selectedMonth, selectedYear, journalCode)) {
-//                 $('#error-message').text("Le mois est déjà clôturé. Vous ne pouvez pas modifier des transactions.");
-//                 return; // Sortir de la fonction si le mois est clôturé
-//             } else {
-//                 $.ajax({
-//                     url: '/save-transaction',
-//                     type: "POST",
-//                     data: {
-//                         _token: $('meta[name="csrf-token"]').attr('content'),
-//                         date: formattedDate,
-//                         libelle: rowData.libelle,
-//                         recette: rowData.recette,
-//                         depense: rowData.depense,
-//                         ref: rowData.ref,
-//                       attachment_url: rowData.attachment_url,
-//                              attachmentName: rowData.attachmentName,
-//                         journal_code: journalCode,
-//                         user_response: userResponseToSend
-//                     },
-//                     success: function(response) {
-//                         // Mettre à jour les totaux
-//                          updateTotals($('#month-select').val(),  $('#year-select').val());
-
-//                         // Ajouter la nouvelle transaction au tableau
-//                         table.addData([{
-//                             id: response.id, // Assurez-vous que l'ID est renvoyé par le serveur
-//                             day: rowData.day,
-//                             libelle: rowData.libelle,
-//                             recette: rowData.recette,
-//                             depense: rowData.depense,
-//                             ref: rowData.ref,
-
-//                             attachment_url: rowData.attachment_url,
-//                              attachmentName: rowData.attachmentName,
-//                              updated_by:rowData.updated_by_name
-
-
-//                         }], true); // Le deuxième paramètre 'true' permet d'ajouter les données en haut du tableau
-
-//                         // Réinitialiser les champs d'entrée
-//                         selectedRows[0].update({
-//                             day: '',
-//                             libelle: '',
-//                             recette: '',
-//                             depense: '',
-//                              ref: '',
-
-//                             attachment_url:'',
-//                             attachmentName:'',
-//                             updated_by:'',
-//                         });
-
-//                         // Enregistrer les données
-//                         saveData();
-
-//                         // Mettre le focus sur le premier champ d'entrée de la nouvelle ligne
-//                         // Remplacez '#first-input-field' par le sélecteur approprié pour votre champ
-//                         $('#first-input-field').focus();
-//                     },
-//                     error: function(xhr, status, error) {
-//                         console.error("Erreur lors de l'envoi des données :", error);
-//                         console.log(xhr.responseText);
-//                     }
-//                 });
-//             }
-//         } else {
-//             console.log("Aucune ligne sélectionnée !");
-//         }
-//     }
-// });
 function openFileUploadDialog(row) {
     const input = document.createElement("input");
     input.type = "file";
@@ -1648,9 +1405,7 @@ function viewAttachment(row) {
 }
 document.getElementById("export-pdf-icon").addEventListener("click", exporterPDF);
 
-/**
- * Helper to get user name by user ID from users array.
- */
+
 function getUserNameById(userId) {
     if (!userId) return "N/A";
     const user = Users.find(u => u.id === userId);
@@ -1658,10 +1413,6 @@ function getUserNameById(userId) {
     return user ? user.name : "N/A";
 }
 
-/**
- * Checks if the month/year/journalCode is closed in soldeMensuels.
- * Returns closure info and dates.
- */
 function isMonthClosedpdf(month, year, journalCode) {
     var soldeMensuel = soldesMensuels.find(function(solde) {
         var moisComparaison = parseInt(solde.mois).toString().padStart(2, '0');
@@ -1684,9 +1435,6 @@ function isMonthClosedpdf(month, year, journalCode) {
     };
 }
 
-/**
- * Main function to export the PDF report.
- */
 function exporterPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -1697,34 +1445,38 @@ function exporterPDF() {
     const month       = document.getElementById("month-select").value;
     const year        = document.getElementById("year-select").value;
     const moisText    = document.querySelector("#month-select option:checked").textContent;
-    const periodeText = `${moisText}`; // Mois + Année
+    const periodeText = `${moisText}`; // Mois + Année 
+    // ─── Infos société ───────────────────────────────────────────────────────────────
+const societeRaisonSociale     = document.getElementById('session-data')?.getAttribute('data-societe-raison_sociale') || "";
+const societeFormeJuridique    = document.getElementById('session-data1')?.getAttribute('data-societe-forme_juridique') || "";
+const societeIdentifiantFiscal = document.getElementById('session-data2')?.getAttribute('data-societe-identifiant_fiscal') || "";
 
     // ─── 2) Vérification de clôture ───────────────────────────────────────────────
     const closureInfo = isMonthClosedpdf(month, year, codeJournal);
     if (!closureInfo.closed) {
-const messageDiv = document.createElement('div');
-messageDiv.textContent = "Veuillez clôturer la période " + periodeText + " avant de l'exporter.";
-Object.assign(messageDiv.style, {
-    position: 'fixed',
-    top: '150px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    backgroundColor: '#f44336', // rouge pour l'avertissement
-    color: 'white',
-    padding: '10px 20px',
-    borderRadius: '5px',
-    zIndex: 9999,
-    fontFamily: 'Arial, sans-serif',
-    boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-});
-document.body.appendChild(messageDiv);
+    const messageDiv = document.createElement('div');
+    messageDiv.textContent = "Veuillez clôturer la période " + periodeText + " avant de l'exporter.";
+    Object.assign(messageDiv.style, {
+        position: 'fixed',
+        top: '150px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        backgroundColor: '#f44336', // rouge pour l'avertissement
+        color: 'white',
+        padding: '10px 20px',
+        borderRadius: '5px',
+        zIndex: 9999,
+        fontFamily: 'Arial, sans-serif',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+    });
+    document.body.appendChild(messageDiv);
 
-// Le message disparaît au bout de 2 secondes
-setTimeout(() => {
-    messageDiv.remove();
-}, 2000);
-        return;
-    }
+    // Le message disparaît au bout de 2 secondes
+    setTimeout(() => {
+        messageDiv.remove();
+    }, 2000);
+            return;
+        }
 
     // ─── 3) Solde initial & final ─────────────────────────────────────────────────
     const soldeInitial = Number(document.getElementById("initial-balance").value || 0).toFixed(2);
@@ -1761,26 +1513,36 @@ setTimeout(() => {
         { content: totalDepense.toFixed(2), styles: { fontStyle: "bold" } },
         ""
     ]);
+// ─── 5) EN-TÊTE BLEU ──────────────────────────────────────────────────────────
+const pageWidth  = doc.internal.pageSize.getWidth();
+const pageHeight = doc.internal.pageSize.getHeight();
+doc.setFillColor(41, 128, 185);
+doc.rect(0, 0, pageWidth, 30, 'F');
 
-    // ─── 5) EN-TÊTE BLEU ──────────────────────────────────────────────────────────
-    const pageWidth  = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    doc.setFillColor(41, 128, 185);
-    doc.rect(0, 0, pageWidth, 30, 'F');
+// 5.1) Ligne 1 : Raison sociale + Forme juridique
+const societeHeaderLine = `${societeRaisonSociale}   ${societeFormeJuridique}`;
+doc.setFontSize(9).setTextColor(255).setFont("helvetica", "bold");
+doc.text(societeHeaderLine, 10, 10); // y = 10
 
-    // 5.1) Titre centré (y = 12)
-    const title = "État de Caisse Mensuel";
-    doc.setFontSize(16).setTextColor(255).setFont("helvetica", "bold");
-    const titleWidth = doc.getTextWidth(title);
-    doc.text(title, (pageWidth - titleWidth) / 2, 12);
+// 5.2) Ligne 2 : IF à gauche, Titre centré
+// IF à gauche
+doc.setFontSize(9).setTextColor(255).setFont("helvetica", "normal");
+doc.text(`IF : ${societeIdentifiantFiscal}`, 10, 16); // gauche
 
-    // 5.2) Champs Code / Intitulé / Période (y = 18)
-    const yHeader = 18;
-    const third   = pageWidth / 3;
-    doc.setFontSize(10).setFont("helvetica", "normal").setTextColor(255);
-    doc.text(`Code : ${codeJournal}`, 10,            yHeader);
-    doc.text(`Intitulé : ${intitule}`, third + 10,   yHeader);
-    doc.text(`Période : ${periodeText}`, 2*third + 10, yHeader);
+// Titre centré
+const title = "État de Caisse Mensuel";
+doc.setFontSize(14).setFont("helvetica", "bold");
+const titleWidth = doc.getTextWidth(title);
+doc.text(title, (pageWidth - titleWidth) / 2, 16); // même y que IF, centré
+
+// 5.3) Ligne 3 : Code / Intitulé / Période
+const yHeader = 26;
+const third   = pageWidth / 3;
+doc.setFontSize(10).setTextColor(255);
+doc.text(`Code : ${codeJournal}`, 10, yHeader);
+doc.text(`Intitulé : ${intitule}`, third + 10, yHeader);
+doc.text(`Période : ${periodeText}`, 2 * third + 10, yHeader);
+
 
     // ─── 6) Affichage du Solde initial juste SOUS l’en-tête (à droite, aligné)
     const ySoldeInitial =  thirtyBelowHeader();
@@ -1833,7 +1595,7 @@ setTimeout(() => {
     const yFooterFait  = yFooterClos + 6;             // 6 pts sous “Clôturé le”
     if (closureInfo.closureDate) {
         const closureDateFormatted = new Date(closureInfo.closureDate).toLocaleDateString('fr-FR');
-        doc.setFontSize(10).setTextColor(255, 0, 0);
+        doc.setTextColor(0);
         doc.text(`Clôturé le : ${closureDateFormatted}`, xFooter, yFooterClos, { align: "right" });
     }
     doc.setFontSize(10).setTextColor(0);
@@ -1850,9 +1612,6 @@ setTimeout(() => {
         return 36;
     }
 }
-
-
-
 
 function exportToExcel() {
     const codeJournal = document.getElementById("journal-select").value;
@@ -1941,9 +1700,6 @@ function isMonthClosedpdf(month, year, journalCode) {
     }
 }
 
-
-
-// Ajoutez cette fonction pour mettre à jour la visibilité de l'icône
 function updateShareIconVisibility() {
     var cloturerButton = document.getElementById('cloturer-button');
     var shareIcon = document.querySelector('.fa-share');
@@ -1953,55 +1709,6 @@ function updateShareIconVisibility() {
      } else {
         shareIcon.classList.add('hidden');     }
 }
-
-// Appelez cette fonction chaque fois que vous modifiez l'état du bouton "Clôturer"
-document.getElementById('cloturer-button').addEventListener('click', function() {
-
-     updateShareIconVisibility();
-});
-
-// Écoutez l'événement keydown pour le champ "Code Journal"
-// Écoutez l'événement keydown pour le champ "Code Journal"
-document.getElementById('journal-select').addEventListener('keydown', function(e) {
-    if (e.key === "Enter") {
-        e.preventDefault(); // Empêche le comportement par défaut
-        document.getElementById('month-select').focus(); // Focaliser le champ "Période"
-    }
-});
-
-// Écoutez l'événement keydown pour le champ "Période"
-document.getElementById('month-select').addEventListener('keydown', function(e) {
-    if (e.key === "Enter") {
-        e.preventDefault(); // Empêche le comportement par défaut
-        var selectedMonth = this.value; // Récupérer le mois sélectionné
-        if (selectedMonth !== "01") {
-            // Si le mois n'est pas janvier, passer directement au tableau
-            const firstRow = table.getRows()[0];
-            if (firstRow) {
-                const firstCell = firstRow.getCells()[0];
-                firstCell.edit(); // Éditer la première cellule
-            }
-        } else {
-            // Si c'est janvier, focaliser le champ "Solde initial"
-            document.getElementById('initial-balance').focus(); // Focaliser le champ "Solde initial"
-        }
-    }
-});
-
-
-// Écoutez l'événement keydown pour le champ "Solde initial"
-document.getElementById('initial-balance').addEventListener('keydown', function(e) {
-    if (e.key === "Enter") {
-        e.preventDefault(); // Empêche le comportement par défaut
-        // Focaliser la première cellule du tableau
-        const firstRow = table.getRows()[0];
-        if (firstRow) {
-            const firstCell = firstRow.getCells()[0];
-            firstCell.edit(); // Éditer la première cellule
-        }
-    }
-});
-
 
 function formatNumber(cell) {
     const value = cell.getValue();

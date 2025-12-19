@@ -37,6 +37,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <!-- Chargement de Bootstrap JS -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<!-- SweetAlert2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
     <style>
@@ -209,16 +214,13 @@
                     <!-- Sixième ligne : 3 inputs -->
                     <div class="row">
                     <div class="col-md-4 mb-3">
-                            <label for="nature_activite" class="form-label">Nature de l'Activité</label>
-                            <select class="form-control" name="nature_activite">
-                                <option value="">choisir une option</option>    
-                                <option value="4.Vente de biens d'équipement">4.Vente de biens d'équipement</option>
-                                <option value="5.Vente de travaux">5.Vente de travaux</option>
-                                <option value="6.Vente de services">6.Vente de services</option>
-                            </select>
+                            <label for="nature_activite" class="form-label">Activité</label>
+                            <input type="text" class="form-control" name="nature_activite" id="nature_activite" >
+
+                           
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
+                            <label for="assujettie_partielle_tva" class="form-label">Assujettie Partielle à la TVA</label>
                             <select class="form-control" name="assujettie_partielle_tva" id="assujettie_partielle_tva" >
                             <option value="">choisir une option</option>    
                             <option value="1">Oui</option>    
@@ -234,7 +236,7 @@
                     </div>
 
                     <!-- Septième ligne : 3 inputs -->
-                    <div class="row">
+                    <!-- <div class="row">
                     <div class="col-md-4 mb-3">
                             <label for="regime_declaration" class="form-label">Régime de Déclaration de TVA</label>
                             <select class="form-control" name="regime_declaration">
@@ -255,11 +257,10 @@
                             <div class="form-group">
                                 <label for="rubrique_tva">Rubrique TVA</label>
                                 <select class="form-control" id="rubrique_tva" name="rubrique_tva">
-                                    <!-- Les options seront ajoutées par JavaScript -->
                                 </select>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                    <!-- Boutons -->
                    <div class="d-flex justify-content-end">
                             <!-- Bouton Réinitialiser avec une très grande marge droite -->
@@ -375,14 +376,14 @@
                         </div>
                         <!-- Emplacement pour Nature d'Activité -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_nature_activite" class="form-label">Emplacement Nature d'Activité</label>
+                            <label for="import_nature_activite" class="form-label">Emplacement Activité</label>
                             <input type="number" class="form-control" id="import_nature_activite" name="nature_activite">
                         </div>
                        
 
-                        <!-- Emplacement pour Assujettie Partielle TVA -->
+                        <!-- Emplacement pour Assujettie Partielle à la TVA -->
                         <div class="col-md-6 mb-3">
-                            <label for="import_assujettie_partielle_tva" class="form-label">Emplacement Assujettie Partielle TVA</label>
+                            <label for="import_assujettie_partielle_tva" class="form-label">Emplacement Assujettie Partielle à la TVA</label>
                             <input type="number" class="form-control" id="import_assujettie_partielle_tva" name="assujettie_partielle_tva">
                         </div>
                         <!-- Emplacement pour Prorata de Déduction -->
@@ -392,20 +393,20 @@
                         </div>
 
                         <!-- Emplacement pour Régime de Déclaration de TVA -->
-                        <div class="col-md-6 mb-3">
+                        <!-- <div class="col-md-6 mb-3">
                             <label for="import_regime_declaration" class="form-label">Emplacement Régime de Déclaration de TVA</label>
                             <input type="number" class="form-control" id="import_regime_declaration" name="regime_declaration">
-                        </div>
+                        </div> -->
                         <!-- Emplacement pour Fait Générateur -->
-                        <div class="col-md-6 mb-3">
+                        <!-- <div class="col-md-6 mb-3">
                             <label for="import_fait_generateur" class="form-label">Emplacement Fait Générateur</label>
                             <input type="number" class="form-control" id="import_fait_generateur" name="fait_generateur">
-                        </div>
+                        </div> -->
                         <!-- Emplacement pour Rubrique TVA -->
-                        <div class="col-md-6 mb-3">
+                        <!-- <div class="col-md-6 mb-3">
                             <label for="import_rubrique_tva" class="form-label">Emplacement Rubrique TVA</label>
                             <input type="number" class="form-control" id="import_rubrique_tva" name="rubrique_tva">
-                        </div>
+                        </div> -->
                       
                     
 
@@ -534,15 +535,11 @@
                     <!-- Ligne 6 -->
                     <div class="row">
                     <div class="col-md-4 mb-3">
-                            <label for="mod_nature_activite" class="form-label">Nature de l'Activité</label>
-                            <select class="form-control" id="mod_nature_activite" name="nature_activite">
-                                <option value="4.Vente de biens d'équipement"> 4.Vente de biens d'équipement</option>
-                                <option value="5.Vente de travaux">5.Vente de travaux</option>
-                                <option value="6.Vente de services">6.Vente de services</option>
-                            </select>
+                            <label for="mod_nature_activite" class="form-label">Activité</label>
+                            <input type="text" class="form-control" name="nature_activite" id="mod_nature_activite" >
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="mod_assujettie_partielle_tva" class="form-label">Assujettie Partielle TVA</label>
+                            <label for="mod_assujettie_partielle_tva" class="form-label">Assujettie Partielle à la TVA</label>
                             <select class="form-control" id="mod_assujettie_partielle_tva" name="assujettie_partielle_tva">
                                 <option value="Null">Choisir une option</option>
                                 <option value="1">Oui</option>
@@ -557,7 +554,7 @@
                     </div>
 
                     <!-- Ligne 7 -->
-                    <div class="row">
+                    <!-- <div class="row">
                     <div class="col-md-4 mb-3">
                             <label for="mod_regime_declaration" class="form-label">Régime de Déclaration de TVA</label>
                             <select class="form-control" id="mod_regime_declaration" name="regime_declaration">
@@ -575,10 +572,9 @@
                         <div class="col-md-4 mb-3">
                             <label for="editRubriqueTVA">Rubrique TVA</label>
                             <select class="form-control select2" id="editRubriqueTVA" name="rubrique_tva">
-                                <!-- Les options seront ajoutées par JavaScript -->
                             </select>
                         </div>
-                    </div>
+                    </div> -->
 
                     <!-- Boutons -->
                     <button type="reset" class="btn btn-secondary me-8">

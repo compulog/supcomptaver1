@@ -626,7 +626,7 @@
 
                         <i class="fas fa-users"></i>
 
-                        <span class="nav-link-text ms-1">Utilisateurs</span>
+                        <span class="nav-link-text ms-1">Utilisateur</span>
 
                     </a>
 
@@ -666,7 +666,7 @@
 
                         <i class="fas fa-cogs"></i>
 
-                        <span class="nav-link-text ms-1">Utilisateurs</span>
+                        <span class="nav-link-text ms-1">Utilisateur</span>
 
                     </a>
 
@@ -674,7 +674,7 @@
 
                         <i class="fas fa-cogs"></i>
 
-                        <span class="nav-link-text ms-1">Interlocuteurs</span>
+                        <span class="nav-link-text ms-1">Interlocuteur</span>
 
                     </a>
 
@@ -714,7 +714,7 @@
 
                         <i class="fas fa-cogs"></i>
 
-                        <span class="nav-link-text ms-1">interlocuteurs</span>
+                        <span class="nav-link-text ms-1">Interlocuteur</span>
 
                     </a>
 
@@ -781,740 +781,442 @@
 <!-- Script pour afficher/cacher la liste -->
 
 <script>
-  window.onload = function() {
-  // Récupérer le nombre de notifications non lues
+window.onload = function() {
   fetch('/notifications/unread')
     .then(response => response.json())
     .then(data => {
- const notificationCount = data.messages.length + data.dossiers.length + data.soldes.length + data.files.length + data.folders.length + data.oldfiles.length + data.oldfolders.length + data.olddossiers.length + data.renamefiles.length + data.renamedossiers.length + data.renamefolders.length;
+      const notificationCount =
+        data.messages.length +
+        data.dossiers.length +
+        data.soldes.length +
+        data.files.length +
+        data.folders.length +
+        data.oldfiles.length +
+        data.oldfolders.length +
+        data.olddossiers.length +
+        data.renamefiles.length +
+        data.renamedossiers.length +
+        data.renamefolders.length;
+
       document.getElementById('notification-count').innerText = notificationCount;
-    
-})
+    })
     .catch(error => console.error(error));
 };
-  function toggleDropdown() {
-    const dropdown = document.getElementById("notificationDropdown");
 
-    // Toggle display (on/off)
+/** ------------------ MARK AS READ ------------------ **/
+function markAsRead(type, id, callback) {
+  fetch(`/notifications/mark-as-read/${type}/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+    }
+  })
+  .then(response => {
+    if (response.ok) {
+      if (callback) callback();
+    } else {
+      console.error('Erreur lors du marquage comme lu');
+    }
+  })
+  .catch(err => console.error(err));
+}
+
+/** ------------------ TOGGLE DROPDOWN ------------------ **/
+function toggleDropdown() {
+  const dropdown = document.getElementById("notificationDropdown");
+
+  if (dropdown.style.display === "block") {
+    dropdown.style.display = "none";
+    return;
+  }
+
+  /** Helpers **/
+  function routeForFile(file) {
+    if (!file) return '#';
+    const type = (file.type || '').toLowerCase().trim();
+    const folders = file.folders;
+    if (!folders || folders === 0) {
+      switch (type) {
+        case 'achat': return '/achat';
+        case 'vente': return '/vente';
+        case 'banque': return '/banque';
+        case 'paie': return '/paie';
+        case 'impot': return '/impot';
+        case 'dossier_permanant': return '/Dossier_permanant';
+        default:
+          return file.dossier && file.dossier.id ? `/Douvrir/${file.dossier.id}` : '#';
+      }
+    } else {
+      switch (type) {
+        case 'achat': return `/folder/${folders}`;
+        case 'vente': return `/foldersVente1/${folders}`;
+        case 'banque': return `/foldersBanque1/${folders}`;
+        case 'paie': return `/foldersPaie1/${folders}`;
+        case 'impot': return `/foldersImpot1/${folders}`;
+        case 'dossier_permanant': return `/foldersDossierPermanant1/${folders}`;
+        default:
+          return file.dossier && file.dossier.id ? `/dasousdossier/${file.dossier.id}` : '#';
+      }
+    }
+  }
+
+  function routeForFolder(folder) {
+    const folderId = folder.folder_id || 0;
+    const type = (folder.type_folder || '').toLowerCase().trim();
+
+    if (!folderId) {
+      switch (type) {
+        case 'achat': return '/achat';
+        case 'vente': return '/vente';
+        case 'banque': return '/banque';
+        case 'paie': return '/paie';
+        case 'impot': return '/impot';
+        case 'dossier_permanant': return '/Dossier_permanant';
+        default: return '#';
+      }
+    } else {
+      switch (type) {
+        case 'achat': return `/folder/${folderId}`;
+        case 'vente': return `/foldersVente1/${folderId}`;
+        case 'banque': return `/foldersBanque1/${folderId}`;
+        case 'paie': return `/foldersPaie1/${folderId}`;
+        case 'impot': return `/foldersImpot1/${folderId}`;
+        case 'dossier_permanant': return `/foldersDossierPermanant1/${folderId}`;
+        default: return `/dasousdossier/${folderId}`;
+      }
+    }
+  }
+
+  /** Charger notifications **/
+  fetch('/notifications/unread')
+    .then(response => response.json())
+    .then(data => {
+      dropdown.innerHTML = '';
+
+      const all = [];
+
+      (data.messages || []).forEach(m => all.push({ kind: 'message', obj: m, date: new Date(m.created_at) }));
+      (data.dossiers || []).forEach(d => all.push({ kind: 'dossier', obj: d, date: new Date(d.created_at) }));
+      (data.soldes || []).forEach(s => all.push({ kind: 'solde', obj: s, date: new Date(s.updated_at) }));
+      (data.files || []).forEach(f => all.push({ kind: 'file', obj: f, date: new Date(f.updated_at) }));
+      (data.folders || []).forEach(f => all.push({ kind: 'folder', obj: f, date: new Date(f.created_at) }));
+      (data.oldfiles || []).forEach(f => all.push({ kind: 'oldfile', obj: f, date: new Date(f.updated_at) }));
+      (data.oldfolders || []).forEach(f => all.push({ kind: 'oldfolder', obj: f, date: new Date(f.updated_at) }));
+      (data.olddossiers || []).forEach(d => all.push({ kind: 'olddossier', obj: d, date: new Date(d.updated_at) }));
+      (data.renamefiles || []).forEach(f => all.push({ kind: 'renamefile', obj: f, date: new Date(f.updated_at) }));
+      (data.renamedossiers || []).forEach(d => all.push({ kind: 'renamedossier', obj: d, date: new Date(d.updated_at) }));
+      (data.renamefolders || []).forEach(f => all.push({ kind: 'renamefolder', obj: f, date: new Date(f.updated_at) }));
+
+      all.sort((a, b) => b.date - a.date);
+
+      if (all.length === 0) {
+        dropdown.innerHTML = '<div class="dropdown-item">Aucune notification</div>';
+        dropdown.style.display = "block";
+        return;
+      }
+
+      all.forEach(entry => {
+        const obj = entry.obj;
+        const when = formatDate(entry.date);
+        const bg = obj.notif_bg_color == 0 ? '#dcdbed' : '#ffffff';
+        let html = "";
+
+        /** Fonction utilitaire pour le lien **/
+        function notificationLink(route, type, id) {
+          return `<a href="javascript:void(0)" 
+                     style="text-decoration:none;color:inherit;"
+                     onclick="markAsRead('${type}', ${id}, function() { window.location.href='${route}'; })">`;
+        }
+
+        /** ---------------- MESSAGE ---------------- **/
+        if (entry.kind === "message") {
+          const file = obj.file;
+          const route = routeForFile(file);
+          html = `
+            <div class="dropdown-item d-flex justify-content-between align-items-center"
+                 style="background:${bg};border-radius:4px;">
+              ${notificationLink(route, 'message', obj.id)}
+                <strong>${obj.user?.name || 'Utilisateur inconnu'}</strong>
+                a commenté : <strong>${file?.name || 'Fichier'}</strong>
+                <br>"${obj.text_message}"
+                <br><small>${when}</small>
+              </a>
+              <i class="fas fa-trash-alt text-danger ms-2"
+                 onclick="supprimerNotificationMessage(${obj.id})"
+                 style="cursor:pointer;"></i>
+            </div>
+          `;
+        }
+
+        /** ---------------- DOSSIER ---------------- **/
+        else if (entry.kind === "dossier") {
+          const route = `/exercices/${obj.societe_id}`;
+          html = `
+            <div class="dropdown-item d-flex justify-content-between align-items-center"
+                 style="background:${bg};border-radius:4px;">
+              ${notificationLink(route, 'dossier', obj.id)}
+                <strong>${obj.user?.name || 'Utilisateur inconnu'}</strong>
+                a créé le dossier <strong>${obj.name}</strong>
+                <br><small>${when}</small>
+              </a>
+              <i class="fas fa-trash-alt text-danger ms-2"
+                 onclick="supprimerNotificationDossier(${obj.id})"
+                 style="cursor:pointer;"></i>
+            </div>
+          `;
+        }
+
+        /** ---------------- SOLDE ---------------- **/
+        else if (entry.kind === "solde") {
+          const route = `/etat-de-caisse?mois=${obj.mois}&annee=${obj.annee}`;
+          html = `
+            <div class="dropdown-item d-flex justify-content-between align-items-center"
+                 style="background:${bg};border-radius:4px;">
+              ${notificationLink(route, 'solde', obj.id)}
+                <strong>${obj.updated_by?.name || 'Utilisateur inconnu'}</strong>
+                a clôturé l'état de caisse <strong>${obj.mois}/${obj.annee}</strong>
+                <br><small>${when}</small>
+              </a>
+              <i class="fas fa-trash-alt text-danger ms-2"
+                 onclick="supprimerNotificationSolde(${obj.id})"
+                 style="cursor:pointer;"></i>
+            </div>
+          `;
+        }
+
+        /** ---------------- FICHIERS ---------------- **/
+        else if (["file","oldfile","renamefile"].includes(entry.kind)) {
+          const route = routeForFile(obj);
+          const user = obj.updated_by?.name || 'Utilisateur inconnu';
+          const action = entry.kind === "file" ? "ajouté" : entry.kind === "oldfile" ? "supprimé" : "renommé";
+          html = `
+            <div class="dropdown-item d-flex justify-content-between align-items-center"
+                 style="background:${bg};border-radius:4px;">
+              ${notificationLink(route, 'file', obj.id)}
+                <strong>${user}</strong> a ${action} le fichier <strong>${obj.name}</strong> (${obj.type})
+                <br><small>${when}</small>
+              </a>
+              <i class="fas fa-trash-alt text-danger ms-2"
+                 onclick="supprimerNotificationFichier(${obj.id})"
+                 style="cursor:pointer;"></i>
+            </div>
+          `;
+        }
+
+        /** ---------------- SOUS-DOSSIERS ---------------- **/
+        else if (["folder","oldfolder","renamefolder"].includes(entry.kind)) {
+          const route = routeForFolder(obj);
+          const user = obj.updated_by?.name || 'Utilisateur inconnu';
+          const action = entry.kind === "folder" ? "créé" : entry.kind === "oldfolder" ? "supprimé" : "renommé";
+          html = `
+            <div class="dropdown-item d-flex justify-content-between align-items-center"
+                 style="background:${bg};border-radius:4px;">
+              ${notificationLink(route, 'folder', obj.id)}
+                <strong>${user}</strong> a ${action} le dossier <strong>${obj.name}</strong> (${obj.type_folder || obj.type})
+                <br><small>${when}</small>
+              </a>
+              <i class="fas fa-trash-alt text-danger ms-2"
+                 onclick="supprimerNotificationSousDossier(${obj.id})"
+                 style="cursor:pointer;"></i>
+            </div>
+          `;
+        }
+
+        /** ---------------- DOSSIERS PRINCIPAUX ---------------- **/
+        else if (["olddossier","renamedossier"].includes(entry.kind)) {
+          const route = `/exercices/${obj.societe_id}`;
+          const user = obj.user?.name || 'Utilisateur inconnu';
+          const action = entry.kind === "olddossier" ? "supprimé" : "renommé";
+          html = `
+            <div class="dropdown-item d-flex justify-content-between align-items-center"
+                 style="background:${bg};border-radius:4px;">
+              ${notificationLink(route, 'dossier', obj.id)}
+                <strong>${user}</strong> a ${action} un dossier principal : <strong>${obj.name}</strong>
+                <br><small>${when}</small>
+              </a>
+              <i class="fas fa-trash-alt text-danger ms-2"
+                 onclick="supprimerNotificationDossier(${obj.id})"
+                 style="cursor:pointer;"></i>
+            </div>
+          `;
+        }
+
+        dropdown.innerHTML += html;
+      });
+
+      dropdown.style.display = "block";
+    })
+    .catch(error => {
+      console.error("Erreur lors du chargement :", error);
+      dropdown.innerHTML = '<div class="dropdown-item">Erreur de chargement</div>';
+      dropdown.style.display = "block";
+    });
+}
+
+/** ------------------ CLOSE ON CLICK OUTSIDE ------------------ **/
+window.onclick = function(event) {
+  if (!event.target.matches('.notification-icon')) {
+    const dropdown = document.getElementById("notificationDropdown");
     if (dropdown.style.display === "block") {
       dropdown.style.display = "none";
-      return;
     }
+  }
+}
 
-    // Charger les notifications depuis Laravel
-    fetch('/notifications/unread')
-      .then(response => response.json())
-      .then(data => {
-        dropdown.innerHTML = ''; // Vider le menu
-//  const notificationCount = data.messages.length + data.dossiers.length + data.soldes.length + data.files.length + data.folders.length + data.oldfiles.length + data.oldfolders.length + data.olddossiers.length + data.renamefiles.length + data.renamedossiers.length + data.renamefolders.length;
-//       document.getElementById('notification-count').innerText = notificationCount;
-    
-        // === Afficher les messages ===
-        if (!data.messages || data.messages.length === 0) {
-          dropdown.innerHTML += '<div class="dropdown-item">Aucun message non lu</div>';
-        } else {
-          data.messages.forEach(msg => {
-            const file = msg.file;
-            const type = file ? (file.type || '').toLowerCase().trim() : null;
-            let route = '#';
+/** ------------------ FORMAT DATE ------------------ **/
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
 
-            if (!file) {
-              route = '#';
-            } else {
-              const folders = file.folders;
-              if (!folders || folders === 0) {
-                switch (type) {
-                  case 'achat': route = '/achat'; break;
-                  case 'vente': route = '/vente'; break;
-                  case 'banque': route = '/banque'; break;
-                  case 'paie': route = '/paie'; break;
-                  case 'impot': route = '/impot'; break;
-                  case 'dossier_permanant': route = '/Dossier_permanant'; break;
-                  default:
-                    if (file.dossier && file.dossier.id) {
-                      route = `/Douvrir/${file.dossier.id}`;
-                    }
-                }
-              } else {
-                switch (type) {
-                  case 'achat': route = `/folder/${folders}`; break;
-                  case 'vente': route = `/foldersVente1/${folders}`; break;
-                  case 'banque': route = `/foldersBanque1/${folders}`; break;
-                  case 'paie': route = `/foldersPaie1/${folders}`; break;
-                  case 'impot': route = `/foldersImpot1/${folders}`; break;
-                  case 'dossier_permanant': route = `/foldersDossierPermanant1/${folders}`; break;
-                  default:
-                    if (file.dossier && file.dossier.id) {
-                      route = `/dasousdossier/${file.dossier.id}`;
-                    }
-                }
-              }
-            }
+document.getElementById('dropdownListButton').addEventListener('click', function() {
+  var dropdownList = document.getElementById('dropdownList');
+  dropdownList.style.display =
+    (dropdownList.style.display === "none" || dropdownList.style.display === "")
+      ? "block" : "none";
+});
 
-            const item = `
-              <div class="dropdown-item d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
+/** ------------------- FONCTIONS DE SUPPRESSION ------------------- **/
+// Tes fonctions de suppression restent inchangées ici
+  /** ------------------- FONCTIONS DE SUPPRESSION ------------------- **/
 
-              <a href="${route}" class="dropdown-item" style="text-decoration: none; color: inherit;">
-                <strong>${msg.user ? msg.user.name : 'Utilisateur inconnu'}</strong> a commenté le fichier 
-                ${file ? `<strong>${file.name}</strong>` : '<em>un fichier inconnu</em>'} : 
-                "${msg.text_message}"
-                <br>
-                <small>${formatDate(msg.created_at)}</small>
-                ${msg.commentaire ? `<br><em style="color: #666;">${msg.commentaire}</em>` : ''}
-              </a>
-<i class="fas fa-trash-alt text-danger ms-2" style="cursor: pointer;" onclick="supprimerNotificationMessage(${msg.id})"></i>
-  </div>
-
-            `;
-            dropdown.innerHTML += item;
-          });
-        }
-
-        dropdown.innerHTML += '<hr>';
-
-        // === Afficher les dossiers ===
-        if (!data.dossiers || data.dossiers.length === 0) {
-          dropdown.innerHTML += '<div class="dropdown-item">Aucun dossier</div>';
-        } else {
-          data.dossiers.forEach(dossier => {
-            const societeId = dossier.societe_id || 0;
-            const url = `/exercices/${societeId}`;
-
-            dropdown.innerHTML += `
-              <div class="dropdown-item d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
-
-              <a href="${url}" class="dropdown-item" style="text-decoration: none; color: inherit;">
-                <strong>${dossier.user ? dossier.user.name : 'Utilisateur inconnu'}</strong> a créé un dossier 
-                <strong>${dossier.name}</strong>
-              </a>
-                <i class="fas fa-trash-alt text-danger ms-2" style="cursor: pointer;"onclick="supprimerNotificationDossier(${dossier.id})"></i>
-  </div>
-
-            `;
-          });
-        }
-
-        dropdown.innerHTML += '<hr>';
-
-        // === Afficher les soldes mensuels ===
-        if (!data.soldes || data.soldes.length === 0) {
-          dropdown.innerHTML += '<div class="dropdown-item">Aucun solde mensuel clôturé</div>';
-        } else {
-          data.soldes.forEach(solde => {
-            const periode = `${solde.mois.toString().padStart(2, '0')}/${solde.annee}`;
-            const url = `/etat-de-caisse?mois=${solde.mois}&annee=${solde.annee}`;
-
-            dropdown.innerHTML += `
-              <div class="dropdown-item d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
-
-              <a href="${url}" class="dropdown-item" style="text-decoration: none; color: inherit;">
-                <strong>${solde.updated_by ? solde.updated_by.name : 'Utilisateur inconnu'}</strong> a clôturé l'état de caisse de la période <strong>${periode}</strong>
-              </a>
-                  <i class="fas fa-trash-alt text-danger ms-2" style="cursor: pointer;"onclick="supprimerNotificationSolde(${solde.id})"></i>
-  </div>
-
-            `;
-          });
-        }
-
-        dropdown.innerHTML += '<hr>';
-
-        // === Afficher les fichiers ===
-        if (!data.files || data.files.length === 0) {
-          dropdown.innerHTML += '<div class="dropdown-item">Aucun fichier</div>';
-        } else {
-          data.files.forEach(file => {
-            const nomFichier = file.name || 'Nom inconnu';
-            const typeFichier = (file.type || 'Type inconnu').toLowerCase().trim();
-            const utilisateur = file.updated_by ? file.updated_by.name : 'Utilisateur inconnu';
-            const date = formatDate(file.updated_at);
-            const folders = file.folders;
-
-            const fileContent = `
-              <strong>${utilisateur}</strong> a ajouté le fichier  
-              <strong>${nomFichier}</strong> dans le dossier
-              <strong>${file.type}</strong>
-              <br><small>${date}</small>
-            `;
-
-            let route = null;
-
-            if (folders === null || folders === 0) {
-              switch (typeFichier) {
-                case 'achat': route = '/achat'; break;
-                case 'vente': route = '/vente'; break;
-                case 'banque': route = '/banque'; break;
-                case 'paie': route = '/paie'; break;
-                case 'impot': route = '/impot'; break;
-                case 'dossier_permanant': route = '/Dossier_permanant'; break;
-                default:
-                  if (file.dossier && file.dossier.id) {
-                    route = `/Douvrir/${file.dossier.id}`;
-                  }
-              }
-            } else {
-              switch (typeFichier) {
-                case 'achat': route = `/folder/${folders}`; break;
-                case 'vente': route = `/foldersVente1/${folders}`; break;
-                case 'banque': route = `/foldersBanque1/${folders}`; break;
-                case 'paie': route = `/foldersPaie1/${folders}`; break;
-                case 'impot': route = `/foldersImpot1/${folders}`; break;
-                case 'dossier_permanant': route = `/foldersDossierPermanant1/${folders}`; break;
-                default:
-                  if (file.dossier && file.dossier.id) {
-                    route = `/dasousdossier/${file.dossier.id}`;
-                  }
-              }
-            }
-
-            if (route) {
-              dropdown.innerHTML += `
-                <div class="dropdown-item d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
-
-                <a href="${route}" class="dropdown-item" style="text-decoration: none; color: inherit;">
-                  ${fileContent}
-                </a>
-                    <i class="fas fa-trash-alt text-danger ms-2" style="cursor: pointer;"  onclick="supprimerNotificationFichier(${file.id})"></i>
-  </div>
-
-              `;
-            } else {
-              dropdown.innerHTML += `
-                <div class="dropdown-item">
-                  ${fileContent}
-                </div>
-              `;
-            }
-          });
-        }
-
-        // === Afficher les sous-dossiers (folders) ===
-        dropdown.innerHTML += '<hr>';
-
-        if (!data.folders || data.folders.length === 0) {
-          dropdown.innerHTML += '<div class="dropdown-item">Aucun sous-dossier</div>';
-      } else {
-    data.folders.forEach(folder => {
-  const utilisateur = folder.updated_by?.name || 'Utilisateur inconnu';
-      const nomSousDossier = folder.name?.trim() || 'Nom inconnu';
-      const typePrincipal = folder.type_folder?.trim().toLowerCase() || 'Type inconnu';
-      const dateCreation = formatDate(folder.created_at);
-      const folderId = folder.folder_id || 0;
-
-      let url = '#';
-
-      if (!folderId || folderId === 0) {
-        switch (typePrincipal) {
-          case 'achat': url = '/achat'; break;
-          case 'vente': url = '/vente'; break;
-          case 'banque': url = '/banque'; break;
-          case 'paie': url = '/paie'; break;
-          case 'impot': url = '/impot'; break;
-          case 'dossier_permanant': url = '/Dossier_permanant'; break;
-          default: url = '#';
-        }
-      } else {
-        switch (typePrincipal) {
-          case 'achat': url = `/folder/${folderId}`; break;
-          case 'vente': url = `/foldersVente1/${folderId}`; break;
-          case 'banque': url = `/foldersBanque1/${folderId}`; break;
-          case 'paie': url = `/foldersPaie1/${folderId}`; break;
-          case 'impot': url = `/foldersImpot1/${folderId}`; break;
-          case 'dossier_permanant': url = `/foldersDossierPermanant1/${folderId}`; break;
-          default: url = `/dasousdossier/${folderId}`;
-        }
+      function supprimerNotificationMessage(id) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Suppression de notification',
+          text: "Vous êtes sûr de vouloir supprimer cette notification ?",
+          showCancelButton: true,
+          confirmButtonText: 'Oui, continuer',
+          cancelButtonText: 'Non',
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            fetch('/notifications/supprimer-notification-message/' + id, {
+              method: 'PUT',
+              headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+            })
+            .then(() => {
+              toggleDropdown(); 
+              Swal.fire({
+                toast: true, position: 'top-end', icon: 'success',
+                title: 'Notification supprimée !', showConfirmButton: false, timer: 1500
+              });
+            });
+          }
+        });
       }
 
-      dropdown.innerHTML += `
-        <div class="dropdown-item d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
-
-        <a href="${url}" class="dropdown-item" style="text-decoration: none; color: inherit;">
-          <strong>${utilisateur}</strong> a créé un sous-dossier 
-          <strong>${nomSousDossier}</strong> dans le dossier principal 
-          <strong>${typePrincipal}</strong><br>
-          <small>${dateCreation}</small>
-        </a>
-            <i class="fas fa-trash-alt text-danger ms-2" style="cursor: pointer;" onclick="supprimerNotificationSousDossier(${folder.id})"></i>
-  </div>
-
-      `;
-    });
-  }
-
-  // === Afficher les oldfiles ===
-  dropdown.innerHTML += '<hr>';
-
-  if (!data.oldfiles || data.oldfiles.length === 0) {
-    dropdown.innerHTML += '<div class="dropdown-item">Aucun ancien fichier</div>';
-  } else {
-    data.oldfiles.forEach(file => {
-      const nomFichier = file.name || 'Nom inconnu';
-      const typeFichier = (file.type || 'Type inconnu').toLowerCase().trim();
-      const utilisateur = file.updated_by ? file.updated_by.name : 'Utilisateur inconnu';
-      const date = formatDate(file.updated_at);
-      const folders = file.folders;
-
-      let route = '#';  // adapte selon ta logique si besoin
-
-      // // Par exemple, on réutilise ta logique route existante (simplifiée ici)
-      // if (folders === null || folders === 0) {
-      //   switch (typeFichier) {
-      //     case 'achat': route = '/achat'; break;
-      //     case 'vente': route = '/vente'; break;
-      //     case 'banque': route = '/banque'; break;
-      //     case 'paie': route = '/paie'; break;
-      //     case 'impot': route = '/impot'; break;
-      //     case 'dossier_permanant': route = '/Dossier_permanant'; break;
-      //     default:
-      //       if (file.dossier && file.dossier.id) {
-      //         route = `/Douvrir/${file.dossier.id}`;
-      //       }
-      //   }
-      // } else {
-      //   // autre logique si nécessaire
-      //   route = `/folder/${folders}`;
-      // }
-
-      dropdown.innerHTML += `
-        <div class="dropdown-item d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
-
-        <a href="${route}" class="dropdown-item" style="text-decoration: none; color: inherit;">
-          <strong>${utilisateur}</strong> a supprimé le fichier  
-          <strong>${nomFichier}</strong> dans le dossier <strong>${file.type}</strong>
-          <br><small>${date}</small>
-        </a>
-<i class="fas fa-trash-alt text-danger ms-2" style="cursor: pointer;"  onclick="supprimerNotificationFichier(${file.id})"></i>
-  </div>
-
-      `;
-    });
-  }
-  // === Afficher les oldfolders (sous-dossiers supprimés) ===
-  dropdown.innerHTML += '<hr>';
-
-  if (!data.oldfolders || data.oldfolders.length === 0) {
-    dropdown.innerHTML += '<div class="dropdown-item">Aucun ancien sous-dossier</div>';
-  } else {
-    data.oldfolders.forEach(folder => {
-      const utilisateur = folder.updated_by ? folder.updated_by.name : 'Utilisateur inconnu';
-      const nomSousDossier = folder.name ? folder.name.trim() : 'Nom inconnu';
-      const typePrincipal = folder.type_folder ? folder.type_folder.trim() : 'Type inconnu';
-
-      dropdown.innerHTML += `
-        <div class="dropdown-item d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
-
-        <div class="dropdown-item"  >
-          <strong>${utilisateur}</strong> a supprimé le sous-dossier 
-          <strong>${nomSousDossier}</strong> dans le dossier principal 
-          <strong>${typePrincipal}</strong>
-        </div>
-            <i class="fas fa-trash-alt text-danger ms-2" style="cursor: pointer;" onclick="supprimerNotificationSousDossier(${folder.id})"></i>
-  </div>
-
-      `;
-    });
-  }
-  // === Afficher les olddossiers (dossiers principaux supprimés) ===
-  dropdown.innerHTML += '<hr>';
-
-  if (!data.olddossiers || data.olddossiers.length === 0) {
-    dropdown.innerHTML += '<div class="dropdown-item">Aucun ancien dossier principal</div>';
-  } else {
-    data.olddossiers.forEach(dossier => {
-      const utilisateur = dossier.user ? dossier.user.name : 'Utilisateur inconnu';
-      const nomDossier = dossier.name ? dossier.name.trim() : 'Nom inconnu';
-
-      dropdown.innerHTML += `
-        <div class="dropdown-item d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
-
-        <div class="dropdown-item" >
-          <strong>${utilisateur}</strong> a supprimé un dossier principal 
-          <strong>${nomDossier}</strong>
-        </div>
-                <i class="fas fa-trash-alt text-danger ms-2" style="cursor: pointer;"onclick="supprimerNotificationDossier(${dossier.id})"></i>
-  </div>
-
-      `;
-    });
-  }
-
-  // === Afficher les fichiers renommés (renamefiles) ===
-  dropdown.innerHTML += '<hr>';
-
-  if (!data.renamefiles || data.renamefiles.length === 0) {
-    dropdown.innerHTML += '<div class="dropdown-item">Aucun fichier renommé</div>';
-  } else {
-    data.renamefiles.forEach(file => {
-      const nomFichier = file.name || 'Nom inconnu';
-      const typeFichier = (file.type || 'Type inconnu').toLowerCase().trim();
-      const utilisateur = file.updated_by ? file.updated_by.name : 'Utilisateur inconnu';
-      const dateModif = formatDate(file.updated_at);
-      const folders = file.folders;
-
-      let route = '#';
-
-      if (!folders || folders === 0) {
-        switch (typeFichier) {
-          case 'achat': route = '/achat'; break;
-          case 'vente': route = '/vente'; break;
-          case 'banque': route = '/banque'; break;
-          case 'paie': route = '/paie'; break;
-          case 'impot': route = '/impot'; break;
-          case 'dossier_permanant': route = '/Dossier_permanant'; break;
-          default:
-            if (file.dossier && file.dossier.id) {
-              route = `/Douvrir/${file.dossier.id}`;
-            }
-        }
-      } else {
-        switch (typeFichier) {
-          case 'achat': route = `/folder/${folders}`; break;
-          case 'vente': route = `/foldersVente1/${folders}`; break;
-          case 'banque': route = `/foldersBanque1/${folders}`; break;
-          case 'paie': route = `/foldersPaie1/${folders}`; break;
-          case 'impot': route = `/foldersImpot1/${folders}`; break;
-          case 'dossier_permanant': route = `/foldersDossierPermanant1/${folders}`; break;
-          default:
-            if (file.dossier && file.dossier.id) {
-              route = `/dasousdossier/${file.dossier.id}`;
-            }
-        }
+      function supprimerNotificationDossier(id) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Suppression',
+          text: "Supprimer cette notification ?",
+          showCancelButton: true,
+          confirmButtonText: 'Oui',
+          cancelButtonText: 'Non',
+          confirmButtonColor: '#d33'
+        }).then(result => {
+          if (result.isConfirmed) {
+            fetch('/notifications/supprimer-notification-dossier/' + id, {
+              method: 'PUT',
+              headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+            })
+            .then(() => {
+              toggleDropdown();
+              Swal.fire({
+                toast: true, position: 'top-end', icon: 'success',
+                title: 'Notification supprimée !', showConfirmButton: false, timer: 1500
+              });
+            });
+          }
+        });
       }
 
-      dropdown.innerHTML += `
-        <div class="dropdown-item d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
-
-        <a href="${route}" class="dropdown-item" style="text-decoration: none; color: inherit;">
-          <strong>${utilisateur}</strong> a renommé le fichier  
-          <strong>${nomFichier}</strong> dans le dossier <strong>${file.type}</strong>
-          <br><small>${dateModif}</small>
-        </a>
-<i class="fas fa-trash-alt text-danger ms-2" style="cursor: pointer;"  onclick="supprimerNotificationFichier(${file.id})"></i>
-  </div>
-
-      `;
-    });
-  }
-
-  // === Afficher les dossiers renommés ===
-  dropdown.innerHTML += '<hr>';
-
-  if (!data.renamedossiers || data.renamedossiers.length === 0) {
-    dropdown.innerHTML += '<div class="dropdown-item">Aucun dossier renommé</div>';
-  } else {
-    data.renamedossiers.forEach(dossier => {
-      const utilisateur = dossier.user ? dossier.user.name : 'Utilisateur inconnu';
-      const nouveauNom = dossier.name || 'Nom inconnu';
-      const dateModif = formatDate(dossier.updated_at);
-      const societeId = dossier.societe_id || 0;
-      const route = `/exercices/${societeId}`;
-
-      dropdown.innerHTML += `
-        <div class="dropdown-item d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
-
-        <a href="${route}" class="dropdown-item" style="text-decoration: none; color: inherit;">
-          <strong>${utilisateur}</strong> a renommé un dossier principal. Nouveau nom : 
-          <strong>${nouveauNom}</strong><br>
-          <small>${dateModif}</small>
-        </a>
-                <i class="fas fa-trash-alt text-danger ms-2" style="cursor: pointer;"onclick="supprimerNotificationDossier(${dossier.id})"></i>
-  </div>
-
-      `;
-    });
-  }
-
-
-  // === Afficher les sous-dossiers renommés ===
-  dropdown.innerHTML += '<hr>';
-
-  if (!data.renamefolders || data.renamefolders.length === 0) {
-    dropdown.innerHTML += '<div class="dropdown-item">Aucun sous-dossier renommé</div>';
-  } else {
-    data.renamefolders.forEach(folder => {
-      const utilisateur = folder.updated_by ? folder.updated_by.name : 'Utilisateur inconnu';
-      const nouveauNom = folder.name ? folder.name.trim() : 'Nom inconnu';
-      const typePrincipal = folder.type_folder ? folder.type_folder.trim().toLowerCase() : 'Type inconnu';
-      const dateModif = formatDate(folder.updated_at);
-      const folderId = folder.folder_id || 0;
-
-      let url = '#';
-
-      if (!folderId || folderId === 0) {
-        switch (typePrincipal) {
-          case 'achat': url = '/achat'; break;
-          case 'vente': url = '/vente'; break;
-          case 'banque': url = '/banque'; break;
-          case 'paie': url = '/paie'; break;
-          case 'impot': url = '/impot'; break;
-          case 'dossier_permanant': url = '/Dossier_permanant'; break;
-          default:
-            if (folder.dossier && folder.dossier.id) {
-              url = `/Douvrir/${folder.dossier.id}`; // 🔄 modifié ici
-            } else {
-              url = '#';
-            }
-        }
-      } else {
-        switch (typePrincipal) {
-          case 'achat': url = `/folder/${folderId}`; break;
-          case 'vente': url = `/foldersVente1/${folderId}`; break;
-          case 'banque': url = `/foldersBanque1/${folderId}`; break;
-          case 'paie': url = `/foldersPaie1/${folderId}`; break;
-          case 'impot': url = `/foldersImpot1/${folderId}`; break;
-          case 'dossier_permanant': url = `/foldersDossierPermanant1/${folderId}`; break;
-          default:
-            if (folder.dossier && folder.dossier.id) {
-              url = `/dasousdossier/${folder.dossier.id}`; // 🔄 modifié ici
-            } else {
-              url = '#';
-            }
-        }
+      function supprimerNotificationSolde(id) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Suppression',
+          text: "Supprimer cette notification ?",
+          showCancelButton: true,
+          confirmButtonText: 'Oui',
+          cancelButtonText: 'Non',
+          confirmButtonColor: '#d33'
+        }).then(result => {
+          if (result.isConfirmed) {
+            fetch('/notifications/supprimer-notification-solde/' + id, {
+              method: 'PUT',
+              headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+            })
+            .then(() => {
+              toggleDropdown(); 
+              Swal.fire({
+                toast: true, position: 'top-end', icon: 'success',
+                title: 'Notification supprimée !', showConfirmButton: false, timer: 1500
+              });
+            });
+          }
+        });
       }
 
-      dropdown.innerHTML += `
-        <div class="dropdown-item d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
-
-        <a href="${url}" class="dropdown-item" style="text-decoration: none; color: inherit; position: relative; display: block;">
-          <strong>${utilisateur}</strong> a renommé un sous-dossier. Nouveau nom :
-          <strong>${nouveauNom}</strong> dans le dossier principal <strong>${typePrincipal}</strong><br>
-          <small>${dateModif}</small>
-        
-        </a>
-            <i class="fas fa-trash-alt text-danger ms-2" style="cursor: pointer;" onclick="supprimerNotificationSousDossier(${folder.id})"></i>
-  </div>
-
-      `;
-    });
-  }
-
-
-        // Afficher le menu
-        dropdown.style.display = "block";
-      })
-      .catch(error => {
-        console.error("Erreur lors du chargement :", error);
-        dropdown.innerHTML = '<div class="dropdown-item">Erreur de chargement</div>';
-        dropdown.style.display = "block";
-      });
-  }
-
-  // Fermer si on clique ailleurs
-  window.onclick = function(event) {
-    if (!event.target.matches('.notification-icon')) {
-      const dropdown = document.getElementById("notificationDropdown");
-      if (dropdown.style.display === "block") {
-        dropdown.style.display = "none";
+      function supprimerNotificationFichier(id) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Suppression',
+          text: "Supprimer cette notification ?",
+          showCancelButton: true,
+          confirmButtonText: 'Oui',
+          cancelButtonText: 'Non',
+          confirmButtonColor: '#d33'
+        }).then(result => {
+          if (result.isConfirmed) {
+            fetch('/notifications/supprimer-notification-fichier/' + id, {
+              method: 'PUT',
+              headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+            })
+            .then(() => {
+              toggleDropdown();
+              Swal.fire({
+                toast: true, position: 'top-end', icon: 'success',
+                title: 'Notification supprimée !', showConfirmButton: false, timer: 1500
+              });
+            });
+          }
+        });
       }
-    }
-  };
 
-  // Formater la date en FR (ex : 29 juillet 2025 à 13:45)
-  function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleString('fr-FR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
-
-
-
-    document.getElementById('dropdownListButton').addEventListener('click', function() {
-
-        var dropdownList = document.getElementById('dropdownList');
-
-        if (dropdownList.style.display === "none" || dropdownList.style.display === "") {
-
-            dropdownList.style.display = "block"; // Afficher la liste
-
-        } else {
-
-            dropdownList.style.display = "none"; // Cacher la liste
-
-        }
-
-    });
-function supprimerNotificationMessage(id) {
-  Swal.fire({
-    icon: 'info',
-    title: 'Suppression de notification',
-    text: "Vous êtes sûr de vouloir supprimer cette notification ?",
-    showCancelButton: true,
-    confirmButtonText: 'Oui, continuer',
-    cancelButtonText: 'Non',
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      fetch('/notifications/supprimer-notification-message/' + id, {
-        method: 'PUT',
-        headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        toggleDropdown();
+      function supprimerNotificationSousDossier(id) {
         Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'success',
-          title: 'Notification supprimée !',
-          showConfirmButton: false,
-          timer: 1500
+          icon: 'info',
+          title: 'Suppression',
+          text: "Supprimer cette notification ?",
+          showCancelButton: true,
+          confirmButtonText: 'Oui',
+          cancelButtonText: 'Non',
+          confirmButtonColor: '#d33'
+        }).then(result => {
+          if (result.isConfirmed) {
+            fetch('/notifications/supprimer-notification-sous-dossier/' + id, {
+              method: 'PUT',
+              headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+            })
+            .then(() => {
+              toggleDropdown();
+              Swal.fire({
+                toast: true, position: 'top-end', icon: 'success',
+                title: 'Notification supprimée !', showConfirmButton: false, timer: 1500
+              });
+            });
+          }
         });
-      })
-      .catch(error => console.error(error));
-    }
-  });
-}
-
-function supprimerNotificationDossier(id) {
-  Swal.fire({
-    icon: 'info',
-    title: 'Suppression de notification',
-    text: "Vous êtes sûr de vouloir supprimer cette notification ?",
-    showCancelButton: true,
-    confirmButtonText: 'Oui, continuer',
-    cancelButtonText: 'Non',
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      fetch('/notifications/supprimer-notification-dossier/' + id, {
-        method: 'PUT',
-        headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        toggleDropdown();
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'success',
-          title: 'Notification supprimée !',
-          showConfirmButton: false,
-          timer: 1500
-        });
-      })
-      .catch(error => console.error(error));
-    }
-  });
-}
-
-function supprimerNotificationSolde(id) {
-  Swal.fire({
-    icon: 'info',
-    title: 'Suppression de notification',
-    text: "Vous êtes sûr de vouloir supprimer cette notification ?",
-    showCancelButton: true,
-    confirmButtonText: 'Oui, continuer',
-    cancelButtonText: 'Non',
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      fetch('/notifications/supprimer-notification-solde/' + id, {
-        method: 'PUT',
-        headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        toggleDropdown();
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'success',
-          title: 'Notification supprimée !',
-          showConfirmButton: false,
-          timer: 1500
-        });
-      })
-      .catch(error => console.error(error));
-    }
-  });
-}
-
-function supprimerNotificationFichier(id) {
-  Swal.fire({
-    icon: 'info',
-    title: 'Suppression de notification',
-    text: "Vous êtes sûr de vouloir supprimer cette notification ?",
-    showCancelButton: true,
-    confirmButtonText: 'Oui, continuer',
-    cancelButtonText: 'Non',
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      fetch('/notifications/supprimer-notification-fichier/' + id, {
-        method: 'PUT',
-        headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        toggleDropdown();
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'success',
-          title: 'Notification supprimée !',
-          showConfirmButton: false,
-          timer: 1500
-        });
-      })
-      .catch(error => console.error(error));
-    }
-  });
-}
-
-function supprimerNotificationSousDossier(id) {
-  Swal.fire({
-    icon: 'info',
-    title: 'Suppression de notification',
-    text: "Vous êtes sûr de vouloir supprimer cette notification ?",
-    showCancelButton: true,
-    confirmButtonText: 'Oui, continuer',
-    cancelButtonText: 'Non',
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      fetch('/notifications/supprimer-notification-sous-dossier/' + id, {
-        method: 'PUT',
-        headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        toggleDropdown();
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'success',
-          title: 'Notification supprimée !',
-          showConfirmButton: false,
-          timer: 1500
-        });
-      })
-      .catch(error => console.error(error));
-    }
-  });
-}
-
-
-
+      }
 </script>
 
 

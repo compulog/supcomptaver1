@@ -464,7 +464,7 @@ class FolderController extends Controller
 
             'type_folder' => $request->type_folder,
         'updated_by' => auth()->id(),
-
+ 'is_read' => 0,
 
 
         ]);

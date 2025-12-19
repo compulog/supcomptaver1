@@ -260,7 +260,9 @@
         background-color: #218838;
     }
 </style>
-    <h6  style="margin-top: 1.5rem !important;">
+    <div style="position: fixed; z-index: 1000;background-color:white; width:100%; min-height:7vh; padding-bottom:50px;margin-top:0px;margin-left:-2%;">
+
+<div style="position: fixed; z-index: 1000;margin-left:1%;margin-top:3%;">
     <a href="{{ route('exercices.show', ['societe_id' => session()->get('societeId')]) }}" style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;">Tableau De Board</a>
        <span style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;">➢</span> 
 
@@ -324,7 +326,7 @@
             menu.style.display = (menu.style.display === 'none') ? 'block' : 'none';
         }
     </script>
-</h6>
+</div>
 <div class="container mt-4">
 
 <!-- Script pour afficher/cacher le menu déroulant et gérer l'affichage -->
@@ -385,7 +387,7 @@
                 id="dropdownMenuButtonBanque" 
                 data-bs-toggle="dropdown" 
                 aria-expanded="false"
-                style="background-color:#4D55CC;border: 1px solid white; border-radius: 10px; color: white; width:100px;">
+                style="background-color:#4D55CC;border: 1px solid white; border-radius: 10px; color: white; width:100px;margin-top:10px;">
                 Charger
             </button>
             <ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonBanque">
@@ -401,25 +403,284 @@
     <!-- Formulaire de téléchargement (Charger) -->
     <div class="p-0" style="background-color: transparent; border-radius: 15px; font-size: 0.75rem; display: inline-flex; justify-content: center; align-items: center; height: auto; width: auto;">
        <!-- Formulaire de filtrage -->
-       <form method="GET" action="{{ url()->current() }}" class="d-flex me-3">
-<div class="input-group">
-<button class="btn btn-primary btn-sm" type="submit" style="height: 38px; order: -1;background-color:#4D55CC;">Triée par</button>
+@php
+    $currentFilter = request()->get('filter_by', 'name');
+    $currentOrder  = request()->get('order_by', 'asc');
+@endphp
 
-<!-- Le select pour le tri -->
-<select name="filter_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
-    <option value="name" {{ request()->get('filter_by') == 'name' ? 'selected' : '' }}>Nom</option>
-    <option value="date" {{ request()->get('filter_by') == 'date' ? 'selected' : '' }}>Date</option>
-</select>
+<form method="GET" action="{{ url()->current() }}" class="d-flex me-3">
+    <div class="input-group" style="align-items:center; gap:6px;margin-top:-8px;">
 
-<!-- Le select pour l'ordre (ascendant ou descendant) -->
-<select name="order_by" class="form-select" style="height: 38px; width: auto; max-width: 200px; font-size: 0.875rem;">
-                <option value="asc" {{ request()->get('order_by') == 'asc' ? 'selected' : '' }}>↑  </option>
-                <option value="desc" {{ request()->get('order_by') == 'desc' ? 'selected' : '' }}>↓  </option>
+        <!-- Label -->
+        <span style="
+            height:38px;
+            min-width:90px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:#4D55CC;
+            font-weight:500;
+            cursor:default;
+        ">
+            Trier par :
+        </span>
+
+        <!-- Select Nom / Date -->
+        <div style="position:relative;">
+            <select name="filter_by"
+                    class="form-select"
+                    style="
+                        height:38px;
+                        width:75px;
+                        font-size:0.875rem;
+                        color:#4D55CC;
+                        border-color:#4D55CC;
+                        padding-right:18px;
+                    "
+                    onchange="this.form.submit()">
+
+                <option value="name" {{ $currentFilter === 'name' ? 'selected' : '' }}>Nom</option>
+                <option value="date" {{ $currentFilter === 'date' ? 'selected' : '' }}>Date</option>
             </select>
-</div>
+
+            <i class="fas fa-chevron-down"
+               style="
+                    position:absolute;
+                    right:8px;
+                    top:50%;
+                    transform:translateY(-50%);
+                    pointer-events:none;
+                    font-size:10px;
+                    color:#4D55CC;
+               ">
+            </i>
+        </div>
+
+        <!-- Bouton A-Z / Z-A -->
+        <button type="submit"
+                name="order_by"
+                value="{{ $currentOrder === 'asc' ? 'desc' : 'asc' }}"
+                style="
+                    height:38px;
+                    width:52px;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    gap:3px;
+                    border-radius:50px;
+                    border:1px solid #4D55CC;
+                    background-color:#4D55CC;
+                    color:white;
+                    padding:0;
+                ">
+
+            <span style="font-size:16px;">
+                {{ $currentOrder === 'asc' ? '↑' : '↓' }}
+            </span>
+
+            <div style="
+                display:flex;
+                flex-direction:column;
+                line-height:1;
+                font-size:10px;
+            ">
+                @if($currentOrder === 'asc')
+                    <span>A</span>
+                    <span>Z</span>
+                @else
+                    <span>Z</span>
+                    <span>A</span>
+                @endif
+            </div>
+        </button>
+
+    </div>
 </form>
 
           
+
+<div class="search-icon" id="searchIcon" 
+     style="margin-top:-10px;width:50px; cursor:pointer; padding:10px; 
+            border-radius:50px; background-color:#4D55CC; color:white; 
+            display:flex; align-items:center; justify-content:center;">
+    <i class="fa fa-search" style="font-size:20px;"></i>
+</div>
+
+
+<div id="customSearchBar">
+    <div class="search-container">
+        <i class="fa fa-search search-icon-bar"></i>
+        <input type="text" id="searchInput" placeholder="Rechercher dans la page...">
+        <button id="prevBtn" class="nav-btn">◀</button>
+        <button id="nextBtn" class="nav-btn">▶</button>
+        <span id="resultCount"></span>
+        <button id="closeBtn" class="close-btn">✖</button>
+    </div>
+</div>
+
+<style>
+
+#customSearchBar {
+    display: none;
+    position: fixed;
+    top: 50px;
+    right: 20px;
+    background: #ffffff;
+    padding: 10px 15px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    z-index: 999999;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid #e5e5e5;
+}
+
+
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#searchInput {
+    padding: 6px 10px;
+    width: 220px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    outline: none;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+#searchInput:focus {
+    border-color: #4D55CC;
+    box-shadow: 0 0 0 2px rgba(77,85,204,0.2);
+}
+
+.nav-btn {
+    background: #4D55CC;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.nav-btn:hover {
+    background: #3b43b0;
+}
+
+.close-btn {
+    background: #ff4e4e;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.close-btn:hover {
+    background: #d93636;
+}
+
+.search-icon-bar {
+    font-size: 18px;
+    color: #4D55CC;
+}
+
+#resultCount {
+    font-size: 14px;
+    font-weight: bold;
+    color: #4D55CC;
+}
+
+
+mark.customSearch {
+    background: #fff176;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+</style>
+
+<script>
+let results = [];
+let currentIndex = 0;
+
+function clearHighlights() {
+    const marks = document.querySelectorAll("mark.customSearch");
+    marks.forEach(m => m.outerHTML = m.innerHTML);
+}
+
+function highlightSearch(term) {
+    clearHighlights();
+
+    if (!term.trim()) {
+        document.getElementById("resultCount").textContent = "";
+        return;
+    }
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    results = [];
+
+    while (walker.nextNode()) {
+        const node = walker.currentNode;
+
+        if (node.nodeValue.toLowerCase().includes(term.toLowerCase())) {
+            const span = document.createElement("span");
+            span.innerHTML = node.nodeValue.replace(
+                new RegExp(term, "gi"),
+                match => `<mark class="customSearch">${match}</mark>`
+            );
+            node.parentNode.replaceChild(span, node);
+        }
+    }
+
+    results = document.querySelectorAll("mark.customSearch");
+    document.getElementById("resultCount").textContent = results.length + " trouvé(s)";
+
+    if (results.length > 0) {
+        currentIndex = 0;
+        scrollToResult(currentIndex);
+    }
+}
+
+function scrollToResult(index) {
+    if (results[index]) {
+        results[index].scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+}
+
+
+document.getElementById("searchIcon").addEventListener("click", () => {
+    document.getElementById("customSearchBar").style.display = "block";
+    document.getElementById("searchInput").focus();
+});
+
+document.getElementById("closeBtn").addEventListener("click", () => {
+    clearHighlights();
+    document.getElementById("customSearchBar").style.display = "none";
+});
+
+document.getElementById("searchInput").addEventListener("input", (e) => {
+    highlightSearch(e.target.value);
+});
+
+document.getElementById("nextBtn").addEventListener("click", () => {
+    if (results.length === 0) return;
+    currentIndex = (currentIndex + 1) % results.length;
+    scrollToResult(currentIndex);
+});
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+    if (results.length === 0) return;
+    currentIndex = (currentIndex - 1 + results.length) % results.length;
+    scrollToResult(currentIndex);
+});
+</script>
+
+
     </div>
 </div>
 </div>
@@ -1004,6 +1265,8 @@ formData.append('exercice_fin', '{{ $societe->exercice_social_fin }}');
         pointer-events: none; /* Ignore les événements de souris */
     }
 </style>
+</div>
+<br />
 <div class="container mt-5">
 <h5>Dossiers</h5>
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
@@ -1310,16 +1573,217 @@ function openRenameModal(folderId, folderName) {
     {{ $file->name }}
 </h6>
                 <div class="action-buttons" style="position: absolute; top: 15px; right: 11%; z-index: 1000;">
-                <a href="{{ asset($file->path) }}" class="btn btn-primary" download title="Télécharger" style="width:2%;height:2%;">
-    <i class="fas fa-download" style="margin-left:-4px;"></i>
-</a>
-<a href="javascript:void(0);" class="btn btn-secondary" onclick="printFile('{{ asset($file->path) }}')" title="Imprimer" style="width:2%;height:2%;">
-    <i class="fas fa-print" style="margin-left:-4px;"></i>
-</a>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Fermer"  style="width:2%;height:2%;">
-                        <i class="fas fa-times" style="margin-left:-4px;"></i>
-                    </button>
-                </div>
+                
+    <!-- ICONE DE RECHERCHE -->
+   <button class="btn btn-secondary" id="cs-search-icon" title="Rechercher">
+    <i class="fa fa-search"></i>
+</button>
+
+
+    <!-- BARRE DE RECHERCHE -->
+    <div id="cs-search-bar">
+        <div class="search-container">
+            <i class="fa fa-search search-icon-bar"></i>
+            <input type="text" id="cs-search-input" placeholder="Rechercher dans la page...">
+            <button id="cs-prev-btn" class="nav-btn">◀</button>
+            <button id="cs-next-btn" class="nav-btn">▶</button>
+            <span id="cs-result-count"></span>
+            <button id="cs-close-btn" class="close-btn">✖</button>
+        </div>
+    </div>
+
+    <!-- BOUTONS D’ACTIONS -->
+    <a href="{{ asset($file->path) }}" class="btn btn-primary" download title="Télécharger">
+        <i class="fas fa-download"></i>
+    </a>
+    <a href="javascript:void(0);" class="btn btn-secondary" onclick="printFile('{{ asset($file->path) }}')" title="Imprimer">
+        <i class="fas fa-print"></i>
+    </a>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Fermer">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+
+<!-- CSS -->
+<style>
+/* Barre de recherche */
+#cs-search-bar {
+    display: none;
+    position: fixed;
+    top: 50px;
+    right: 20px;
+    background: #ffffff;
+    padding: 10px 15px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    z-index: 111111;
+    border: 1px solid #e5e5e5;
+}
+
+/* Surlignage */
+mark.customSearch {
+    background: #fff176;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+mark.currentSearch {
+    background: #ffab40;
+}
+
+/* Boutons de navigation dans la recherche */
+.nav-btn {
+    background: #4D55CC;
+    color: white;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Bouton fermer */
+.close-btn {
+    background: #ff4e4e;
+    color: white;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Icône de recherche */
+.search-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #4D55CC;
+    color: white;
+    cursor: pointer;
+}
+
+</style>
+
+<!-- JS -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const input = document.getElementById("cs-search-input");
+    const bar = document.getElementById("cs-search-bar");
+    const resultCount = document.getElementById("cs-result-count");
+    const prevBtn = document.getElementById("cs-prev-btn");
+    const nextBtn = document.getElementById("cs-next-btn");
+
+    let results = [];
+    let currentIndex = -1;
+    let rafId = null;
+
+    // OUVRIR LA BARRE
+    document.getElementById("cs-search-icon").addEventListener("click", () => {
+        bar.style.display = "block";
+        input.focus();
+    });
+
+    // FERMER LA BARRE
+    document.getElementById("cs-close-btn").addEventListener("click", () => {
+        clearHighlights();
+        bar.style.display = "none";
+        input.value = "";
+        resultCount.textContent = "";
+        currentIndex = -1;
+    });
+
+    // ÉCHAPPER LES CARACTÈRES SPÉCIAUX POUR REGEX
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // SUPPRIMER LES SURLIGNAGES
+    function clearHighlights() {
+        document.querySelectorAll("mark.customSearch, mark.currentSearch")
+            .forEach(m => m.replaceWith(m.textContent));
+        results = [];
+        currentIndex = -1;
+    }
+
+    // FONCTION DE SURBRILLANCE
+    function highlight(term) {
+        clearHighlights();
+        if (!term) {
+            resultCount.textContent = "";
+            return;
+        }
+
+        const regex = new RegExp(escapeRegExp(term), "gi");
+        const nodes = [];
+
+        const walker = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode(node) {
+                    if (node.parentElement.closest("#cs-search-bar") ||
+                        node.parentElement.closest("script, style")) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                }
+            }
+        );
+
+        while (walker.nextNode()) {
+            if (regex.test(walker.currentNode.nodeValue)) {
+                nodes.push(walker.currentNode);
+            }
+        }
+
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+            nodes.forEach(node => {
+                const span = document.createElement("span");
+                span.innerHTML = node.nodeValue.replace(
+                    regex,
+                    m => `<mark class="customSearch">${m}</mark>`
+                );
+                node.replaceWith(span);
+            });
+
+            results = Array.from(document.querySelectorAll("mark.customSearch"));
+            resultCount.textContent = results.length + " trouvé(s)";
+            currentIndex = results.length ? 0 : -1;
+
+            highlightCurrent();
+        });
+    }
+
+    // METTRE EN SURBRILLANCE LE RÉSULTAT ACTUEL
+    function highlightCurrent() {
+        results.forEach((el, i) => el.classList.remove("currentSearch"));
+        if (currentIndex >= 0 && results[currentIndex]) {
+            results[currentIndex].classList.add("currentSearch");
+            results[currentIndex].scrollIntoView({ block: "center" });
+        }
+    }
+
+    // NAVIGATION
+    nextBtn.addEventListener("click", () => {
+        if (!results.length) return;
+        currentIndex = (currentIndex + 1) % results.length;
+        highlightCurrent();
+    });
+
+    prevBtn.addEventListener("click", () => {
+        if (!results.length) return;
+        currentIndex = (currentIndex - 1 + results.length) % results.length;
+        highlightCurrent();
+    });
+
+    // LANCER LA RECHERCHE AU TYPAGE
+    input.addEventListener("input", e => highlight(e.target.value));
+
+});
+</script>
             @endif
 
             <div class="modal-body" style="margin-left:-28%;margin-top:7%;">
@@ -1995,6 +2459,7 @@ function updateNavigationButtons() {
 updateNavigationButtons();
 
 
+
 let currentPage = 1;
 function viewFile(fileId) {
      const idx = files.findIndex(f => f.id == fileId);
@@ -2014,22 +2479,19 @@ function viewFile(fileId) {
    
 
     // Mettre à jour le lien de téléchargement
-   // ...existing code...
-const downloadButton = document.querySelector('.action-buttons a.btn-primary');
-if (downloadButton) {
-    downloadButton.href = file.path.startsWith('http') ? file.path : '{{ asset('') }}' + file.path;
-    downloadButton.setAttribute('download', file.name);
-}
-const printButton = document.querySelector('.action-buttons a.btn-secondary');
-if (printButton) {
-    printButton.setAttribute('onclick', `printFile('${file.path.startsWith('http') ? file.path : '{{ asset('') }}' + file.path}')`);
-}
-// ...existing code...
+    const downloadButton = document.querySelector('.action-buttons a.btn-primary');
+    if (downloadButton) {
+        downloadButton.href = file.path; // Mettre à jour le lien
+    }
+    const printButton = document.querySelector('.action-buttons a.btn-secondary');
+    if (printButton) {
+        printButton.setAttribute('onclick', `printFile('${file.path}')`); // Mettre à jour l'URL
+    }
     const url = '/file/view/' + fileId;
     const modal = new bootstrap.Modal(document.getElementById('fileModal'));
     modal.show();
-// Mettre à jour l'ID du fichier dans le formulaire de message
-document.querySelector('input[name="file_id"]').value = fileId;
+    // Mettre à jour l'ID du fichier dans le formulaire de message
+    document.querySelector('input[name="file_id"]').value = fileId;
 
     const filePreviewContent = document.getElementById('filePreviewContent');
     filePreviewContent.innerHTML = '<p>Chargement...</p>';
@@ -2065,171 +2527,171 @@ document.querySelector('input[name="file_id"]').value = fileId;
                 };
                 reader.readAsArrayBuffer(blob);
             } else if (blob.type === 'application/pdf') {
-    filePreviewContent.innerHTML = '';
+                filePreviewContent.innerHTML = '';
 
-    const container = document.createElement('div');
-    container.id = 'pdf-container';
-    filePreviewContent.appendChild(container);
+                const container = document.createElement('div');
+                container.id = 'pdf-container';
+                filePreviewContent.appendChild(container);
 
-    // Ajout du bloc d'affichage dynamique
-    const pageControl = document.createElement('div');
-    // pageControl.id = 'page-num';
-    // pageControl.style = 'text-align: center; color: white; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background-color: rgba(0, 0, 0, .75); border-radius: 25px; padding: 10px;';
-    // pageControl.innerHTML = `
-    //     <span id="current-page-display" style="color:white; cursor: pointer;">Page 1 sur 1</span>
-    // `;
-    document.body.appendChild(pageControl);
+                // Ajout du bloc d'affichage dynamique
+                const pageControl = document.createElement('div');
+                // pageControl.id = 'page-num';
+                // pageControl.style = 'text-align: center; color: white; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background-color: rgba(0, 0, 0, .75); border-radius: 25px; padding: 10px;';
+                // pageControl.innerHTML = `
+                //     <span id="current-page-display" style="color:white; cursor: pointer;">Page 1 sur 1</span>
+                // `;
+                document.body.appendChild(pageControl);
 
-    const currentPageDisplay = document.getElementById('current-page-display');
+                const currentPageDisplay = document.getElementById('current-page-display');
 
-    pdfjsLib.getDocument({ url: fileURL }).promise.then(pdf => {
-        const totalPages = pdf.numPages;
-
-        // Met à jour le texte de la page
-        currentPageDisplay.innerText = `Page ${currentPage} sur ${totalPages}`;
-
-        // Observer les pages visibles
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const visiblePageNum = parseInt(entry.target.getAttribute('data-page-number'));
-                    currentPage = visiblePageNum;
+                pdfjsLib.getDocument({ url: fileURL }).promise.then(pdf => {
+                    const totalPages = pdf.numPages;
+                    // console.log('Total pages:', totalPages);
+                    // Met à jour le texte de la page
                     currentPageDisplay.innerText = `Page ${currentPage} sur ${totalPages}`;
-                }
-            });
-        }, {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.6
-        });
 
- // Gérer le clic pour afficher le champ de saisie
-currentPageDisplay.addEventListener('click', () => {
-    const inputContainer = document.createElement('div'); // Créer un conteneur
-    inputContainer.style.display = 'flex'; // Utiliser flex pour aligner le texte et l'input
+                    // Observer les pages visibles
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const visiblePageNum = parseInt(entry.target.getAttribute('data-page-number'));
+                                currentPage = visiblePageNum;
+                                currentPageDisplay.innerText = `Page ${currentPage} sur ${totalPages}`;
+                            }
+                        });
+                    }, {
+                        root: null,
+                        rootMargin: '0px',
+                        threshold: 0.6
+                    });
 
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.min = 1;
-    input.max = totalPages;
-    input.value = currentPage;
-    input.style.width = '30px';
-    input.style.padding = '4px';
-    input.style.border = 'none';
-    input.style.borderRadius = '0px'; // Supprimer la bordure arrondie
-    input.style.background = 'transparent';
-    input.style.color = 'white'; // Couleur de texte blanche
-    input.style.textAlign = 'center';
-    input.style.outline = 'none';
+                // Gérer le clic pour afficher le champ de saisie
+                currentPageDisplay.addEventListener('click', () => {
+                    const inputContainer = document.createElement('div'); // Créer un conteneur
+                    inputContainer.style.display = 'flex'; // Utiliser flex pour aligner le texte et l'input
 
-    // Masquer les flèches dans différents navigateurs
-    input.style.webkitAppearance = 'none'; // Chrome, Safari, Opera
-    input.style.mozAppearance = 'textfield'; // Firefox
-    input.style.appearance = 'none'; // Standard pour d'autres navigateurs modernes
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.min = 1;
+                    input.max = totalPages;
+                    input.value = currentPage;
+                    input.style.width = '30px';
+                    input.style.padding = '4px';
+                    input.style.border = 'none';
+                    input.style.borderRadius = '0px'; // Supprimer la bordure arrondie
+                    input.style.background = 'transparent';
+                    input.style.color = 'white'; // Couleur de texte blanche
+                    input.style.textAlign = 'center';
+                    input.style.outline = 'none';
 
-    // Cibler spécifiquement les flèches pour les versions récentes de Chrome et Safari
-    input.style.msInputMethod = 'none'; // Pour Internet Explorer et Edge (ancien)
+                    // Masquer les flèches dans différents navigateurs
+                    input.style.webkitAppearance = 'none'; // Chrome, Safari, Opera
+                    input.style.mozAppearance = 'textfield'; // Firefox
+                    input.style.appearance = 'none'; // Standard pour d'autres navigateurs modernes
 
-    // Supprimer la zone de texte par défaut sous Safari
-    input.style.background = 'transparent';
-    input.style.overflow = 'hidden'; // Masquer l'overflow de la zone du spinner
+                    // Cibler spécifiquement les flèches pour les versions récentes de Chrome et Safari
+                    input.style.msInputMethod = 'none'; // Pour Internet Explorer et Edge (ancien)
 
-    // Créer un élément pour le texte "Page"
-    const pageText = document.createElement('span');
-    const surText = document.createElement('span');
-    const totalText = document.createElement('span');
+                    // Supprimer la zone de texte par défaut sous Safari
+                    input.style.background = 'transparent';
+                    input.style.overflow = 'hidden'; // Masquer l'overflow de la zone du spinner
 
-    pageText.innerText = 'Page ';
-    surText.innerText = ' sur ';
-    totalText.innerText = ` ${totalPages}`;
+                    // Créer un élément pour le texte "Page"
+                    const pageText = document.createElement('span');
+                    const surText = document.createElement('span');
+                    const totalText = document.createElement('span');
 
-    pageText.style.color = 'white'; // Couleur de texte blanche
-    pageText.style.marginRight = '5px'; // Espace entre le texte et l'input
+                    pageText.innerText = 'Page ';
+                    surText.innerText = ' sur ';
+                    totalText.innerText = ` ${totalPages}`;
 
-    // Ajouter le texte et l'input au conteneur
-    inputContainer.appendChild(pageText);
-    inputContainer.appendChild(input);
-    inputContainer.appendChild(surText);
-    inputContainer.appendChild(totalText);
+                    pageText.style.color = 'white'; // Couleur de texte blanche
+                    pageText.style.marginRight = '5px'; // Espace entre le texte et l'input
 
-    // Remplacer currentPageDisplay par le conteneur
-    currentPageDisplay.replaceWith(inputContainer);
-    input.focus();
+                    // Ajouter le texte et l'input au conteneur
+                    inputContainer.appendChild(pageText);
+                    inputContainer.appendChild(input);
+                    inputContainer.appendChild(surText);
+                    inputContainer.appendChild(totalText);
 
-    const validateInput = () => {
-        const pageNum = parseInt(input.value);
-        if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
-            const targetPage = document.querySelector(`.pdf-page[data-page-number='${pageNum}']`);
-            if (targetPage) {
-                targetPage.scrollIntoView({ behavior: 'smooth' });
-            }
-            currentPage = pageNum; // Mettre à jour la page actuelle
-        }
-        // Mettre à jour le message avec la valeur de l'input
-        currentPageDisplay.innerText = `Page ${currentPage} sur ${totalPages}`;
-        inputContainer.replaceWith(currentPageDisplay); // Remplacer le conteneur par le texte
-    };
+                    // Remplacer currentPageDisplay par le conteneur
+                    currentPageDisplay.replaceWith(inputContainer);
+                    input.focus();
 
-    input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            validateInput();
-        }
-    });
+                    const validateInput = () => {
+                        const pageNum = parseInt(input.value);
+                        if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+                            const targetPage = document.querySelector(`.pdf-page[data-page-number='${pageNum}']`);
+                            if (targetPage) {
+                                targetPage.scrollIntoView({ behavior: 'smooth' });
+                            }
+                            currentPage = pageNum; // Mettre à jour la page actuelle
+                        }
+                        // Mettre à jour le message avec la valeur de l'input
+                        currentPageDisplay.innerText = `Page ${currentPage} sur ${totalPages}`;
+                        inputContainer.replaceWith(currentPageDisplay); // Remplacer le conteneur par le texte
+                    };
 
-    input.addEventListener('blur', () => {
-        validateInput();
-    });
-});
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            validateInput();
+                        }
+                    });
 
-
-        // Rendu de chaque page
-        for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-            pdf.getPage(pageNum).then(page => {
-                const scale = 1.5;
-                const viewport = page.getViewport({ scale });
-
-                const pageContainer = document.createElement('div');
-                pageContainer.className = 'pdf-page';
-                pageContainer.setAttribute('data-page-number', pageNum);
-                pageContainer.style.position = 'relative';
-                pageContainer.style.marginBottom = '20px';
-                // pageContainer.style.border = '1px solid #ccc';
-                container.appendChild(pageContainer);
-
-                observer.observe(pageContainer); // 👈 observer chaque page
-
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                pageContainer.appendChild(canvas);
-
-                page.render({ canvasContext: context, viewport });
-
-                page.getTextContent().then(textContent => {
-                    const textLayerDiv = document.createElement('div');
-                    textLayerDiv.className = 'textLayer';
-                    textLayerDiv.style.position = 'absolute';
-                    textLayerDiv.style.top = '0';
-                    textLayerDiv.style.left = '0';
-                    textLayerDiv.style.height = `${viewport.height}px`;
-                    textLayerDiv.style.width = `${viewport.width}px`;
-                    textLayerDiv.style.pointerEvents = 'auto';
-                    pageContainer.appendChild(textLayerDiv);
-
-                    pdfjsLib.renderTextLayer({
-                        textContent,
-                        container: textLayerDiv,
-                        viewport,
-                        textDivs: []
+                    input.addEventListener('blur', () => {
+                        validateInput();
                     });
                 });
-            });
-        }
-    }).catch(err => {
-        console.error("Erreur lors de l'affichage du PDF :", err);
-        filePreviewContent.innerHTML = '<p>Impossible d\'afficher le fichier PDF.</p>';
-    });
+
+
+                            // Rendu de chaque page
+                            for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                                pdf.getPage(pageNum).then(page => {
+                                    const scale = 1.5;
+                                    const viewport = page.getViewport({ scale });
+
+                                    const pageContainer = document.createElement('div');
+                                    pageContainer.className = 'pdf-page';
+                                    pageContainer.setAttribute('data-page-number', pageNum);
+                                    pageContainer.style.position = 'relative';
+                                    pageContainer.style.marginBottom = '20px';
+                                    // pageContainer.style.border = '1px solid #ccc';
+                                    container.appendChild(pageContainer);
+
+                                    observer.observe(pageContainer); // 👈 observer chaque page
+
+                                    const canvas = document.createElement('canvas');
+                                    const context = canvas.getContext('2d');
+                                    canvas.height = viewport.height;
+                                    canvas.width = viewport.width;
+                                    pageContainer.appendChild(canvas);
+
+                                    page.render({ canvasContext: context, viewport });
+
+                                    page.getTextContent().then(textContent => {
+                                        const textLayerDiv = document.createElement('div');
+                                        textLayerDiv.className = 'textLayer';
+                                        textLayerDiv.style.position = 'absolute';
+                                        textLayerDiv.style.top = '0';
+                                        textLayerDiv.style.left = '0';
+                                        textLayerDiv.style.height = `${viewport.height}px`;
+                                        textLayerDiv.style.width = `${viewport.width}px`;
+                                        textLayerDiv.style.pointerEvents = 'auto';
+                                        pageContainer.appendChild(textLayerDiv);
+
+                                        pdfjsLib.renderTextLayer({
+                                            textContent,
+                                            container: textLayerDiv,
+                                            viewport,
+                                            textDivs: []
+                                        });
+                                    });
+                                });
+                            }
+                        }).catch(err => {
+                            console.error("Erreur lors de l'affichage du PDF :", err);
+                            filePreviewContent.innerHTML = '<p>Impossible d\'afficher le fichier PDF.</p>';
+                        });
 }
          
  else if (['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'].includes(blob.type)) {
@@ -2316,545 +2778,482 @@ currentPageDisplay.addEventListener('click', () => {
                     messagesContainer.innerHTML = ''; // Vider le conteneur avant d'ajouter les nouveaux messages
 
                     data.messages.forEach(function(message) {
-var messageDiv = document.createElement("div");
-messageDiv.classList.add("message");
-messageDiv.setAttribute("data-message-id", message.id); // Ajoute l'ID ici
-    
-    // Création du message
-    var userMessage = document.createElement("p");
-    userMessage.innerHTML = `<strong>${message.user_name}:</strong></br/><i style="font-size:10px;">  ${message.created_at}</i> </br/><p style="font-size:18px;"> ${message.text_message} </p>`;
-    console.log("Message:", message);
-
-    // Vérifiez si le message a un commentaire
-// Dans la boucle où vous créez les messages
-// if (message.commentaire !== null) {
-//     var commentIcon = document.createElement("i");
-//     commentIcon.classList.add("fas", "fa-comment");
-//     commentIcon.title = "Ce message a un commentaire";
-//     userMessage.appendChild(commentIcon);
-
-//     // Ajoutez l'événement de clic ici
-//     commentIcon.addEventListener("click", function() {
-//         handleCommentClick(message.commentaire); // Passer le texte du commentaire à la fonction
-//     });
-// }
-
-
-// Ajoute cette fonction juste après renderMessages ou à la fin de ton script
-// Place cette fonction tout en haut de ton <script> principal, AVANT le addEventListener du formulaire
-// Placez ceci AVANT le addEventListener du formulaire
-function reloadMessages(fileId) {
-    fetch(`/messages/getMessages/${fileId}`)
-        .then(response => response.json())
-        .then(data => {
-            renderMessages(data.messages);
-        })
-        .catch(error => console.error("Erreur lors du rechargement des messages:", error));
-}
-
-// ...puis le reste de votre script...
-// if (!window.messageFormListenerAdded) {
-//     document.getElementById('messageForm').addEventListener('submit', function(event) {
-//         event.preventDefault();
-//         const formData = new FormData(this);
-//         fetch("{{ route('messages.store') }}", {
-//             method: 'POST',
-//             body: formData,
-//             headers: {
-//                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-//             }
-//         })
-//         .then(response => response.json())
-      
-//         .then(data => {
-            
-//             if (data.success) {
-//                 const fileId = document.querySelector('input[name="file_id"]').value;
-//                 document.getElementById("message_text").value = '';
-//                 viewFile(parseInt(fileId)); // <-- Toujours rappeler viewFile même si c'est le premier message
-//                 highlightComments(data.comments); // Assurez-vous que `data.comments` contient les commentaires à colorer
-
-            
-//             } else {
-//                 alert("Erreur lors de l'envoi du message.");
-//             }
-//         })
-
-//         .catch(error => console.error("Erreur lors de l'envoi du message:", error));
-//     });
-//     window.messageFormListenerAdded = true;
-// }
-
-
-messageDiv.addEventListener("mouseover", function() {
-    highlightComments(data.messages, message.commentaire); // Passe le commentaire du message survolé
-   if (message.commentaire) {
-        showBigFlesh(messageDiv, message.commentaire); // Nouvelle fonction pour la grande flèche
-    }
-});
-messageDiv.addEventListener("mouseout", function() {
-    highlightComments(data.messages); // Remet le surlignage normal
-        removeBigFlesh(); // Supprimer la flèche quand on quitte le message
-
-});
-
-
-
-function showBigFlesh(messageDiv, commentText) {
-    removeBigFlesh();
-
-    const textLayer = document.querySelector('.textLayer');
-    if (!textLayer) return;
-    const textElements = textLayer.getElementsByTagName('span');
-    let targetSpan = null;
-    for (let el of textElements) {
-        if (el.textContent.trim().includes(commentText.trim())) {
-            targetSpan = el;
-            break;
-        }
-    }
-    if (!targetSpan) return;
-
-    const spanRect = targetSpan.getBoundingClientRect();
-    const msgRect = messageDiv.getBoundingClientRect();
-
-    // Départ : coin supérieur gauche du message
-    const startX = msgRect.left;
-    const startY = msgRect.top;
-    // Arrivée : coin inférieur droit du commentaire
-    const endX = spanRect.right;
-    const endY = spanRect.bottom;
-
-    // Calcul du cône
-    const dx = endX - startX;
-    const dy = endY - startY;
-    const length = Math.sqrt(dx * dx + dy * dy);
-    const coneWidth = 24;
-    const halfWidth = coneWidth / 2;
-    const nx = -dy / length;
-    const ny = dx / length;
-
-    // Points du triangle (large côté message, pointe côté commentaire)
-    const p1x = startX + nx * halfWidth;
-    const p1y = startY + ny * halfWidth;
-    const p2x = startX - nx * halfWidth;
-    const p2y = startY - ny * halfWidth;
-    const p3x = endX;
-    const p3y = endY;
-
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.id = "big-flesh-svg";
-    svg.style.position = "fixed";
-    svg.style.left = "0";
-    svg.style.top = "0";
-    svg.style.width = "100vw";
-    svg.style.height = "100vh";
-    svg.style.pointerEvents = "none";
-    svg.style.zIndex = "2000";
-    
-    const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    polygon.setAttribute("points", `${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}`);
-    polygon.setAttribute("fill", "yellow");
-    polygon.setAttribute("opacity", "0.7");
-
-    svg.appendChild(polygon);
-    document.body.appendChild(svg);
-}
-
-// Fonction pour supprimer la flèche
-function removeBigFlesh() {
-    const oldSvg = document.getElementById("big-flesh-svg");
-    if (oldSvg) oldSvg.remove();
-}
-
-
-
-
-
-
-
-
-
-
-
-// Affiche une flèche du commentaire (dans le PDF) vers son message (dans la chat-box)
-
-function showFleshFromCommentToMessage(commentText, hoveredSpan = null) {
-    removeBigFlesh();
-
-    // Utiliser le span survolé si fourni, sinon le chercher
-    let targetSpan = hoveredSpan;
-    if (!targetSpan) {
-        const textLayer = document.querySelector('.textLayer');
-        if (!textLayer) return;
-        const textElements = textLayer.getElementsByTagName('span');
-        for (let el of textElements) {
-            if (el.textContent.trim().includes(commentText.trim())) {
-                targetSpan = el;
-                break;
-            }
-        }
-    }
-    if (!targetSpan) return;
-
-    // Trouver le message correspondant dans la chat-box
-    const messages = document.querySelectorAll('#messages-container .message');
-    let targetMessage = null;
-    messages.forEach(msg => {
-        if (msg.innerText.includes(commentText.trim())) {
-            targetMessage = msg;
-        }
-    });
-    if (!targetMessage) return;
-
-    // Scroll le message dans la vue
-    targetMessage.scrollIntoView({ behavior: "smooth", block: "center" });
-
-    // Surligner le message
-    targetMessage.style.backgroundColor = "orange";
-    setTimeout(() => {
-        targetMessage.style.backgroundColor = "";
-    }, 1000);
-
-    // Attendre que le scroll soit terminé avant de dessiner la flèche
-   
-setTimeout(() => {
-    const spanRect = targetSpan.getBoundingClientRect();
-    const msgRect = targetMessage.getBoundingClientRect();
-
-    // Point de départ : bord droit du commentaire
-    const startX = spanRect.right;
-    const startY = spanRect.top + (spanRect.height / 2);
-    // Point d'arrivée : bord gauche du message
-    const endX = msgRect.left;
-    const endY = msgRect.top + (msgRect.height / 2);
-
-    // Calculer la direction du vecteur
-    const dx = endX - startX;
-    const dy = endY - startY;
-    const length = Math.sqrt(dx * dx + dy * dy);
-
-    // Largeur du cône (ajustez selon vos besoins)
-    const coneWidth = 20; // largeur à la base (départ)
-    const halfWidth = coneWidth / 2;
-
-    // Calculer le vecteur perpendiculaire normalisé
-    const nx = -dy / length;
-    const ny = dx / length;
-
-    // Points du triangle (cône)
-    const p1x = startX + nx * halfWidth;
-    const p1y = startY + ny * halfWidth;
-    const p2x = startX - nx * halfWidth;
-    const p2y = startY - ny * halfWidth;
-    const p3x = endX;
-    const p3y = endY;
-
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.id = "big-flesh-svg";
-    svg.style.position = "fixed";
-    svg.style.left = "0";
-    svg.style.top = "0";
-    svg.style.width = "100vw";
-    svg.style.height = "100vh";
-    svg.style.pointerEvents = "none";
-    svg.style.zIndex = "2000";
-
-    // Créer le triangle (cône)
-    const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    polygon.setAttribute("points", `${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}`);
-    polygon.setAttribute("fill", "yellow");
-    polygon.setAttribute("opacity", "0.7");
-
-    svg.appendChild(polygon);
-    document.body.appendChild(svg);
-}, 400); // 400ms pour laisser le scroll se faire
-
-}
-
-
-// Ajoutez ce bloc après le rendu du PDF et l'appel à highlightComments
-
-document.addEventListener('mouseover', function(event) {
-    const span = event.target.closest('.highlight1, .highlight2');
-    if (span && span.getAttribute('data-comment')) {
-        showFleshFromCommentToMessage(span.getAttribute('data-comment'), span);
-
-        // Surligner le message et ses réponses
-        const comment = span.getAttribute('data-comment');
-        document.querySelectorAll('#messages-container .message').forEach(msg => {
-            if (msg.innerText.includes(comment)) {
-                msg.style.backgroundColor = 'yellow';
-                // Surligner aussi les réponses
-                msg.querySelectorAll('.message').forEach(reply => {
-                    reply.style.backgroundColor = 'yellow';
-                });
-            }
-        });
-    }
-});
-
-document.addEventListener('mouseout', function(event) {
-    const span = event.target.closest('.highlight1, .highlight2');
-    if (span) {
-        removeBigFlesh();
-        // Retirer le surlignage jaune
-        document.querySelectorAll('#messages-container .message').forEach(msg => {
-            msg.style.backgroundColor = '';
-            msg.querySelectorAll('.message').forEach(reply => {
-                reply.style.backgroundColor = '';
-            });
-        });
-    }
-});
-
-
-
-    // Actions du message
-    var actionsDiv = document.createElement("div");
-    actionsDiv.classList.add("message-actions");
-
-    
-    var markAsReadButton = document.createElement("i");
-    markAsReadButton.classList.add("fas", message.is_read ? "fa-envelope-open" : "fa-envelope");
-    markAsReadButton.style.cursor = "pointer";
-    markAsReadButton.style.fontSize = "15px";
-    markAsReadButton.style.color = message.is_read ? "#28a745" : "#e74a3b";
-    markAsReadButton.title = message.is_read ? "Marquer comme non lue" : "Marquer comme lue";
-                     
-    markAsReadButton.addEventListener("click", function() {
-                            fetch(`/messages/read/${message.id}`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                }
-                            })
+                    var messageDiv = document.createElement("div");
+                    messageDiv.classList.add("message");
+                    messageDiv.setAttribute("data-message-id", message.id); // Ajoute l'ID ici
+                        
+                    // Création du message
+                    var userMessage = document.createElement("p");
+                    userMessage.innerHTML = `<strong>${message.user_name}:</strong></br/><i style="font-size:10px;">  ${message.created_at}</i> </br/><p style="font-size:18px;"> ${message.text_message} </p>`;
+                    console.log("Message:", message);
+                
+                    function reloadMessages(fileId) {
+                        fetch(`/messages/getMessages/${fileId}`)
                             .then(response => response.json())
                             .then(data => {
-                                if (data.success) {
-                                    markAsReadButton.classList.replace("fa-envelope", "fa-envelope-open");
-                                    markAsReadButton.style.color = "#28a745"; // Change la couleur pour indiquer que le message est lu
-                                } else {
-                                    alert(data.message); // Affiche un message d'erreur si le message n'a pas pu être marqué comme lu
-                                }
+                                renderMessages(data.messages);
                             })
-                            .catch(error => console.error("Erreur lors de la mise à jour de l'état de lecture:", error));
-                        });
-  
+                            .catch(error => console.error("Erreur lors du rechargement des messages:", error));
+                    }
+    
 
-     // Bouton de suppression
-     var deleteButton = document.createElement("button");
-                        deleteButton.innerHTML = '<i class="fas fa-trash" title="Supprimer"></i>';
-                        deleteButton.style = "background: none; border: none; cursor: pointer; color: #ff0000;";
-                        deleteButton.addEventListener("click", function() {
-                            if (confirm("Êtes-vous sûr de vouloir supprimer ce message ?")) {
-                                fetch(`/messages/delete/${message.id}`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                    }
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        messageDiv.remove();
-                                    } else {
-                                        alert("Erreur lors de la suppression du message.");
-                                    }
-                                })
-                                .catch(error => console.error("Erreur lors de la suppression du message:", error));
-                            }
-                        });
-                        //modification button
-    var editButton = document.createElement("button");
-                        editButton.innerHTML = '<i class="fas fa-edit" title="Modifier"></i>';
-                        editButton.style = "background: none; border: none; cursor: pointer; color: #f39c12;";
+                    messageDiv.addEventListener("mouseover", function() {
+                        highlightComments(data.messages, message.commentaire); // Passe le commentaire du message survolé
+                    if (message.commentaire) {
+                            // showBigFlesh(messageDiv, message.commentaire); // Nouvelle fonction pour la grande flèche
+                        }
+                    });
+                    messageDiv.addEventListener("mouseout", function() {
+                        highlightComments(data.messages); // Remet le surlignage normal
+                            // removeBigFlesh(); // Supprimer la flèche quand on quitte le message
 
-                        editButton.addEventListener("click", function() {
-                            var newText = prompt("Modifiez votre message:", message.text_message);
-                            if (newText) {
-                                fetch(`/messages/update/${message.id}`, {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                    },
-                                    body: JSON.stringify({ text_message: newText })
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-viewFile(parseInt(fileId))
-                                    } else {
-                                        alert("Erreur lors de la modification du message.");
-                                    }
-                                })
-                                .catch(error => console.error("Erreur lors de la modification du message:", error));
-                            }
-                        });
-// Bouton de réponse
-var replyButton = document.createElement("button");
-                        replyButton.innerHTML = '<i class="fas fa-reply" title="Répondre"></i>';
-                        replyButton.style = "background: none; border: none; cursor: pointer; color: #1a73e8;";
-                        replyButton.addEventListener("click", function() {
-                            var replyForm = document.createElement("form");
-                            replyForm.action = "{{ route('messages.store') }}";
-                            replyForm.className = "inline-reply-box"; 
-                            replyForm.method = "POST";
-                            replyForm.innerHTML = `@csrf
-                                <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
-                                <input type="hidden" name="file_id" value="{{ $file->id ?? 'null' }}">
-                                <input type="hidden" name="reply_to_message_id" value="${message.id}">
-                                <input type="hidden" name="societe_id" value="{{ session('societeId') }}">
-                                <textarea name="text_message" placeholder="Répondre..." style="width: 100%; height: 60px;"></textarea>
-                                <div style="display: flex; width: 100%; gap: 0;">
-  <!-- Bouton Envoyer -->
-  <button type="submit" style="
-    width: 50%;
-    background-color: #28a745;
-    color: #ffffff;
-    border: none;
-    padding: 10px 0;
-    font-size: 16px;
-    border-radius: 4px 0 0 4px;
-    cursor: pointer;
-  ">
-    Envoyer
-  </button>
+                    });
 
-  <!-- Bouton Annuler -->
-  <button type="button" class="cancel-reply" style="
-  margin-left:8px;
-    width: 50%;
-    background-color: #28a745;
-    color: #ffffff;
-    border: none;
-    padding: 10px 0;
-    font-size: 16px;
-    border-radius: 0 4px 4px 0;
-    cursor: pointer;
-  ">
-    Annuler
-  </button>
-</div>
-`;
 
-                            // Ajouter l'événement pour le bouton Annuler
-                            var cancelButton = replyForm.querySelector(".cancel-reply");
-                            cancelButton.addEventListener("click", function() {
-                                replyForm.remove(); // Supprimer le formulaire lorsque le bouton Annuler est cliqué
+
+                    // function showBigFlesh(messageDiv, commentText) {
+                    //     removeBigFlesh();
+
+                    //     const textLayer = document.querySelector('.textLayer');
+                    //     if (!textLayer) return;
+                    //     const textElements = textLayer.getElementsByTagName('span');
+                    //     let targetSpan = null;
+                    //     for (let el of textElements) {
+                    //         if (el.textContent.trim().includes(commentText.trim())) {
+                    //             targetSpan = el;
+                    //             break;
+                    //         }
+                    //     }
+                    //     if (!targetSpan) return;
+
+                    //     const spanRect = targetSpan.getBoundingClientRect();
+                    //     const msgRect = messageDiv.getBoundingClientRect();
+
+                    //     // Départ : coin supérieur gauche du message
+                    //     const startX = msgRect.left;
+                    //     const startY = msgRect.top;
+                    //     // Arrivée : coin inférieur droit du commentaire
+                    //     const endX = spanRect.right;
+                    //     const endY = spanRect.bottom;
+
+                    //     // Calcul du cône
+                    //     const dx = endX - startX;
+                    //     const dy = endY - startY;
+                    //     const length = Math.sqrt(dx * dx + dy * dy);
+                    //     const coneWidth = 24;
+                    //     const halfWidth = coneWidth / 2;
+                    //     const nx = -dy / length;
+                    //     const ny = dx / length;
+
+                    //     // Points du triangle (large côté message, pointe côté commentaire)
+                    //     const p1x = startX + nx * halfWidth;
+                    //     const p1y = startY + ny * halfWidth;
+                    //     const p2x = startX - nx * halfWidth;
+                    //     const p2y = startY - ny * halfWidth;
+                    //     const p3x = endX;
+                    //     const p3y = endY;
+
+                    //     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    //     svg.id = "big-flesh-svg";
+                    //     svg.style.position = "fixed";
+                    //     svg.style.left = "0";
+                    //     svg.style.top = "0";
+                    //     svg.style.width = "100vw";
+                    //     svg.style.height = "100vh";
+                    //     svg.style.pointerEvents = "none";
+                    //     svg.style.zIndex = "2000";
+                        
+                    //     const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                    //     polygon.setAttribute("points", `${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}`);
+                    //     polygon.setAttribute("fill", "yellow");
+                    //     polygon.setAttribute("opacity", "0.7");
+
+                    //     svg.appendChild(polygon);
+                    //     document.body.appendChild(svg);
+                    // }
+
+                    // Fonction pour supprimer la flèche
+                    // function removeBigFlesh() {
+                    //     const oldSvg = document.getElementById("big-flesh-svg");
+                    //     if (oldSvg) oldSvg.remove();
+                    // }
+
+
+ 
+                    // function showFleshFromCommentToMessage(commentText, hoveredSpan = null) {
+                    //     // removeBigFlesh();
+
+                    //     // Utiliser le span survolé si fourni, sinon le chercher
+                    //     let targetSpan = hoveredSpan;
+                    //     if (!targetSpan) {
+                    //         const textLayer = document.querySelector('.textLayer');
+                    //         if (!textLayer) return;
+                    //         const textElements = textLayer.getElementsByTagName('span');
+                    //         for (let el of textElements) {
+                    //             if (el.textContent.trim().includes(commentText.trim())) {
+                    //                 targetSpan = el;
+                    //                 break;
+                    //             }
+                    //         }
+                    //     }
+                    //     if (!targetSpan) return;
+
+                    //     // Trouver le message correspondant dans la chat-box
+                    //     const messages = document.querySelectorAll('#messages-container .message');
+                    //     let targetMessage = null;
+                    //     messages.forEach(msg => {
+                    //         if (msg.innerText.includes(commentText.trim())) {
+                    //             targetMessage = msg;
+                    //         }
+                    //     });
+                    //     if (!targetMessage) return;
+
+                    //     // Scroll le message dans la vue
+                    //     targetMessage.scrollIntoView({ behavior: "smooth", block: "center" });
+
+                    //     // Surligner le message
+                    //     targetMessage.style.backgroundColor = "orange";
+                    //     setTimeout(() => {
+                    //         targetMessage.style.backgroundColor = "";
+                    //     }, 1000);
+
+                    //     // Attendre que le scroll soit terminé avant de dessiner la flèche
+                    
+                    //     setTimeout(() => {
+                    //         const spanRect = targetSpan.getBoundingClientRect();
+                    //         const msgRect = targetMessage.getBoundingClientRect();
+
+                    //         // Point de départ : bord droit du commentaire
+                    //         const startX = spanRect.right;
+                    //         const startY = spanRect.top + (spanRect.height / 2);
+                    //         // Point d'arrivée : bord gauche du message
+                    //         const endX = msgRect.left;
+                    //         const endY = msgRect.top + (msgRect.height / 2);
+
+                    //         // Calculer la direction du vecteur
+                    //         const dx = endX - startX;
+                    //         const dy = endY - startY;
+                    //         const length = Math.sqrt(dx * dx + dy * dy);
+
+                    //         // Largeur du cône (ajustez selon vos besoins)
+                    //         const coneWidth = 20; // largeur à la base (départ)
+                    //         const halfWidth = coneWidth / 2;
+
+                    //         // Calculer le vecteur perpendiculaire normalisé
+                    //         const nx = -dy / length;
+                    //         const ny = dx / length;
+
+                    //         // Points du triangle (cône)
+                    //         const p1x = startX + nx * halfWidth;
+                    //         const p1y = startY + ny * halfWidth;
+                    //         const p2x = startX - nx * halfWidth;
+                    //         const p2y = startY - ny * halfWidth;
+                    //         const p3x = endX;
+                    //         const p3y = endY;
+
+                    //         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    //         svg.id = "big-flesh-svg";
+                    //         svg.style.position = "fixed";
+                    //         svg.style.left = "0";
+                    //         svg.style.top = "0";
+                    //         svg.style.width = "100vw";
+                    //         svg.style.height = "100vh";
+                    //         svg.style.pointerEvents = "none";
+                    //         svg.style.zIndex = "2000";
+
+                    //         // Créer le triangle (cône)
+                    //         const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                    //         polygon.setAttribute("points", `${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}`);
+                    //         polygon.setAttribute("fill", "yellow");
+                    //         polygon.setAttribute("opacity", "0.7");
+
+                    //         svg.appendChild(polygon);
+                    //         document.body.appendChild(svg);
+                    //     }, 400); // 400ms pour laisser le scroll se faire
+
+                    // }
+
+
+ 
+                    document.addEventListener('mouseover', function(event) {
+                        const span = event.target.closest('.highlight1, .highlight2');
+                        if (span && span.getAttribute('data-comment')) {
+                            // showFleshFromCommentToMessage(span.getAttribute('data-comment'), span);
+
+                            // Surligner le message et ses réponses
+                            const comment = span.getAttribute('data-comment');
+                            document.querySelectorAll('#messages-container .message').forEach(msg => {
+                                if (msg.innerText.includes(comment)) {
+                                    msg.style.backgroundColor = 'yellow';
+                                    // Surligner aussi les réponses
+                                    msg.querySelectorAll('.message').forEach(reply => {
+                                        reply.style.backgroundColor = 'yellow';
+                                    });
+                                }
                             });
+                        }
+                    });
 
-                            messageDiv.appendChild(replyForm);
+                    document.addEventListener('mouseout', function(event) {
+                        const span = event.target.closest('.highlight1, .highlight2');
+                        if (span) {
+                            // removeBigFlesh();
+                            // Retirer le surlignage jaune
+                            document.querySelectorAll('#messages-container .message').forEach(msg => {
+                                msg.style.backgroundColor = '';
+                                msg.querySelectorAll('.message').forEach(reply => {
+                                    reply.style.backgroundColor = '';
+                                });
+                            });
+                        }
+                    });
+
+
+
+                    // Actions du message
+                    var actionsDiv = document.createElement("div");
+                    actionsDiv.classList.add("message-actions");
+
+                    
+                    var markAsReadButton = document.createElement("i");
+                        markAsReadButton.classList.add("fas", message.is_read ? "fa-envelope-open" : "fa-envelope");
+                        markAsReadButton.style.cursor = "pointer";
+                        markAsReadButton.style.fontSize = "15px";
+                        markAsReadButton.style.color = message.is_read ? "#28a745" : "#e74a3b";
+                        markAsReadButton.title = message.is_read ? "Marquer comme non lue" : "Marquer comme lue";
+                                        
+                        markAsReadButton.addEventListener("click", function() {
+                                            fetch(`/messages/read/${message.id}`, {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                                }
+                                            })
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                if (data.success) {
+                                                    markAsReadButton.classList.replace("fa-envelope", "fa-envelope-open");
+                                                    markAsReadButton.style.color = "#28a745"; // Change la couleur pour indiquer que le message est lu
+                                                } else {
+                                                    alert(data.message); // Affiche un message d'erreur si le message n'a pas pu être marqué comme lu
+                                                }
+                                            })
+                                            .catch(error => console.error("Erreur lors de la mise à jour de l'état de lecture:", error));
+                                        });
+                
+
+                    // Bouton de suppression
+                    var deleteButton = document.createElement("button");
+                                        deleteButton.innerHTML = '<i class="fas fa-trash" title="Supprimer"></i>';
+                                        deleteButton.style = "background: none; border: none; cursor: pointer; color: #ff0000;";
+                                        deleteButton.addEventListener("click", function() {
+                                            if (confirm("Êtes-vous sûr de vouloir supprimer ce message ?")) {
+                                                fetch(`/messages/delete/${message.id}`, {
+                                                    method: 'DELETE',
+                                                    headers: {
+                                                        'Content-Type': 'application/json',
+                                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                                    }
+                                                })
+                                                .then(response => response.json())
+                                                .then(data => {
+                                                    if (data.success) {
+                                                        messageDiv.remove();
+                                                    } else {
+                                                        alert("Erreur lors de la suppression du message.");
+                                                    }
+                                                })
+                                                .catch(error => console.error("Erreur lors de la suppression du message:", error));
+                                            }
+                                        });
+                                        //modification button
+                    var editButton = document.createElement("button");
+                                        editButton.innerHTML = '<i class="fas fa-edit" title="Modifier"></i>';
+                                        editButton.style = "background: none; border: none; cursor: pointer; color: #f39c12;";
+
+                                        editButton.addEventListener("click", function() {
+                                            var newText = prompt("Modifiez votre message:", message.text_message);
+                                            if (newText) {
+                                                fetch(`/messages/update/${message.id}`, {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json',
+                                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                                    },
+                                                    body: JSON.stringify({ text_message: newText })
+                                                })
+                                                .then(response => response.json())
+                                                .then(data => {
+                                                    if (data.success) {
+                                                        viewFile(parseInt(fileId))
+                                                    } else {
+                                                        alert("Erreur lors de la modification du message.");
+                                                    }
+                                                })
+                                                .catch(error => console.error("Erreur lors de la modification du message:", error));
+                                            }
+                                        });
+                    // Bouton de réponse
+                    var replyButton = document.createElement("button");
+                                            replyButton.innerHTML = '<i class="fas fa-reply" title="Répondre"></i>';
+                                            replyButton.style = "background: none; border: none; cursor: pointer; color: #1a73e8;";
+                                            replyButton.addEventListener("click", function() {
+                                                var replyForm = document.createElement("form");
+                                                replyForm.action = "{{ route('messages.store') }}";
+                                                replyForm.className = "inline-reply-box"; 
+                                                replyForm.method = "POST";
+                                                replyForm.innerHTML = `@csrf
+                                                    <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
+                                                    <input type="hidden" name="file_id" value="{{ $file->id ?? 'null' }}">
+                                                    <input type="hidden" name="reply_to_message_id" value="${message.id}">
+                                                    <input type="hidden" name="societe_id" value="{{ session('societeId') }}">
+                                                    <textarea name="text_message" placeholder="Répondre..." style="width: 100%; height: 60px;"></textarea>
+                                                    <div style="display: flex; width: 100%; gap: 0;">
+                                                    <!-- Bouton Envoyer -->
+                                                    <button type="submit" style="
+                                                        width: 50%;
+                                                        background-color: #28a745;
+                                                        color: #ffffff;
+                                                        border: none;
+                                                        padding: 10px 0;
+                                                        font-size: 16px;
+                                                        border-radius: 4px 0 0 4px;
+                                                        cursor: pointer;
+                                                    ">
+                                                        Envoyer
+                                                    </button>
+
+                                                    <!-- Bouton Annuler -->
+                                                    <button type="button" class="cancel-reply" style="
+                                                    margin-left:8px;
+                                                        width: 50%;
+                                                        background-color: #28a745;
+                                                        color: #ffffff;
+                                                        border: none;
+                                                        padding: 10px 0;
+                                                        font-size: 16px;
+                                                        border-radius: 0 4px 4px 0;
+                                                        cursor: pointer;
+                                                    ">
+                                                        Annuler
+                                                    </button>
+                                                    </div>
+                                                    `;
+
+                                                // Ajouter l'événement pour le bouton Annuler
+                                                var cancelButton = replyForm.querySelector(".cancel-reply");
+                                                cancelButton.addEventListener("click", function() {
+                                                    replyForm.remove(); // Supprimer le formulaire lorsque le bouton Annuler est cliqué
+                                                });
+
+                                                messageDiv.appendChild(replyForm);
+                                            });
+
+                        actionsDiv.appendChild(replyButton);                 
+                        actionsDiv.appendChild(markAsReadButton);
+                        actionsDiv.appendChild(editButton);  
+                        actionsDiv.appendChild(deleteButton);
+                        messageDiv.appendChild(userMessage);
+                        messageDiv.appendChild(actionsDiv);
+                        messagesContainer.appendChild(messageDiv);
+
+                        // Afficher les réponses
+                        if (message.replies.length > 0) {
+                                                var repliesDiv = document.createElement("div");
+                                                repliesDiv.style.marginLeft = "20px"; // Décalage pour les réponses
+                                                message.replies.forEach(function(reply) {
+                                                    var replyDiv = document.createElement("div");
+                                                    replyDiv.classList.add("message");
+
+                                                    // Affichage du message de la réponse
+                                                    replyDiv.innerHTML = `<p><strong>${reply.user_name}:</strong></br><i style="font-size:10px;"> ${reply.created_at}</i><br><p style="font-size:18px;">${reply.text_message}</p></p>`;
+                                                    
+                                                    // Actions de la réponse
+                                                    var replyActionsDiv = document.createElement("div");
+                                                    replyActionsDiv.style.display = "flex"; 
+                                                    replyActionsDiv.style.alignItems = "center"; 
+                                                    replyActionsDiv.style.gap = "10px"; 
+
+                                                    // Bouton de modification de la réponse
+                                                    var editReplyButton = document.createElement("button");
+                                                    editReplyButton.innerHTML = '<i class="fas fa-edit" title="Modifier"></i>';
+                                                    editReplyButton.style = "background: none; border: none; cursor: pointer; color: #f39c12;";
+
+                                                    editReplyButton.addEventListener("click", function() {
+                                                        var newReplyText = prompt("Modifiez votre réponse:", reply.text_message);
+                                                        if (newReplyText) {
+                                                            fetch(`/messages/update/${reply.id}`, {
+                                                                method: 'POST',
+                                                                headers: {
+                                                                    'Content-Type': 'application/json',
+                                                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                                                },
+                                                                body: JSON.stringify({ text_message: newReplyText })
+                                                            })
+                                                            .then(response => response.json())
+                                                            .then(data => {
+                                                                if (data.success) {
+                                                                viewFile(parseInt(fileId))
+                                                                } else {
+                                                                    alert("Erreur lors de la modification de la réponse.");
+                                                                }
+                                                            })
+                                                            .catch(error => console.error("Erreur lors de la modification de la réponse:", error));
+                                                        }
+                                                    });
+
+                                                // Bouton de suppression de la réponse
+                                                var deleteReplyButton = document.createElement("button");
+                                                deleteReplyButton.innerHTML = '<i class="fas fa-trash" title="Supprimer"></i>';
+                                                deleteReplyButton.style = "background: none; border: none; cursor: pointer; color: #ff0000;";
+                                                deleteReplyButton.addEventListener("click", function() {
+                                                    if (confirm("Êtes-vous sûr de vouloir supprimer cette réponse ?")) {
+                                                        fetch(`/messages/delete/${reply.id}`, {
+                                                            method: 'DELETE',
+                                                            headers: {
+                                                                'Content-Type': 'application/json',
+                                                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                                            }
+                                                        })
+                                                        .then(response => response.json())
+                                                        .then(data => {
+                                                            if (data.success) {
+                                                                replyDiv.remove();
+                                                            } else {
+                                                                alert("Erreur lors de la suppression de la réponse.");
+                                                            }
+                                                        })
+                                                        .catch(error => console.error("Erreur lors de la suppression de la réponse:", error));
+                                                    }
+                                                });
+
+                                                
+                    var markAsReadButton = document.createElement("button");
+                    markAsReadButton.innerHTML = '<i class="fas ' + (reply.is_read ? 'fa-envelope-open' : 'fa-envelope') + '" title="' + (reply.is_read ? 'Marqué comme lu' : 'Marquer comme lue') + '" style="cursor: pointer; font-size: 15px; color: ' + (reply.is_read ? '#28a745' : '#e74a3b') + ';"></i>';
+                    markAsReadButton.style = "background: none; border: none; cursor: pointer; color: #28a745;";
+
+
+                    markAsReadButton.addEventListener("click", function() {
+                        fetch(`/messages/read/${reply.id}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Mise à jour de l'icône
+                                reply.is_read = true; // Met à jour l'état local
+                                markAsReadButton.innerHTML = '<i class="fas fa-envelope-open" title="Marqué comme lu" style="cursor: pointer; font-size: 15px; color: #28a745;"></i>';
+                            } else {
+                                alert(data.message); // Affiche un message d'erreur si le marquage échoue
+                            }
+                        })
+                        .catch(error => console.error("Erreur lors du marquage comme lu de la réponse:", error));
                         });
-
-    actionsDiv.appendChild(replyButton);                 
-    actionsDiv.appendChild(markAsReadButton);
-    actionsDiv.appendChild(editButton);  
-    actionsDiv.appendChild(deleteButton);
-    messageDiv.appendChild(userMessage);
-    messageDiv.appendChild(actionsDiv);
-    messagesContainer.appendChild(messageDiv);
-
-      // Afficher les réponses
-      if (message.replies.length > 0) {
-                            var repliesDiv = document.createElement("div");
-                            repliesDiv.style.marginLeft = "20px"; // Décalage pour les réponses
-                            message.replies.forEach(function(reply) {
-                                var replyDiv = document.createElement("div");
-                                replyDiv.classList.add("message");
-
-                                // Affichage du message de la réponse
-                                replyDiv.innerHTML = `<p><strong>${reply.user_name}:</strong></br><i style="font-size:10px;"> ${reply.created_at}</i><br><p style="font-size:18px;">${reply.text_message}</p></p>`;
-                                
-                                // Actions de la réponse
-                                var replyActionsDiv = document.createElement("div");
-                                replyActionsDiv.style.display = "flex"; 
-                                replyActionsDiv.style.alignItems = "center"; 
-                                replyActionsDiv.style.gap = "10px"; 
-
-                                // Bouton de modification de la réponse
-                                var editReplyButton = document.createElement("button");
-                                editReplyButton.innerHTML = '<i class="fas fa-edit" title="Modifier"></i>';
-                                editReplyButton.style = "background: none; border: none; cursor: pointer; color: #f39c12;";
-
-                                editReplyButton.addEventListener("click", function() {
-                                    var newReplyText = prompt("Modifiez votre réponse:", reply.text_message);
-                                    if (newReplyText) {
-                                        fetch(`/messages/update/${reply.id}`, {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json',
-                                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                            },
-                                            body: JSON.stringify({ text_message: newReplyText })
-                                        })
-                                        .then(response => response.json())
-                                        .then(data => {
-                                            if (data.success) {
-viewFile(parseInt(fileId))
-                                            } else {
-                                                alert("Erreur lors de la modification de la réponse.");
-                                            }
-                                        })
-                                        .catch(error => console.error("Erreur lors de la modification de la réponse:", error));
-                                    }
-                                });
-
-                                // Bouton de suppression de la réponse
-                                var deleteReplyButton = document.createElement("button");
-                                deleteReplyButton.innerHTML = '<i class="fas fa-trash" title="Supprimer"></i>';
-                                deleteReplyButton.style = "background: none; border: none; cursor: pointer; color: #ff0000;";
-                                deleteReplyButton.addEventListener("click", function() {
-                                    if (confirm("Êtes-vous sûr de vouloir supprimer cette réponse ?")) {
-                                        fetch(`/messages/delete/${reply.id}`, {
-                                            method: 'DELETE',
-                                            headers: {
-                                                'Content-Type': 'application/json',
-                                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                            }
-                                        })
-                                        .then(response => response.json())
-                                        .then(data => {
-                                            if (data.success) {
-                                                replyDiv.remove();
-                                            } else {
-                                                alert("Erreur lors de la suppression de la réponse.");
-                                            }
-                                        })
-                                        .catch(error => console.error("Erreur lors de la suppression de la réponse:", error));
-                                    }
-                                });
-
-                                
-                               // Bouton de marquage comme lu pour la réponse
-var markAsReadButton = document.createElement("button");
-markAsReadButton.innerHTML = '<i class="fas ' + (reply.is_read ? 'fa-envelope-open' : 'fa-envelope') + '" title="' + (reply.is_read ? 'Marqué comme lu' : 'Marquer comme lue') + '" style="cursor: pointer; font-size: 15px; color: ' + (reply.is_read ? '#28a745' : '#e74a3b') + ';"></i>';
-markAsReadButton.style = "background: none; border: none; cursor: pointer; color: #28a745;";
-
-
-markAsReadButton.addEventListener("click", function() {
-    fetch(`/messages/read/${reply.id}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Mise à jour de l'icône
-            reply.is_read = true; // Met à jour l'état local
-            markAsReadButton.innerHTML = '<i class="fas fa-envelope-open" title="Marqué comme lu" style="cursor: pointer; font-size: 15px; color: #28a745;"></i>';
-        } else {
-            alert(data.message); // Affiche un message d'erreur si le marquage échoue
-        }
-    })
-    .catch(error => console.error("Erreur lors du marquage comme lu de la réponse:", error));
-});
 
                                 replyActionsDiv.appendChild(markAsReadButton); // Ajouter le bouton "Marquer comme lu"
                                 replyActionsDiv.appendChild(editReplyButton);
@@ -2865,7 +3264,7 @@ markAsReadButton.addEventListener("click", function() {
                             });
                             messageDiv.appendChild(repliesDiv);
                         }
-});
+                    });
                 })
                 .catch(error => console.error("Erreur lors du chargement des messages:", error));
         })
@@ -2878,37 +3277,23 @@ markAsReadButton.addEventListener("click", function() {
 }
     
   
-  
-  
-
-    function openRenameModal(folderId, folderName) {
+function openRenameModal(folderId, folderName) {
         document.getElementById('newFolderName').value = folderName;
         document.getElementById('renameFolderForm').action = '/folder/' + folderId; // Met à jour l'action du formulaire avec l'ID du dossier
         var myModal = new bootstrap.Modal(document.getElementById('renameFolderModal'));
         myModal.show();
-    }
-    function openRenameFileModal(fileId, fileName) {
-    document.getElementById('newFileName').value = fileName; // Remplit le champ avec le nom actuel
-    document.getElementById('renameFileForm').action = '/file/' + fileId; // Met à jour l'action du formulaire
-    var myModal = new bootstrap.Modal(document.getElementById('renameFileModal'));
-    myModal.show(); // Affiche le modal
+}
+function openRenameFileModal(fileId, fileName) {
+        document.getElementById('newFileName').value = fileName; // Remplit le champ avec le nom actuel
+        document.getElementById('renameFileForm').action = '/file/' + fileId; // Met à jour l'action du formulaire
+        var myModal = new bootstrap.Modal(document.getElementById('renameFileModal'));
+        myModal.show(); // Affiche le modal
 }
 
+    
 let selectedText = '';
     let range;
 
-    // Écoutez l'événement de sélection de texte dans le conteneur du PDF
-    // document.getElementById("filePreviewContent").addEventListener("mouseup", function () {
-    //     const selection = window.getSelection();
-    //     if (selection.toString().length > 0) {
-    //         selectedText = selection.toString();
-    //         range = selection.getRangeAt(0);
-            
-    //         // Insérer le texte sélectionné dans la boîte de communication
-    //         document.getElementById("message_text").value = selectedText + '@ '; // Insérer le texte sélectionné
-    //         document.getElementById("message_text").focus(); // Met le focus sur le champ de message
-    //     }
-    // });
 
     let commentIcon;
 
@@ -2957,28 +3342,19 @@ document.getElementById("filePreviewContent").addEventListener("mouseup", functi
     // Ajouter le stack au bouton
     commentIcon.appendChild(iconStack);
 
-    // Effets de survol
-    // commentIcon.addEventListener("mouseenter", () => {
-    //     // commentIcon.style.backgroundColor = "#e8f0fe";
-    // });
-
-    // commentIcon.addEventListener("mouseleave", () => {
-    //     // commentIcon.style.backgroundColor = "#ffffff";
-    // });
-
+   
     document.body.appendChild(commentIcon);
 }
 
 
         // Positionner l'icône à droite de la sélection
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        commentIcon.style.top = `${rect.bottom + window.scrollY + 5}px`; // Positionner juste en dessous de la sélection
-        commentIcon.style.left = `${rect.right + window.scrollX + 5}px`; // Positionner à droite de la sélection, avec une marge de 5px
-        commentIcon.style.display = "flex"; // Afficher l'icône dans le carré
+const range = selection.getRangeAt(0);
+const rect = range.getBoundingClientRect();
+commentIcon.style.top = `${rect.bottom + window.scrollY + 5}px`; // Positionner juste en dessous de la sélection
+commentIcon.style.left = `${rect.right + window.scrollX + 5}px`; // Positionner à droite de la sélection, avec une marge de 5px
+commentIcon.style.display = "flex"; // Afficher l'icône dans le carré
 
-        // Ajouter un événement de clic à l'icône
-        // ...dans l'écouteur mouseup sur filePreviewContent...
+   
 commentIcon.onclick = function() {
     // Ne pas insérer le texte sélectionné dans la zone de message
     const messageText = document.getElementById("message_text");
@@ -2995,18 +3371,18 @@ commentIcon.onclick = function() {
     }
     commentInput.value = selectedText;
     searchAndHighlightText(commentInput.value);
- const textarea = document.getElementById("message_text");
-    textarea.placeholder = "commentez ici...";
-    messageText.focus();
-    commentIcon.style.display = "none";
-};
+    const textarea = document.getElementById("message_text");
+        textarea.placeholder = "commentez ici...";
+        messageText.focus();
+        commentIcon.style.display = "none";
+    };
 
-    } else {
-        if (commentIcon) {
-            commentIcon.style.display = "none"; // Cacher l'icône si rien n'est sélectionné
+        } else {
+            if (commentIcon) {
+                commentIcon.style.display = "none"; // Cacher l'icône si rien n'est sélectionné
+            }
         }
-    }
-});
+    });
 
 
 
@@ -3028,37 +3404,25 @@ commentIcon.onclick = function() {
             range = null;
         }
     }
- 
-document.addEventListener('click', function (event) {
-    const span = event.target.closest('.highlight1');
-    if (span) {
-        const comment = span.getAttribute('data-comment');
-        if (comment) {
-            // Chercher tous les messages dans la boîte de messages
-            const messages = document.querySelectorAll('#messages-container .message');
-            messages.forEach(msg => {
-    if (msg.innerText.includes(comment)) {
-        const messageId = msg.getAttribute('data-message-id');
-        showReplyBox(msg, comment, messageId); // Passe l'ID ici
-    }
-});
+        
+        document.addEventListener('click', function (event) {
+            const span = event.target.closest('.highlight1');
+            if (span) {
+                const comment = span.getAttribute('data-comment');
+                if (comment) {
+                    // Chercher tous les messages dans la boîte de messages
+                    const messages = document.querySelectorAll('#messages-container .message');
+                    messages.forEach(msg => {
+            if (msg.innerText.includes(comment)) {
+                const messageId = msg.getAttribute('data-message-id');
+                showReplyBox(msg, comment, messageId); // Passe l'ID ici
+            }
+        });
         }
     }
 });
 
 
-// SUPPRIMEZ ou commentez ce bloc pour que la boîte reste affichée
-// document.addEventListener('mouseout', function (event) {
-//     const span = event.target.closest('.highlight1');
-//     if (span) {
-//         // Masquer toutes les boîtes de réponse affichées par ce survol
-//         hideAllReplyBoxes();
-//     }
-// });
-
-// Fonction pour afficher la boîte de réponse sous le message correspondant
-
-// Fonction pour afficher la boîte de réponse sous le message correspondant
 function showReplyBox(messageDiv, comment, messageId) {
     // Vérifier si une boîte de réponse existe déjà
     if (messageDiv.querySelector('.inline-reply-box')) return;
@@ -3104,7 +3468,7 @@ function showReplyBox(messageDiv, comment, messageId) {
   ">
     Annuler
   </button>
-</div>
+    </div>
     `;
 
     // Annuler la réponse
@@ -3128,7 +3492,6 @@ function showReplyBox(messageDiv, comment, messageId) {
 }
  
 
-// Fonction pour rechercher et sélectionner le texte dans le PDF
 function handleCommentClick(commentText) {
     console.log("Commentaire cliqué:", commentText);
     searchAndHighlightText(commentText);
@@ -3161,72 +3524,110 @@ function searchAndHighlightText(text) {
     }
 }
 
-function highlightComments(comments, darkComment = null) {
-    const textLayer = document.querySelector('.textLayer');
-    if (!textLayer) return;
-    const textElements = textLayer.getElementsByTagName('span');
 
-    // Nettoyer les anciens surlignages
-    for (let el of textElements) {
-        el.classList.remove('highlight1', 'highlight2');
-        el.style.backgroundColor = '';
-        el.removeAttribute('data-comment');
-    }
+function highlightComments(comments) {
+    const textLayers = document.querySelectorAll('.textLayer');
 
-    comments.forEach(comment => {
-        if (!comment.commentaire || comment.commentaire.trim() === "") return;
-        const commentText = comment.commentaire;
-        const messageText = comment.text_message;
-        for (let i = 0; i < textElements.length; i++) {
-            if (textElements[i].textContent.trim().includes(commentText.trim())) {
-                if (darkComment && commentText.trim() === darkComment.trim()) {
-                    textElements[i].classList.add('highlight2');
-                    textElements[i].style.backgroundColor = 'orange';
-                } else {
-                    textElements[i].classList.add('highlight1');
-                    textElements[i].style.backgroundColor = 'yellow';
+    textLayers.forEach(textLayer => {
+        const spans = Array.from(textLayer.getElementsByTagName('span'));
+
+        // Nettoyer anciens surlignages
+        spans.forEach(span => {
+            span.classList.remove('highlight1', 'highlight2');
+            span.style.backgroundColor = '';
+            span.removeAttribute('data-comment');
+        });
+
+        // Concaténer tout le texte de la page
+        const fullText = spans.map(span => span.textContent).join('');
+
+        comments.forEach(comment => {
+            const commentText = comment.commentaire?.trim();
+            if (!commentText) return;
+            const messageText = comment.text_message;
+
+            let startIndex = 0;
+
+            // Boucle pour trouver toutes les occurrences du commentaire
+            while ((startIndex = fullText.indexOf(commentText, startIndex)) > -1) {
+                let remaining = commentText.length;
+                let i = 0;
+                let charCount = 0;
+
+                // Parcourir les spans pour surligner ceux qui contiennent le texte
+                while (remaining > 0 && i < spans.length) {
+                    const span = spans[i];
+                    const spanLength = span.textContent.length;
+
+                    if (startIndex < charCount + spanLength && (startIndex + remaining) > charCount) {
+                        // Ce span contient au moins une partie du commentaire
+                        span.style.backgroundColor = (commentText === comment.darkComment) ? 'orange' : 'yellow';
+                        span.classList.add((commentText === comment.darkComment) ? 'highlight2' : 'highlight1');
+                        span.setAttribute('data-comment', messageText);
+
+                        // Réduire le reste à surligner
+                        const overlap = Math.min(remaining, charCount + spanLength - startIndex);
+                        remaining -= overlap;
+                    }
+
+                    charCount += spanLength;
+                    i++;
                 }
-                textElements[i].setAttribute('data-comment', messageText);
+
+                startIndex += commentText.length;
             }
-        }
+        });
     });
 }
-// ...dans la fonction viewFile, après le rendu PDF...
-pdfjsLib.getDocument({ url: fileURL }).promise.then(pdf => {
-    // ...rendu des pages...
-    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-        pdf.getPage(pageNum).then(page => {
-            // ...rendu canvas...
-            page.render({ canvasContext: context, viewport }).promise.then(() => {
-                // Attendre que la couche de texte soit ajoutée
-                page.getTextContent().then(textContent => {
-                    // ...création de la textLayer...
-                    pdfjsLib.renderTextLayer({
-                        textContent,
-                        container: textLayerDiv,
-                        viewport,
-                        textDivs: []
-                    }).promise.then(() => {
-                        // Appeler highlightComments ici, quand la textLayer est prête
-                        highlightComments(data.messages);
-                    });
-                });
-            });
-        });
+
+// Exemple d'utilisation après rendu PDF
+pdfjsLib.getDocument({ url: fileURL }).promise.then(async pdf => {
+    const container = document.getElementById('pdfContainer');
+    container.innerHTML = '';
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.5 });
+
+        // Canvas pour la page
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        container.appendChild(canvas);
+        const context = canvas.getContext('2d');
+
+        // Rendu de la page
+        await page.render({ canvasContext: context, viewport }).promise;
+
+        // Rendu de la textLayer
+        const textContent = await page.getTextContent();
+        const textLayerDiv = document.createElement('div');
+        textLayerDiv.className = 'textLayer';
+        textLayerDiv.style.position = 'absolute';
+        textLayerDiv.style.top = canvas.offsetTop + 'px';
+        textLayerDiv.style.left = canvas.offsetLeft + 'px';
+        textLayerDiv.style.height = canvas.height + 'px';
+        textLayerDiv.style.width = canvas.width + 'px';
+        container.appendChild(textLayerDiv);
+
+        await pdfjsLib.renderTextLayer({
+            textContent,
+            container: textLayerDiv,
+            viewport,
+            textDivs: []
+        }).promise;
     }
+
+    // Après rendu de toutes les pages, surligner les commentaires
+    highlightComments(data.messages);
 });
 
-    function openRenameModal(folderId, folderName) {
-        document.getElementById('newFolderName').value = folderName;
-        document.getElementById('renameFolderForm').action = '/folder/' + folderId; // Met à jour l'action du formulaire avec l'ID du dossier
-        var myModal = new bootstrap.Modal(document.getElementById('renameFolderModal'));
-        myModal.show();
-    }
- 
+  
+
 </script>
 
 
- <style>
+<style>
 #messages-container {
     display: flex;
     flex-direction: column-reverse; /* Les messages s'empilent du bas vers le haut */
@@ -3234,11 +3635,11 @@ pdfjsLib.getDocument({ url: fileURL }).promise.then(pdf => {
     height: 80%;
     overflow-y: auto;
 }
-    .highlight1 {
-    background-color: yellow; /* Surlignage en rouge */
+.highlight1 {
+background-color: yellow; /* Surlignage en rouge */
         opacity: 0.5;
 
- }
+}
 .highlight2 {
     background-color: yellow !important;
     opacity: 0.8;
@@ -3266,17 +3667,25 @@ pdfjsLib.getDocument({ url: fileURL }).promise.then(pdf => {
 </style>
            
 <script>
-    
-// Ajoutez cet écouteur d'événements dans votre script principal
 document.addEventListener('keydown', function(event) {
+    // Vérifier si l'utilisateur est dans un champ de texte
+    const target = event.target;
+    const isTyping = target.tagName === 'INPUT' || 
+                     target.tagName === 'TEXTAREA' || 
+                     target.isContentEditable;
+
+    if (isTyping) {
+        return; // Ne rien faire si on tape dans un champ
+    }
+
     if (event.key === 'ArrowLeft') {
         navigateFile(-1); // Naviguer vers le fichier précédent
     } else if (event.key === 'ArrowRight') {
         navigateFile(1); // Naviguer vers le fichier suivant
     }
 });
-
 </script>
+
 @if(session('alert'))
     <script>
         if (confirm("{{ session('alert') }}")) {

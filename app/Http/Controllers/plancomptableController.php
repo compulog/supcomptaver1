@@ -12,6 +12,7 @@ use App\Models\Client;        // idem pour PlanComptable
 use App\Imports\PlanComptableImport;
 use App\Exports\PlanComptableExport;
 use Illuminate\Support\Str; // N'oubliez pas d'importer le helper Str
+use App\Services\PlanComptableService;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,27 @@ use Illuminate\Support\Facades\Hash;
 
 class PlanComptableController extends Controller
 {
+public function search(Request $request)
+{
+    $q = $request->query('q', '');
+    $societeId = session('societeId');
+    if (! $societeId) return response()->json([], 200);
+
+    $query = PlanComptable::where('societe_id', $societeId);
+    if ($q !== '') {
+        $query->where(function($s) use ($q) {
+            $s->where('compte', 'like', "%{$q}%")->orWhere('intitule', 'like', "%{$q}%");
+        });
+    }
+
+    $rows = $query->select('compte','intitule')->orderBy('compte')->limit(1000)->get();
+    return response()->json($rows);
+}
+/**
+ * Génère et persiste un plan comptable "par défaut" si aucun compte n'existe pour la société en session.
+ */
+
+
     public function ajouterContrePartie(Request $request)
 {
     // Validation des données reçues
@@ -58,43 +80,100 @@ class PlanComptableController extends Controller
         'contre_partie' => $compte,
     ]);
 }
+public function index()
+{
+    // Vérifie si une société est sélectionnée en session
+    $societeId = session('societeId');
+    $societe = $societeId ? \App\Models\Societe::find($societeId) : null;
 
+    // Retourne la vue avec la société
+    return view('plancomptable', compact('societe'));
+}
 
+public function getData(Request $request)
+{
+    $societeId = session('societeId');
+    if (!$societeId) {
+        return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+    }
 
+    $societe = \App\Models\Societe::find($societeId);
+    if (!$societe) {
+        return response()->json(['error' => 'Société introuvable'], 404);
+    }
 
-    // Méthode pour afficher tous les plans comptables d'une société
-    public function index()
-    {
-        // Récupérer l'ID de la société dans la session
-        $societeId = session('societeId');
+    $expectedLength = (int) $societe->nombre_chiffre_compte;
 
-        // Vérifier si l'ID de la société existe
-        if (!$societeId) {
-            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+    DB::beginTransaction();
+    try {
+        // Récupérer les lignes déjà créées pour cette société
+        $existingPlans = \App\Models\PlanComptable::where('societe_id', $societeId)
+                            ->pluck('compte')
+                            ->toArray();
+
+        // Récupérer toutes les lignes templates (societe_id NULL ou 0)
+        $templates = \App\Models\PlanComptable::whereNull('societe_id')
+                        ->orWhere('societe_id', 0)
+                        ->orderBy('compte')
+                        ->get();
+
+        $toInsert = [];
+        $now = now();
+
+        foreach ($templates as $tpl) {
+            $raw = preg_replace('/\D/', '', (string)$tpl->compte);
+            if ($raw === '') continue;
+
+            $comptePad = str_pad($raw, $expectedLength, '0', STR_PAD_RIGHT);
+
+            // On n'insère que si cette combinaison compte+societe_id n'existe pas
+            if (!in_array($comptePad, $existingPlans) && strlen($comptePad) === $expectedLength) {
+                $toInsert[] = [
+                    'societe_id' => $societeId,
+                    'compte'     => $comptePad,
+                    'intitule'   => $tpl->intitule,
+                    'etat'       => $tpl->intitule ? 'ok' : 'manquant',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
         }
 
-        // Récupérer tous les plans comptables pour la société spécifiée
-        $plansComptables = PlanComptable::where('societe_id', $societeId)->get();
+        if (!empty($toInsert)) {
+            DB::table('plan_comptable')->insert($toInsert);
+        }
 
-        return response()->json($plansComptables);
+        // Récupérer toutes les lignes pour cette société
+        $plans = \App\Models\PlanComptable::where('societe_id', $societeId)
+                    ->orderBy('compte')
+                    ->get();
+
+        $data = $plans->map(function ($p) {
+            return [
+                'id' => $p->id,
+                'compte' => (string)$p->compte,
+                'intitule' => $p->intitule,
+                'etat' => $p->etat,
+            ];
+        })->values()->all();
+
+        DB::commit();
+
+        return response()->json([
+            'data' => $data,
+            'meta' => ['processed' => count($plans), 'inserted' => count($toInsert)],
+            'expected_length' => $expectedLength,
+            'message' => 'Plan comptable chargé sans doublons'
+        ], 200);
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        Log::error('getData error: '.$e->getMessage(), ['exception' => $e]);
+        return response()->json(['error' => 'Erreur serveur'], 500);
     }
+}
 
-    // Méthode pour récupérer les données du plan comptable
-    public function getData()
-    {
-       // Récupérer l'ID de la société dans la session
-       $societeId = session('societeId');
 
-       // Vérifier si l'ID de la société existe
-       if (!$societeId) {
-           return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
-       }
-
-       // Récupérer tous les plans comptables pour la société spécifiée
-       $plansComptables = PlanComptable::where('societe_id', $societeId)->get();
-
-       return response()->json($plansComptables);
-    }
 
 // Méthode pour ajouter un nouveau plan comptable
 public function store(Request $request)
@@ -181,142 +260,136 @@ public function store(Request $request)
     }
     }
 
-    // Supprimer un plan comptable
-    public function destroy($id)
-    {
-        // Récupérer le plan comptable par ID
-        $planComptable = PlanComptable::findOrFail($id);
 
-        // Supprimer le plan comptable
-        $planComptable->delete();
+public function import(Request $request)
+{
+    set_time_limit(300);
 
-        // Retourner une réponse JSON
-        return response()->json(['success' => true]);
+    $request->validate([
+        'file'             => 'required|file|mimes:xlsx,xls,csv',
+        'colonne_compte'   => 'required|integer',
+        'colonne_intitule' => 'required|integer',
+    ]);
+
+    $societeId = $request->input('societe_id', session('societeId'));
+    if (!$societeId) {
+        return response()->json(['success' => false, 'error' => 'Aucun ID de société fourni.'], 422);
     }
 
-
-
-
-    // Afficher le formulaire d'importation
-    public function showImportForm()
-    {
-        return view('plancomptable.import'); // La vue avec le formulaire d'import
+    $societe = \App\Models\Societe::find($societeId);
+    if (!$societe) {
+        return response()->json(['success' => false, 'error' => "Société introuvable pour l'ID {$societeId}."], 422);
     }
 
-    public function import(Request $request)
-    {
-        // Validation des données
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv',
-            'colonne_compte' => 'required|integer',
-            'colonne_intitule' => 'required|integer',
+    $compteLength = (int) $societe->nombre_chiffre_compte;
+
+    try {
+        $rawRows           = $this->parseExcelFile(
+            $request->file('file'),
+            $request->colonne_compte,
+            $request->colonne_intitule
+        );
+        $insertPlan        = [];
+        $insertFournisseurs= [];
+        $insertClients     = [];
+        $rowsForFrontend   = [];
+
+        foreach ($rawRows as $row) {
+            $compte   = trim((string) ($row['compte']   ?? ''));
+            $intitule = trim((string) ($row['intitule'] ?? ''));
+            $etat     = 'ok';
+
+            if ($compte === '' || $intitule === '') {
+                $etat = 'manquant';  // jaune
+            } elseif (!ctype_digit($compte) || strlen($compte) !== $compteLength) {
+                $etat = 'erreur';    // rouge
+            }
+
+            $rowsForFrontend[] = compact('compte', 'intitule', 'etat');
+
+            $insertPlan[] = [
+                'societe_id' => $societeId,
+                'compte'     => $compte,
+                'intitule'   => $intitule,
+                'etat'       => $etat, // <-- champ ajouté
+            ];
+
+            if (\Illuminate\Support\Str::startsWith($compte, '4411')) {
+                $insertFournisseurs[] = [
+                    'societe_id' => $societeId,
+                    'compte'     => $compte,
+                    'intitule'   => $intitule,
+                ];
+            }
+
+            if (\Illuminate\Support\Str::startsWith($compte, '3421')) {
+                $insertClients[] = [
+                    'societe_id'         => $societeId,
+                    'compte'             => $compte,
+                    'intitule'           => $intitule,
+                    'identifiant_fiscal' => '',
+                    'ICE'                => '',
+                    'type_client'        => '',
+                ];
+            }
+        }
+
+        PlanComptable::upsert(
+            $insertPlan,
+            ['societe_id', 'compte'],
+            ['intitule', 'etat']
+        );
+
+        Fournisseur::upsert(
+            $insertFournisseurs,
+            ['societe_id', 'compte'],
+            ['intitule']
+        );
+
+        Client::upsert(
+            $insertClients,
+            ['societe_id', 'compte'],
+            ['intitule', 'identifiant_fiscal', 'ICE', 'type_client']
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Importation terminée.',
+            'rows'    => $rowsForFrontend,
         ]);
+    } catch (\Throwable $e) {
+        Log::error('Erreur import Plan Comptable', ['exception' => $e]);
 
-        // Récupérer l'ID de la société à partir de la session
-        $societeId = session('societeId');
-
-        // Si l'ID de la société est modifié (par exemple, depuis un formulaire ou une sélection), le mettre à jour
-        if ($request->has('societe_id')) {
-            $societeId = $request->societe_id;
-        }
-
-        try {
-            // Récupérer les données du fichier Excel
-            $importedData = $this->parseExcelFile($request->file('file'), $request->colonne_compte, $request->colonne_intitule);
-
-            // Récupérer la société pour obtenir le nombre de chiffres autorisé dans le compte
-            $societe = Societe::find($societeId);
-            $compteLength = 8;  // Valeur par défaut de 8 chiffres
-
-            // Vérifier si la société existe et récupérer le nombre de chiffres du compte
-            if ($societe && isset($societe->nombre_chiffre_compte)) {
-                $compteLength = $societe->nombre_chiffre_compte;
-            }
-
-            // Filtrer les données pour ne garder que les lignes où le compte respecte la longueur autorisée
-            $validData = array_filter($importedData, function ($data) use ($compteLength) {
-                return strlen($data['compte']) === $compteLength;
-            });
-
-            // Si aucune donnée valide n'est trouvée
-            if (empty($validData)) {
-                return redirect()->back()->with('error', "Aucune ligne ne respecte la longueur autorisée de {$compteLength} chiffres.");
-            }
-
-            // Parcourir les données validées pour les insérer dans les différentes tables
-            foreach ($validData as $data) {
-                // Insertion dans la table plan_comptable si le compte n'existe pas déjà
-                $existingPlanComptable = PlanComptable::where('compte', $data['compte'])
-                                                      ->where('societe_id', $societeId)
-                                                      ->first();
-                if (!$existingPlanComptable) {
-                    PlanComptable::create([
-                        'compte' => $data['compte'],
-                        'intitule' => $data['intitule'],
-                        'societe_id' => $societeId,
-                    ]);
-                }
-
-                // Si le compte commence par '4411', l'enregistrer dans la table fournisseurs
-                if (Str::startsWith($data['compte'], '4411')) {
-                    $existingFournisseur = Fournisseur::where('compte', $data['compte'])
-                                                      ->where('societe_id', $societeId)
-                                                      ->first();
-                    if (!$existingFournisseur) {
-                        Fournisseur::create([
-                            'compte' => $data['compte'],
-                            'intitule' => $data['intitule'],
-                            'societe_id' => $societeId,
-                        ]);
-                    }
-                }
-
-                // Si le compte commence par '3421', l'enregistrer dans la table clients
-                if (Str::startsWith($data['compte'], '3421')) {
-                    $existingClient = Client::where('compte', $data['compte'])
-                                            ->where('societe_id', $societeId)
-                                            ->first();
-                    if (!$existingClient) {
-                        Client::create([
-                            'compte' => $data['compte'],
-                            'intitule' => $data['intitule'],
-                            'societe_id' => $societeId,
-                            'identifiant_fiscal' => '', // Décommentez cette ligne si nécessaire
-                            'ICE' => '', // Décommentez cette ligne si nécessaire
-                            'type_client' => '' // Décommentez cette ligne si nécessaire
-
-                        ]);
-                    }
-                }
-            }
-
-            // Retourner à la page précédente avec un message de succès
-            return redirect()->back()->with('success', 'Importation réussie.');
-        } catch (\Exception $e) {
-            // En cas d'erreur
-            return redirect()->back()->with('error', 'Erreur lors de l\'importation : ' . $e->getMessage());
-        }
+        return response()->json([
+            'success' => false,
+            'error'   => 'Erreur serveur : ' . $e->getMessage(),
+        ], 500);
     }
+}
+
+
+
 
     /**
-     * Parser le fichier Excel (en ignorant la première ligne)
+     * Parse le fichier Excel et renvoie un tableau brut de lignes
+     * en ignorant la première ligne (en-têtes).
      */
-    protected function parseExcelFile($file, $compteColumn, $intituleColumn)
+    protected function parseExcelFile($file, $compteCol, $intituleCol)
     {
-        // Utilisation de la bibliothèque Laravel Excel pour lire le fichier
-        $data = Excel::toArray([], $file);  // Lire toutes les feuilles du fichier Excel
+        $allSheets = Excel::toArray([], $file);
+        $rows      = $allSheets[0] ?? [];
 
-        // Extraire les données en ignorant la première ligne (index 0)
-        $importedData = [];
-        foreach (array_slice($data[0], 1) as $row) {  // On commence à partir de la deuxième ligne (index 1)
-            $importedData[] = [
-                'compte' => $row[$compteColumn - 1],  // Compte basé sur l'index de la colonne
-                'intitule' => $row[$intituleColumn - 1],  // Intitulé basé sur l'index de la colonne
+        $result = [];
+        foreach (array_slice($rows, 1) as $row) {
+            $result[] = [
+                'compte'   => $row[$compteCol - 1]   ?? null,
+                'intitule' => $row[$intituleCol - 1] ?? null,
             ];
         }
 
-        return $importedData;
+        return $result;
     }
+
 
 
 // Méthode pour exporter en Excel
@@ -329,29 +402,83 @@ public function exportExcel()
     return Excel::download(new PlanComptableExport($societeId), 'plan_comptable_societe_' . $societeId . '.xlsx');
 }
 
+ public function destroy($id)
+{
+    $planComptable = PlanComptable::findOrFail($id);
+    $planComptable->delete();
 
+    return response()->json([
+        'success' => true,
+        'message' => 'Plan comptable supprimé avec succès.'
+    ], 200);
+}
+
+
+/**
+ * Supprimer plusieurs plans comptables (avec suppression en cascade)
+ */
+/**
+ * Supprimer plusieurs plans comptables (avec suppression en cascade et events)
+ */
 // PlanComptableController.php
 public function deleteSelected(Request $request)
 {
-     // Valider que le tableau 'ids' est bien fourni
-     $request->validate([
-        'ids' => 'required|array',
-        'ids.*' => 'integer',  // Chaque ID doit être un entier
-    ]);
+    $ids = $request->input('ids');
+
+    if (!is_array($ids) || empty($ids)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Aucun ID fourni pour la suppression.'
+        ], 400);
+    }
 
     try {
-        // Supprimer les lignes avec les IDs reçus
-        PlanComptable::whereIn('id', $request->ids)->delete();
+        $deletedCount = PlanComptable::whereIn('id', $ids)->delete();
 
-        return response()->json(['status' => 'success']);
+        return response()->json([
+            'success' => true,
+            'message' => $deletedCount . ' ligne(s) supprimée(s) avec succès.'
+        ], 200);
     } catch (\Exception $e) {
-        return response()->json(['status' => 'error', 'message' => 'Erreur lors de la suppression.']);
+        // Log::error('deleteSelected error', ['exception' => $e]); // optionnel
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur lors de la suppression : ' . $e->getMessage()
+        ], 500);
+    }
+
+
+
+
+}
+
+
+ public function forSociete(Request $request)
+    {
+        $societeId = session('societeId') ?: (int) $request->query('societe_id', 0);
+        if (! $societeId) {
+            return response()->json(['error' => 'Aucune société sélectionnée'], 400);
+        }
+
+        $societe = Societe::find($societeId);
+        if (! $societe) {
+            return response()->json(['error' => 'Société introuvable'], 404);
+        }
+
+        $targetLen = (int) ($societe->nombre_chiffre_compte ?? 8);
+        if ($targetLen <= 0) $targetLen = 8;
+
+        $persist = (bool) $request->query('persist', false);
+
+        if ($persist) {
+            $count = PlanComptableService::persistForSociete($societeId, $targetLen);
+            return response()->json(['status' => 'ok', 'message' => "Persisté {$count} lignes", 'societe_id' => $societeId]);
+        }
+
+        $rows = PlanComptableService::generateForSociete($societeId, $targetLen, 3600);
+        return response()->json(['status' => 'ok', 'count' => count($rows), 'data' => $rows]);
     }
 }
-
-
-}
-
 
 
 

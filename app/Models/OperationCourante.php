@@ -38,6 +38,8 @@ class OperationCourante extends Model
         'nature_op',
         'date_lettrage',
         'mode_pay',
+        'file_id',
+        'reste_montant_lettre'
     ];
 
     // Définir la relation avec la société
@@ -45,4 +47,16 @@ class OperationCourante extends Model
     {
         return $this->belongsTo(Societe::class);  // Assurez-vous que vous avez une table 'societes' et un modèle 'Societe'
     }
+    public function file()
+{
+    return $this->belongsTo(File::class);
+}
+/**
+ * Une opération courante peut avoir plusieurs lettrages
+ */
+public function lettrages()
+{
+    return $this->hasMany(Lettrage::class, 'id_operation');
+}
+
 }

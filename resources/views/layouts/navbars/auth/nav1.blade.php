@@ -105,7 +105,7 @@
         <!-- Utilisateurs link with icon -->
         <a class="nav-link {{ (Request::is('utilisateurs') ? 'active' : '') }}" href="{{ url('utilisateurs') }}">
             <i class="fas fa-users"></i> <!-- Users icon -->
-            <span class="nav-link-text ms-1">Utilisateurs</span>  
+            <span class="nav-link-text ms-1">Utilisateur</span>  
         </a>
 
      
@@ -137,7 +137,7 @@
 
                         <i class="fas fa-cogs"></i>
 
-                        <span class="nav-link-text ms-1">Utilisateurs</span>
+                        <span class="nav-link-text ms-1">Utilisateur</span>
 
                     </a>
 
@@ -145,7 +145,7 @@
 
                         <i class="fas fa-cogs"></i>
 
-                        <span class="nav-link-text ms-1">Interlocuteurs</span>
+                        <span class="nav-link-text ms-1">Interlocuteur</span>
 
                     </a>
 
@@ -185,7 +185,7 @@
 
                         <i class="fas fa-cogs"></i>
 
-                        <span class="nav-link-text ms-1">interlocuteurs</span>
+                        <span class="nav-link-text ms-1">Interlocuteur</span>
 
                     </a>
 

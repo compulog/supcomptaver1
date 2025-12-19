@@ -158,7 +158,48 @@
             <span class="nav-link-text ms-1" style="color:#fff;">Opérations Courantes</span>
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('') ? 'active' : '') }}" href="{{ url('') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-exchange-alt text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Immobilisations</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('') ? 'active' : '') }}" href="{{ url('') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-exchange-alt text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Titres de Participations</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('') ? 'active' : '') }}" href="{{ url('') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-exchange-alt text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Biens en Crédit-Bail</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('') ? 'active' : '') }}" href="{{ url('') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-exchange-alt text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Répartition du Capital Social</span>
+          </a>
+        </li>
+         <li class="nav-item">
+          <a class="nav-link {{ (Request::is('') ? 'active' : '') }}" href="{{ url('') }}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-exchange-alt text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Locations et Baux autres que le Crédit-Bail</span>
+          </a>
+        </li>
       </ul>
+      
 
       <li class="nav-item mt-2">
         <span class="sidebar-section-title ps-4 ms-2 text-uppercase text-xs font-weight-bolder  d-flex align-items-center" onclick="toggleSection('edition-section')" style="cursor:pointer;user-select:none;">
@@ -194,8 +235,74 @@
             <span class="nav-link-text ms-1" style="color:#fff;">Balance</span>
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('') ? 'active' : '') }}" href="{{ url('balance')}}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-balance-scale text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Etats de Synthèses</span>
+          </a>
+        </li>
+       
       </ul>
-
+         <li class="nav-item mt-2">
+        <span class="sidebar-section-title ps-4 ms-2 text-uppercase text-xs font-weight-bolder  d-flex align-items-center" onclick="toggleSection('TELE-DECLARATION-section')" style="cursor:pointer;user-select:none;">
+        <div class="sidebar-section-card d-flex align-items-center w-100" style="background-color:#ffffff;">
+          <span style="color: #211c84;">TELE-DECLARATION</span>
+          <i id="chevron-config-section" class="fas fa-chevron-right ms-auto transition-chev chev-white"></i>
+        </div>
+        </span>
+      </li>
+    <ul class="navbar-nav ps-4" id="TELE-DECLARATION-section" style="display:none;">
+               <li class="nav-item">
+          <a class="nav-link {{ (Request::is('') ? 'active' : '') }}" href="{{ url('balance')}}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-balance-scale text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Impôt sur les Sociétés (IS)</span>
+          </a>
+        </li>
+                <li class="nav-item">
+          <a class="nav-link {{ (Request::is('') ? 'active' : '') }}" href="{{ url('balance')}}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-balance-scale text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Taxe sur la Valeur Ajoutée (TVA)</span>
+          </a>
+        </li>
+          <li class="nav-item">
+          <a class="nav-link {{ (Request::is('') ? 'active' : '') }}" href="{{ url('balance')}}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-balance-scale text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Droits de Timbres</span>
+          </a>
+        </li>
+          <li class="nav-item">
+          <a class="nav-link {{ (Request::is('') ? 'active' : '') }}" href="{{ url('balance')}}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-balance-scale text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">TP Déclaration des Eléments Imposables</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ (Request::is('') ? 'active' : '') }}" href="{{ url('balance')}}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-balance-scale text-dark text-sm"></i>
+            </div>
+            <span class="nav-link-text ms-1" style="color:#fff;">Délais de Paiement</span>
+          </a>
+        </li>
+    </ul>
+     <li class="nav-item mt-2">
+        <span class="sidebar-section-title ps-4 ms-2 text-uppercase text-xs font-weight-bolder  d-flex align-items-center" onclick="toggleSection('TELE-DECLARATION-section')" style="cursor:pointer;user-select:none;">
+        <div class="sidebar-section-card d-flex align-items-center w-100" style="background-color:#ffffff;">
+          <span style="color: #211c84;">PAIE RH</span>
+          <i id="chevron-config-section" class="fas fa-chevron-right ms-auto transition-chev chev-white"></i>
+        </div>
+        </span>
+      </li>
 <script>
 function toggleSection(sectionId) {
   // Ferme les autres sections et remet les chevrons à droite

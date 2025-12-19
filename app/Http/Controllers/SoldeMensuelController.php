@@ -11,7 +11,7 @@ class SoldeMensuelController extends Controller
  
     public function saveSolde(Request $request)
     {
-       
+    //    dd($request);
          // Récupérer l'ID de la société à partir de la session
         $societeId = session('societeId');
     

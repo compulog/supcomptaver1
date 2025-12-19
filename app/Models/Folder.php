@@ -16,7 +16,7 @@ class Folder extends Model
     protected $table = 'folders';
 
     // Définir les champs autorisés pour l'attribution de masse
-    protected $fillable = ['name', 'societe_id', 'folder_id', 'type_folder', 'updated_by'];
+    protected $fillable = ['name', 'societe_id', 'folder_id', 'type_folder', 'updated_by','is_read'];
 
     public function parent()
     {

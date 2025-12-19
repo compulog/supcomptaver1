@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 use App\Imports\FournisseurImport;
 use App\Models\Fournisseur;
-use App\Models\racine;
+use App\Models\Racine;
 use App\Models\PlanComptable;
 use App\Models\societe;
 use Illuminate\Support\Facades\DB;
@@ -17,25 +17,10 @@ use Illuminate\Support\Facades\Log;
 
 class FournisseurController extends Controller
 {
-
-
-
     public function index()
-    {// Récupérer l'ID de la société dans la session
-        $societeId = session('societeId');
-
-        // Vérifier si l'ID de la société existe
-        if (!$societeId) {
-            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
-        }
-
-        // Récupérer tous les plans comptables pour la société spécifiée
-        $fournisseurs = Fournisseur::where('societe_id', $societeId)->get();
-
-        return response()->json($fournisseurs);
+    {
+        return view('fournisseurs.index');
     }
-
-
 
     public function show($id)
     {
@@ -43,194 +28,520 @@ class FournisseurController extends Controller
         return response()->json($fournisseur, 200);
     }
 
-    public function getData()
-    {
-        // Récupérer l'ID de la société dans la session
-        $societeId = session('societeId');
+    /**
+     * Endpoint JSON utilisé par Tabulator
+     */
+    // public function getData(Request $request)
+    // {
+    //     Log::debug('getData appelé', ['session' => session()->all()]);
 
-        // Vérifier si l'ID de la société existe
-        if (!$societeId) {
-            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
-        }
+    //     $societeId = session('societeId');
+    //     Log::debug('societeId', ['societeId' => $societeId]);
 
-        // Récupérer tous les plans comptables pour la société spécifiée
-        $fournisseurs = Fournisseur::where('societe_id', $societeId)->get();
+    //     if (!$societeId) {
+    //         Log::warning('societeId manquant en session');
+    //         return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+    //     }
 
-        return response()->json($fournisseurs);
-    }
+    //     $fournisseurs = Fournisseur::where('societe_id', $societeId)
+    //         ->select('id','compte','intitule','identifiant_fiscal','ICE','rubrique_tva','designation','contre_partie')
+    //         ->orderBy('compte')
+    //         ->get()
+    //         ->map(function ($f) {
+    //             $arr = $f->toArray();
+    //             $arr += [
+    //                 'missing_compte' => 0,
+    //                 'missing_intitule' => 0,
+    //                 'invalid_compte_format' => 0,
+    //                 'invalid_length_compte' => 0,
+    //                 'highlight_ice' => null,
+    //                 'invalid' => 0,
+    //             ];
+    //             return $arr;
+    //         });
 
-    public function store(Request $request)
+    //     $comptesPlan = PlanComptable::where('societe_id', $societeId)
+    //         ->where('compte', 'like', '4411%')
+    //         ->select('id','compte','intitule')
+    //         ->orderBy('compte')
+    //         ->get();
+
+    //     $comptesMap = $comptesPlan->mapWithKeys(function($c){
+    //         return [$c->compte => ($c->compte . ($c->intitule ? ' - ' . $c->intitule : ''))];
+    //     })->toArray();
+
+    //     Log::debug('comptesPlan count', ['count' => $comptesPlan->count()]);
+
+    //     return response()->json([
+    //         'fournisseurs' => $fournisseurs,
+    //         'comptes_plan' => $comptesPlan,
+    //         'comptes_map'  => $comptesMap,
+    //     ], 200);
+    // }
+
+
+  public function getData(Request $request)
 {
+    Log::debug('getData Fournisseurs (plan_comptable inclus) appelé', ['session' => session()->all(), 'request' => $request->all()]);
+
     $societeId = session('societeId');
+
     if (!$societeId) {
         return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
     }
 
-    $validatedData = $request->validate([
-        'compte' => 'nullable|string|max:' . ($request->nombre_chiffre_compte ?? 255),
-        'intitule' => 'required|string|max:255',
-        'identifiant_fiscal' => 'nullable|string|max:255',
-        'ICE' => 'nullable|string|max:255',
-        'nature_operation' => 'nullable|string|max:255',
-        'rubrique_tva' => 'nullable|string|max:255',
-        'designation' => 'nullable|string|max:255',
-        'contre_partie' => 'nullable|string|max:255',
-    ]);
+    // Récupérer la société pour obtenir nombre_chiffre_compte
+    $societe = \App\Models\Societe::find($societeId);
+    $length = $societe ? (int) $societe->nombre_chiffre_compte : 0;
 
-    if (empty($validatedData['compte'])) {
-        $validatedData['compte'] = $this->getNextCompte($societeId);
-    }
-    $validatedData['societe_id'] = $societeId;
-
-    // Vérifier si un fournisseur avec ce compte existe déjà pour cette société
-    $existingFournisseur = Fournisseur::where('societe_id', $societeId)
-        ->where('compte', $validatedData['compte'])
-        ->first();
-
-    if ($existingFournisseur) {
-        return response()->json([
-            'error' => 'Ce compte existe déjà, vous ne pouvez pas le créer.'
-        ], 422);
+    if ($length <= 0) {
+        return response()->json(['error' => 'La longueur des comptes n\'est pas définie pour la société'], 400);
     }
 
-    DB::beginTransaction();
-    try {
-        $fournisseur = Fournisseur::create($validatedData);
-        PlanComptable::create([
-            'societe_id' => $societeId,
-            'compte' => $validatedData['compte'],
-            'intitule' => $validatedData['intitule'],
+    // Helper : normalisation / formatage selon la règle convenue
+    $formatCompte = function($compteRaw, int $len) {
+        $compteRaw = $compteRaw ?? '';
+        $digits = preg_replace('/\D/', '', (string)$compteRaw);
+        $curLen = strlen($digits);
+
+        if ($curLen === 0) {
+            // si vide -> 00..01 (dernier chiffre = 1)
+            return str_repeat('0', max(0, $len - 1)) . '1';
+        }
+
+        if ($curLen >= $len) {
+            // tronquer à gauche (garder les premiers chiffres)
+            return substr($digits, 0, $len);
+        }
+
+        // compléter : insérer des zéros AVANT le dernier chiffre
+        $prefix = $curLen > 1 ? substr($digits, 0, $curLen - 1) : '';
+        $last   = substr($digits, -1);
+        $zerosToAdd = $len - $curLen;
+
+        return $prefix . str_repeat('0', $zerosToAdd) . $last;
+    };
+
+    // -----------------------------------------------------------------------
+    // 1) Charger fournisseurs existants (ordre par id pour déterminisme)
+    // -----------------------------------------------------------------------
+    $fournisseursRaw = \App\Models\Fournisseur::where('societe_id', $societeId)
+        ->select('id','compte','intitule','identifiant_fiscal','ICE','rubrique_tva','designation','contre_partie')
+        ->orderBy('id')
+        ->get();
+
+    $seen = []; // map normalized_compte => true
+    $fournisseurs = collect();
+
+    foreach ($fournisseursRaw as $f) {
+        $raw = $f->compte ?? '';
+        $normalized = $formatCompte($raw, $length);
+
+        // ne renvoyer que si la normalisation a bien donné la longueur voulue
+        if (strlen($normalized) !== $length) {
+            continue;
+        }
+
+        // enregistrer comme vu pour éviter doublons venant du plan_comptable
+        if (!isset($seen[$normalized])) {
+            $seen[$normalized] = true;
+
+            $fournisseurs->push([
+                'id' => $f->id,
+                'compte' => $raw,
+                'normalized_compte' => $normalized,
+                'intitule' => $f->intitule,
+                'identifiant_fiscal' => $f->identifiant_fiscal,
+                'ICE' => $f->ICE,
+                'rubrique_tva' => $f->rubrique_tva,
+                'designation' => $f->designation,
+                'contre_partie' => $f->contre_partie,
+                'source' => 'fournisseur',
+                // flags pour front
+                'missing_compte' => 0,
+                'missing_intitule' => 0,
+                'invalid_compte_format' => 0,
+                'invalid_length_compte' => 0,
+                'highlight_ice' => null,
+                'invalid' => 0,
+            ]);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // 2) Charger comptes du plan comptable commençant par 4411*
+    //    et ajouter uniquement ceux qui ne sont pas déjà présents dans fournisseurs
+    // -----------------------------------------------------------------------
+    $comptesPlanRaw = \App\Models\PlanComptable::where('societe_id', $societeId)
+        ->where('compte', 'like', '4411%')
+        ->select('id','compte','intitule')
+        ->orderBy('id')
+        ->get();
+
+    foreach ($comptesPlanRaw as $cp) {
+        $raw = $cp->compte ?? '';
+        $normalized = $formatCompte($raw, $length);
+
+        // ne renvoyer que si la normalisation a bien donné la longueur voulue
+        if (strlen($normalized) !== $length) {
+            continue;
+        }
+
+        // si déjà vu dans fournisseurs -> skip (on respecte la priorité fournisseurs)
+        if (isset($seen[$normalized])) {
+            continue;
+        }
+
+        // sinon, on ajoute en tant que fournisseur issu du plan comptable
+        $seen[$normalized] = true;
+
+        $fournisseurs->push([
+            'id' => 'plan-'.$cp->id,              // id composite pour front (éviter collision)
+            'compte' => $raw,
+            'normalized_compte' => $normalized,
+            'intitule' => $cp->intitule,
+            'identifiant_fiscal' => null,
+            'ICE' => null,
+            'rubrique_tva' => null,
+            'designation' => null,
+            'contre_partie' => null,
+            'source' => 'plan_comptable',
+            'missing_compte' => 0,
+            'missing_intitule' => 0,
+            'invalid_compte_format' => 0,
+            'invalid_length_compte' => 0,
+            'highlight_ice' => null,
+            'invalid' => 0,
         ]);
-        DB::commit();
-        return response()->json([
-            'success' => true,
-            'fournisseur' => $fournisseur,
-        ]);
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('Erreur lors de la création du fournisseur : ' . $e->getMessage());
-        return response()->json([
-            'error' => 'Une erreur est survenue lors de la création du fournisseur.',
-            'details' => $e->getMessage()
-        ], 500);
-    }
-}
-
-// public function checkCompte(Request $request)
-// {
-//     $request->validate([
-//         'compte' => 'required|string',
-//         'societe_id' => 'required|integer'
-//     ]);
-
-//     $exists = Fournisseur::where('societe_id', $request->societe_id)
-//                 ->where('compte', $request->compte)
-//                 ->exists();
-
-//                 if ($exists) {
-//                     return response()->json([
-//                         'exists'  => true,
-//                         'message' => 'Ce compte existe déjà, vous ne pouvez pas le créer.'
-//                     ], 200);
-//                 }
-//     return response()->json(['exists' => $exists]);
-// }
-
-
-public function checkCompte(Request $request)
-{
-    $exists = Fournisseur::where('societe_id', $request->societe_id)
-                ->where('compte', $request->compte)
-                ->exists();
-
-    return response()->json([
-        'exists'  => $exists,
-        'message' => $exists ? 'Ce compte existe déjà pour, vous ne pouvez pas le créer' : ''
-    ]);
-}
-
-
-
- // Méthode pour afficher le formulaire d'édition
- public function edit($id)
- {
- $fournisseur = Fournisseur::findOrFail($id);
-return response()->json($fournisseur);
-
-
- }
-
- // Méthode pour mettre à jour le fournisseur
- public function update(Request $request, $id)
-{
-    // Validation des données
-    $validator = Validator::make($request->all(), [
-        'compte' => 'required|string|max:255',
-        'intitule' => 'required|string|max:255',
-        'identifiant_fiscal' => 'nullable|string|max:255',
-        'ICE' => 'nullable|string|max:15',
-        'nature_operation' => 'nullable|string',
-        'rubrique_tva' => 'nullable|string',
-        'designation' => 'nullable|string|max:255',
-        'contre_partie' => 'nullable|string|max:255',
-        'invalid' => 'nullable|boolean', // Ajout de la validation pour le champ invalid
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['message' => 'Erreur de validation', 'errors' => $validator->errors()], 422);
     }
 
-    // Mise à jour des données
-    $fournisseur = Fournisseur::findOrFail($id);
+    // -----------------------------------------------------------------------
+    // 3) Construire comptes_map utile pour selects (depuis comptesPlanRaw filtré)
+    //    on renvoie map uniquement pour ceux des comptesPlanRaw (après normalisation)
+    // -----------------------------------------------------------------------
+    $comptesMap = [];
+    foreach ($comptesPlanRaw as $cp) {
+        $normalized = $formatCompte($cp->compte ?? '', $length);
+        if (strlen($normalized) !== $length) continue;
+        // si ce compte est déjà utilisé par un fournisseur, ne pas lister dans la map
+        if (isset($seen[$normalized]) && collect($fournisseurs)->contains(fn($x) => $x['normalized_compte'] === $normalized && $x['source'] === 'fournisseur')) {
+            // si existant comme fournisseur, on peut quand même l'ignorer dans la map
+            // (ou inclure selon préférence) — ici on inclut tous les comptesPlanRaw non-filterés
+        }
+        $comptesMap[$normalized] = ($normalized . ($cp->intitule ? ' - ' . $cp->intitule : ''));
+    }
 
-    $fournisseur->compte = $request->input('compte');
-    $fournisseur->intitule = $request->input('intitule');
-    $fournisseur->identifiant_fiscal = $request->input('identifiant_fiscal');
-    $fournisseur->ICE = $request->input('ICE');
-    $fournisseur->nature_operation = $request->input('nature_operation');
-    $fournisseur->rubrique_tva = $request->input('rubrique_tva');
-    $fournisseur->designation = $request->input('designation');
-    $fournisseur->contre_partie = $request->input('contre_partie');
-
-    // Vérification et mise à jour de la validité (invalid)
-    $nombre_chiffre_compte = $fournisseur->societe->nombre_chiffre_compte; // Obtenez la longueur attendue
-    $compte = $request->input('compte');
-    $fournisseur->invalid = (strlen($compte) != $nombre_chiffre_compte) ? 1 : 0; // Calcul automatique basé sur le compte
-
-    $fournisseur->save(); // Enregistrer les modifications
-
+    // renvoyer la liste fusionnée (fournisseurs + plan_comptable non-dup)
     return response()->json([
-        'message' => 'Fournisseur mis à jour avec succès',
-        'fournisseur' => $fournisseur,
+        'fournisseurs' => $fournisseurs->values(),
+        'comptes_plan' => [],      // vide pour compatibilité front (tu peux renvoyer $comptesPlanRaw si besoin)
+        'comptes_map' => $comptesMap,
+        'length_choisie' => $length,
+        'count' => $fournisseurs->count(),
     ], 200);
 }
 
+    /**
+     * Store : normalise rubrique_tva (array|string) -> "112/110/153"
+     */
+ public function store(Request $request)
+    {
+        //  dd($request->all());
+        $societeId = session('societeId');
+        if (!$societeId) {
+            return response()->json(['error' => 'Aucune société sélectionnée dans la session'], 400);
+        }
+
+        $validatedData = $request->validate([
+            'compte'            => 'nullable|string|max:' . ($request->nombre_chiffre_compte ?? 255),
+            'intitule'          => 'required|string|max:255',
+            'identifiant_fiscal'=> 'nullable|string|max:255',
+            'ICE'               => 'nullable|string|max:255',
+            'nature_operation'  => 'nullable|string|max:255',
+            'rubrique_tva'      => 'nullable|string|max:1000',
+            'designation'       => 'nullable|string|max:255',
+            'contre_partie'     => 'nullable|string|max:255',
+            'ville'             => 'nullable|string|max:255',
+            'adresse'           => 'nullable|string|max:255',
+            'RC'                => 'nullable|string|max:100',
+            'delai_p'           => 'nullable|string|max:100',
+        ]);
+
+        // Prefer the dedicated concat field coming from front
+        $concat = $request->input('rubrique_tva_concat', $request->input('rubrique_tva'));
+        if ($concat) {
+            $validatedData['rubrique_tva'] = $this->normalizeRubriqueConcat($concat);
+        } else {
+            // If nothing provided, ensure field exists (null or empty)
+            $validatedData['rubrique_tva'] = $validatedData['rubrique_tva'] ?? '';
+        }
+
+        if (empty($validatedData['compte'])) {
+            // If you already have getNextCompte implemented elsewhere keep it,
+            // otherwise we attempt a simple fallback.
+            if (method_exists($this, 'getNextCompte')) {
+                $validatedData['compte'] = $this->getNextCompte($societeId);
+            } else {
+                // fallback: create a pseudo-compte by taking max numeric and +1
+                $max = PlanComptable::where('societe_id', $societeId)->max('compte');
+                $candidate = is_numeric($max) ? ((int)$max + 1) : date('YmdHis');
+                $validatedData['compte'] = (string)$candidate;
+            }
+        }
+
+        $validatedData['societe_id'] = $societeId;
+
+        // Vérifier si un fournisseur avec ce compte existe déjà pour cette société
+        $existingFournisseur = Fournisseur::where('societe_id', $societeId)
+            ->where('compte', $validatedData['compte'])
+            ->first();
+
+        if ($existingFournisseur) {
+            return response()->json([
+                'error' => 'Ce compte existe déjà, vous ne pouvez pas le créer.'
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $fournisseur = Fournisseur::create($validatedData);
+
+            // create plan comptable entry
+            PlanComptable::create([
+                'societe_id' => $societeId,
+                'compte'     => $validatedData['compte'],
+                'intitule'   => $validatedData['intitule'],
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'success'     => true,
+                'fournisseur' => $fournisseur,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erreur lors de la création du fournisseur : ' . $e->getMessage());
+            return response()->json([
+                'error'   => 'Une erreur est survenue lors de la création du fournisseur.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function checkCompte(Request $request)
+    {
+        $exists = Fournisseur::where('societe_id', $request->societe_id)
+                    ->where('compte', $request->compte)
+                    ->exists();
+
+        return response()->json([
+            'exists'  => $exists,
+            'message' => $exists ? 'Ce compte existe déjà, vous ne pouvez pas le créer' : ''
+        ]);
+    }
+
+    /**
+     * Edit: return fournisseur + rubriques as array
+     */
+    public function edit($id)
+    {
+        $fournisseur = Fournisseur::findOrFail($id);
+
+        // Split and normalize the rubriques (from "112/110/153" to ['112','110','153'])
+        $raw = $fournisseur->rubrique_tva ?? '';
+        $rubriques = [];
+        if ($raw !== null && trim($raw) !== '') {
+            // split on / , ; and keep numeric tokens
+            $tokens = preg_split('/[\/,;]+/', $raw);
+            foreach ($tokens as $t) {
+                $t = trim($t);
+                if ($t === '') continue;
+                if (preg_match('/^\d+$/', $t)) $rubriques[] = $t;
+            }
+        }
+
+        return response()->json([
+            'fournisseur' => $fournisseur,
+            'rubriques' => array_values($rubriques),
+        ]);
+    }
+
+    /**
+     * Update: replace rubrique_tva entirely with provided concat string.
+     * Accepts rubrique_tva_concat from the front (preferred).
+     */
+    public function update(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'compte' => 'required|string|max:255',
+            'intitule' => 'required|string|max:255',
+            'identifiant_fiscal' => 'nullable|string|max:255',
+            'ICE' => 'nullable|string|max:15',
+            'nature_operation' => 'nullable|string',
+            'rubrique_tva' => 'nullable|string',
+            'designation' => 'nullable|string|max:255',
+            'contre_partie' => 'nullable|string|max:255',
+            'invalid' => 'nullable|boolean',
+            'ville' => 'nullable|string|max:255',
+            'adresse' => 'nullable|string|max:255',
+            'RC' => 'nullable|string|max:100',
+            'rc' => 'nullable|string|max:100',
+            'delai_p' => 'nullable|string|max:100',
+            'rubrique_tva_concat' => 'nullable|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Erreur de validation', 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $fournisseur = Fournisseur::findOrFail($id);
+
+            // Assignations principales
+            $fournisseur->compte = $request->input('compte');
+            $fournisseur->intitule = $request->input('intitule');
+            $fournisseur->identifiant_fiscal = $request->input('identifiant_fiscal');
+            $fournisseur->ICE = $request->input('ICE');
+            $fournisseur->nature_operation = $request->input('nature_operation');
+            $fournisseur->designation = $request->input('designation');
+            $fournisseur->contre_partie = $request->input('contre_partie');
+
+            // RC support both RC or rc field from front
+            $rcValue = $request->input('RC', $request->input('rc', null));
+            $fournisseur->RC = $rcValue;
+
+            // other simple fields
+            $fournisseur->ville = $request->input('ville');
+            $fournisseur->adresse = $request->input('adresse');
+            $fournisseur->delai_p = $request->input('delai_p');
+
+            // --- Rubriques: replace entirely using rubrique_tva_concat OR rubrique_tva ---
+            $concat = $request->input('rubrique_tva_concat', $request->input('rubrique_tva'));
+            if ($concat !== null) {
+                $fournisseur->rubrique_tva = $this->normalizeRubriqueConcat($concat);
+            } else {
+                // if not provided, leave existing value untouched
+            }
+
+            // Calcul automatique du champ invalid basé sur la longueur du compte
+            $nombre_chiffre_compte = optional($fournisseur->societe)->nombre_chiffre_compte ?? null;
+            $compte = (string) $request->input('compte', '');
+            if ($nombre_chiffre_compte) {
+                $fournisseur->invalid = (strlen($compte) != (int) $nombre_chiffre_compte) ? 1 : 0;
+            } else {
+                $fournisseur->invalid = $request->input('invalid', $fournisseur->invalid ?? 0);
+            }
+
+            $fournisseur->save();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Fournisseur mis à jour avec succès',
+                'fournisseur' => $fournisseur->fresh(),
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erreur update fournisseur: '.$e->getMessage());
+            return response()->json(['message' => 'Erreur serveur lors de la mise à jour', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Normalize a raw concat string into tokens joined by '/'.
+     * Accepts "112/110/153" or "112,110;153" etc. Returns "112/110/153" or ''.
+     */
+    protected function normalizeRubriqueConcat($raw)
+    {
+        if ($raw === null) return '';
+        // split by slash, comma, semicolon, spaces; keep only numeric tokens
+        $tokens = preg_split('/[\/,;|\s]+/', (string)$raw);
+        $clean = [];
+        foreach ($tokens as $t) {
+            $t = trim($t);
+            if ($t === '') continue;
+            // accept only digits
+            if (preg_match('/^\d+$/', $t)) $clean[] = $t;
+        }
+        // remove duplicates but preserve order
+        $clean = array_values(array_unique($clean));
+        return count($clean) ? implode('/', $clean) : '';
+    }
 
 
+public function getRubriquesTva()
+{
+    // 1) Vérification de la société active
+    $societeId = session('societeId');
+    if (empty($societeId)) {
+        return response()->json([
+            'error' => 'Aucune société sélectionnée dans la session.'
+        ], 400);
+    }
 
- // Récupère les rubriques TVA pour un type d'opération 'Achat'
- public function getRubriquesTva()
- {
-     // Liste des numéros de racines à exclure
-     $exclusions = ['190', '182', '200', '201', '205'];
+    // 2) Numéros de racines à exclure
+    $exclusions = ['147', '151', '152', '148', '144'];
 
-     $rubriques = Racine::select('Num_racines','categorie', 'Nom_racines', 'Taux' )
-         ->where('type', 'Achat')
-         ->whereNotIn('Num_racines', $exclusions)  // Exclure les numéros de racines spécifiés
-         ->get();
+    // 3) Récupération des rubriques liées à la société active
+    $rubriques = Racine::select('Num_racines', 'categorie', 'Nom_racines', 'Taux')
+        ->where('societe_id', $societeId) // ✅ Filtrage par société
+        ->where('type', 'Les déductions')
+        ->whereNotIn('Num_racines', $exclusions)
+        ->orderBy('categorie', 'desc') // Ordre inversé
+        ->get();
 
-     $rubriquesParCategorie = [];
-     foreach ($rubriques as $rubrique) {
-         $rubriquesParCategorie[$rubrique->categorie]['rubriques'][] = [
-             'Nom_racines' => $rubrique->Nom_racines,
-             'Num_racines' => $rubrique->Num_racines,
-             'Taux' => $rubrique->Taux,
-         ];
-     }
+    // 4) Regroupement par catégorie principale
+    $categoriesTemp = [];
+    foreach ($rubriques as $rubrique) {
+        [$main, $sub] = array_map('trim', explode('/', $rubrique->categorie) + [1 => null]);
 
-     return response()->json(['rubriques' => $rubriquesParCategorie]);
- }
+        if (!isset($categoriesTemp[$main])) {
+            $categoriesTemp[$main] = [
+                'subCategories' => [],
+                'rubriques'     => [],
+            ];
+        }
 
+        if ($sub && !in_array($sub, $categoriesTemp[$main]['subCategories'])) {
+            $categoriesTemp[$main]['subCategories'][] = $sub;
+        }
+
+        $categoriesTemp[$main]['rubriques'][] = [
+            'Num_racines' => $rubrique->Num_racines,
+            'Nom_racines' => $rubrique->Nom_racines,
+            'Taux'        => $rubrique->Taux,
+        ];
+    }
+
+    // 5) Construction de la structure finale
+    $categories = [];
+    $counter = 1;
+    foreach (array_keys($categoriesTemp) as $name) {
+        $data = $categoriesTemp[$name];
+        $categories[] = [
+            'categoryId'    => $counter,
+            'categoryName'  => "$counter. $name",
+            'subCategories' => $data['subCategories'],
+            'rubriques'     => $data['rubriques'],
+        ];
+        $counter++;
+    }
+
+    // 6) Si aucune rubrique trouvée
+    if (empty($categories)) {
+        return response()->json([
+            'message' => 'Aucune rubrique trouvée pour cette société.'
+        ], 404);
+    }
+
+    // 7) Retour de la réponse JSON
+    return response()->json([
+        'categories' => $categories,
+    ]);
+}
 
   /**
      * Génère un compte unique pour la société donnée.
@@ -345,64 +656,69 @@ public function getComptes()
 
      * Gère l'importation du fichier Excel
      */
-    public function import(Request $request)
-    {
-        // Validation du fichier et des indices de colonnes
-        $request->validate([
-            'file'                         => 'required|file|mimes:xlsx,xls,csv',
-            'colonne_compte'               => 'required|integer|min:1',
-            'colonne_intitule'             => 'required|integer|min:1',
-            'colonne_identifiant_fiscal'   => 'nullable|integer|min:1',
-            'colonne_ICE'                  => 'nullable|integer|min:1',
-            'colonne_nature_operation'     => 'nullable|integer|min:1',
-            'colonne_rubrique_tva'         => 'nullable|integer|min:1',
-            'colonne_designation'          => 'nullable|integer|min:1',
-            'colonne_contre_partie'        => 'nullable|integer|min:1',
-        ]);
+public function import(Request $request)
+{
+    $request->validate([
+        'file' => 'required|file|mimes:xlsx,xls,csv',
+        'colonne_compte' => 'required|integer|min:1',
+        'colonne_intitule' => 'required|integer|min:1',
+        'colonne_identifiant_fiscal' => 'nullable|integer|min:1',
+        'colonne_ICE'                => 'nullable|integer|min:1',
+        'colonne_nature_operation'   => 'nullable|integer|min:1',
+        'colonne_rubrique_tva'       => 'nullable|integer|min:1',
+        'colonne_designation'        => 'nullable|integer|min:1',
+        'colonne_contre_partie'      => 'nullable|integer|min:1',
+        'colonne_RC'      => 'nullable|integer|min:1',
+        'colonne_ville'   => 'nullable|integer|min:1',
+        'colonne_adresse' => 'nullable|integer|min:1',
+        'colonne_delai_p' => 'nullable|integer|min:1',
+    ]);
 
-        try {
-            // Récupération de l’ID de la société en session et de son paramètre nombre de chiffres
-            $societe_id = session('societeId');
-            $societe = Societe::findOrFail($societe_id);
-            $nombre_chiffre_compte = $societe->nombre_chiffre_compte;
-
-            // Préparation du mapping des colonnes
-            $mapping = [
-                'colonne_compte'            => (int) $request->input('colonne_compte'),
-                'colonne_intitule'          => (int) $request->input('colonne_intitule'),
-                'colonne_identifiant_fiscal'=> $request->filled('colonne_identifiant_fiscal')
-                                                ? (int) $request->input('colonne_identifiant_fiscal')
-                                                : null,
-                'colonne_ICE'               => $request->filled('colonne_ICE')
-                                                ? (int) $request->input('colonne_ICE')
-                                                : null,
-                'colonne_nature_operation'  => $request->filled('colonne_nature_operation')
-                                                ? (int) $request->input('colonne_nature_operation')
-                                                : null,
-                'colonne_rubrique_tva'      => $request->filled('colonne_rubrique_tva')
-                                                ? (int) $request->input('colonne_rubrique_tva')
-                                                : null,
-                'colonne_designation'       => $request->filled('colonne_designation')
-                                                ? (int) $request->input('colonne_designation')
-                                                : null,
-                'colonne_contre_partie'     => $request->filled('colonne_contre_partie')
-                                                ? (int) $request->input('colonne_contre_partie')
-                                                : null,
-            ];
-
-            // Lancement de l’import avec updateOrCreate pour ne pas dupliquer
-            Excel::import(
-                new FournisseurImport($societe_id, $nombre_chiffre_compte, $mapping),
-                $request->file('file')
-            );
-
-            return redirect()->back()->with('success', 'Importation réussie !');
-        } catch (\Exception $e) {
-            return redirect()->back()
-                             ->withInput()
-                             ->with('error', 'Erreur lors de l’import : ' . $e->getMessage());
+    try {
+        $societe_id = session('societeId');
+        if (! $societe_id) {
+            return redirect()->back()->with('error', 'Société non définie en session.');
         }
+
+        $societe = \App\Models\Societe::findOrFail($societe_id);
+        $nombre_chiffre_compte = $societe->nombre_chiffre_compte;
+
+        $mapping = [
+            'compte'                => ((int)$request->input('colonne_compte')) - 1,
+            'intitule'              => ((int)$request->input('colonne_intitule')) - 1,
+            'identifiant_fiscal'    => $request->filled('colonne_identifiant_fiscal') ? ((int)$request->input('colonne_identifiant_fiscal') - 1) : null,
+            'ICE'                   => $request->filled('colonne_ICE') ? ((int)$request->input('colonne_ICE') - 1) : null,
+            'nature_operation'      => $request->filled('colonne_nature_operation') ? ((int)$request->input('colonne_nature_operation') - 1) : null,
+            'rubrique_tva'          => $request->filled('colonne_rubrique_tva') ? ((int)$request->input('colonne_rubrique_tva') - 1) : null,
+            'designation'           => $request->filled('colonne_designation') ? ((int)$request->input('colonne_designation') - 1) : null,
+            'contre_partie'         => $request->filled('colonne_contre_partie') ? ((int)$request->input('colonne_contre_partie') - 1) : null,
+            'RC'                    => $request->filled('colonne_RC') ? ((int)$request->input('colonne_RC') - 1) : null,
+            'ville'                 => $request->filled('colonne_ville') ? ((int)$request->input('colonne_ville') - 1) : null,
+            'adresse'               => $request->filled('colonne_adresse') ? ((int)$request->input('colonne_adresse') - 1) : null,
+            'delai_p'               => $request->filled('colonne_delai_p') ? ((int)$request->input('colonne_delai_p') - 1) : null,
+        ];
+
+        Excel::import(new \App\Imports\FournisseurImport($societe_id, $nombre_chiffre_compte, $mapping), $request->file('file'));
+
+        return $request->ajax()
+            ? response()->json(['success' => 'Importation réussie'])
+            : redirect()->back()->with('success', 'Importation réussie !');
+
+    } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+        $failures = $e->failures();
+        $messages = [];
+        foreach ($failures as $f) {
+            $messages[] = "Ligne " . $f->row() . " : " . implode(', ', $f->errors());
+        }
+        return redirect()->back()->with('error', 'Erreurs d\'import : ' . implode(' | ', $messages));
+
+    } catch (\Exception $e) {
+        Log::error('Import fournisseurs error: '.$e->getMessage());
+        return redirect()->back()->withInput()->with('error', 'Erreur lors de l’import : ' . $e->getMessage());
     }
+}
+
+
     /**
      * Parse le fichier Excel (en ignorant la première ligne).
      */
