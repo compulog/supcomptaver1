@@ -777,11 +777,11 @@ function loadScriptExclusive(scriptUrl) {
                              <div style="display: flex; gap: 8px; align-items: center;">
             <label for="filter-period-ventes" style="font-size: 11px; font-weight: bold;">Période:</label>
 
-                     <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+                     <!-- <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; padding: 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);"> -->
                 <select id="periode-ventes" style="font-size: 10px; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
                     <option value="selectionner un mois">Sélectionner un mois</option>
                 </select>
-            </div>
+            <!-- </div> -->
             <input type="text" id="annee-ventes" readonly style="font-size: 10px; width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;" />
         </div>
 
@@ -1721,6 +1721,320 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   document.getElementById('closeModal').addEventListener('click', resetModal);
+  modal.addEventListener("click", e => { if(e.target === modal) resetModal(); });
+
+  attachEvents();
+});
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style>
+  /* Modal principal */
+  #files_ventes_Modal.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.45);
+    justify-content: center; align-items: center;
+    transition: background 0.3s;
+  }
+
+  /* Contenu du modal */
+  #files_ventes_Modal .modal-content {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    max-width: 1000px;
+    width: 80%;
+    height: 80%;
+    margin: 5% auto;
+    padding: 20px;
+    font-size: 1em;
+    color: #34495e;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Hover sur boutons */
+  #files_ventes_Modal .file-button:hover,
+  #files_ventes_Modal .file-button.selected {
+    background: #e3f2fd;
+    color: #1976d2;
+  }
+
+  /* Responsive mobile */
+  @media (max-width: 600px) {
+    #files_ventes_Modal .modal-content {
+      max-width: 98vw;
+      padding: 18px 6vw;
+    }
+  }
+
+  /* Breadcrumbs */
+  #ventesBreadcrumb span {
+    cursor: pointer;
+    color: #1976d2;
+  }
+  #ventesBreadcrumb span:hover {
+    text-decoration: underline;
+  }
+
+  .folder-button {
+    padding: 0.5rem; 
+    background-color: #ffc107; 
+    border-radius: 17px;
+    color: #fff; 
+    border: none; 
+    width: 100%; 
+    height: 100%;
+    cursor: pointer;
+  }
+
+  .file-card img, .file-card canvas {
+    height: 200px;
+    object-fit: cover;
+  }
+  #fileListVentes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    padding-left: 0;
+    margin: 0;
+  }
+  .file-card {
+    display: none; /* masqué par défaut, puis affiché via JS */
+  }
+</style>
+
+<!-- ✅ Font Awesome pour les icônes -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div id="files_ventes_Modal" class="modal">
+  <div class="modal-content">
+    <span id="closeVentesModal" 
+          style="position: absolute; top: 10px; right: 15px; 
+                 font-size: 24px; font-weight: bold; cursor: pointer; color: #333;">
+      &times;
+    </span>
+
+    <!-- 🔹 Navigation Dashboard -->
+    <div style="margin-bottom:1rem;">
+      <a href="#" id="backToDashboardVentes"
+         style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;">
+      </a>
+      <span style="color:rgb(34, 146, 245); text-decoration: underline; font-weight: bold;">
+      </span>
+    </div>
+
+    <!-- Dashboard initial -->
+    <div id="dashboardVentes" style="display: flex; flex-wrap: wrap; gap: 20px;">
+      <div id="TableauDeBordVentes" class="p-2 text-white"
+           style="background-color: #ffc107; border-radius: 15px; font-size: 0.75rem;
+                  height: 130px; cursor: pointer; width:30%; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+        <h4>Ventes</h4>
+      </div>
+
+      <!-- Dossiers manuels -->
+      @if(isset($dossierManuel) && $dossierManuel->count() > 0)
+        @foreach($dossierManuel as $dossier)
+          <div class="dossierManuelItem text-white"
+               data-dossierid="{{ $dossier->id }}"
+               data-dossiername="{{ $dossier->name }}"
+               style="background-color: #17a2b8; border-radius: 15px;
+                      font-size: 0.75rem; height: 130px; width:30%;
+                      cursor: pointer; display:flex; align-items:center;
+                      justify-content:center; flex-direction:column;">
+            <h4>{{ $dossier->name }}</h4>
+          </div>
+        @endforeach
+      @else
+        <p>Aucun dossier manuel disponible.</p>
+      @endif
+    </div>
+
+    <!-- Contenu dynamique ventes/dossier -->
+    <div id="ventesContent" style="display: none;">
+      <nav id="ventesBreadcrumb" style="margin-bottom: 1rem; font-size: 14px;"></nav>
+   
+      <div id="filterZoneVentes" 
+           style="display: flex; justify-content: flex-end; align-items: center; margin-top: 2rem; gap: 10px;">
+        <label for="sortFilesVentes" style="font-weight: bold;">Trier par :</label>
+        <select id="sortFilesVentes" 
+                style="padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+          <option value="name">Nom</option>
+          <option value="date">Date</option>
+        </select>
+
+        <button id="sortToggleVentes"
+                title="Changer l’ordre de tri"
+                style="display: flex; align-items: center; gap: 6px; 
+                       background: #f8f9fa; border: 1px solid #ccc; border-radius: 6px;
+                       cursor: pointer; font-size: 16px; color: #007bff; 
+                       padding: 6px 12px; font-weight: bold; transition: all 0.3s;">
+          <i class="fas fa-sort-amount-up"></i> 
+          <span id="sortLabelVentes">A → Z</span>
+        </button>
+
+        <!-- Icône de recherche -->
+        <i class="fa-solid fa-magnifying-glass search-icon" id="search-iconVentes"></i>
+      </div>
+ 
+      <h3>Dossiers</h3>
+      <ul id="folderListVentes" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding-left: 0; margin: 0;">
+        @foreach($folders_ventes as $folder)
+          <li style="list-style-type: none;" data-typefolder="{{ $folder->type_folder }}">
+            <button class="folder-button"
+                    data-folderid="{{ $folder->id }}"
+                    data-foldername="{{ $folder->name }}">
+              <i class="fas fa-folder"></i> {{ $folder->name }}
+            </button>
+          </li>
+        @endforeach
+      </ul>
+
+      <h3 style="margin-top: 2rem;">Fichiers</h3>
+      <div id="fileListVentes" style="padding-left: 0; margin: 0;">
+        @foreach($files_ventes as $file)
+          <div class="col file-card" data-type="{{ $file->type }}" 
+               style="padding-bottom:32px; display:none;">
+            <div class="card shadow-sm" style="width:13rem;height:250px;padding-bottom:16px;" 
+                 data-fileid="{{ $file->id }}" data-filepath="{{ asset($file->path) }}">
+              <div class="card-body text-center d-flex flex-column justify-content-between" style="padding:0.5rem;">
+                @php $ext = strtolower(pathinfo($file->name, PATHINFO_EXTENSION)); @endphp
+                @if(in_array($ext, ['jpg','jpeg','png','gif']))
+                  <img src="{{ asset($file->path) }}" alt="{{ $file->name }}" class="img-fluid mb-2">
+                @elseif($ext == 'pdf')
+                  <canvas class="img-fluid mb-2"></canvas>
+                @else
+                  <img src="https://via.placeholder.com/80x100.png?text=Fichier" class="img-fluid mb-2">
+                @endif
+                <h5 class="card-title text-truncate" style="font-size:0.9rem;font-weight:bold;">{{ $file->name }}</h5>
+              </div>
+            </div>
+          </div>
+        @endforeach
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("files_ventes_Modal");
+  const tableau = document.getElementById("TableauDeBordVentes");
+  const ventesContent = document.getElementById("ventesContent");
+  const dashboardVentes = document.getElementById("dashboardVentes");
+  const backToDashboard = document.getElementById("backToDashboardVentes");
+  const breadcrumb = document.getElementById("ventesBreadcrumb");
+  const folderList = document.getElementById("folderListVentes");
+  const fileList = document.getElementById("fileListVentes");
+
+  let breadcrumbPath = [];
+
+  function resetModal() {
+    modal.style.display = "none";
+    dashboardVentes.style.display = "flex";
+    ventesContent.style.display = "none";
+    breadcrumbPath = [];
+    breadcrumb.innerHTML = "";
+    attachEvents();
+  }
+
+  function updateBreadcrumb() {
+    breadcrumb.innerHTML = breadcrumbPath.map((name, index) => {
+      if(index < breadcrumbPath.length - 1){
+        return `<span class="breadcrumb-folder" data-index="${index}">${name}</span> ➢ `;
+      } else return `<span>${name}</span>`;
+    }).join('');
+    document.querySelectorAll(".breadcrumb-folder").forEach(el => {
+      el.addEventListener("click", function(){
+        const idx = parseInt(this.dataset.index);
+        breadcrumbPath = breadcrumbPath.slice(0, idx + 1);
+        openContent(breadcrumbPath[breadcrumbPath.length-1]);
+      });
+    });
+  }
+
+  function openContent(typeName) {
+    dashboardVentes.style.display = "none";
+    ventesContent.style.display = "block";
+    if(breadcrumbPath[breadcrumbPath.length-1] !== typeName) breadcrumbPath.push(typeName);
+    updateBreadcrumb();
+
+    document.querySelectorAll("#folderListVentes li").forEach(li => {
+      li.style.display = li.dataset.typefolder === typeName ? 'block' : 'none';
+    });
+
+    let hasFiles = false;
+    document.querySelectorAll("#fileListVentes .file-card").forEach(f => {
+      if(f.dataset.type === typeName){
+        f.style.display = "block";
+        hasFiles = true;
+      } else f.style.display = "none";
+    });
+
+    fileList.querySelectorAll(".no-file-msg").forEach(el => el.remove());
+    if(!hasFiles){
+      const p = document.createElement("p");
+      p.textContent = "Aucun fichier disponible.";
+      p.classList.add("no-file-msg");
+      fileList.appendChild(p);
+    }
+  }
+
+  function attachEvents() {
+    document.querySelectorAll(".folder-button").forEach(btn => {
+      btn.addEventListener("dblclick", function() {
+        openContent(this.dataset.foldername);
+      });
+    });
+
+    document.querySelectorAll(".file-card").forEach(cardWrapper => {
+      cardWrapper.addEventListener("dblclick", function () {
+        const innerCard = this.querySelector('.card');
+        const selectedFilePath = innerCard.dataset.filepath;
+        if(selectedFilePath) window.open(selectedFilePath, '_blank');
+      });
+    });
+  }
+
+  tableau.addEventListener("dblclick", () => {
+    modal.style.display = "flex";
+    breadcrumbPath = ['Ventes'];
+    openContent('ventes');
+  });
+
+  document.querySelectorAll(".dossierManuelItem").forEach(item => {
+    item.addEventListener("dblclick", function() {
+      const dossierName = this.dataset.dossiername;
+      modal.style.display = "flex";
+      breadcrumbPath = ['Ventes', dossierName];
+      openContent(dossierName);
+    });
+  });
+
+  backToDashboard.addEventListener("click", function(e){
+    e.preventDefault();
+    resetModal();
+  });
+
+  document.getElementById('closeVentesModal').addEventListener('click', resetModal);
   modal.addEventListener("click", e => { if(e.target === modal) resetModal(); });
 
   attachEvents();

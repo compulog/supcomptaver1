@@ -16,8 +16,8 @@ use App\Models\File;
 class OperationCaisseBanqueController extends Controller
 {
 
-    public function destroy(Request $request)
-    {                
+public function destroy(Request $request)
+{                
         $societeId = session('societeId');
 
         // Vérifier si le societeId est valide, sinon renvoyer une erreur
@@ -38,268 +38,7 @@ class OperationCaisseBanqueController extends Controller
 
         // Retourner une réponse JSON
         return response()->json(['message' => 'Opérations supprimées avec succès.']);
-    }
-
-    // public function store(Request $request)
-    // {
-       
-    //     // Récupérer le societe_id depuis la session
-    //     $societeId = session('societeId');
-    
-    //     // Validation des données
-    //     $validatedData = $request->validate([
-    //         'id' => 'nullable|exists:operation_courantes,id', // Validation pour l'ID
-    //         'date' => 'required|date',
-    //         'numero_dossier' => 'nullable|string',
-    //         'fact_lettrer' => 'nullable|string',
-    //         'compte' => 'nullable|string',
-    //         'libelle' => 'nullable|string',
-    //         'debit' => 'nullable|numeric',
-    //         'credit' => 'nullable|numeric',
-    //         'contre_partie' => 'nullable|string',
-    //         'piece_justificative' => 'nullable|string',
-    //         'taux_ras_tva' => 'nullable|string',
-    //         'nature_op' => 'nullable|string',
-    //         'date_lettrage' => 'nullable|date',
-    //         'mode_pay' => 'nullable|string',
-    //         'type_journal' => 'nullable|numeric',
-    //         'saisie_choisie' => 'required|string', 
-    //     ]);
-    
-    //     // Ajouter le champ numero_facture avec la valeur par défaut
-    //     $validatedData['numero_facture'] = 'pas de facture';
-    
-    //     // Ajouter le societe_id récupéré de la session
-    //     $validatedData['societe_id'] = $societeId;
-    //     $validatedData['categorie'] = 'caisse';
-    
-    //     // Vérifier si des opérations existantes avec le même fact_lettrer existent
-    //     $existingOperations = OperationCourante::where('fact_lettrer', $validatedData['fact_lettrer'])
-    //         ->where('societe_id', $societeId)
-    //         ->get();
-    
-    //     if ($existingOperations->isNotEmpty()) {
-    //         // Si le numéro de facture existe, mettre à jour tous les enregistrements
-    //         foreach ($existingOperations as $existingOperation) {
-    //             $existingOperation->update($validatedData);
-    //         }
-    //     } else {
-    //         // Sinon, enregistrer l'opération principale
-    //         $operation = OperationCourante::create($validatedData);
-    //     }
-    
-    //     // Vérifier si la saisie choisie est "contre partie auto"
-    //     if ($validatedData['saisie_choisie'] === 'contre-partie') {
-    //         // Vérifier si des opérations existantes ont été mises à jour
-    //         if ($existingOperations->isEmpty()) {
-    //             // Créer la ligne de contrepartie uniquement si aucune opération existante n'a été mise à jour
-    //             $contrePartieData = [
-    //                 'date' => $validatedData['date'],
-    //                 'fact_lettrer' => $validatedData['fact_lettrer'],
-    //                 'compte' => $validatedData['contre_partie'], // Utiliser le champ contre_partie pour le compte
-    //                 'contre_partie' => $validatedData['compte'],
-    //                 'libelle' => 'Paiement ' . $validatedData['libelle'], // Libellé pour la contrepartie
-    //                 'debit' => $validatedData['credit'], // Le crédit devient le débit pour la contrepartie
-    //                 'credit' => $validatedData['debit'], // Le débit devient le crédit pour la contrepartie
-    //                 'piece_justificative' => $validatedData['piece_justificative'],
-    //                 'taux_ras_tva' => $validatedData['taux_ras_tva'],
-    //                 'nature_op' => $validatedData['nature_op'],
-    //                 'date_lettrage' => $validatedData['date_lettrage'],
-    //                 'mode_pay' => $validatedData['mode_pay'],
-    //                 'type_journal' => $validatedData['type_journal'],
-    //                 'numero_facture' => 'pas de facture', // Ajouter le champ numero_facture avec la valeur par défaut
-    //                 'societe_id' => $societeId,
-    //                 'categorie' => 'caisse',
-    //             ];
-    
-    //             // Enregistrer la ligne de contrepartie
-    //             OperationCourante::create($contrePartieData);
-    //         }
-    //     }
-    
-    //     return response()->json(['message' => 'Données enregistrées avec succès.']);
-    // }
-
-    // public function storeBanque(Request $request)
-    // {
-    //     //  dd($request->all());
-    //     $societeId = session('societeId');
-
-    //     $racine = Racine::where('societe_id', $societeId)
-    //             ->where('num_racines', 142)
-    //             ->first();
-    //     $taux = is_numeric($racine->Taux) ? (float) $racine->Taux : 0;
-    //         //  dd($taux);
-       
-    
-    //      $validatedData = $request->validate([
-    //         'date' => 'required|date',
-    //         'numero_dossier' => 'nullable|string',
-    //         'fact_lettrer' => 'nullable|string',
-    //         'compte' => 'nullable|string',
-    //         'libelle' => 'nullable|string',
-    //         'debit' => 'nullable|numeric',
-    //         'credit' => 'nullable|numeric',
-    //         'contre_partie' => 'nullable|string',
-    //         'piece_justificative' => 'nullable|string',
-    //         'taux_ras_tva' => 'nullable|string',
-    //         'nature_op' => 'nullable|string',
-    //         'date_lettrage' => 'nullable|date',
-    //         'mode_pay' => 'nullable|string',
-    //         'type_journal' => 'nullable|numeric',
-    //         'saisie_choisie' => 'required|string', 
-    //         'file_id' => 'nullable|integer',
-
-    //     ]);
-    //     $validatedData['file_id'] = $request->input('file_id');
-    //     $validatedData['numero_facture'] = 'pas de facture';
-    //     $validatedData['societe_id'] = $societeId;
-    //     $validatedData['categorie'] = 'Banque';
-
-    //     // Vérifier si le numéro de facture existe déjà
-    //     // $existingOperations = OperationCourante::where('fact_lettrer', $validatedData['fact_lettrer'])
-    //     //     ->where('societe_id', $societeId)
-    //     //     ->get();
-
-    //     // if ($existingOperations->isNotEmpty()) {
-    //     //     // Si le numéro de facture existe, mettre à jour tous les enregistrements
-    //     //     foreach ($existingOperations as $existingOperation) {
-    //     //         $existingOperation->update($validatedData);
-    //     //     }
-    //     // } else {
-    //         // Sinon, enregistrer l'opération principale
-    //      if (!empty($validatedData['fact_lettrer'])) {
-    //         $factures = explode('&', $validatedData['fact_lettrer']);
-
-    //         foreach ($factures as $factureStr) {
-    //             $factureStr = trim($factureStr);
-
-    //             if (!empty($factureStr)) {
-    //                 $parts = explode('|', $factureStr);
-
-    //                 if (count($parts) === 4) {
-    //                     $operationId = intval(trim($parts[0]));
-    //                     $numero = trim($parts[1]);
-    //                     $montant = floatval(trim($parts[2]));
-    //                     $date = trim($parts[3]);
-
-    //                     $acompte = 0;
-    //                     if (!empty($validatedData['debit']) && $validatedData['debit'] != 0) {
-    //                         $acompte = $validatedData['debit'];
-    //                     } elseif (!empty($validatedData['credit']) && $validatedData['credit'] != 0) {
-    //                         $acompte = $validatedData['credit'];
-    //                     }
-
-    //                     Lettrage::create([
-    //                         'NFacture' => $numero,
-    //                         'Acompte' => $acompte,
-    //                         'compte' => $validatedData['compte'],
-    //                         'id_operation' => $operationId,
-    //                         'id_user' => auth()->id(), 
-    //                     ]);
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     if (!empty($validatedData['fact_lettrer'])) {
-    //         $factures = explode('&', $validatedData['fact_lettrer']);
-    //         $facturesNettoyees = [];
-
-    //         foreach ($factures as $factureStr) {
-    //             $parts = explode('|', trim($factureStr));
-    //             if (count($parts) === 4) {
-    //                 $facturesNettoyees[] = implode('|', array_slice($parts, 1)); 
-    //             } else {
-                
-    //                 $facturesNettoyees[] = trim($factureStr);
-    //             }
-    //         }
-
-    //         $validatedData['fact_lettrer'] = implode(' & ', $facturesNettoyees);
-    //     }
-
-        
-    //         $operation = OperationCourante::create($validatedData);
-    //     // }
-
-    //     // Vérifier si la saisie choisie est "contre partie auto"
-    //     if ($validatedData['saisie_choisie'] === 'contre-partie') {
- 
-    //         // if ($existingOperations->isEmpty()) {
-                
-    //            if (str_starts_with($validatedData['compte'], '6147')) {
-    //                  // dd('arrive');
-    //                     $contrePartieData1 = [
-    //                     'date' => $validatedData['date'],
-    //                     'fact_lettrer' => $validatedData['fact_lettrer'],
-    //                     'compte' => $racine->compte_tva,
-    //                     'contre_partie' => $validatedData['contre_partie'],
-    //                     'libelle' => $validatedData['libelle'],
-    //                     'debit' => $validatedData['debit'] * ($taux / 100),
-    //                     'credit' => $validatedData['credit'],
-    //                     'piece_justificative' => $validatedData['piece_justificative'],
-    //                     'taux_ras_tva' => $validatedData['taux_ras_tva'],
-    //                     'nature_op' => $validatedData['nature_op'],
-    //                     'date_lettrage' => $validatedData['date_lettrage'],
-    //                     'mode_pay' => $validatedData['mode_pay'],
-    //                     'type_journal' => $validatedData['type_journal'],
-    //                     'numero_facture' => 'pas de facture',
-    //                     'societe_id' => $societeId,
-    //                     'categorie' => 'Banque',
-    //                     'file_id' => $validatedData['file_id'] ?? null,
-    //                 ];
-    //                     $contrePartieData2 = [
-    //                     'date' => $validatedData['date'],
-    //                     'fact_lettrer' => $validatedData['fact_lettrer'],
-    //                     'compte' => $validatedData['contre_partie'],
-    //                     'contre_partie' => $validatedData['compte'],
-    //                     'libelle' =>$validatedData['libelle'],
-    //                     'debit' => $validatedData['credit'],
-    //                     'credit' => $validatedData['debit'] + $validatedData['debit'] * ($taux / 100),
-    //                     'piece_justificative' => $validatedData['piece_justificative'],
-    //                     'taux_ras_tva' => $validatedData['taux_ras_tva'],
-    //                     'nature_op' => $validatedData['nature_op'],
-    //                     'date_lettrage' => $validatedData['date_lettrage'],
-    //                     'mode_pay' => $validatedData['mode_pay'],
-    //                     'type_journal' => $validatedData['type_journal'],
-    //                     'numero_facture' => 'pas de facture',
-    //                     'societe_id' => $societeId,
-    //                     'categorie' => 'Banque',
-    //                     'file_id' => $validatedData['file_id'] ?? null,
-    //                 ];
-    //                     OperationCourante::create($contrePartieData1);
-    //                     OperationCourante::create($contrePartieData2);  
-    //             }else{
-                    
-    //                 $contrePartieData = [
-    //                     'date' => $validatedData['date'],
-    //                     'fact_lettrer' => $validatedData['fact_lettrer'],
-    //                     'compte' => $validatedData['contre_partie'],
-    //                     'contre_partie' => $validatedData['compte'],
-    //                     'libelle' => $validatedData['libelle'],
-    //                     'debit' => $validatedData['credit'],
-    //                     'credit' => $validatedData['debit'],
-    //                     'piece_justificative' => $validatedData['piece_justificative'],
-    //                     'taux_ras_tva' => $validatedData['taux_ras_tva'],
-    //                     'nature_op' => $validatedData['nature_op'],
-    //                     'date_lettrage' => $validatedData['date_lettrage'],
-    //                     'mode_pay' => $validatedData['mode_pay'],
-    //                     'type_journal' => $validatedData['type_journal'],
-    //                     'numero_facture' => 'pas de facture',
-    //                     'societe_id' => $societeId,
-    //                     'categorie' => 'Banque',
-    //                     'file_id' => $validatedData['file_id'] ?? null,
-    //                 ];
- 
-    //                  OperationCourante::create($contrePartieData);
-
-    //             // }
-
-    //         }
-    //     }
-
-    //     return response()->json(['message' => 'Données enregistrées avec succès.']);
-    // }
+}
 
 public function storeBanque(Request $request)
 {
@@ -331,93 +70,87 @@ public function storeBanque(Request $request)
         'file_id' => 'nullable|integer',
     ]);
 
+    /* =======================================================
+       🔥 SAUVEGARDE DE LA VALEUR ORIGINALE AVEC ID
+    ======================================================= */
+    $factletOriginal = $validatedData['fact_lettrer'] ?? '';
+
     $validatedData['file_id'] = $request->input('file_id');
     $validatedData['numero_facture'] = 'pas de facture';
     $validatedData['societe_id'] = $societeId;
     $validatedData['categorie'] = 'Banque';
 
-    $validatedData['reste_montant_lettre'] = !empty($validatedData['fact_lettrer'])
+    $validatedData['reste_montant_lettre'] = !empty($factletOriginal)
         ? 0.00
         : ($validatedData['debit'] ?? $validatedData['credit'] ?? 0.00);
 
-    // Enregistrement de l'opération principale AVANT lettrage pour obtenir son ID
+    /* =======================================================
+       ✅ OPÉRATION PRINCIPALE (AVEC fact_lettrer + ID)
+    ======================================================= */
     $operationPrincipale = OperationCourante::create($validatedData);
 
-    // Traitement du lettrage si présent
-    if (!empty($validatedData['fact_lettrer'])) {
-    $factures = explode('&', $validatedData['fact_lettrer']);
+    /* =======================================================
+       🔗 TRAITEMENT DU LETTRAGE
+    ======================================================= */
+    if (!empty($factletOriginal)) {
 
-    $acompte = !empty($validatedData['debit']) && $validatedData['debit'] != 0
-        ? $validatedData['debit']
-        : (!empty($validatedData['credit']) ? $validatedData['credit'] : 0);
+        $factures = explode('&', $factletOriginal);
 
-    $resteAcompte = $acompte;
+        $acompte = !empty($validatedData['debit']) && $validatedData['debit'] != 0
+            ? $validatedData['debit']
+            : (!empty($validatedData['credit']) ? $validatedData['credit'] : 0);
 
-    foreach ($factures as $factureStr) {
-        $factureStr = trim($factureStr);
-        if (empty($factureStr)) continue;
+        $resteAcompte = $acompte;
 
-        $parts = explode('|', $factureStr);
-        if (count($parts) !== 4) continue;
+        foreach ($factures as $factureStr) {
 
-        $operationId = (int) trim($parts[0]); // ID de la facture existante
-        $numero = trim($parts[1]);
-        $montant = (float) trim($parts[2]);
-        $dateFacture = trim($parts[3]);
+            $factureStr = trim($factureStr);
+            if (empty($factureStr)) continue;
 
-        if ($operationId <= 0) {
-            throw new \Exception("ID de la facture invalide : " . $parts[0]);
+            $parts = explode('|', $factureStr);
+            if (count($parts) !== 4) continue;
+
+            $operationId = (int) trim($parts[0]);
+            $numero      = trim($parts[1]);
+
+            if ($operationId <= 0) continue;
+
+            $operation = OperationCourante::find($operationId);
+            if (!$operation || $resteAcompte <= 0) break;
+
+            $montantLettrable = min($resteAcompte, $operation->reste_montant_lettre);
+
+            Lettrage::create([
+                'NFacture'    => $numero,
+                'Acompte'     => $montantLettrable,
+                'compte'      => $validatedData['compte'],
+                'id_operation'=> $operationId,
+                'id_user'     => auth()->id(),
+                'lettrage_id' => $operationPrincipale->id,
+            ]);
+
+            $operation->reste_montant_lettre -= $montantLettrable;
+            $operation->reste_montant_lettre = max($operation->reste_montant_lettre, 0);
+            $operation->save();
+
+            $resteAcompte -= $montantLettrable;
         }
 
-        $operation = OperationCourante::find($operationId);
-        if (!$operation) continue;
-
-        if ($resteAcompte <= 0) break;
-
-        $acompteLettrage = min($resteAcompte, $operation->reste_montant_lettre);
-
-        Lettrage::create([
-            'NFacture' => $numero,
-            'Acompte' => $acompteLettrage,
-            'compte' => $validatedData['compte'],
-            'id_operation' => $operationId,          // ID exact de la facture
-            'id_user' => auth()->id(),
-            'lettrage_id' => $operationPrincipale->id, // ID de l'opération actuelle
-        ]);
-
-        // Met à jour le reste à lettrer de la facture
-        $operation->reste_montant_lettre -= $acompteLettrage;
-        if ($operation->reste_montant_lettre < 0) {
-            $operation->reste_montant_lettre = 0;
-        }
-        $operation->save();
-
-        $resteAcompte -= $acompteLettrage;
-    }
-
-    if ($resteAcompte > 0) {
-        echo "<script>alert('L\'acompte est supérieur au total des restes à lettrer des factures.');</script>";
-    }
-
-    // Nettoyage du champ fact_lettrer pour ne garder que le numéro et le montant
-    $facturesNettoyees = [];
-    foreach ($factures as $factureStr) {
-        $parts = explode('|', trim($factureStr));
-        if (count($parts) === 4) {
-            $facturesNettoyees[] = implode('|', array_slice($parts, 1)); // numéro|montant|date
-        } else {
-            $facturesNettoyees[] = trim($factureStr);
+        if ($resteAcompte > 0) {
+            echo "<script>alert('L\\'acompte est supérieur au total des restes à lettrer.');</script>";
         }
     }
-    $validatedData['fact_lettrer'] = implode(' & ', $facturesNettoyees);
-    }
 
-    // Saisie automatique contre-partie
+    /* =======================================================
+       🔁 CONTRE-PARTIES (AVEC fact_lettrer + ID)
+    ======================================================= */
     if ($validatedData['saisie_choisie'] === 'contre-partie') {
+
         if (str_starts_with($validatedData['compte'], '6147')) {
+
             $contrePartieData1 = [
                 'date' => $validatedData['date'],
-                'fact_lettrer' => $validatedData['fact_lettrer'],
+                'fact_lettrer' => $factletOriginal,
                 'compte' => $racine->compte_tva,
                 'contre_partie' => $validatedData['contre_partie'],
                 'libelle' => $validatedData['libelle'],
@@ -432,18 +165,18 @@ public function storeBanque(Request $request)
                 'numero_facture' => 'pas de facture',
                 'societe_id' => $societeId,
                 'categorie' => 'Banque',
-                'file_id' => $validatedData['file_id'] ?? null,
-                'reste_montant_lettre' => !empty($validatedData['fact_lettrer']) ? 0.00 : ($validatedData['debit'] ?? $validatedData['credit'] ?? 0.00),
+                'file_id' => $validatedData['file_id'],
+                'reste_montant_lettre' => !empty($factletOriginal) ? 0.00 : ($validatedData['debit'] ?? 0),
             ];
 
             $contrePartieData2 = [
                 'date' => $validatedData['date'],
-                'fact_lettrer' => $validatedData['fact_lettrer'],
+                'fact_lettrer' => $factletOriginal,
                 'compte' => $validatedData['contre_partie'],
                 'contre_partie' => $validatedData['compte'],
                 'libelle' => $validatedData['libelle'],
                 'debit' => $validatedData['credit'],
-                'credit' => $validatedData['debit'] + $validatedData['debit'] * ($taux / 100),
+                'credit' => $validatedData['debit'] + ($validatedData['debit'] * ($taux / 100)),
                 'piece_justificative' => $validatedData['piece_justificative'],
                 'taux_ras_tva' => $validatedData['taux_ras_tva'],
                 'nature_op' => $validatedData['nature_op'],
@@ -453,16 +186,18 @@ public function storeBanque(Request $request)
                 'numero_facture' => 'pas de facture',
                 'societe_id' => $societeId,
                 'categorie' => 'Banque',
-                'file_id' => $validatedData['file_id'] ?? null,
-                'reste_montant_lettre' => !empty($validatedData['fact_lettrer']) ? 0.00 : ($validatedData['credit'] ?? $validatedData['debit'] ?? 0.00),
+                'file_id' => $validatedData['file_id'],
+                'reste_montant_lettre' => !empty($factletOriginal) ? 0.00 : ($validatedData['credit'] ?? 0),
             ];
 
             OperationCourante::create($contrePartieData1);
             OperationCourante::create($contrePartieData2);
+
         } else {
+
             $contrePartieData = [
                 'date' => $validatedData['date'],
-                'fact_lettrer' => $validatedData['fact_lettrer'],
+                'fact_lettrer' => $factletOriginal,
                 'compte' => $validatedData['contre_partie'],
                 'contre_partie' => $validatedData['compte'],
                 'libelle' => $validatedData['libelle'],
@@ -477,8 +212,8 @@ public function storeBanque(Request $request)
                 'numero_facture' => 'pas de facture',
                 'societe_id' => $societeId,
                 'categorie' => 'Banque',
-                'file_id' => $validatedData['file_id'] ?? null,
-                'reste_montant_lettre' => !empty($validatedData['fact_lettrer']) ? 0.00 : ($validatedData['credit'] ?? $validatedData['debit'] ?? 0.00),
+                'file_id' => $validatedData['file_id'],
+                'reste_montant_lettre' => !empty($factletOriginal) ? 0.00 : ($validatedData['credit'] ?? 0),
             ];
 
             OperationCourante::create($contrePartieData);
@@ -514,9 +249,8 @@ public function getBanque(Request $request)
     return response()->json($operations);
 }
 
-
-    public function get(Request $request)
-    {
+public function get(Request $request)
+{
         // Récupérer le societe_id depuis la session
         $societeId = session('societeId');
         
@@ -537,7 +271,7 @@ public function getBanque(Request $request)
 
         // Retourner les données récupérées sous forme de réponse JSON
         return response()->json($operations);
-    }
+}
 
 public function importerOperationCouranteBanque(Request $request)
 {
@@ -648,6 +382,7 @@ public function importerOperationCouranteBanque(Request $request)
         'erreurs' => $erreurs,
     ]);
 }
+
 public function importerOperationCouranteCaisse(Request $request)
 {
     $societeId = session('societeId');
@@ -799,35 +534,6 @@ public function searchFacture(Request $request)
     return response()->json($operations);
 }
 
-// public function updateBanque(Request $request, $id)
-// {
-//     dd($request->all());
-//     $operation = OperationCourante::findOrFail($id); // ⚠️ Assure-toi que le modèle est bien importé
-
-//     $validatedData = $request->validate([
-//         'date' => 'required|date',
-//         'numero_dossier' => 'nullable|string',
-//         'fact_lettrer' => 'nullable|string',
-//         'compte' => 'nullable|string',
-//         'libelle' => 'nullable|string',
-//         'debit' => 'nullable|numeric',
-//         'credit' => 'nullable|numeric',
-//         'contre_partie' => 'nullable|string',
-//         'piece_justificative' => 'nullable|string',
-//         'taux_ras_tva' => 'nullable|string',
-//         'nature_op' => 'nullable|string',
-//         'date_lettrage' => 'nullable|date',
-//         'mode_pay' => 'nullable|string',
-//         'type_journal' => 'nullable|numeric',
-//     ]);
-
-//     // Mise à jour simple de la ligne
-//     $operation->update($validatedData);
-
-//     return response()->json(['message' => 'Opération mise à jour avec succès']);
-// }
-
-
 public function updateBanqueOperation(Request $request)
 {
     $data = $request->input('data');
@@ -900,20 +606,40 @@ public function updateBanqueOperation(Request $request)
                 $operation->date_lettrage = null;
                 $operation->reste_montant_lettre = ($operation->debit ?? $operation->credit ?? 0);
                 $operation->save();
+                $valeursiffac = explode('|', $ancienneValeurLettrage);
 
-                // 🔹 Mettre à jour les opérations avec même pièce justificative
-                if (!empty($operation->piece_justificative)) {
-                    $opsLiees = OperationCourante::where('piece_justificative', $operation->piece_justificative)
-                        ->where('id', '!=', $operation->id)
-                        ->get();
+                // On prend la première valeur
+                $idfac = $valeursiffac[0];
+                //  dd($idfac);
+                $opsLieesfaclet = OperationCourante::where('id', '=', $idfac)
+                                                    ->get();
 
-                    foreach ($opsLiees as $op) {
-                        $op->fact_lettrer = null;
-                        $op->date_lettrage = null;
-                        $op->reste_montant_lettre = $op->debit ?? $op->credit ?? 0;
-                        $op->save();
-                    }
+                foreach ($opsLieesfaclet as $op) {
+                
+                    $value = (isset($op->debit) && $op->debit > 0) ? $op->debit : ($op->credit ?? 0);
+                    $op->reste_montant_lettre = (float) ($value ?? 0);
+                    //   dd($op->debit, $op->credit);
+                    $op->save();
                 }
+
+                                    //    dd($opsLieesfaclet->reste_montant_lettre  );
+                    // 🔹 Mettre à jour les opérations avec même pièce justificative
+                    if (!empty($operation->piece_justificative)) {
+                        $opsLiees = OperationCourante::where('piece_justificative', $operation->piece_justificative)
+                            ->where('id', '!=', $operation->id)
+                            ->get();
+                        //  $opsLieesfaclet = OperationCourante::where('id', '=', $facture->id)
+                        //                         ->get();
+                    
+                        foreach ($opsLiees as $op) {
+                            $op->fact_lettrer = null;
+                            $op->date_lettrage = null;
+                            // $op->reste_montant_lettre = $op->debit ?? $op->credit ?? 0;
+                            $op->reste_montant_lettre = $op->debit ?? $op->credit ?? 0;
+
+                            $op->save();
+                        }
+                    }
             }
 
             // ---------------------------------------------------
@@ -1046,11 +772,6 @@ public function updateBanqueOperation(Request $request)
     }
 }
 
-
-
-    
-
-
 public function storeCaisse(Request $request) {
     // dd($request->all());
     // ✅ Transformation de 'facture' en 'fact_lettrer' si présent dans le request
@@ -1106,9 +827,9 @@ public function storeCaisse(Request $request) {
     $validatedData['reste_montant_lettre'] = !empty($validatedData['fact_lettrer'])
         ? 0.00
         : ($validatedData['debit'] ?? $validatedData['credit'] ?? 0.00);
-
+    // dd($validatedData);
     $operationPrincipale = OperationCourante::create($validatedData);
-
+    $factlet01 = $validatedData['fact_lettrer'];
     // ✅ Traitement du lettrage
     if (!empty($validatedData['fact_lettrer'])) {
         $factures = explode('&', $validatedData['fact_lettrer']);
@@ -1212,7 +933,8 @@ public function storeCaisse(Request $request) {
         if (str_starts_with($validatedData['compte'], '6147')) {
             $contrePartieData1 = [
                 'date' => $validatedData['date'],
-                'fact_lettrer' => $validatedData['fact_lettrer'],
+                // 'fact_lettrer' => $validatedData['fact_lettrer'],
+                'fact_lettrer' => $factlet01,
                 'compte' => $racine->compte_tva,
                 'contre_partie' => $validatedData['contre_partie'],
                 'libelle' => $validatedData['libelle'],
@@ -1232,7 +954,8 @@ public function storeCaisse(Request $request) {
 
             $contrePartieData2 = [
                 'date' => $validatedData['date'],
-                'fact_lettrer' => $validatedData['fact_lettrer'],
+                // 'fact_lettrer' => $validatedData['fact_lettrer'],
+                'fact_lettrer' => $factlet01,
                 'compte' => $validatedData['contre_partie'],
                 'contre_partie' => $validatedData['compte'],
                 'libelle' => $validatedData['libelle'],
@@ -1249,13 +972,14 @@ public function storeCaisse(Request $request) {
                 'categorie' => 'Caisse',
                 'reste_montant_lettre' => !empty($validatedData['fact_lettrer']) ? 0.00 : ($validatedData['credit'] ?? $validatedData['debit'] ?? 0.00),
             ];
-
+    //  dd($contrePartieData1, $contrePartieData2);
             OperationCourante::create($contrePartieData1);
             OperationCourante::create($contrePartieData2);
         } else {
             $contrePartieData = [
                 'date' => $validatedData['date'],
-                'fact_lettrer' => $validatedData['fact_lettrer'],
+                // 'fact_lettrer' => $validatedData['fact_lettrer'],
+                'fact_lettrer' => $factlet01,
                 'compte' => $validatedData['contre_partie'],
                 'contre_partie' => $validatedData['compte'],
                 'libelle' => $validatedData['libelle'],
@@ -1272,7 +996,7 @@ public function storeCaisse(Request $request) {
                 'categorie' => 'Caisse',
                 'reste_montant_lettre' => !empty($validatedData['fact_lettrer']) ? 0.00 : ($validatedData['credit'] ?? $validatedData['debit'] ?? 0.00),
             ];
-
+    //   dd($contrePartieData);
             OperationCourante::create($contrePartieData);
         }
     }
@@ -1280,10 +1004,7 @@ public function storeCaisse(Request $request) {
     return response()->json(['message' => 'Données enregistrées avec succès.']);
 }
 
-
-
-public function transfereBanque(Request $request)
-{
+public function transfereBanque(Request $request){
     $societeId = session('societeId');
 
     if (!$societeId) {
@@ -1330,8 +1051,8 @@ public function transfereBanque(Request $request)
         return response()->json(['error' => 'Erreur serveur lors de la mise à jour.'], 500);
     }
 }
-public function transfereCaisse(Request $request)
-{
+
+public function transfereCaisse(Request $request){
     $societeId = session('societeId');
 
     if (!$societeId) {
@@ -1412,8 +1133,6 @@ public function getSoldeInitialCaisse(Request $request){
             'solde_initial_cr' => $soldeInitialCR,
     ]);
 }
-
-
 
 public function modifierTousCompteCaisse(Request $request)
 {
@@ -1503,7 +1222,6 @@ public function modifierTousCompteCaisse(Request $request)
     }
 }
 
-
 public function modifierTousCompteBanque(Request $request)
 {
     
@@ -1591,8 +1309,6 @@ public function modifierTousCompteBanque(Request $request)
         return response()->json(['error' => 'Erreur serveur lors de la mise à jour.'], 500);
     }
 }
-
-
 
 public function getSoldeActuel(Request $request)
 {

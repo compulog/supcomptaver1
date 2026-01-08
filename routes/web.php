@@ -72,6 +72,9 @@ use App\Http\Controllers\ReleveBancaireController;
 
 Route::group(['middleware' => 'auth'], function () {
 
+    Route::post('/operation-courante-vente-store', [OperationCouranteController::class, 'storeVenteOperation'])
+     ->name('operation-courante-vente.store');
+
     Route::post('/achats/update-row', [OperationCouranteController::class, 'updateRow'])
     ->name('achats.updateRow');
 

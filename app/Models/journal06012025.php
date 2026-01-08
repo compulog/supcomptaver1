@@ -20,9 +20,8 @@ class Journal extends Model
         'intitule',
         'contre_partie',
         'societe_id',
-        'identifiant_fiscal',  // anciennement 'if'
+        'if',
         'ice',
-        'rubrique_tva',
     ];
     protected $dates = ['deleted_at']; // Permet de gérer la colonne deleted_at comme une date
 

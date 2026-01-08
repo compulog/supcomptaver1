@@ -42,9 +42,10 @@ public function updateRow(Request $request)
 
         $validated = $request->validate([
             'id' => 'required|integer|exists:operation_courante,id',
-            'date' => 'nullable|date',
-            'date_livr' => 'nullable|date',
+            'date' => 'nullable|string',
+            'date_livr' => 'nullable|string',
             'numero_facture' => 'nullable|string|max:255',
+            'numero_dossier' => 'nullable|string|max:255',
             'compte' => 'nullable|string|max:255',
             'libelle' => 'nullable|string|max:255',
             'debit' => 'nullable|numeric',
@@ -56,21 +57,212 @@ public function updateRow(Request $request)
             'compte_tva' => 'nullable|string|max:255',
             'prorat_de_deduction' => 'nullable|string|in:Oui,Non',
             'file_id' => 'nullable|integer',
+            'fact_lettrer' => 'nullable', 
+            'date_lettrage' => 'nullable|string'
         ]);
 
         $op = OperationCourante::where('id', $request->id)
             ->where('societe_id', $societeId)
             ->firstOrFail();
 
-        $ancienPiece = $op->piece_justificative;
+        $anciennePiece = $op->piece_justificative;
         $ancienCompte = $op->compte;
         $ancienContrePartie = $op->contre_partie;
-        $ancienProrata = $op->prorat_de_deduction;
+        $ancienneProrata = $op->prorat_de_deduction;
+        $ancienneValeurLettrage = $op->fact_lettrer;
 
-         
-        $op->date = $request->date ? Carbon::parse($request->date)->format('Y-m-d') : null;
-        $op->date_livr = $request->date_livr ? Carbon::parse($request->date_livr)->format('Y-m-d') : null;
+        // -------------------------------
+        // Fonction pour parser plusieurs formats de date
+        // -------------------------------
+        $parseDateMultiFormat = function ($dateString) {
+            if (!$dateString) return null;
+            $formats = ['d/m/Y', 'Y-m-d', 'm/d/Y'];
+            foreach ($formats as $format) {
+                try {
+                    $parsed = Carbon::createFromFormat($format, $dateString);
+                    if ($parsed !== false) return $parsed->format('Y-m-d');
+                } catch (\Exception $e) {}
+            }
+            return false;
+        };
+
+        DB::beginTransaction();
+
+        // -------------------------------
+        // Gestion du lettrage / délettrage
+        // -------------------------------
+        $nouvelleValeurLettrage = $request->fact_lettrer ?? null;
+        if ($ancienneValeurLettrage !== $nouvelleValeurLettrage) {
+
+            // Cas suppression totale ou partielle
+                // if (empty($nouvelleValeurLettrage)) {
+
+                //         // 🔹 Récupérer toutes les lignes de lettrage liées (lettrage_id OU id_operation)
+                //         $lignesLettrage = Lettrage::where(function($q) use ($op) {
+                //             $q->where('lettrage_id', $op->id)
+                //             ->orWhere('id_operation', $op->id);
+                //         })->get();
+
+                //         foreach ($lignesLettrage as $ligne) {
+                //             $facture = OperationCourante::find($ligne->id_operation);
+                //             if ($facture) {
+
+                //                 // 🔹 Restitution du montant lettré
+                //                 $facture->reste_montant_lettre += $ligne->Acompte;
+
+                //                 $montantInitial = $facture->debit ?? $facture->credit ?? 0;
+                //                 if ($facture->reste_montant_lettre > $montantInitial) {
+                //                     $facture->reste_montant_lettre = $montantInitial;
+                //                 }
+
+                //                 $facture->save();
+                //             }
+                //         }
+
+                //         // 🔹 Suppression de toutes les lignes de lettrage liées
+                //         Lettrage::where(function($q) use ($op) {
+                //             $q->where('lettrage_id', $op->id)
+                //             ->orWhere('id_operation', $op->id);
+                //         })->delete();
+
+                //         // 🔹 Réinitialisation du paiement
+                //         $op->fact_lettrer = null;
+                //         $op->date_lettrage = null;
+                //         $op->reste_montant_lettre = ($op->debit ?? $op->credit ?? 0);
+                //         $op->save();
+
+                //         // 🔹 Remise correcte de la facture principale (comme dans le 1er code)
+                //         if (!empty($ancienneValeurLettrage)) {
+                //             $valeurs = explode('|', $ancienneValeurLettrage);
+                //             $idFacture = $valeurs[0] ?? null;
+
+                //             if ($idFacture) {
+                //                 $facture = OperationCourante::find($idFacture);
+                //                 if ($facture) {
+                //                     $montant = $facture->debit ?? $facture->credit ?? 0;
+                //                     $facture->reste_montant_lettre = (float) $montant;
+                //                     $facture->save();
+                //                 }
+                //             }
+                //         }
+
+                //         // 🔹 Synchronisation des lignes ayant la même pièce justificative
+                //         if (!empty($op->piece_justificative)) {
+                //             $opsLiees = OperationCourante::where('piece_justificative', $op->piece_justificative)
+                //                 ->where('id', '!=', $op->id)
+                //                 ->get();
+
+                //             foreach ($opsLiees as $ligne) {
+                //                 $ligne->fact_lettrer = null;
+                //                 $ligne->date_lettrage = null;
+                //                 $ligne->reste_montant_lettre = $ligne->debit ?? $ligne->credit ?? 0;
+                //                 $ligne->save();
+                //             }
+                //         }
+                //     }
+                                if (empty($nouvelleValeurLettrage)) {
+
+    // 🔹 Récupérer uniquement les lettrages du paiement
+    $lignesLettrage = Lettrage::where('lettrage_id', $op->id)->get();
+
+    // 🔹 Factures concernées
+    $factureIds = $lignesLettrage->pluck('id_operation')->unique();
+
+    // 🔹 Supprimer d’abord les lettrages
+    Lettrage::where('lettrage_id', $op->id)->delete();
+
+    // 🔹 Recalcul propre des factures
+    foreach ($factureIds as $factureId) {
+
+        $facture = OperationCourante::find($factureId);
+        if (!$facture) continue;
+
+        $montantInitial = (float) ($facture->debit ?? $facture->credit ?? 0);
+
+        // 🔹 Total réellement lettré (après suppression)
+        $totalLettre = Lettrage::where('id_operation', $factureId)->sum('Acompte');
+
+        $facture->reste_montant_lettre = max(
+            0,
+            $montantInitial - $totalLettre
+        );
+
+        $facture->save();
+    }
+
+    // 🔹 Réinitialisation du paiement
+    $montantPaiement = (float) ($op->debit ?? $op->credit ?? 0);
+
+    $op->fact_lettrer = null;
+    $op->date_lettrage = null;
+    $op->reste_montant_lettre = $montantPaiement;
+    $op->save();
+
+    // 🔹 Synchronisation des pièces justificatives
+    if (!empty($op->piece_justificative)) {
+
+        $opsLiees = OperationCourante::where('piece_justificative', $op->piece_justificative)
+            ->where('id', '!=', $op->id)
+            ->get();
+
+        foreach ($opsLiees as $ligne) {
+            $ligne->fact_lettrer = null;
+            $ligne->date_lettrage = null;
+            $ligne->reste_montant_lettre = (float) ($ligne->debit ?? $ligne->credit ?? 0);
+            $ligne->save();
+        }
+    }
+    }
+                    else {
+                // Ajout / modification lettrage
+                $factures = is_array($nouvelleValeurLettrage)
+                    ? $nouvelleValeurLettrage
+                    : explode('&', $nouvelleValeurLettrage);
+
+                $acompteDisponible = $op->debit ?? $op->credit ?? 0;
+
+                foreach ($factures as $factureStr) {
+                    $parts = explode('|', $factureStr);
+                    if (count($parts) !== 4) continue;
+
+                    $factureId = intval(trim($parts[0]));
+                    $numero = trim($parts[1]);
+                    $facture = OperationCourante::find($factureId);
+                    if (!$facture) continue;
+
+                    $ligneExistante = Lettrage::where('lettrage_id', $op->id)
+                        ->where('id_operation', $factureId)
+                        ->first();
+
+                    $montantLettrer = min($acompteDisponible, $facture->reste_montant_lettre);
+                    if (!$ligneExistante && $montantLettrer > 0) {
+                        Lettrage::create([
+                            'NFacture' => $numero,
+                            'Acompte' => $montantLettrer,
+                            'compte' => $op->compte,
+                            'id_operation' => $factureId,
+                            'id_user' => auth()->id(),
+                            'lettrage_id' => $op->id,
+                        ]);
+                        $facture->reste_montant_lettre -= $montantLettrer;
+                        $facture->save();
+                        $acompteDisponible -= $montantLettrer;
+                    }
+                }
+
+                $op->fact_lettrer = $nouvelleValeurLettrage;
+                $op->date_lettrage = now();
+                $op->reste_montant_lettre = $acompteDisponible;
+            }
+        }
+
+        // -------------------------------
+        // Mise à jour des autres champs
+        // -------------------------------
+        $op->date = $parseDateMultiFormat($request->date);
+        $op->date_livr = $parseDateMultiFormat($request->date_livr);
         $op->numero_facture = $request->numero_facture;
+        $op->numero_dossier = $request->numero_dossier;
         $op->compte = $request->compte;
         $op->libelle = $request->libelle;
         $op->debit = $request->debit ? floatval($request->debit) : null;
@@ -85,14 +277,18 @@ public function updateRow(Request $request)
         $op->updated_at = now();
         $op->save();
 
+        // -------------------------------
+        // Propagation des changements aux autres lignes avec même piece_justificative
+        // -------------------------------
         OperationCourante::where('societe_id', $societeId)
-            ->where('piece_justificative', $ancienPiece)
+            ->where('piece_justificative', $anciennePiece)
             ->where('id', '!=', $op->id)
             ->update([
                 'piece_justificative' => $op->piece_justificative,
                 'date' => $op->date,
                 'date_livr' => $op->date_livr,
                 'numero_facture' => $op->numero_facture,
+                'numero_dossier' => $op->numero_dossier,
                 'libelle' => $op->libelle,
                 'prorat_de_deduction' => $op->prorat_de_deduction,
                 'file_id' => $op->file_id,
@@ -103,39 +299,33 @@ public function updateRow(Request $request)
             OperationCourante::where('societe_id', $societeId)
                 ->where('piece_justificative', $op->piece_justificative)
                 ->where('contre_partie', $ancienCompte)
-                ->update([
-                    'contre_partie' => $op->compte,
-                    'updated_at' => now()
-                ]);
+                ->update(['contre_partie' => $op->compte, 'updated_at' => now()]);
         }
 
         if ($ancienContrePartie !== $op->contre_partie) {
             OperationCourante::where('societe_id', $societeId)
                 ->where('piece_justificative', $op->piece_justificative)
                 ->where('compte', $ancienContrePartie)
-                ->update([
-                    'compte' => $op->contre_partie,
-                    'updated_at' => now()
-                ]);
+                ->update(['compte' => $op->contre_partie, 'updated_at' => now()]);
         }
 
-        if ($ancienProrata !== $op->prorat_de_deduction) {
+        if ($ancienneProrata !== $op->prorat_de_deduction) {
             OperationCourante::where('societe_id', $societeId)
                 ->where('piece_justificative', $op->piece_justificative)
                 ->where('id', '!=', $op->id)
-                ->update([
-                    'prorat_de_deduction' => $op->prorat_de_deduction,
-                    'updated_at' => now()
-                ]);
+                ->update(['prorat_de_deduction' => $op->prorat_de_deduction, 'updated_at' => now()]);
         }
+
+        DB::commit();
 
         return response()->json([
             'success' => true,
-            'message' => 'Ligne mise à jour. Modifications propagées correctement.',
+            'message' => '✅ Ligne mise à jour et lettrage géré avec succès.',
             'id' => $op->id,
         ]);
 
     } catch (\Exception $e) {
+        DB::rollBack();
         \Log::error('Erreur updateRow : ' . $e->getMessage());
         return response()->json(['error' => $e->getMessage()], 500);
     }
@@ -149,162 +339,427 @@ public function updateRow(Request $request)
 
 
 
-public function storeAchatOperation(Request $request)
+ public function storeVenteOperation(Request $request)
 {
-        //  dd($request->all());
+    // dd($request->all());
     $societeId = session('societeId');
 
-    $validated = $request->validate([
-        'date' => 'required',
-        'date_livraison' => 'nullable',
-        'numero_facture' => 'nullable|string',
-        'numero_dossier' => 'nullable|string',
-        'compte' => 'nullable|string',
-        'libelle' => 'nullable|string',
-        'debit' => 'nullable|numeric',
-        'credit' => 'nullable|numeric',
-        'contre_partie' => 'nullable|string',
-        'piece_justificative' => 'nullable|string',
-        'code_journal' => 'required|string',
-        'taux_ras_tva' => 'nullable|string',
-        'nature_op' => 'nullable|string',
-        'mode_pay' => 'nullable|string',
-        'file_id' => 'nullable|integer',
-        'saisie_choisie' => 'nullable|string',
-    ]);
+    DB::transaction(function () use ($request, $societeId) {
 
-  
-    $operation1 = OperationCourante::create([
-        'date'                => $request->date,
-        'date_livr'           => $request->date_livraison,
-        'numero_dossier'      => $request->numero_dossier,
-        'numero_facture'      => $request->numero_facture,
-        'compte'              => $request->compte,
-        'libelle'             => $request->libelle,
-        'debit'               => $request->debit,
-        'credit'              => $request->credit,
-        'contre_partie'       => $request->contre_partie,
-        'piece_justificative' => $request->piece_justificative,
-        'type_journal'        => $request->code_journal,
-        'taux_ras_tva'        => $request->taux_ras_tva,
-        'nature_op'           => $request->nature_op,
-        'prorat_de_deduction' => $request->prorat_de_deduction,
-        'mode_pay'            => $request->mode_pay,
-        'categorie'           => "Achats",
-        'file_id'             => $request->file_id,
-        'saisie_choisie'      => $request->saisie_choisie,
-        'societe_id'          => $societeId,
-    ]);
-
-  
-    if ($request->saisie_choisie !== "contre-partie") {
-        return response()->json([
-            'success' => true,
-            'message' => 'Opération enregistrée.',
-            'operation' => $operation1
+        /* ============================
+           VALIDATION
+        ============================ */
+        $request->validate([
+            'date' => 'required|date',
+            'date_livraison' => 'nullable|date',
+            'numero_facture' => 'nullable|string',
+            'numero_dossier' => 'nullable|string',
+            'compte' => 'nullable|string',
+            'libelle' => 'nullable|string',
+            'debit' => 'nullable|numeric',
+            'credit' => 'nullable|numeric',
+            'contre_partie' => 'nullable|string',
+            'piece_justificative' => 'nullable|string',
+            'code_journal' => 'required|string',
+            'taux_ras_tva' => 'nullable|string',
+            'nature_op' => 'nullable|string',
+            'mode_pay' => 'nullable|string',
+            'file_id' => 'nullable|integer',
+            'saisie_choisie' => 'nullable|string',
+            'fact_lettrer' => 'nullable|string',
         ]);
-    }
 
-    
-    $fournisseur = Fournisseur::where('compte', $request->compte)
-        ->where('societe_id', $societeId)
-        ->first();
+        $factletOriginal = $request->fact_lettrer ?? '';
 
-    $tvaGenerated = [];
-    $total_debit_tva = 0;
-    $total_credit_tva = 0;
+        /* ============================
+           OPÉRATION PRINCIPALE
+        ============================ */
+        $operation1 = OperationCourante::create([
+            'date' => $request->date,
+            'date_livr' => $request->date_livraison,
+            'numero_dossier' => $request->numero_dossier,
+            'numero_facture' => $request->numero_facture,
+            'compte' => $request->compte,
+            'libelle' => $request->libelle,
+            'debit' => $request->debit,
+            'credit' => $request->credit,
+            'contre_partie' => $request->contre_partie,
+            'piece_justificative' => $request->piece_justificative,
+            'type_journal' => $request->code_journal,
+            'taux_ras_tva' => $request->taux_ras_tva,
+            'nature_op' => $request->nature_op,
+            // 'prorat_de_deduction' => $request->prorat_de_deduction,
+            'mode_pay' => $request->mode_pay,
+            'categorie' => 'Ventes',
+            'file_id' => $request->file_id,
+            'saisie_choisie' => $request->saisie_choisie,
+            'societe_id' => $societeId,
+            'fact_lettrer' => $factletOriginal,
+            'reste_montant_lettre' => !empty($factletOriginal)
+                ? 0.00
+                : (($request->debit ?? 0) > 0 ? $request->debit : $request->credit),
+        ]);
 
-    if ($fournisseur && $fournisseur->rubrique_tva) {
-
-        $rubriques = explode("/", $fournisseur->rubrique_tva);
-
-        foreach ($rubriques as $rubrique) {
-
-            $racine = Racine::where('Num_racines', $rubrique)
-                ->where('societe_id', $societeId)
-                ->first();
-
-            if (!$racine) continue;
-
-            $compte_tva = $racine->compte_tva;
-            $taux_tva = $racine->Taux ?? 0;
-            $debit_tva = 0;
-            $credit_tva = 0;
-            $proratasociete = Societe::where('id', $societeId)
-            ->first();
-          if ($request->prorat_de_deduction === 'Oui') {
-                
-                if ($request->credit > 0) {
-                    $debit_tva = ((($request->credit / (1 + ($taux_tva / 100))) * ($taux_tva / 100)) * ($proratasociete->prorata_de_deduction / 100));
-                }
-                if ($request->debit > 0) {
-                    $credit_tva = ((($request->debit / (1 + ($taux_tva / 100))) * ($taux_tva / 100)) * ($proratasociete->prorata_de_deduction / 100));
-                }
-            } else {
-                
-                if ($request->credit > 0) {
-                $debit_tva = ($request->credit / (1 + ($taux_tva / 100))) * ($taux_tva / 100);
-                }
-                if ($request->debit > 0) {
-                $credit_tva = ($request->debit / (1 + ($taux_tva / 100))) * ($taux_tva / 100);
-                }
-            }
-
-            $tvaLine = OperationCourante::create([
-                'date'                => $request->date,
-                'date_livr'           => $request->date_livraison,
-                'numero_dossier'      => $request->numero_dossier,
-                'numero_facture'      => $request->numero_facture,
-                'compte'              => $compte_tva,
-                'libelle'             => $request->libelle,
-                'debit'               => $debit_tva,
-                'credit'              => $credit_tva,
-                'contre_partie'       => $request->compte,
-                'rubrique_tva'        => $rubrique,
-                'prorat_de_deduction' => $request->prorat_de_deduction,
-                'piece_justificative' => $request->piece_justificative,
-                'type_journal'        => $request->code_journal,
-                'categorie'           => "Achats",
-                'file_id'             => $request->file_id,
-                'saisie_choisie'      => $request->saisie_choisie,
-                'societe_id'          => $societeId,
-            ]);
-
-            $tvaGenerated[] = $tvaLine;
-            $total_debit_tva += $debit_tva;
-            $total_credit_tva += $credit_tva;
+        if ($request->saisie_choisie !== 'contre-partie') {
+            return;
         }
-    }
 
-    
-    $operation2 = OperationCourante::create([
-        'date'                => $request->date,
-        'date_livr'           => $request->date_livraison,
-        'numero_dossier'      => $request->numero_dossier,
-        'numero_facture'      => $request->numero_facture,
-        'compte'              => $request->contre_partie,
-        'libelle'             => $request->libelle,
-        'debit'               => $request->credit > 0 ? $request->credit - $total_debit_tva : $request->credit,
-        'credit'              => $request->debit > 0 ? $request->debit - $total_credit_tva : $request->debit ,
-        'contre_partie'       => $request->compte,
-        'prorat_de_deduction' => $request->prorat_de_deduction,
-        'piece_justificative' => $request->piece_justificative,
-        'type_journal'        => $request->code_journal,
-        'taux_ras_tva'        => $request->taux_ras_tva,
-        'nature_op'           => $request->nature_op,
-        'mode_pay'            => $request->mode_pay,
-        'categorie'           => "Achats",
-        'file_id'             => $request->file_id,
-        'saisie_choisie'      => $request->saisie_choisie,
-        'societe_id'          => $societeId,
-    ]);
+        /* ============================
+           TVA
+        ============================ */
+        // $fournisseur = Fournisseur::where('compte', $request->compte)
+        //     ->where('societe_id', $societeId)
+        //     ->first();
+        $journal = Journal::where('code_journal', $request->code_journal)
+            ->where('societe_id', $societeId)
+            ->first();
+
+        $totalDebitTVA = 0;
+        $totalCreditTVA = 0;
+
+        if ($journal && !empty($journal->rubrique_tva)) {
+        // dd($journal->rubrique_tva);
+            $rubriques = explode('/', $journal->rubrique_tva);
+            $societe = Societe::find($societeId);
+
+            foreach ($rubriques as $rubrique) {
+
+                $racine = Racine::where('Num_racines', $rubrique)
+                    ->where('societe_id', $societeId)
+                    ->first();
+                // dd($racine);
+                if (!$racine) continue;
+
+                $taux = $racine->Taux ?? 0;
+                $debitTVA = 0;
+                $creditTVA = 0;
+
+                // if ($request->prorat_de_deduction === 'Oui') {
+                //     if ($request->credit > 0) {
+                //         $debitTVA = (($request->credit / (1 + $taux / 100)) * ($taux / 100))
+                //             * ($societe->prorata_de_deduction / 100);
+                //     }
+                //     if ($request->debit > 0) {
+                //         $creditTVA = (($request->debit / (1 + $taux / 100)) * ($taux / 100))
+                //             * ($societe->prorata_de_deduction / 100);
+                //     }
+                // } else {
+                    if ($request->credit > 0)
+                        $debitTVA = ($request->credit / (1 + $taux / 100)) * ($taux / 100);
+                    if ($request->debit > 0)
+                        $creditTVA = ($request->debit / (1 + $taux / 100)) * ($taux / 100);
+                // }
+
+                OperationCourante::create([
+                    'date' => $request->date,
+                    'date_livr' => $request->date_livraison,
+                    'numero_dossier' => $request->numero_dossier,
+                    'numero_facture' => $request->numero_facture,
+                    'compte' => $racine->compte_tva,
+                    'libelle' => $request->libelle,
+                    'debit' => $debitTVA,
+                    'credit' => $creditTVA,
+                    'contre_partie' => $request->compte,
+                    'rubrique_tva' => $rubrique,
+                    // 'prorat_de_deduction' => $request->prorat_de_deduction,
+                    'piece_justificative' => $request->piece_justificative,
+                    'type_journal' => $request->code_journal,
+                    'categorie' => 'Ventes',
+                    'file_id' => $request->file_id,
+                    'saisie_choisie' => $request->saisie_choisie,
+                    'societe_id' => $societeId,
+                    'fact_lettrer' => $factletOriginal,
+                    'reste_montant_lettre' => 0.00,
+                ]);
+
+                $totalDebitTVA += $debitTVA;
+                $totalCreditTVA += $creditTVA;
+            }
+        }
+
+        /* ============================
+           CONTRE-PARTIE
+        ============================ */
+        $operation2 = OperationCourante::create([
+            'date' => $request->date,
+            'date_livr' => $request->date_livraison,
+            'numero_dossier' => $request->numero_dossier,
+            'numero_facture' => $request->numero_facture,
+            'compte' => $request->contre_partie,
+            'libelle' => $request->libelle,
+            'debit' => $request->credit > 0 ? $request->credit - $totalDebitTVA : 0,
+            'credit' => $request->debit > 0 ? $request->debit - $totalCreditTVA : 0,
+            'contre_partie' => $request->compte,
+            // 'prorat_de_deduction' => $request->prorat_de_deduction,
+            'piece_justificative' => $request->piece_justificative,
+            'type_journal' => $request->code_journal,
+            'taux_ras_tva' => $request->taux_ras_tva,
+            'nature_op' => $request->nature_op,
+            'mode_pay' => $request->mode_pay,
+            'categorie' => 'Ventes',
+            'file_id' => $request->file_id,
+            'saisie_choisie' => $request->saisie_choisie,
+            'societe_id' => $societeId,
+            'fact_lettrer' => $factletOriginal,
+            'reste_montant_lettre' => !empty($factletOriginal)
+                ? 0.00
+                : (($request->debit ?? 0) > 0 ? $request->debit : $request->credit),
+        ]);
+
+        /* ============================
+           LETTRAGE (LOGIQUE BANQUE)
+        ============================ */
+        if (!empty($factletOriginal)) {
+
+            $factures = explode('&', $factletOriginal);
+
+            $acompte = ($request->debit ?? 0) > 0 ? $request->debit : ($request->credit ?? 0);
+            $resteAcompte = $acompte;
+
+            foreach ($factures as $factureStr) {
+
+                $parts = explode('|', trim($factureStr));
+                if (count($parts) < 2 || $resteAcompte <= 0) continue;
+
+                $operationId = (int) $parts[0];
+                $numero = $parts[1];
+
+                $facture = OperationCourante::find($operationId);
+                if (!$facture || $facture->reste_montant_lettre <= 0) continue;
+
+                $montant = min($resteAcompte, $facture->reste_montant_lettre);
+
+                Lettrage::create([
+                    'NFacture' => $numero,
+                    'Acompte' => $montant,
+                    'compte' => $request->compte,
+                    'id_operation' => $operationId,
+                    'id_user' => auth()->id(),
+                    'lettrage_id' => $operation1->id,
+                ]);
+
+                $facture->reste_montant_lettre -= $montant;
+                $facture->reste_montant_lettre = max($facture->reste_montant_lettre, 0);
+                $facture->save();
+
+                $resteAcompte -= $montant;
+            }
+        }
+    });
 
     return response()->json([
         'success' => true,
-        'message' => 'Opération + contre-partie + TVA enregistrées.',
-        'operation_1' => $operation1,
-        'operation_2' => $operation2,
-        'tva_lines'   => $tvaGenerated
+        'message' => 'Opération achat + TVA + contre-partie + lettrage enregistrées avec succès.'
+    ]);
+}
+
+public function storeAchatOperation(Request $request)
+{
+    $societeId = session('societeId');
+
+    DB::transaction(function () use ($request, $societeId) {
+
+        /* ============================
+           VALIDATION
+        ============================ */
+        $request->validate([
+            'date' => 'required|date',
+            'date_livraison' => 'nullable|date',
+            'numero_facture' => 'nullable|string',
+            'numero_dossier' => 'nullable|string',
+            'compte' => 'nullable|string',
+            'libelle' => 'nullable|string',
+            'debit' => 'nullable|numeric',
+            'credit' => 'nullable|numeric',
+            'contre_partie' => 'nullable|string',
+            'piece_justificative' => 'nullable|string',
+            'code_journal' => 'required|string',
+            'taux_ras_tva' => 'nullable|string',
+            'nature_op' => 'nullable|string',
+            'mode_pay' => 'nullable|string',
+            'file_id' => 'nullable|integer',
+            'saisie_choisie' => 'nullable|string',
+            'fact_lettrer' => 'nullable|string',
+        ]);
+
+        $factletOriginal = $request->fact_lettrer ?? '';
+
+        /* ============================
+           OPÉRATION PRINCIPALE
+        ============================ */
+        $operation1 = OperationCourante::create([
+            'date' => $request->date,
+            'date_livr' => $request->date_livraison,
+            'numero_dossier' => $request->numero_dossier,
+            'numero_facture' => $request->numero_facture,
+            'compte' => $request->compte,
+            'libelle' => $request->libelle,
+            'debit' => $request->debit,
+            'credit' => $request->credit,
+            'contre_partie' => $request->contre_partie,
+            'piece_justificative' => $request->piece_justificative,
+            'type_journal' => $request->code_journal,
+            'taux_ras_tva' => $request->taux_ras_tva,
+            'nature_op' => $request->nature_op,
+            'prorat_de_deduction' => $request->prorat_de_deduction,
+            'mode_pay' => $request->mode_pay,
+            'categorie' => 'Achats',
+            'file_id' => $request->file_id,
+            'saisie_choisie' => $request->saisie_choisie,
+            'societe_id' => $societeId,
+            'fact_lettrer' => $factletOriginal,
+            'reste_montant_lettre' => !empty($factletOriginal)
+                ? 0.00
+                : (($request->debit ?? 0) > 0 ? $request->debit : $request->credit),
+        ]);
+
+        if ($request->saisie_choisie !== 'contre-partie') {
+            return;
+        }
+
+        /* ============================
+           TVA
+        ============================ */
+        $fournisseur = Fournisseur::where('compte', $request->compte)
+            ->where('societe_id', $societeId)
+            ->first();
+
+        $totalDebitTVA = 0;
+        $totalCreditTVA = 0;
+
+        if ($fournisseur && $fournisseur->rubrique_tva) {
+
+            $rubriques = explode('/', $fournisseur->rubrique_tva);
+            $societe = Societe::find($societeId);
+
+            foreach ($rubriques as $rubrique) {
+
+                $racine = Racine::where('Num_racines', $rubrique)
+                    ->where('societe_id', $societeId)
+                    ->first();
+
+                if (!$racine) continue;
+
+                $taux = $racine->Taux ?? 0;
+                $debitTVA = 0;
+                $creditTVA = 0;
+
+                if ($request->prorat_de_deduction === 'Oui') {
+                    if ($request->credit > 0) {
+                        $debitTVA = (($request->credit / (1 + $taux / 100)) * ($taux / 100))
+                            * ($societe->prorata_de_deduction / 100);
+                    }
+                    if ($request->debit > 0) {
+                        $creditTVA = (($request->debit / (1 + $taux / 100)) * ($taux / 100))
+                            * ($societe->prorata_de_deduction / 100);
+                    }
+                } else {
+                    if ($request->credit > 0)
+                        $debitTVA = ($request->credit / (1 + $taux / 100)) * ($taux / 100);
+                    if ($request->debit > 0)
+                        $creditTVA = ($request->debit / (1 + $taux / 100)) * ($taux / 100);
+                }
+
+                OperationCourante::create([
+                    'date' => $request->date,
+                    'date_livr' => $request->date_livraison,
+                    'numero_dossier' => $request->numero_dossier,
+                    'numero_facture' => $request->numero_facture,
+                    'compte' => $racine->compte_tva,
+                    'libelle' => $request->libelle,
+                    'debit' => $debitTVA,
+                    'credit' => $creditTVA,
+                    'contre_partie' => $request->compte,
+                    'rubrique_tva' => $rubrique,
+                    'prorat_de_deduction' => $request->prorat_de_deduction,
+                    'piece_justificative' => $request->piece_justificative,
+                    'type_journal' => $request->code_journal,
+                    'categorie' => 'Achats',
+                    'file_id' => $request->file_id,
+                    'saisie_choisie' => $request->saisie_choisie,
+                    'societe_id' => $societeId,
+                    'fact_lettrer' => $factletOriginal,
+                    'reste_montant_lettre' => 0.00,
+                ]);
+
+                $totalDebitTVA += $debitTVA;
+                $totalCreditTVA += $creditTVA;
+            }
+        }
+
+        /* ============================
+           CONTRE-PARTIE
+        ============================ */
+        $operation2 = OperationCourante::create([
+            'date' => $request->date,
+            'date_livr' => $request->date_livraison,
+            'numero_dossier' => $request->numero_dossier,
+            'numero_facture' => $request->numero_facture,
+            'compte' => $request->contre_partie,
+            'libelle' => $request->libelle,
+            'debit' => $request->credit > 0 ? $request->credit - $totalDebitTVA : 0,
+            'credit' => $request->debit > 0 ? $request->debit - $totalCreditTVA : 0,
+            'contre_partie' => $request->compte,
+            'prorat_de_deduction' => $request->prorat_de_deduction,
+            'piece_justificative' => $request->piece_justificative,
+            'type_journal' => $request->code_journal,
+            'taux_ras_tva' => $request->taux_ras_tva,
+            'nature_op' => $request->nature_op,
+            'mode_pay' => $request->mode_pay,
+            'categorie' => 'Achats',
+            'file_id' => $request->file_id,
+            'saisie_choisie' => $request->saisie_choisie,
+            'societe_id' => $societeId,
+            'fact_lettrer' => $factletOriginal,
+            'reste_montant_lettre' => !empty($factletOriginal)
+                ? 0.00
+                : (($request->debit ?? 0) > 0 ? $request->debit : $request->credit),
+        ]);
+
+        /* ============================
+           LETTRAGE (LOGIQUE BANQUE)
+        ============================ */
+        if (!empty($factletOriginal)) {
+
+            $factures = explode('&', $factletOriginal);
+
+            $acompte = ($request->debit ?? 0) > 0 ? $request->debit : ($request->credit ?? 0);
+            $resteAcompte = $acompte;
+
+            foreach ($factures as $factureStr) {
+
+                $parts = explode('|', trim($factureStr));
+                if (count($parts) < 2 || $resteAcompte <= 0) continue;
+
+                $operationId = (int) $parts[0];
+                $numero = $parts[1];
+
+                $facture = OperationCourante::find($operationId);
+                if (!$facture || $facture->reste_montant_lettre <= 0) continue;
+
+                $montant = min($resteAcompte, $facture->reste_montant_lettre);
+
+                Lettrage::create([
+                    'NFacture' => $numero,
+                    'Acompte' => $montant,
+                    'compte' => $request->compte,
+                    'id_operation' => $operationId,
+                    'id_user' => auth()->id(),
+                    'lettrage_id' => $operation1->id,
+                ]);
+
+                $facture->reste_montant_lettre -= $montant;
+                $facture->reste_montant_lettre = max($facture->reste_montant_lettre, 0);
+                $facture->save();
+
+                $resteAcompte -= $montant;
+            }
+        }
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Opération achat + TVA + contre-partie + lettrage enregistrées avec succès.'
     ]);
 }
 
@@ -1836,21 +2291,32 @@ public function selectFolder(Request $request)
     $folders_banque = Folder::where('societe_id', $societeId)
                             ->where('folder_id', $folderId)
                             ->get();
- $folders_achat = Folder::where('societe_id', $societeId)
+    $folders_achat = Folder::where('societe_id', $societeId)
                             ->where('folder_id', $folderId)
+                            ->get();
+    $folders_ventes  = Folder::where('societe_id', $societeId)
+                            ->where('folder_id', $folderId)
+                            ->where('type_folder', 'vente')
                             ->get();
     // Récupération des fichiers du dossier sélectionné
     $files_banque = File::where('societe_id', $societeId)
                         ->where('folders', $folderId)
                         ->get();
-  $files_achat = File::where('societe_id', $societeId)
+    $files_achat = File::where('societe_id', $societeId)
                         ->where('folders', $folderId)
                         ->get();
+    $files_ventes  = File::where('societe_id', $societeId)
+                        ->where('folders', $folderId)
+                        ->where('type', 'vente')
+                        ->get();
+
     return response()->json([
         'folders_banque' => $folders_banque,
         'files_banque' => $files_banque,
          'folders_achat' => $folders_achat,
-        'files_achat' => $files_achat
+        'files_achat' => $files_achat,
+         'folders_ventes'  => $folders_ventes,
+        'files_ventes'    => $files_ventes
     ]);
 }
 
@@ -1881,8 +2347,8 @@ public function index(Request $request)
 
     $folders_achat = Folder::where('societe_id', $societeId)
     ->where(function ($query) {
-        $query->where('type_folder', 'achat')
-              ->orWhereNotIn('type_folder', ['banque', 'vente', 'caisse', 'impot', 'paie', 'dossier_permanant']);
+        $query->where('type_folder', 'Ventes')
+              ->orWhereNotIn('type_folder', ['banque', 'achat', 'caisse', 'impot', 'paie', 'dossier_permanant']);
     })
     ->whereNull('deleted_at')
     ->where(function ($query) {
@@ -1891,10 +2357,17 @@ public function index(Request $request)
     })
     ->get();
 
-    $folders_vente = Folder::where('societe_id', $societeId)
-        ->where('type_folder', 'vente')
-        ->whereNull('deleted_at')
-        ->get();
+    $folders_ventes = Folder::where('societe_id', $societeId)
+        ->where(function ($query) {
+        $query->where('type_folder', 'vente')
+              ->orWhereNotIn('type_folder', ['banque', 'vente', 'caisse', 'impot', 'paie', 'dossier_permanant']);
+    })
+    ->whereNull('deleted_at')
+    ->where(function ($query) {
+        $query->whereNull('folder_id')
+              ->orWhere('folder_id', 0);
+    })
+    ->get();
 
     // 2) Récupérer l'id à éditer depuis la query-string (ou null)
     $editId = $request->query('edit');
@@ -1917,16 +2390,16 @@ public function index(Request $request)
                      ->get();
 
        $files_banque = File::where('societe_id', $societeId)
-    ->where(function ($query) {
-        $query->where('type', 'banque')
-              ->orWhereNotIn('type', ['achat', 'vente', 'caisse', 'impot', 'paie', 'dossier_permanant']);
-    })
-    ->whereNull('deleted_at')
-    ->where(function ($query) {
-        $query->whereNull('folders')
-              ->orWhere('folders', 0);
-    })
-    ->get();
+            ->where(function ($query) {
+                $query->where('type', 'banque')
+                    ->orWhereNotIn('type', ['achat', 'vente', 'caisse', 'impot', 'paie', 'dossier_permanant']);
+            })
+            ->whereNull('deleted_at')
+            ->where(function ($query) {
+                $query->whereNull('folders')
+                    ->orWhere('folders', 0);
+            })
+            ->get();
 
 
         $files_achat = File::where('societe_id', $societeId)
@@ -1941,10 +2414,17 @@ public function index(Request $request)
     })
     ->get();
 
-        $files_vente = File::where('societe_id', $societeId)
-                           ->where('type', 'vente')
-                           ->whereNull('deleted_at')
-                           ->get();
+        $files_ventes = File::where('societe_id', $societeId)
+                               ->where(function ($query) {
+        $query->where('type', 'vente')
+              ->orWhereNotIn('type', ['banque', 'achat', 'caisse', 'impot', 'paie', 'dossier_permanant']);
+    })
+    ->whereNull('deleted_at')
+    ->where(function ($query) {
+        $query->whereNull('folders')
+              ->orWhere('folders', 0);
+    })
+    ->get();
     }
 
     return view('Operation_Courante', compact(
@@ -1952,10 +2432,11 @@ public function index(Request $request)
         'planComptable',
         'files_banque',
         'files_achat',
-        'files_vente',
+        'files_ventes',
         'editId',
         'folders_banque',
         'folders_achat',
+        'folders_ventes',
         'dossierManuel'
     ));
 }
@@ -2960,7 +3441,7 @@ public function getJournauxVTE()
     }
 
     // Filtrer par type_journal 'Ventes'
-    $journaux = Journal::select('code_journal', 'intitule', 'type_journal')
+    $journaux = Journal::select('code_journal', 'intitule', 'type_journal', 'rubrique_tva', 'contre_partie')
     ->where('societe_id', $societeId)
 
         ->where('type_journal', 'Ventes') // Filtrer par type_journal

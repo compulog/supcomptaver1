@@ -534,7 +534,8 @@ function updateLibelleAndFocus(row, compte) {
 // Fonction qui met à jour la ligne avec les données du fournisseur
 function updateRowWithFournisseur(row, fournisseur) {
     const numeroFacture = row.getCell("numero_facture").getValue() || "Inconnu";
-    const libelle = `F° ${numeroFacture} ${fournisseur.intitule || ""}`;
+    const numeroDossier = row.getCell("numero_dossier").getValue() || "Inconnu";
+    const libelle = `F° ${numeroDossier} ${numeroFacture} ${fournisseur.intitule || ""}`;
     const tauxTVA = parseFloat(fournisseur.taux_tva) || 0;
     window.tauxTVAGlobal = tauxTVA;  // mise à jour globale si nécessaire
 
@@ -1110,200 +1111,136 @@ function navigateAfterCommitRobust(row, currentField, direction = "next") {
 /* === genericDateEditor réutilisable (pour 'ventes') === */
 // genericDateEditorVte : commit + navigation automatique Enter -> next editable cell
 const genericDateEditorVte = () => {
-  // Helper robuste
+
   function isString(v) {
     return typeof v === "string" || v instanceof String;
   }
 
   function safeParseDate(value) {
-    // accepte Date, string (ISO, "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd"), sinon null
-    if (value === null || value === undefined) return null;
+    if (value == null) return null;
     if (value instanceof Date && !isNaN(value)) {
       return luxon.DateTime.fromJSDate(value);
     }
     if (!isString(value)) return null;
 
-    const v = value.trim();
-    if (v === "") return null;
-
-    // essayer ISO d'abord, puis formats connus
-    let dt = luxon.DateTime.fromISO(v);
-    if (!dt.isValid) dt = luxon.DateTime.fromFormat(v, "yyyy-MM-dd HH:mm:ss");
-    if (!dt.isValid) dt = luxon.DateTime.fromFormat(v, "yyyy-MM-dd");
-    return dt.isValid ? dt : null;
-  }
-
-  // convertit "dd/MM/yyyy" (ou variantes permissives) en DateTime ou null
-  function parseInputDDMMYYYY(str) {
-    if (!isString(str)) return null;
-    const digits = str.replace(/\D/g, "");
-    if (digits.length < 6) return null; // pas assez d'info
-    // extraire j,m,a (supporte aussi jjmmaa)
-    const day = parseInt(digits.slice(0, 2), 10) || 1;
-    const month = parseInt(digits.slice(2, 4), 10) || 1;
-    const yearPart = digits.slice(4);
-    const year = yearPart.length === 2 ? (2000 + parseInt(yearPart, 10)) : parseInt(yearPart, 10) || luxon.DateTime.local().year;
-    const dt = luxon.DateTime.local(year, month, day);
+    let dt = luxon.DateTime.fromISO(value);
+    if (!dt.isValid) dt = luxon.DateTime.fromFormat(value, "yyyy-MM-dd HH:mm:ss");
+    if (!dt.isValid) dt = luxon.DateTime.fromFormat(value, "yyyy-MM-dd");
     return dt.isValid ? dt : null;
   }
 
   return function(cell, onRendered, success, cancel) {
+
     const field = cell.getColumn().getField();
     const input = document.createElement("input");
     input.type = "text";
-    input.placeholder = "jj/MM/aaaa";
     input.style.width = "100%";
     input.autocomplete = "off";
 
-    // valeur initiale (robuste)
     const raw = cell.getValue();
     const dtInit = safeParseDate(raw);
-    if (dtInit) {
-      input.value = dtInit.toFormat("dd/MM/yyyy");
+
+    const moisRadio   = document.getElementById("filter-mois-ventes");
+    const periodeSel  = document.getElementById("periode-ventes");
+
+    // Définir placeholder selon le mode
+    if (moisRadio && moisRadio.checked) {
+      input.placeholder = "JJ"; // uniquement jour
+      if (dtInit) input.value = dtInit.toFormat("dd"); // afficher seulement le jour si déjà rempli
     } else {
-      input.value = ""; // vide par défaut
+      input.placeholder = "JJ/MM";
+      if (dtInit) input.value = dtInit.toFormat("dd/MM"); // jour/mois si mode normal
     }
 
-    // --- helper : trouver la colonne editable suivante / précédente ---
-    function findAdjacentEditableField(table, currentField, direction = "next") {
-      const columns = table.getColumns();
-      const fields = columns.map(col => col.getField()).filter(f => typeof f !== "undefined");
-      const idx = fields.indexOf(currentField);
-      if (idx === -1) return null;
-      const step = direction === "next" ? 1 : -1;
-      for (let i = idx + step; direction === "next" ? i < fields.length : i >= 0; i += step) {
-        const colComp = columns[i];
-        if (!colComp) continue;
-        const def = colComp.getDefinition ? colComp.getDefinition() : {};
-        if (typeof def.editor !== "undefined" && def.editor !== false) {
-          const f = colComp.getField();
-          if (f) return f;
+    /* =========================
+       COMMIT
+       ========================= */
+    function doCommit() {
+
+      if (field === "date") {
+
+        const anneeSel = document.getElementById("annee-ventes");
+        const digits = (input.value || "").replace(/\D/g, "");
+
+        let day, month, year;
+
+        // 🔹 MODE EXERCICE : SAISIE JOUR SEULEMENT
+        if (moisRadio && moisRadio.checked) {
+          if (digits.length < 1) { cancel(); return; }
+          day = parseInt(digits.slice(0, 2), 10) || 1;
+
+          const [mm, yyyy] = periodeSel?.value?.split("-") || [];
+          month = parseInt(mm, 10) || 1;
+          year  = parseInt(yyyy, 10) || parseInt(anneeSel?.value, 10) || luxon.DateTime.local().year;
+
         }
-      }
-      return null;
-    }
+        // 🔹 MODE NORMAL : JJ/MM
+        else {
+          if (digits.length < 4) { cancel(); return; }
+          day   = parseInt(digits.slice(0, 2), 10);
+          month = parseInt(digits.slice(2, 4), 10);
+          year  = parseInt(anneeSel?.value, 10) || luxon.DateTime.local().year;
+        }
 
-    // --- helper : navigation après commit (next | prev) ---
-    function navigateAfterCommitRobust(row, direction = "next") {
-      try {
-        const table = cell.getTable();
-        const targetField = findAdjacentEditableField(table, field, direction);
-        if (!targetField) return;
-        row.scrollTo().then(() => {
-          const nextCell = row.getCell(targetField);
-          if (nextCell) setTimeout(() => nextCell.edit(true), 50);
-        }).catch(() => {
-          const nextCell = row.getCell && row.getCell(targetField);
-          if (nextCell) setTimeout(() => nextCell.edit(true), 50);
-        });
-      } catch (e) {
-        // safe-fail
-      }
-    }
+        const dt = luxon.DateTime.local(year, month, day);
+        if (!dt.isValid) { cancel(); return; }
 
-    // --- commit logique (direction: 'next' | 'prev' | null) ---
-    function doCommit(direction = null) {
-      // fonction utilitaire pour renvoyer success ou cancel en garantissant null/iso
-      function commitDateFromDateTime(dt) {
-        if (!dt || !dt.isValid) { cancel(); return null; }
         const iso = dt.toFormat("yyyy-MM-dd HH:mm:ss");
         success(iso);
-        return iso;
-      }
 
-      // logique spécifique pour la colonne 'date'
-      if (field === "date") {
-        const moisRadio = document.getElementById("filter-mois-ventes");
-        const periodeSelect = document.getElementById("periode-ventes");
-        const anneeSelect = document.getElementById("annee-ventes");
-
-        // format permissif
-        const digits = (input.value || "").replace(/\D/g, "");
-        let formatted = input.value;
-        if (digits.length >= 8) formatted = digits.slice(0,2) + "/" + digits.slice(2,4) + "/" + digits.slice(4,8);
-        else if (digits.length > 4) formatted = digits.slice(0,2) + "/" + digits.slice(2,4) + "/" + digits.slice(4);
-        else if (digits.length > 2) formatted = digits.slice(0,2) + "/" + digits.slice(2);
-        input.value = formatted;
-
-        // partie jour
-        const parts = (input.value || "").split("/");
-        parts[0] = parts[0] ? parts[0].padStart(2, "0") : "01";
-        const day = parseInt(parts[0], 10) || 1;
-
-        let month, year;
-        if (moisRadio && moisRadio.checked) {
-          const periode = periodeSelect ? (periodeSelect.value || "") : "";
-          const [mm, yyyy] = (periode && periode.indexOf("-") > -1) ? periode.split("-") : [null, null];
-          month = parseInt(mm, 10) || 1;
-          year  = parseInt(yyyy, 10) || (anneeSelect ? parseInt(anneeSelect.value, 10) : luxon.DateTime.local().year);
-        } else {
-          month = parts[1] ? parseInt(parts[1], 10) : 1;
-          year  = parts[2] ? parseInt(parts[2], 10) : (anneeSelect ? parseInt(anneeSelect.value, 10) : luxon.DateTime.local().year);
-        }
-
-        const nDT = luxon.DateTime.local(year, month, day);
-        const iso = commitDateFromDateTime(nDT);
-        if (!iso) return;
-
-        // copie automatique vers date_livr si présent
+        // copie vers date_livr si présent
         try {
-          const row = cell.getRow();
-          row.update({ date_livr: iso });
-        } catch (err) { /* ignore */ }
+          cell.getRow().update({ date_livr: iso });
+        } catch (_) {}
 
-        const row = cell.getRow();
-        if (direction) navigateAfterCommitRobust(row, direction);
         return;
       }
 
-      // logique générale (ex: date_livr)
-      // try parse permissif : dd/mm/yyyy ou ddmmyyyy ou autres
-      const dtFromInput = parseInputDDMMYYYY(input.value);
-      if (!dtFromInput) { cancel(); return; }
-      const iso = dtFromInput.toFormat("yyyy-MM-dd HH:mm:ss");
-      success(iso);
-
-      const row = cell.getRow();
-      if (direction) navigateAfterCommitRobust(row, direction);
+      cancel();
     }
 
-    // flatpickr seulement pour date_livr
-    onRendered(() => {
-      input.focus();
-      if (field === "date_livr" && typeof flatpickr !== "undefined") {
-        flatpickr(input, {
-          dateFormat: "d/m/Y",
-          allowInput: true,
-          defaultDate: input.value || null,
-          locale: "fr",
-        });
+    /* =========================
+       FORMAT SAISIE
+       ========================= */
+    input.addEventListener("input", () => {
+      const digits = (input.value || "").replace(/\D/g, "");
+
+      // MODE EXERCICE → JOUR seul
+      if (moisRadio && moisRadio.checked) {
+        input.value = digits.slice(0, 2);
+        return;
+      }
+
+      // MODE NORMAL → JJ/MM
+      if (digits.length > 2) {
+        input.value = digits.slice(0, 2) + "/" + digits.slice(2, 4);
+      } else {
+        input.value = digits;
       }
     });
 
-    // formatage permissif à la volée
-    input.addEventListener("input", () => {
-      const only = (input.value || "").replace(/\D/g, "");
-      if (only.length >= 8) input.value = only.slice(0,2) + "/" + only.slice(2,4) + "/" + only.slice(4,8);
-      else if (only.length > 4) input.value = only.slice(0,2) + "/" + only.slice(2,4) + "/" + only.slice(4);
-      else if (only.length > 2) input.value = only.slice(0,2) + "/" + only.slice(2);
-      else input.value = only;
-    });
+    /* =========================
+       EVENTS
+       ========================= */
+    input.addEventListener("blur", doCommit);
 
-    // events: Enter => next, Shift+Enter => prev, Escape => cancel, Blur => commit
-    input.addEventListener("blur", () => doCommit(null));
     input.addEventListener("keydown", e => {
       if (e.key === "Enter") {
         e.preventDefault();
-        if (e.shiftKey) doCommit("prev"); else doCommit("next");
-      } else if (e.key === "Escape") {
+        doCommit();
+      }
+      if (e.key === "Escape") {
         e.preventDefault();
         cancel();
       }
     });
 
+    onRendered(() => input.focus());
+
     return input;
   };
 };
+
 
 const genericDateEditorOP = () => {
 
@@ -3716,7 +3653,7 @@ async function getContrePartieByCodeJournal(codeJournal) {
         const intit = journal.intitule || '';
         const rub   = journal.rubrique_tva || '';
         const cp    = journal.contre_partie || journal.contrePartie || '';
-
+// console.log('a ' + rub);
         // utilisation de template literal pour plus de lisibilité
         const optionHtml = `<option value="${code}"
                                   data-type="${type}"
@@ -4527,7 +4464,7 @@ let toggle = false;
                   sorter: "date",
                   editor: function(cell, onRendered, success, cancel) {
                     // On utilise ton éditeur existant
-                    const editor = genericDateEditor("numero_facture", "date")(cell, onRendered, success, cancel);
+                    const editor = genericDateEditor("numero_dossier", "date")(cell, onRendered, success, cancel);
 
                     // Après rendu, on ajoute la gestion de la touche Enter
                     onRendered(function() {
@@ -4542,7 +4479,7 @@ let toggle = false;
                                 if(e.key === "Enter"){
                                     e.preventDefault();             // Empêche le comportement par défaut
                                     success(input.value);           // Valide la cellule
-                                    const nextCell = cell.getRow().getCell("numero_facture");
+                                    const nextCell = cell.getRow().getCell("numero_dossier");
                                     if(nextCell) nextCell.edit();  // Passe au prochain éditeur
                                 }
                                 if(e.key === "Escape"){
@@ -4563,7 +4500,16 @@ let toggle = false;
                     return dt.isValid ? dt.toFormat("dd/MM/yyyy") : raw;
                   }
                 },
-
+                { title: "N° dossier",
+                  field: "numero_dossier",
+                  headerFilter: "input",
+                  headerFilterParams: {
+                                        elementAttributes: {
+                                            style: "width: 95px; height: 25px;"
+                                        }
+                                    },
+                  editor: genericTextEditor
+                },
 
                 { title: "N° facture",
                     field: "numero_facture",
@@ -4835,7 +4781,143 @@ let toggle = false;
                     }
                 },
 
+                                { title: "N° facture lettrée",
+    field: "fact_lettrer",
+    width: 200,
+    headerFilter: "input",
 
+    // =========================
+    // FORMATTER : afficher seulement les numéros de facture
+    // =========================
+    formatter: function(cell) {
+        const value = cell.getValue();
+        if (!value) return "";
+
+        // Normaliser en tableau (séparateur : & ou tableau)
+        const values = typeof value === "string"
+            ? value.split(/\s*&\s*/).filter(Boolean)
+            : Array.isArray(value) ? value : [];
+
+        // Retourner uniquement les numéros de facture
+        return values
+            .map(v => {
+                const parts = v.split("|");
+                return parts[1] || ""; // numero_facture
+            })
+            .filter(Boolean)
+            .join(" | ");
+    },
+
+    // =========================
+    // EDITOR : modal avec checkboxes
+    // =========================
+    editor: function(cell, onRendered, success, cancel) {
+        const row = cell.getRow();
+        const compte = row.getCell("compte").getValue();
+        const debit = row.getCell("debit").getValue();
+        const credit = row.getCell("credit").getValue();
+
+        if (!debit && !credit) {
+            alert("Veuillez remplir une valeur de débit ou crédit.");
+            cancel();
+            return document.createElement("div");
+        }
+
+        // Création overlay/modal
+        const overlay = document.createElement("div");
+        overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:flex;justify-content:center;align-items:center;z-index:10002;";
+
+        const modal = document.createElement("div");
+        modal.style = "background:#fff;padding:15px;border-radius:6px;min-width:360px;box-shadow:0 6px 20px rgba(0,0,0,0.2);";
+        modal.innerHTML = "<h4>Sélection des factures lettrées</h4>";
+
+        const checkboxContainer = document.createElement("div");
+        checkboxContainer.style = "max-height:260px;overflow-y:auto;border:1px solid #ddd;padding:6px;margin-top:6px;";
+        modal.appendChild(checkboxContainer);
+
+        const btnRow = document.createElement("div");
+        btnRow.style = "margin-top:10px;display:flex;justify-content:flex-end;gap:8px;";
+
+        const cancelBtn = document.createElement("button"); 
+        cancelBtn.textContent = "Annuler"; 
+        cancelBtn.className = "btn btn-secondary";
+
+        const saveBtn = document.createElement("button"); 
+        saveBtn.textContent = "Valider"; 
+        saveBtn.className = "btn btn-primary";
+
+        btnRow.append(cancelBtn, saveBtn); 
+        modal.appendChild(btnRow);
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // Valeurs existantes
+        const existingRaw = cell.getValue() ?? [];
+        let existingValues = typeof existingRaw === "string" 
+            ? existingRaw.split(/\s*&\s*/).filter(Boolean)
+            : existingRaw;
+
+        // Récupération via AJAX
+        $.ajax({
+            url: `/get-nfacturelettree?debit=${encodeURIComponent(debit)}&credit=${encodeURIComponent(credit)}&compte=${encodeURIComponent(compte)}`,
+            method: 'GET',
+            success: function(response) {
+                if (!response) response = [];
+                const dispoMap = {};
+                response.forEach(item => {
+                    const montantVal = item.debit ?? item.credit;
+                    const valeur = `${item.id}|${item.numero_facture}|${montantVal}|${item.date}`;
+                    dispoMap[valeur] = `${item.numero_facture} / ${montantVal} / ${item.date}`;
+                });
+
+                // Pré-cocher les valeurs existantes
+                existingValues.forEach(v => {
+                    const parts = v.split('|');
+                    const label = `${parts[1] || ''} / ${parts[2] || ''} / ${parts[3] || ''}`;
+                    const cb = document.createElement('div');
+                    cb.innerHTML = `<label><input type="checkbox" value="${v}" checked> ${label}</label>`;
+                    checkboxContainer.appendChild(cb);
+                    delete dispoMap[v];
+                });
+
+                // Ajouter les autres options
+                Object.keys(dispoMap).forEach(val => {
+                    const cb = document.createElement('div');
+                    cb.innerHTML = `<label><input type="checkbox" value="${val}"> ${dispoMap[val]}</label>`;
+                    checkboxContainer.appendChild(cb);
+                });
+
+                // Boutons
+                saveBtn.onclick = function() {
+                    const checked = [];
+                    checkboxContainer.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => checked.push(cb.value));
+                    const joined = checked.join(' & ');
+                    cell.setValue(joined);
+                    success(joined);
+
+                    // Focus automatique sur date_lettrage si nécessaire
+                    const dateCell = row.getCell("date_lettrage");
+                    if (dateCell) dateCell.edit();
+                    
+                    document.body.removeChild(overlay);
+                };
+
+                cancelBtn.onclick = function() {
+                    document.body.removeChild(overlay);
+                    cancel();
+                };
+            },
+            error: function(err) {
+                console.error("Erreur AJAX :", err);
+                document.body.removeChild(overlay);
+                cancel();
+            }
+        });
+
+        return document.createElement("div"); // nécessaire pour Tabulator
+    }
+}
+,
 
                 contrePartieColumn,
 
@@ -5656,7 +5738,7 @@ tableAch.on("dataLoaded", function() {
 // Table des ventes
 window.tableVentes = new Tabulator("#table-ventes", {
     height: "500px",
- index:'id',
+    index:'id',
 
     // ← chaque colonne s’adapte à la largeur de son contenu
     layout: "fitDataFill",
@@ -5707,909 +5789,796 @@ window.tableVentes = new Tabulator("#table-ventes", {
         "<td style='padding: 8px; text-align: center; font-size: 12px;'><span id='solde-credit-ventes'></span></td>" +
     "</tr>" +
 "</table>",
-// --table vente --------------------------------------
-    columns: [
-        { title: "ID", field: "id", visible: false },
-         {  title: "Date",
-    field: "date",
-    hozAlign: "center",
-    headerFilter: "input",
-    headerFilterParams: {
-      elementAttributes: { style: "width: 95px; height: 25px;" }
-    },
-    sorter: "date",
-    editor: genericDateEditorVte("date_livr", null), // après validation, passe sur date_livr
-    formatter: function(cell) {
-      const dateValue = cell.getValue();
-      if (!dateValue) return "";
-      let dt = luxon.DateTime.fromFormat(dateValue, "yyyy-MM-dd HH:mm:ss");
-      if (!dt.isValid) dt = luxon.DateTime.fromISO(dateValue);
-      return dt.isValid ? dt.toFormat("dd/MM/yyyy") : dateValue;
-    }
-  },
-  { title: "Date livraison",
-    field: "date_livr",
-    hozAlign: "center",
-    headerFilter: "input",
-    headerFilterParams: {
-      elementAttributes: { style: "width: 95px; height: 25px;" }
-    },
-    sorter: "date",
-    editor: genericDateEditorVte(null, "date"), // prevField = date (Shift+Enter pour revenir)
-    formatter: function(cell) {
-      const raw = cell.getValue();
-      if (!raw) return "";
-      let dt = luxon.DateTime.fromISO(raw);
-      if (!dt.isValid) dt = luxon.DateTime.fromFormat(raw, "yyyy-MM-dd HH:mm:ss");
-      return dt.isValid ? dt.toFormat("dd/MM/yyyy") : raw;
-    }
-  },
+     columns: [
+                    { title: "ID", field: "id", visible: false },
+                    {
+                      title: "Date",
+                      field: "date",
+                      hozAlign: "center",
+                      headerFilter: "input",
+                      headerFilterParams: {
+                        elementAttributes: { style: "width: 95px; height: 25px;" }
+                      },
+                      sorter: "date",
+                      editor: genericDateEditorVte("date_livr", null),
 
-        { title: "N° dossier", field: "numero_dossier", headerFilter: "input",
-             headerFilterParams: { elementAttributes: { style: "width: 95px; height: 25px;" } },
-              editor: guaranteedInputEditor("numero_dossier", "numero_facture") },
+                      formatter: function(cell) {
+                        const dateValue = cell.getValue();
+                        if (!dateValue) return "";
+                        let dt = luxon.DateTime.fromFormat(dateValue, "yyyy-MM-dd HH:mm:ss");
+                        if (!dt.isValid) dt = luxon.DateTime.fromISO(dateValue);
+                        return dt.isValid ? dt.toFormat("dd/MM/yyyy") : dateValue;
+                      },
 
-        { title: "N° Facture", field: "numero_facture",headerFilter: "input",headerFilterParams: {
-            elementAttributes: {
-                style: "width: 95px; height: 25px;" // 80 pixels de large
-            }
-        },
-  editor: guaranteedInputEditor("numero_facture", "compte", "numero_dossier") // nextField = compte, prevField = numero_dossier
-        },
+                      cellEdited: function(cell) {
+                        const row = cell.getRow();
+                        const nextCell = row.getCell("numero_dossier");
 
-        { title: "Compte",
-            field: "compte",
-            headerFilter: "input",
-            headerFilterParams: {
-              elementAttributes: { style: "width: 95px; height: 25px;" }
-            },
-            // Utilisation de l'éditeur personnalisé pour les clients
-            editor: customListEditorClt,
-            editorParams: {
-              autocomplete: true,
-              listOnEmpty: true,
-              values: window.comptesClients // On passe la liste formatée
-            },
-            cellEdited: function(cell) {
-              const compteClient = cell.getValue();
-              const row = cell.getRow();
-              if (!compteClient) return;
-
-              // Recherche du client dans le tableau global
-              const client = window.clients.find(c => `${c.compte} - ${c.intitule}` === compteClient);
-              const numeroDossier = row.getCell("numero_dossier").getValue() || "";
-              const numeroFacture = row.getCell("numero_facture").getValue() || "";
-
-              if (client) {
-                row.update({
-                  libelle: `F°${numeroFacture} D°${numeroDossier} ${client.intitule}`
-                });
-              } else {
-                // Affichage d'un message et d'un bouton pour ajouter un client
-                let editorEl = cell.getElement();
-                if (!editorEl.querySelector('.btn-ajouter-client')) {
-                  editorEl.innerHTML = `
-                    <div style="display: flex; flex-direction: column; padding: 5px;">
-                      <span style="color:red; font-size:0.9em;">Client non trouvé</span>
-                      <div style="display: flex; align-items: center; margin-top: 3px;">
-                        <span>${compteClient}</span>
-                        <button type="button" class="btn-ajouter-client" title="Ajouter client"
-                          style="margin-left:5px; padding:0 5px; border:none; background:none; cursor:pointer;">
-                          <i class="fas fa-plus-circle" style="color:green;"></i>
-                        </button>
-                      </div>
-                    </div>
-                  `;
-                  editorEl.querySelector('.btn-ajouter-client').addEventListener('click', () => {
-                    Swal.fire({
-                      title: 'Client non trouvé',
-                      text: "Voulez-vous ajouter ce client ?",
-                      icon: 'question',
-                      showCancelButton: true,
-                      confirmButtonText: 'Oui, ajouter',
-                      cancelButtonText: 'Non'
-                    }).then((resultConfirmation) => {
-                      if (resultConfirmation.isConfirmed) {
-                        ouvrirPopupClient(compteClient, row, cell);
-                      } else {
-                        cell.edit();
+                        if (nextCell) {
+                          nextCell.edit(); // ouvre l'éditeur automatiquement
+                        }
                       }
-                    });
-                  });
-                }
-                if (!cell._reopened) {
-                  cell._reopened = true;
-                  setTimeout(() => { cell.edit(); }, 100);
-                }
-              }
+                    },
 
-              // Focus sur la cellule "Débit"
-              const debitCell = row.getCell("debit");
-              if (debitCell) {
-                debitCell.getElement().focus();
-              }
-            }
-          },
+                    // { title: "Date livraison",
+                    //   field: "date_livr",
+                    //   hozAlign: "center",
+                    //   headerFilter: "input",
+                    //   headerFilterParams: {
+                    //     elementAttributes: { style: "width: 95px; height: 25px;" }
+                    //   },
+                    //   sorter: "date",
+                    //   editor: genericDateEditorVte(null, "date"), // prevField = date (Shift+Enter pour revenir)
+                    //   formatter: function(cell) {
+                    //     const raw = cell.getValue();
+                    //     if (!raw) return "";
+                    //     let dt = luxon.DateTime.fromISO(raw);
+                    //     if (!dt.isValid) dt = luxon.DateTime.fromFormat(raw, "yyyy-MM-dd HH:mm:ss");
+                    //     return dt.isValid ? dt.toFormat("dd/MM/yyyy") : raw;
+                    //   }
+                    // },
 
+                    { title: "N° dossier", field: "numero_dossier", headerFilter: "input",
+                        headerFilterParams: { elementAttributes: { style: "width: 95px; height: 25px;" } },
+                          editor: guaranteedInputEditor("numero_dossier", "numero_facture") 
+                    },
+                    { title: "N° Facture", field: "numero_facture",headerFilter: "input",headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 95px; height: 25px;" // 80 pixels de large
+                        }
+                    },
+              editor: guaranteedInputEditor("numero_facture", "compte", "numero_dossier") // nextField = compte, prevField = numero_dossier
+                    },
+                    { title: "Compte",
+                        field: "compte",
+                        headerFilter: "input",
+                        headerFilterParams: {
+                          elementAttributes: { style: "width: 95px; height: 25px;" }
+                        },
+                        // Utilisation de l'éditeur personnalisé pour les clients
+                        editor: customListEditorClt,
+                        editorParams: {
+                          autocomplete: true,
+                          listOnEmpty: true,
+                          values: window.comptesClients // On passe la liste formatée
+                        },
+                        cellEdited: function(cell) {
+                          const compteClient = cell.getValue();
+                          const row = cell.getRow();
+                          if (!compteClient) return;
 
-{
-    title: "Libellé",
-    field: "libelle",
-    headerFilter: "input",
-    headerFilterParams: {
-        elementAttributes: {
-            style: "width: 95px; height: 25px;" // 80 pixels de large
-        }
-    },
-    editor: guaranteedInputEditor("libelle"),
-    editable: true, // Non éditable automatiquement
-},
-{
-title: "Débit",
-field: "debit",
-headerFilter: "input",
-headerFilterParams: {
-    elementAttributes: {
-        style: "width: 95px; height: 25px;" // 80 pixels de large
-    }
-},
-  editor: calcNumberEditorFactory(),
-bottomCalc: "sum", // Calcul du total dans le bas de la colonne
-formatter: function(cell) {
-// Formater pour afficher 0.00 si la cellule est vide ou nulle
-const value = cell.getValue();
-return value ? parseFloat(value).toFixed(2) : "0.00";
-},
+                          // Recherche du client dans le tableau global
+                          const client = window.clients.find(c => `${c.compte} - ${c.intitule}` === compteClient);
+                          const numeroDossier = row.getCell("numero_dossier").getValue() || "";
+                          const numeroFacture = row.getCell("numero_facture").getValue() || "";
 
-},
-{ title: "Crédit", field: "credit", headerFilter: "input", headerFilterParams: {
-    elementAttributes: {
-        style: "width: 95px; height: 25px;" // 80 pixels de large
-    }
-},
-  editor: calcNumberEditorFactory(),
-bottomCalc: "sum", // Calcul du total dans le bas de la colonne
-formatter: function(cell) {
-// Formater pour afficher 0.00 si la cellule est vide ou nulle
-const value = cell.getValue();
-return value ? parseFloat(value).toFixed(2) : "0.00";
-},
- },
-{
-    title: "Contre-Partie",
-    field: "contre_partie",
-    headerFilter: "input",
-    headerFilterParams: { elementAttributes: { style: "width:95px; height:25px;" } },
-    triggerOnPrefill: false,
-    editor: customListEditorPlanComptable,
-    editorParams: {
-      autocomplete: true,
-      listOnEmpty: true,
-      verticalNavigation: "editor",
-      valuesLookup: async function(cell) {
-        if (!selectedCodeJournal2 || selectedCodeJournal2.trim() === "") return [];
-        try {
-          const resp = await fetch(`/get-contre-parties-ventes?code_journal=${selectedCodeJournal2}`);
-          if (!resp.ok) throw new Error("Erreur réseau");
-          const datav = await resp.json();
-          if (datav.error) return [];
-          return datav;
-        } catch (err) {
-          console.error(err);
-          alert("Impossible de récupérer les contre-parties.");
-          return [];
-        }
-      },
-      onRendered: function(editorEl, cell) {
-        // pré-fill
-        if (!cell.getValue()) {
-          const contrePartie = $('#journal-ventes option:selected').data('contre_partie');
-          if (contrePartie) {
-            cell.setValue(contrePartie, true);
-            editorEl.value = contrePartie;
-          } else if (editorEl.options && editorEl.options.length > 0) {
-            const first = editorEl.options[0].value || editorEl.options[0];
-            cell.setValue(first, true);
-            editorEl.value = first;
-          }
-        }
+                          if (client) {
+                            row.update({
+                              libelle: `F°${numeroFacture} D°${numeroDossier} ${client.intitule}`
+                            });
+                          } else {
+                            // Affichage d'un message et d'un bouton pour ajouter un client
+                            let editorEl = cell.getElement();
+                            if (!editorEl.querySelector('.btn-ajouter-client')) {
+                              editorEl.innerHTML = `
+                                <div style="display: flex; flex-direction: column; padding: 5px;">
+                                  <span style="color:red; font-size:0.9em;">Client non trouvé</span>
+                                  <div style="display: flex; align-items: center; margin-top: 3px;">
+                                    <span>${compteClient}</span>
+                                    <button type="button" class="btn-ajouter-client" title="Ajouter client"
+                                      style="margin-left:5px; padding:0 5px; border:none; background:none; cursor:pointer;">
+                                      <i class="fas fa-plus-circle" style="color:green;"></i>
+                                    </button>
+                                  </div>
+                                </div>
+                              `;
+                              editorEl.querySelector('.btn-ajouter-client').addEventListener('click', () => {
+                                Swal.fire({
+                                  title: 'Client non trouvé',
+                                  text: "Voulez-vous ajouter ce client ?",
+                                  icon: 'question',
+                                  showCancelButton: true,
+                                  confirmButtonText: 'Oui, ajouter',
+                                  cancelButtonText: 'Non'
+                                }).then((resultConfirmation) => {
+                                  if (resultConfirmation.isConfirmed) {
+                                    ouvrirPopupClient(compteClient, row, cell);
+                                  } else {
+                                    cell.edit();
+                                  }
+                                });
+                              });
+                            }
+                            if (!cell._reopened) {
+                              cell._reopened = true;
+                              setTimeout(() => { cell.edit(); }, 100);
+                            }
+                          }
 
-        // Intercepter Enter => commit + ouvrir piece_justificative
-        editorEl.addEventListener("keydown", function(e) {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            // commit dans la cellule
-            try { cell.setValue(editorEl.value, true); } catch (err) {}
-            // ouvrir piece_justificative
-            const nextCell = cell.getRow().getCell("piece_justificative");
-            if (nextCell) setTimeout(() => { try { nextCell.edit(true); } catch(e){} }, 50);
-          } else if (e.key === "Escape") {
-            e.preventDefault();
-            cell.edit(); // ré-ouvrir si besoin
-          }
-        });
-      }
-    },
-    cellEdited: function(cell) {
-      // hook après changement
-      console.log("Contre-Partie mise à jour :", cell.getValue());
-    }
-  },
+                          // Focus sur la cellule "Débit"
+                          const debitCell = row.getCell("debit");
+                          if (debitCell) {
+                            debitCell.getElement().focus();
+                          }
+                        }
+                    },
+                    { title: "Libellé",
+                        field: "libelle",
+                        headerFilter: "input",
+                        headerFilterParams: {
+                            elementAttributes: {
+                                style: "width: 95px; height: 25px;" // 80 pixels de large
+                            }
+                        },
+                        editor: guaranteedInputEditor("libelle"),
+                        editable: true, // Non éditable automatiquement
+                    },
+                    { title: "Débit",
+                    field: "debit",
+                    headerFilter: "input",
+                    headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 95px; height: 25px;" // 80 pixels de large
+                        }
+                    },
+                      editor: calcNumberEditorFactory(),
+                    bottomCalc: "sum", // Calcul du total dans le bas de la colonne
+                    formatter: function(cell) {
+                    // Formater pour afficher 0.00 si la cellule est vide ou nulle
+                    const value = cell.getValue();
+                    return value ? parseFloat(value).toFixed(2) : "0.00";
+                    },
 
-        {
-            title: "Compte TVA",
-            field: "compte_tva",
-            headerFilter: "input",
-            visible:false,
-            headerFilterParams: {
-                elementAttributes: {
-                    style: "width: 95px; height: 25px;" // 80 pixels de large
-                }
-            },
-            editor: customListEditortva,
-            editorParams: {
-                autocomplete: true,
-                listOnEmpty: true,
-                values: comptesAchats.map(compte => `${compte.compte} - ${compte.intitule}`)
-            }
-        },
-        {
-    title: "Rubrique TVA",
-    field: "rubrique_tva",
-    headerFilter: "input",
-    headerFilterParams: {
-        elementAttributes: { style: "width: 95px; height: 25px;" }
-    },
-    width: 95,
-     visible:false,
-    minWidth: 95,
-    widthGrow: 0,
-    formatter: function(cell) {
-        const value = cell.getValue() || "";
-        return `<div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${value}">${value}</div>`;
-    },
+                    },
+                    { title: "Crédit", field: "credit", headerFilter: "input", headerFilterParams: {
+                        elementAttributes: {
+                            style: "width: 95px; height: 25px;" // 80 pixels de large
+                        }
+                    },
+                      editor: calcNumberEditorFactory(),
+                    bottomCalc: "sum", // Calcul du total dans le bas de la colonne
+                    formatter: function(cell) {
+                    // Formater pour afficher 0.00 si la cellule est vide ou nulle
+                    const value = cell.getValue();
+                    return value ? parseFloat(value).toFixed(2) : "0.00";
+                    },
+                    },
+                    { title: "N° facture lettrée",
+                        field: "fact_lettrer",
+                        width: 200,
+                        headerFilter: "input",
 
-    // Editor : input text (pas de select). Le traitement AJAX est fait ici.
-   // --- Editor rubrique_tva adapté au JSON renvoyé par ton controller ---
-editor: function(cell, onRendered, success, cancel, editorParams) {
-    const row = cell.getRow();
-    const input = document.createElement("input");
-    input.type = "text";
-    input.style.width = "100%";
-    input.style.boxSizing = "border-box";
-    input.value = cell.getValue() || "";
+                        // =========================
+                        // FORMATTER : afficher seulement les numéros de facture
+                        // =========================
+                        formatter: function(cell) {
+                            const value = cell.getValue();
+                            if (!value) return "";
 
-    let lastServerResp = null;
+                            // Normaliser en tableau (séparateur : & ou tableau)
+                            const values = typeof value === "string"
+                                ? value.split(/\s*&\s*/).filter(Boolean)
+                                : Array.isArray(value) ? value : [];
 
-    function getCsrfToken() {
-        const t = document.querySelector('meta[name="csrf-token"]');
-        return t ? t.getAttribute('content') : null;
-    }
-    function getCodeJournalFromDom() {
-        const sel = document.querySelector('#journal-ventes');
-        if (sel && sel.value && String(sel.value).trim() !== '') return String(sel.value).trim();
-        return null;
-    }
+                            // Retourner uniquement les numéros de facture
+                            return values
+                                .map(v => {
+                                    const parts = v.split("|");
+                                    return parts[1] || ""; // numero_facture
+                                })
+                                .filter(Boolean)
+                                .join(" | ");
+                        },
 
-    function fetchRubrique(codeJournal) {
-        return new Promise((resolve, reject) => {
-            const params = {};
-            if (codeJournal) params.code_journal = codeJournal;
-            const soc = document.querySelector('#societe_id');
-            if (soc && soc.value) params.societe_id = soc.value;
+                        // =========================
+                        // EDITOR : modal avec checkboxes
+                        // =========================
+                        editor: function(cell, onRendered, success, cancel) {
+                            const row = cell.getRow();
+                            const compte = row.getCell("compte").getValue();
+                            const debit = row.getCell("debit").getValue();
+                            const credit = row.getCell("credit").getValue();
 
-            $.ajax({
-                url: '/getRubriqueSociete',
-                method: 'GET',
-                dataType: 'json',
-                data: params,
-                headers: { 'X-CSRF-TOKEN': getCsrfToken() ?? '' },
-                success(resp) {
-                    if (resp && resp.error) { resolve({ ok: false, error: resp.error, raw: resp }); return; }
-                    resolve({ ok: true, data: resp });
+                            if (!debit && !credit) {
+                                alert("Veuillez remplir une valeur de débit ou crédit.");
+                                cancel();
+                                return document.createElement("div");
+                            }
+
+                            // Création overlay/modal
+                            const overlay = document.createElement("div");
+                            overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:flex;justify-content:center;align-items:center;z-index:10002;";
+
+                            const modal = document.createElement("div");
+                            modal.style = "background:#fff;padding:15px;border-radius:6px;min-width:360px;box-shadow:0 6px 20px rgba(0,0,0,0.2);";
+                            modal.innerHTML = "<h4>Sélection des factures lettrées</h4>";
+
+                            const checkboxContainer = document.createElement("div");
+                            checkboxContainer.style = "max-height:260px;overflow-y:auto;border:1px solid #ddd;padding:6px;margin-top:6px;";
+                            modal.appendChild(checkboxContainer);
+
+                            const btnRow = document.createElement("div");
+                            btnRow.style = "margin-top:10px;display:flex;justify-content:flex-end;gap:8px;";
+
+                            const cancelBtn = document.createElement("button"); 
+                            cancelBtn.textContent = "Annuler"; 
+                            cancelBtn.className = "btn btn-secondary";
+
+                            const saveBtn = document.createElement("button"); 
+                            saveBtn.textContent = "Valider"; 
+                            saveBtn.className = "btn btn-primary";
+
+                            btnRow.append(cancelBtn, saveBtn); 
+                            modal.appendChild(btnRow);
+                            overlay.appendChild(modal);
+                            document.body.appendChild(overlay);
+
+                            // Valeurs existantes
+                            const existingRaw = cell.getValue() ?? [];
+                            let existingValues = typeof existingRaw === "string" 
+                                ? existingRaw.split(/\s*&\s*/).filter(Boolean)
+                                : existingRaw;
+
+                            // Récupération via AJAX
+                            $.ajax({
+                                url: `/get-nfacturelettree?debit=${encodeURIComponent(debit)}&credit=${encodeURIComponent(credit)}&compte=${encodeURIComponent(compte)}`,
+                                method: 'GET',
+                                success: function(response) {
+                                    if (!response) response = [];
+                                    const dispoMap = {};
+                                    response.forEach(item => {
+                                        const montantVal = item.debit ?? item.credit;
+                                        const valeur = `${item.id}|${item.numero_facture}|${montantVal}|${item.date}`;
+                                        dispoMap[valeur] = `${item.numero_facture} / ${montantVal} / ${item.date}`;
+                                    });
+
+                                    // Pré-cocher les valeurs existantes
+                                    existingValues.forEach(v => {
+                                        const parts = v.split('|');
+                                        const label = `${parts[1] || ''} / ${parts[2] || ''} / ${parts[3] || ''}`;
+                                        const cb = document.createElement('div');
+                                        cb.innerHTML = `<label><input type="checkbox" value="${v}" checked> ${label}</label>`;
+                                        checkboxContainer.appendChild(cb);
+                                        delete dispoMap[v];
+                                    });
+
+                                    // Ajouter les autres options
+                                    Object.keys(dispoMap).forEach(val => {
+                                        const cb = document.createElement('div');
+                                        cb.innerHTML = `<label><input type="checkbox" value="${val}"> ${dispoMap[val]}</label>`;
+                                        checkboxContainer.appendChild(cb);
+                                    });
+
+                                    // Boutons
+                                    saveBtn.onclick = function() {
+                                        const checked = [];
+                                        checkboxContainer.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => checked.push(cb.value));
+                                        const joined = checked.join(' & ');
+                                        cell.setValue(joined);
+                                        success(joined);
+
+                                        // Focus automatique sur date_lettrage si nécessaire
+                                        const dateCell = row.getCell("date_lettrage");
+                                        if (dateCell) dateCell.edit();
+                                        
+                                        document.body.removeChild(overlay);
+                                    };
+
+                                    cancelBtn.onclick = function() {
+                                        document.body.removeChild(overlay);
+                                        cancel();
+                                    };
+                                },
+                                error: function(err) {
+                                    console.error("Erreur AJAX :", err);
+                                    document.body.removeChild(overlay);
+                                    cancel();
+                                }
+                            });
+
+                            return document.createElement("div"); 
+                        }
+                    },
+                    { title: "Contre-Partie",
+                        field: "contre_partie",
+                        headerFilter: "input",
+                        headerFilterParams: { elementAttributes: { style: "width:95px; height:25px;" } },
+                        triggerOnPrefill: false,
+                        editor: customListEditorPlanComptable,
+                        editorParams: {
+                          autocomplete: true,
+                          listOnEmpty: true,
+                          verticalNavigation: "editor",
+                          valuesLookup: async function(cell) {
+                            if (!selectedCodeJournal2 || selectedCodeJournal2.trim() === "") return [];
+                            try {
+                              const resp = await fetch(`/get-contre-parties-ventes?code_journal=${selectedCodeJournal2}`);
+                              if (!resp.ok) throw new Error("Erreur réseau");
+                              const datav = await resp.json();
+                              if (datav.error) return [];
+                              return datav;
+                            } catch (err) {
+                              console.error(err);
+                              alert("Impossible de récupérer les contre-parties.");
+                              return [];
+                            }
+                          },
+                          onRendered: function(editorEl, cell) {
+                            // pré-fill
+                            if (!cell.getValue()) {
+                              const contrePartie = $('#journal-ventes option:selected').data('contre_partie');
+                              if (contrePartie) {
+                                cell.setValue(contrePartie, true);
+                                editorEl.value = contrePartie;
+                              } else if (editorEl.options && editorEl.options.length > 0) {
+                                const first = editorEl.options[0].value || editorEl.options[0];
+                                cell.setValue(first, true);
+                                editorEl.value = first;
+                              }
+                            }
+
+                            // Intercepter Enter => commit + ouvrir piece_justificative
+                            editorEl.addEventListener("keydown", function(e) {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                // commit dans la cellule
+                                try { cell.setValue(editorEl.value, true); } catch (err) {}
+                                // ouvrir piece_justificative
+                                const nextCell = cell.getRow().getCell("piece_justificative");
+                                if (nextCell) setTimeout(() => { try { nextCell.edit(true); } catch(e){} }, 50);
+                              } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                cell.edit(); // ré-ouvrir si besoin
+                              }
+                            });
+                          }
+                        },
+                        cellEdited: function(cell) {
+                          // hook après changement
+                          console.log("Contre-Partie mise à jour :", cell.getValue());
+                        }
+                    },
+                    { title: "Compte TVA",
+                        field: "compte_tva",
+                        headerFilter: "input",
+                        visible:false,
+                        headerFilterParams: {
+                            elementAttributes: {
+                                style: "width: 95px; height: 25px;" // 80 pixels de large
+                            }
+                        },
+                        editor: customListEditortva,
+                        editorParams: {
+                            autocomplete: true,
+                            listOnEmpty: true,
+                            values: comptesAchats.map(compte => `${compte.compte} - ${compte.intitule}`)
+                        }
+                    },
+                    { title: "Rubrique TVA",
+                field: "rubrique_tva",
+                headerFilter: "input",
+                headerFilterParams: {
+                    elementAttributes: { style: "width: 95px; height: 25px;" }
                 },
-                error(jqXHR) {
-                    let parsed = null;
-                    try { parsed = jqXHR.responseJSON ?? null; } catch(e) { parsed = null; }
-                    reject({ status: jqXHR.status, parsed });
+                width: 95,
+                visible:false,
+                minWidth: 95,
+                widthGrow: 0,
+                formatter: function(cell) {
+                    const value = cell.getValue() || "";
+                    return `<div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${value}">${value}</div>`;
+                },
+
+                // Editor : input text (pas de select). Le traitement AJAX est fait ici.
+              // --- Editor rubrique_tva adapté au JSON renvoyé par ton controller ---
+            editor: function(cell, onRendered, success, cancel, editorParams) {
+                const row = cell.getRow();
+                const input = document.createElement("input");
+                input.type = "text";
+                input.style.width = "100%";
+                input.style.boxSizing = "border-box";
+                input.value = cell.getValue() || "";
+
+                let lastServerResp = null;
+
+                function getCsrfToken() {
+                    const t = document.querySelector('meta[name="csrf-token"]');
+                    return t ? t.getAttribute('content') : null;
                 }
-            });
-        });
-    }
+                function getCodeJournalFromDom() {
+                    const sel = document.querySelector('#journal-ventes');
+                    if (sel && sel.value && String(sel.value).trim() !== '') return String(sel.value).trim();
+                    return null;
+                }
 
-    onRendered(() => {
-        const el = cell.getElement();
-        el.innerHTML = "";
-        el.appendChild(input);
-        input.focus();
-        input.select();
-    });
+                function fetchRubrique(codeJournal) {
+                    return new Promise((resolve, reject) => {
+                        const params = {};
+                        if (codeJournal) params.code_journal = codeJournal;
+                        const soc = document.querySelector('#societe_id');
+                        if (soc && soc.value) params.societe_id = soc.value;
 
-    (function tryAutoFill() {
-        const codeJournal = getCodeJournalFromDom();
-        fetchRubrique(codeJournal)
-            .then(result => {
-                if (!result.ok) { console.warn('getRubriqueSociete:', result.error || result.raw); return; }
-                const resp = result.data;
-                lastServerResp = resp;
-
-                const serverText = resp.selected_text ?? (resp.nom_racines ? `${resp.rubrique}: ${resp.nom_racines} (${Number(resp.taux).toFixed(2)}%)` : (resp.rubrique ?? ""));
-                const serverCode = resp.selected ? String(resp.selected) : (resp.rubrique ? String(resp.rubrique) : null);
-                const serverCompteTva = resp.compte_tva ?? "";
-
-                // normaliser taux en fraction
-                const serverTaux = (typeof resp.taux !== 'undefined' && resp.taux !== null && resp.taux !== '') ? (Number(resp.taux) > 1 ? Number(resp.taux) / 100 : Number(resp.taux)) : null;
-
-                if (!input.value || String(input.value).trim() === "") {
-                    input.value = serverText;
-                    try {
-                        row.update({
-                            rubrique_tva_code: serverCode,
-                            rubrique_tva: serverText,
-                            compte_tva: serverCompteTva,
-                            rubrique_tva_taux: serverTaux
+                        $.ajax({
+                            url: '/getRubriqueSociete',
+                            method: 'GET',
+                            dataType: 'json',
+                            data: params,
+                            headers: { 'X-CSRF-TOKEN': getCsrfToken() ?? '' },
+                            success(resp) {
+                                if (resp && resp.error) { resolve({ ok: false, error: resp.error, raw: resp }); return; }
+                                resolve({ ok: true, data: resp });
+                            },
+                            error(jqXHR) {
+                                let parsed = null;
+                                try { parsed = jqXHR.responseJSON ?? null; } catch(e) { parsed = null; }
+                                reject({ status: jqXHR.status, parsed });
+                            }
                         });
-                        // recalcul si besoin (si débit déjà présent)
-                        try { calculerCredit(row.getData(), 'ligne1', parseFloat(row.getData().debit || 0)); } catch(e) {}
+                    });
+                }
+
+                onRendered(() => {
+                    const el = cell.getElement();
+                    el.innerHTML = "";
+                    el.appendChild(input);
+                    input.focus();
+                    input.select();
+                });
+
+                (function tryAutoFill() {
+                    const codeJournal = getCodeJournalFromDom();
+                    fetchRubrique(codeJournal)
+                        .then(result => {
+                            if (!result.ok) { console.warn('getRubriqueSociete:', result.error || result.raw); return; }
+                            const resp = result.data;
+                            lastServerResp = resp;
+
+                            const serverText = resp.selected_text ?? (resp.nom_racines ? `${resp.rubrique}: ${resp.nom_racines} (${Number(resp.taux).toFixed(2)}%)` : (resp.rubrique ?? ""));
+                            const serverCode = resp.selected ? String(resp.selected) : (resp.rubrique ? String(resp.rubrique) : null);
+                            const serverCompteTva = resp.compte_tva ?? "";
+
+                            // normaliser taux en fraction
+                            const serverTaux = (typeof resp.taux !== 'undefined' && resp.taux !== null && resp.taux !== '') ? (Number(resp.taux) > 1 ? Number(resp.taux) / 100 : Number(resp.taux)) : null;
+
+                            if (!input.value || String(input.value).trim() === "") {
+                                input.value = serverText;
+                                try {
+                                    row.update({
+                                        rubrique_tva_code: serverCode,
+                                        rubrique_tva: serverText,
+                                        compte_tva: serverCompteTva,
+                                        rubrique_tva_taux: serverTaux
+                                    });
+                                    // recalcul si besoin (si débit déjà présent)
+                                    try { calculerCredit(row.getData(), 'ligne1', parseFloat(row.getData().debit || 0)); } catch(e) {}
+                                } catch (e) {
+                                    console.warn("Impossible d'update row lors du préfill:", e);
+                                }
+                            } else {
+                                // ne pas écraser texte, mais renseigner code/compte/taux si absent
+                                const d = row.getData();
+                                const updates = {};
+                                if (!d.rubrique_tva_code && serverCode) updates.rubrique_tva_code = serverCode;
+                                if (!d.compte_tva && serverCompteTva) updates.compte_tva = serverCompteTva;
+                                if ((!d.rubrique_tva_taux || d.rubrique_tva_taux === null) && serverTaux !== null) updates.rubrique_tva_taux = serverTaux;
+                                if (Object.keys(updates).length) {
+                                    try { row.update(updates); } catch(e) {}
+                                }
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Erreur AJAX getRubriqueSociete dans editor:', err);
+                        });
+                })();
+
+                function commitValue() {
+                    const v = input.value ?? "";
+                    try {
+                        if (!v || String(v).trim() === "") {
+                            row.update({ rubrique_tva: "", rubrique_tva_code: null, rubrique_tva_taux: null, compte_tva: "" });
+                        } else {
+                            // si on a la liste 'rubriques' du serveur, on tente de matcher par 'value' ou 'text'
+                            const updates = { rubrique_tva: v };
+                            if (lastServerResp && Array.isArray(lastServerResp.rubriques)) {
+                                const found = lastServerResp.rubriques.find(r => String(r.value) === String(v) || String((r.text||'').toLowerCase()) === String(v).toLowerCase() || (String(r.text||'').toLowerCase().indexOf(String(v).toLowerCase()) !== -1));
+                                if (found) {
+                                    updates.rubrique_tva_code = found.value ?? updates.rubrique_tva_code;
+                                    updates.compte_tva = found.compte_tva ?? updates.compte_tva;
+                                    // si taux exposé dans les items, essaye de l'utiliser (sinon top-level resp.taux peut être utilisé)
+                                    if (typeof found.taux !== 'undefined' && found.taux !== null) {
+                                        updates.rubrique_tva_taux = (Number(found.taux) > 1 ? Number(found.taux) / 100 : Number(found.taux));
+                                    } else if (typeof lastServerResp.taux !== 'undefined') {
+                                        updates.rubrique_tva_taux = (Number(lastServerResp.taux) > 1 ? Number(lastServerResp.taux) / 100 : Number(lastServerResp.taux));
+                                    }
+                                } else {
+                                    // si pas trouvé, mais top-level selected existe => l'utiliser
+                                    if (lastServerResp.selected) {
+                                        updates.rubrique_tva_code = lastServerResp.selected;
+                                        updates.compte_tva = lastServerResp.compte_tva ?? updates.compte_tva;
+                                        if (typeof lastServerResp.taux !== 'undefined') updates.rubrique_tva_taux = (Number(lastServerResp.taux) > 1 ? Number(lastServerResp.taux) / 100 : Number(lastServerResp.taux));
+                                    }
+                                }
+                            } else if (lastServerResp) {
+                                if (lastServerResp.selected) updates.rubrique_tva_code = lastServerResp.selected;
+                                if (lastServerResp.compte_tva) updates.compte_tva = lastServerResp.compte_tva;
+                                if (typeof lastServerResp.taux !== 'undefined') updates.rubrique_tva_taux = (Number(lastServerResp.taux) > 1 ? Number(lastServerResp.taux) / 100 : Number(lastServerResp.taux));
+                            }
+
+                            row.update(updates);
+                        }
                     } catch (e) {
-                        console.warn("Impossible d'update row lors du préfill:", e);
+                        console.error('Erreur update row lors du commit:', e);
                     }
-                } else {
-                    // ne pas écraser texte, mais renseigner code/compte/taux si absent
-                    const d = row.getData();
-                    const updates = {};
-                    if (!d.rubrique_tva_code && serverCode) updates.rubrique_tva_code = serverCode;
-                    if (!d.compte_tva && serverCompteTva) updates.compte_tva = serverCompteTva;
-                    if ((!d.rubrique_tva_taux || d.rubrique_tva_taux === null) && serverTaux !== null) updates.rubrique_tva_taux = serverTaux;
-                    if (Object.keys(updates).length) {
-                        try { row.update(updates); } catch(e) {}
-                    }
-                }
-            })
-            .catch(err => {
-                console.error('Erreur AJAX getRubriqueSociete dans editor:', err);
-            });
-    })();
+                    success(input.value);
 
-    function commitValue() {
-        const v = input.value ?? "";
-        try {
-            if (!v || String(v).trim() === "") {
-                row.update({ rubrique_tva: "", rubrique_tva_code: null, rubrique_tva_taux: null, compte_tva: "" });
-            } else {
-                // si on a la liste 'rubriques' du serveur, on tente de matcher par 'value' ou 'text'
-                const updates = { rubrique_tva: v };
-                if (lastServerResp && Array.isArray(lastServerResp.rubriques)) {
-                    const found = lastServerResp.rubriques.find(r => String(r.value) === String(v) || String((r.text||'').toLowerCase()) === String(v).toLowerCase() || (String(r.text||'').toLowerCase().indexOf(String(v).toLowerCase()) !== -1));
-                    if (found) {
-                        updates.rubrique_tva_code = found.value ?? updates.rubrique_tva_code;
-                        updates.compte_tva = found.compte_tva ?? updates.compte_tva;
-                        // si taux exposé dans les items, essaye de l'utiliser (sinon top-level resp.taux peut être utilisé)
-                        if (typeof found.taux !== 'undefined' && found.taux !== null) {
-                            updates.rubrique_tva_taux = (Number(found.taux) > 1 ? Number(found.taux) / 100 : Number(found.taux));
-                        } else if (typeof lastServerResp.taux !== 'undefined') {
-                            updates.rubrique_tva_taux = (Number(lastServerResp.taux) > 1 ? Number(lastServerResp.taux) / 100 : Number(lastServerResp.taux));
-                        }
-                    } else {
-                        // si pas trouvé, mais top-level selected existe => l'utiliser
-                        if (lastServerResp.selected) {
-                            updates.rubrique_tva_code = lastServerResp.selected;
-                            updates.compte_tva = lastServerResp.compte_tva ?? updates.compte_tva;
-                            if (typeof lastServerResp.taux !== 'undefined') updates.rubrique_tva_taux = (Number(lastServerResp.taux) > 1 ? Number(lastServerResp.taux) / 100 : Number(lastServerResp.taux));
-                        }
-                    }
-                } else if (lastServerResp) {
-                    if (lastServerResp.selected) updates.rubrique_tva_code = lastServerResp.selected;
-                    if (lastServerResp.compte_tva) updates.compte_tva = lastServerResp.compte_tva;
-                    if (typeof lastServerResp.taux !== 'undefined') updates.rubrique_tva_taux = (Number(lastServerResp.taux) > 1 ? Number(lastServerResp.taux) / 100 : Number(lastServerResp.taux));
+                    // recalcul immédiat et redraw
+                    try {
+                        const d = row.getData();
+                        calculerCredit(d, 'ligne1', parseFloat(d.debit || 0));
+                        row.getTable().redraw(true);
+                    } catch (e) {}
                 }
 
-                row.update(updates);
+                function cancelEdit() { cancel(); }
+
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+                    else if (e.key === 'Enter') { e.preventDefault(); commitValue(); }
+                    else if (e.key === 'Tab') {
+                        commitValue();
+                        setTimeout(() => {
+                            try {
+                                const nextCell = typeof row.getNextCell === 'function' ? row.getNextCell(cell) : null;
+                                if (nextCell && typeof nextCell.edit === 'function') nextCell.edit();
+                            } catch (e) {}
+                        }, 10);
+                    }
+                });
+
+                input.addEventListener('blur', function(e) {
+                    setTimeout(() => {
+                        if (document.activeElement !== input) commitValue();
+                    }, 120);
+                });
+
+                cell.getElement().addEventListener('destroyEditor', function() {
+                    try { input.removeEventListener('keydown', this); } catch (e) {}
+                }, { once: true });
+
+                return input;
             }
-        } catch (e) {
-            console.error('Erreur update row lors du commit:', e);
-        }
-        success(input.value);
+                    },
+                    { title: "Solde Cumulé",
+                        field: "value", // Ce champ contient le solde cumulé calculé (issu de ton mapping: value: ligne.solde_cumule)
+                        // editor: "input", // Permet l'édition manuelle si besoin (tu peux le supprimer si le solde doit être uniquement calculé)
+                        headerFilter: "input",
+                        headerFilterParams: {
+                            elementAttributes: {
+                                style: "width: 95px; height: 25px;" // 80 pixels de large
+                            }
+                        },
+                        formatter: function(cell, formatterParams, onRendered) {
+                            let val = cell.getValue();
 
-        // recalcul immédiat et redraw
-        try {
-            const d = row.getData();
-            calculerCredit(d, 'ligne1', parseFloat(d.debit || 0));
-            row.getTable().redraw(true);
-        } catch (e) {}
-    }
+                            // Vérifier si c'est un nombre
+                            if (val !== "" && !isNaN(val)) {
+                              let numericVal = parseFloat(val);
 
-    function cancelEdit() { cancel(); }
+                              // Si c'est -0, on le force à 0
+                              if (Object.is(numericVal, -0)) {
+                                numericVal = 0;
+                              }
 
-    input.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
-        else if (e.key === 'Enter') { e.preventDefault(); commitValue(); }
-        else if (e.key === 'Tab') {
-            commitValue();
-            setTimeout(() => {
-                try {
-                    const nextCell = typeof row.getNextCell === 'function' ? row.getNextCell(cell) : null;
-                    if (nextCell && typeof nextCell.edit === 'function') nextCell.edit();
-                } catch (e) {}
-            }, 10);
-        }
-    });
+                              // Retourne la valeur formatée sur 2 décimales
+                              return numericVal.toFixed(2);
+                            }
 
-    input.addEventListener('blur', function(e) {
-        setTimeout(() => {
-            if (document.activeElement !== input) commitValue();
-        }, 120);
-    });
-
-    cell.getElement().addEventListener('destroyEditor', function() {
-        try { input.removeEventListener('keydown', this); } catch (e) {}
-    }, { once: true });
-
-    return input;
-}
-        },
-
-        {
-            title: "Solde Cumulé",
-            field: "value", // Ce champ contient le solde cumulé calculé (issu de ton mapping: value: ligne.solde_cumule)
-            // editor: "input", // Permet l'édition manuelle si besoin (tu peux le supprimer si le solde doit être uniquement calculé)
-            headerFilter: "input",
-            headerFilterParams: {
-                elementAttributes: {
-                    style: "width: 95px; height: 25px;" // 80 pixels de large
-                }
-            },
-            formatter: function(cell, formatterParams, onRendered) {
-                let val = cell.getValue();
-
-                // Vérifier si c'est un nombre
-                if (val !== "" && !isNaN(val)) {
-                  let numericVal = parseFloat(val);
-
-                  // Si c'est -0, on le force à 0
-                  if (Object.is(numericVal, -0)) {
-                    numericVal = 0;
-                  }
-
-                  // Retourne la valeur formatée sur 2 décimales
-                  return numericVal.toFixed(2);
-                }
-
-                return val;
-              }
-          },
-// ---------- COLONNE VENTE (même design/traitement que ACHAT) ----------
-// ---------------------- COLONNE VENTE ----------------------
-{
-  title: "Pièce justificative",
+                            return val;
+                          }
+                    },
+                    { title: "Pièce justificative",
   field: "piece_justificative",
-  headerFilter: "input",
-  headerFilterParams: { elementAttributes: { style: "width: 150px; height: 25px;" } },
   width: 200,
+  headerFilter: "input",
   formatter: function(cell) {
-    const d = cell.getRow().getData();
-    const piece = d.piece_justificative || "";
-    const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    var rowData = cell.getRow().getData(); // Données de la ligne complète
+    var justificatif = cell.getValue() || ''; // Le champ "piece_justificative"
+    var filePath = rowData.file?.path || ''; // Le chemin réel du fichier (file.path)
 
-    let showView = false;
-    try {
-      if (d && (d.file_id || d.file_url || d.filepath || d.path || d.file_id === 0)) showView = true;
-      else if (d && d.piece_justificative) {
-        const table = cell.getTable && cell.getTable();
-        const all = (table && typeof table.getData === 'function') ? table.getData() : (table && typeof table.getRows === 'function' ? table.getRows().map(r=>r.getData()) : []);
-        if (Array.isArray(all) && all.length) {
-          const same = all.find(r => r && r.piece_justificative === d.piece_justificative && (r.file_id || r.file_url || r.filepath || r.path));
-          showView = Boolean(same && (same.file_id || same.file_url || same.filepath || same.path));
-        }
-      }
-    } catch(e){ showView = false; }
+    // Champ texte avec gestion de la touche Entrée, sans id pour éviter doublons
+    var input = "<input type='text' class='selected-file-input' value='" + justificatif + 
+      "' onkeydown='if(event.key === \"Enter\") { " +
+      "var cellElement = this.closest(\".tabulator-cell\");" +
+      "var uploadIcon = cellElement.querySelector(\".upload-icon\");" +
+      "if(uploadIcon) uploadIcon.focus();" +
+      "}'>";
 
-    // tooltip name resolution
-    let titleName = '';
-    try {
-      if (d) titleName = d.file_name || d.filename || d.name || '';
-      if (!titleName && d && d.file_id) {
-        const card = document.querySelector(`.card[data-file_id="${d.file_id}"]`);
-        if (card) titleName = card.getAttribute('data-filename') || card.dataset.filename || '';
-      }
-      if (!titleName) {
-        const path = d.file_url || d.filepath || d.path || '';
-        if (path) titleName = decodeURIComponent(String(path).split('/').pop() || '');
-      }
-    } catch(e){ titleName = ''; }
+    // Icône œil (vue fichier)
+    var iconView = filePath
+      ? "<i class='fas fa-eye view-icon' title='Voir le fichier' tabindex='0' onclick='viewFile(\"" + filePath + "\")'></i>"
+      : '';
 
-    const input = `<input type='text' class='selected-file-input pj-input' value='${esc(piece)}' placeholder='${esc(piece)}' style='width:70%;border:0;background:transparent;padding:4px 6px;'>`;
-    const iconView = `<button class='icon-btn view-icon-vente' title='${esc(titleName || "Voir le fichier")}' aria-label='${esc(titleName || "Voir le fichier")}' tabindex='0' style='border:0;background:none;padding:6px; ${showView ? "" : "display:none;"}'><i class='fas fa-eye' aria-hidden="true"></i></button>`;
-    const icon = `<button class='icon-btn upload-icon' title='Choisir un fichier' tabindex='0' style='border:0;background:none;padding:6px;'><i class='fas fa-paperclip' aria-hidden="true"></i></button>`;
+    // Icône upload (trombone) sans id pour éviter doublons
+    var iconUpload = "<i class='fas fa-paperclip upload-icon' id='upload-icon-ventes' data-action='open-modal' title='Choisir un fichier' tabindex='0'></i>";
 
-    return `<div style="display:flex;align-items:center;gap:6px;">${input}${iconView}${icon}</div>`;
+    // Icône "eye" si justificatif vide
+    var iconEye = justificatif === ''
+      ? "<i class='fas fa-eye view-icon' title='Voir le fichier' tabindex='0' onclick='viewFile(null)'></i>"
+      : '';
+
+    return input + iconUpload + iconEye + iconView;
   },
 
+  // Optionnel : clic sur la cellule déclenche aussi l'ouverture du fichier
   cellClick: function(e, cell) {
-    if (!e || !e.target) return;
-    const target = e.target.closest ? e.target.closest('i, button, .upload-icon, .view-icon-vente, .selected-file-input') || e.target : e.target;
-    const row = cell.getRow();
-    const d = row.getData();
-    const table = cell.getTable && cell.getTable();
-
-    /* ---------- Helpers globaux idempotents (créés une seule fois si absent) ---------- */
-    if (!window._ventePieceHelpers) {
-      window._ventePieceHelpers = true;
-
-      window.getCsrfToken = function() {
-        if (typeof csrfToken !== 'undefined' && csrfToken) return csrfToken;
-        const m = document.querySelector('meta[name="csrf-token"]');
-        return m ? m.getAttribute('content') : '';
-      };
-
-      window.sendUpdateToServerWithFallback = async function(id, field, value, numero_facture) {
-        const token = window.getCsrfToken();
-        const postUrl = `/operation-courante/${encodeURIComponent(id)}/update-field`;
-        try {
-          const resp = await fetch(postUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'X-CSRF-TOKEN': token,
-              'X-Requested-With': 'XMLHttpRequest'
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify({ field, value })
-          });
-          if (resp.ok) return await resp.json().catch(()=>null);
-          console.warn(`POST ${postUrl} returned ${resp.status}, fallback to PUT.`);
-        } catch (err) {
-          console.warn('POST updateField failed, fallback to PUT', err);
-        }
-
-        // fallback PUT
-        const putUrl = `/operations/${encodeURIComponent(id)}`;
-        const resp2 = await fetch(putUrl, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': token,
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          credentials: 'same-origin',
-          body: JSON.stringify({ field, value, numero_facture: numero_facture || '' })
-        });
-        if (!resp2.ok) {
-          const t = await resp2.text().catch(()=> '');
-          throw new Error(`PUT -> HTTP ${resp2.status} : ${t.slice(0,200)}`);
-        }
-        return await resp2.json().catch(()=>null);
-      };
-
-      window.applyPieceToSameNumero = function(tableRef, numero, value) {
-        if (!tableRef) return [];
-        const applied = [];
-        try {
-          tableRef.getRows().forEach(r => {
-            const rd = r.getData();
-            if (rd && String(rd.numero_facture || '') === String(numero)) {
-              try { r.update({ piece_justificative: value }); applied.push(r); } catch(e){ console.warn('applyPieceToSameNumero failed', e); }
-            }
-          });
-        } catch(e){ console.warn(e); }
-        return applied;
-      };
-
-      window.rollbackPieceBackups = function(backups) {
-        if (!Array.isArray(backups)) return;
-        backups.forEach(b => {
-          try { if (b.rowRef) b.rowRef.update({ piece_justificative: b.oldValue }); } catch(e){ console.warn('rollback failed', e); }
-        });
-      };
-
-      window.updatePieceForRowVente = async function(targetRow, tableRef, newVal) {
-        const data = targetRow.getData();
-        const numero = data.numero_facture || '';
-        const isTemp = !data.id || String(data.id).startsWith('temp_') || data.__isTemp === true;
-
-        // collect backups
-        const backups = [];
-        try {
-          (tableRef || window.tableAch).getRows().forEach(r => {
-            const rd = r.getData();
-            if (rd && String(rd.numero_facture || '') === String(numero)) {
-              backups.push({ id: rd.id || null, rowRef: r, oldValue: rd.piece_justificative });
-            }
-          });
-        } catch(e) { console.warn('collect backups failed', e); }
-
-        // optimistic apply
-        try {
-          if (backups.length) {
-            backups.forEach(b => { try { b.rowRef.update({ piece_justificative: newVal }); } catch(e){} } );
-          } else {
-            try { targetRow.update({ piece_justificative: newVal }); } catch(e){ console.warn(e); }
-          }
-        } catch(e){ console.warn('optimistic apply failed', e); }
-
-        if (isTemp) return { ok: true, message: 'temp row updated client-side only' };
-
-        // send to server (tries updateField then fallback)
-        try {
-          const resp = await window.sendUpdateToServerWithFallback(data.id, 'piece_justificative', newVal, numero);
-          if (resp) {
-            let returned = null;
-            if (Array.isArray(resp) && resp.length) returned = resp[0];
-            else if (resp.data && Array.isArray(resp.data) && resp.data.length) returned = resp.data[0];
-            else if (resp.ligne) returned = resp.ligne;
-            else returned = resp;
-
-            if (returned && typeof returned === 'object') {
-              try { targetRow.update(returned); } catch(e){ console.warn('update targetRow with server data failed', e); }
-
-              const serverPiece = returned.piece_justificative !== undefined ? returned.piece_justificative : newVal;
-              (tableRef || window.tableAch).getRows().forEach(r => {
-                const rd = r.getData();
-                if (rd && String(rd.numero_facture || '') === String(numero)) {
-                  const b = backups.find(x => (x.id && x.id === rd.id) || (x.rowRef && x.rowRef === r));
-                  const changedAfterSend = b ? (String(rd.piece_justificative || '') !== String(b.oldValue || '')) : false;
-                  if (!changedAfterSend) {
-                    try { r.update({ piece_justificative: serverPiece }); } catch(e){ console.warn('propagate after server failed', e); }
-                  }
-                }
-              });
-            }
-          }
-          return { ok: true };
-        } catch (err) {
-          try { window.rollbackPieceBackups(backups); } catch(e){ console.warn('rollback failed', e); }
-          if (window.Swal) Swal.fire({ icon:'error', title:'Erreur', text: String(err.message || err) });
-          else console.error(err);
-          throw err;
-        }
-      };
-    } // end helpers init
-
-    /* ---------- attacher gestion de l'input (blur / Enter) ---------- */
-    try {
-      const inputEl = (() => {
-        // priorité: si click direct sur input, target peut être it; sinon find .selected-file-input in cell element
-        if (target && target.classList && target.classList.contains('selected-file-input')) return target;
-        const wrapper = cell.getElement ? cell.getElement() : null;
-        return wrapper ? wrapper.querySelector('.selected-file-input') : null;
-      })();
-
-      if (inputEl && !inputEl._attached) {
-        inputEl._attached = true;
-
-        inputEl.addEventListener('blur', async () => {
-          const val = inputEl.value?.trim() || '';
-          try {
-            await window.updatePieceForRowVente(row, table || window.tableAch, val);
-          } catch(e){ /* already handled */ }
-        });
-
-        inputEl.addEventListener('keydown', async function(ev){
-          if (ev.key === 'Enter') {
-            ev.preventDefault();
-            const val = inputEl.value?.trim() || '';
-            try {
-              await window.updatePieceForRowVente(row, table || window.tableAch, val);
-            } catch(e){ /* handled */ }
-
-            // selection + focus upload or open modal
-            try { if (!(!d.date && !d.date_livr && !d.compte && !d.libelle && !d.debit && !d.credit)) row.select(); } catch(_) {}
-            const uploadBtn = cell.getElement ? cell.getElement().querySelector('.upload-icon') : null;
-            if (uploadBtn) { uploadBtn.focus(); return; }
-            window.currentPieceCellvente = cell;
-            if (typeof loadAndShowModal === 'function') loadAndShowModal('files_vente_Modal', typeof urlVenteList !== 'undefined' ? urlVenteList : null, undefined);
-          }
-        }, true);
-      }
-    } catch(e){ console.warn('attach input handlers vente', e); }
-
-    /* ---------- VIEW handling (open modal / open file) ---------- */
-    if (target && (target.classList && target.classList.contains('view-icon-vente') || (target.tagName && target.tagName.toLowerCase()==='i' && target.classList.contains('fa-eye')))) {
-      (async function(){
-        try {
-          if (typeof openFileModalByField === 'function') {
-            await openFileModalByField(row);
-            return;
-          }
-          let fileId = d.file_id || null;
-          if (!fileId && d.piece_justificative) {
-            const all = (table && typeof table.getData === 'function') ? table.getData() : (table && typeof table.getRows === 'function' ? table.getRows().map(r=>r.getData()) : []);
-            const same = all.find(r => r && r.piece_justificative === d.piece_justificative && (r.file_id || r.file_id === 0));
-            if (same && same.file_id) fileId = same.file_id;
-          }
-          if (fileId && typeof openFileModalByFileId === 'function') { openFileModalByFileId(fileId); return; }
-          const path = d.file_url || d.filepath || d.path || null;
-          if (path) { window.open(path, '_blank'); return; }
-          try { if (typeof ecouterEntrerVentes === 'function') ecouterEntrerVentes(table); } catch(e){ console.warn(e); }
-        } catch(err){ console.error('view vente error', err); }
-      })();
-      return;
-    }
-
-
-    /* ---------- UPLOAD handling (marquage des lignes en attente et ouverture modal) ---------- */
-    if (target && (target.classList && target.classList.contains('upload-icon') || (target.tagName && target.tagName.toLowerCase()==='i' && target.classList.contains('fa-paperclip')))) {
-      try {
-        window.currentPieceCellvente = cell;
-        $('#confirmBtnVente').data && $('#confirmBtnVente').data('cell', cell);
-        const selectedRows = (table && typeof table.getSelectedRows === 'function') ? table.getSelectedRows() : [];
-        const rowsToMark = (selectedRows && selectedRows.length > 0) ? selectedRows : [row];
-
-        window.rowsWaitingForFileVente = window.rowsWaitingForFileVente || [];
-        rowsToMark.forEach(r => {
-          try {
-            const rd = r.getData();
-            if (rd && rd.file_id) return;
-            const already = window.rowsWaitingForFileVente.some(x => { try { return x.getIndex && r.getIndex && x.getIndex() === r.getIndex(); } catch(e){ return false; } });
-            if (!already) {
-              window.rowsWaitingForFileVente.push(r);
-              try { r.getElement && r.getElement().classList.add('waiting-file'); } catch(e){}
-            }
-          } catch(err){ console.warn(err); }
-        });
-
-        if (typeof loadAndShowModal === 'function') {
-          loadAndShowModal('files_vente_Modal', typeof urlVenteList !== 'undefined' ? urlVenteList : null, undefined);
-        } else {
-          const m = document.getElementById('files_vente_Modal');
-          if (m) { m.style.display = 'block'; m.classList.add('open'); }
-        }
-        if (row && typeof row.select === 'function') row.select();
-      } catch(err){ console.error('upload vente error', err); }
-    }
-  }
-},
-
-{
-  title: "<input type='checkbox' id='master-select' title='Tout sélectionner / Tout désélectionner'>",
-  field: "selected",
-  width: 70,
-  hozAlign: "center",
-  headerSort: false,
-  headerFilter: false,
-  formatter: function (cell) {
-    const row = cell.getRow();
-    const data = row.getData();
-    const checked = row.isSelected() ? "checked" : "";
-    let html = `<input type='checkbox' class='select-row' ${checked}>`;
-
-    // croix rouge si ligne de saisie (tous champs principaux vides)
-    const isSaisie = !data.date && !data.date_livr && !data.compte && !data.libelle && !data.debit && !data.credit;
-    if (isSaisie) {
-      html += ` <span class='clear-row-btn' style='color:red;cursor:pointer;font-size:18px;' title='Vider la ligne'>&times;</span>`;
-    }
-
-    return html;
+    var filePath = cell.getRow().getData().file?.path;
+    currentPieceCellBanque = cell;
+    if (filePath) viewFile(filePath);
   },
-  cellClick: function (e, cell) {
-    const row = cell.getRow();
-    const table = cell.getTable && cell.getTable();
+                    },
+                    { title: "<input type='checkbox' id='master-select' title='Tout sélectionner / Tout désélectionner'>",
+                      field: "selected",
+                      width: 70,
+                      hozAlign: "center",
+                      headerSort: false,
+                      headerFilter: false,
+                      formatter: function (cell) {
+                        const row = cell.getRow();
+                        const data = row.getData();
+                        const checked = row.isSelected() ? "checked" : "";
+                        let html = `<input type='checkbox' class='select-row' ${checked}>`;
 
-    // Helper : mettre à jour état master checkbox
-    const updateMasterCheckbox = () => {
-      try {
-        const allRows = table.getRows();
-        const selRows = table.getSelectedRows();
-        const master  = document.getElementById("master-select");
-        if (!master) return;
-        master.checked = allRows.length > 0 && selRows.length === allRows.length;
-      } catch (err) { /* silent */ }
-    };
+                        // croix rouge si ligne de saisie (tous champs principaux vides)
+                        const isSaisie = !data.date && !data.date_livr && !data.compte && !data.libelle && !data.debit && !data.credit;
+                        if (isSaisie) {
+                          html += ` <span class='clear-row-btn' style='color:red;cursor:pointer;font-size:18px;' title='Vider la ligne'>&times;</span>`;
+                        }
 
-    // --- clic sur la croix => vider la ligne ---
-    if (e.target.classList.contains('clear-row-btn')) {
-      const emptyData = {};
-      Object.keys(row.getData()).forEach(function (key) {
-        if (['id','selected'].includes(key)) return;
-        emptyData[key] = '';
-      });
-      row.update(emptyData);
-      try { row.deselect && row.deselect(); } catch(e){}
-      // mise à jour master checkbox
-      updateMasterCheckbox();
-      return;
-    }
+                        return html;
+                      },
+                      cellClick: function (e, cell) {
+                        const row = cell.getRow();
+                        const table = cell.getTable && cell.getTable();
 
-    // --- clic sur la case à cocher => toggle Tabulator sélection ---
-    if (e.target.classList.contains('select-row')) {
-      if (row.isSelected()) {
-        row.deselect();
-      } else {
-        row.select();
-      }
-      // mise à jour master checkbox
-      updateMasterCheckbox();
-      return;
-    }
+                        // Helper : mettre à jour état master checkbox
+                        const updateMasterCheckbox = () => {
+                          try {
+                            const allRows = table.getRows();
+                            const selRows = table.getSelectedRows();
+                            const master  = document.getElementById("master-select");
+                            if (!master) return;
+                            master.checked = allRows.length > 0 && selRows.length === allRows.length;
+                          } catch (err) { /* silent */ }
+                        };
 
-    // --- clic ailleurs dans la cellule => toggleSelect aussi ---
-    // (pour conserver le comportement précédent)
-    try {
-      row.toggleSelect();
-      updateMasterCheckbox();
-    } catch (err) {
-      console.warn('toggleSelect error', err);
-    }
+                        // --- clic sur la croix => vider la ligne ---
+                        if (e.target.classList.contains('clear-row-btn')) {
+                          const emptyData = {};
+                          Object.keys(row.getData()).forEach(function (key) {
+                            if (['id','selected'].includes(key)) return;
+                            emptyData[key] = '';
+                          });
+                          row.update(emptyData);
+                          try { row.deselect && row.deselect(); } catch(e){}
+                          // mise à jour master checkbox
+                          updateMasterCheckbox();
+                          return;
+                        }
 
-    // --- ATTACH : master checkbox behavior (only once) ---
-    try {
-      if (!document._masterSelectAttached) {
-        document._masterSelectAttached = true;
-        const master = document.getElementById("master-select");
-        if (master) {
-          master.addEventListener('change', function () {
-            try {
-              const rows = table.getRows();
-              if (master.checked) {
-                rows.forEach(r => r.select && r.select());
-              } else {
-                rows.forEach(r => r.deselect && r.deselect());
-              }
-              // NE PAS appeler enregistrerLignesVentes() ici (tu as demandé de ne pas sauver sur sélection)
-            } catch (err) { console.warn('master-select handler', err); }
-          });
-        } else {
-          // Si élément pas encore dans DOM (par ex rendu tardif), tenter une attache périodique courte
-          let tries = 0;
-          const tId = setInterval(() => {
-            tries++;
-            const m = document.getElementById("master-select");
-            if (m) {
-              clearInterval(tId);
-              m.addEventListener('change', function () {
-                try {
-                  const rows = table.getRows();
-                  if (m.checked) rows.forEach(r => r.select && r.select());
-                  else rows.forEach(r => r.deselect && r.deselect());
-                } catch (err) {}
-              });
-            } else if (tries > 20) clearInterval(tId);
-          }, 100);
-        }
-      }
-    } catch (err) { console.warn('attach master-select', err); }
+                        // --- clic sur la case à cocher => toggle Tabulator sélection ---
+                        if (e.target.classList.contains('select-row')) {
+                          if (row.isSelected()) {
+                            row.deselect();
+                          } else {
+                            row.select();
+                          }
+                          // mise à jour master checkbox
+                          updateMasterCheckbox();
+                          return;
+                        }
 
-    // --- ATTACH : écoute Enter sur la table (one-time) ---
-    try {
-      const tblEl = (table && typeof table.getElement === 'function') ? table.getElement() : null;
-      const targetEl = tblEl || document;
-      if (targetEl && !targetEl._enterListenerVentesAttached) {
-        targetEl._enterListenerVentesAttached = true;
-        targetEl.addEventListener('keydown', function (evt) {
-          // Ignore si focus dans un input/textarea/select (sauf si c'est la colonne où on veut intercepter)
-          const tag = (evt.target && evt.target.tagName) ? evt.target.tagName.toLowerCase() : null;
-          if (tag === 'input' || tag === 'textarea' || tag === 'select' || evt.target && evt.target.isContentEditable) {
-            // si tu veux que Enter depuis la pj-input déclenche l'enregistrement, adapte ici
-            return;
-          }
-          if (evt.key === 'Enter') {
-            try {
-              // appel ecouterEntrerVentes si défini (peut faire traitements avant save)
-              if (typeof ecouterEntrerVentes === 'function') {
-                try { ecouterEntrerVentes(table); } catch(e){ console.warn('ecouterEntrerVentes error', e); }
-              }
-              // appel enregistrement
-              if (typeof enregistrerLignesVentes === 'function') {
-                try { enregistrerLignesVentes(); } catch(e){ console.warn('enregistrerLignesVentes error', e); }
-              }
-            } catch (err) {
-              console.error('Enter handler ventes error', err);
-            }
-          }
-        }, true); // capture pour attraper Enter tôt
-      }
-    } catch (err) { console.warn('attach Enter handler ventes', err); }
+                        // --- clic ailleurs dans la cellule => toggleSelect aussi ---
+                        // (pour conserver le comportement précédent)
+                        try {
+                          row.toggleSelect();
+                          updateMasterCheckbox();
+                        } catch (err) {
+                          console.warn('toggleSelect error', err);
+                        }
 
-  } // fin cellClick
-},
+                        // --- ATTACH : master checkbox behavior (only once) ---
+                        try {
+                          if (!document._masterSelectAttached) {
+                            document._masterSelectAttached = true;
+                            const master = document.getElementById("master-select");
+                            if (master) {
+                              master.addEventListener('change', function () {
+                                try {
+                                  const rows = table.getRows();
+                                  if (master.checked) {
+                                    rows.forEach(r => r.select && r.select());
+                                  } else {
+                                    rows.forEach(r => r.deselect && r.deselect());
+                                  }
+                                  // NE PAS appeler enregistrerLignesVentes() ici (tu as demandé de ne pas sauver sur sélection)
+                                } catch (err) { console.warn('master-select handler', err); }
+                              });
+                            } else {
+                              // Si élément pas encore dans DOM (par ex rendu tardif), tenter une attache périodique courte
+                              let tries = 0;
+                              const tId = setInterval(() => {
+                                tries++;
+                                const m = document.getElementById("master-select");
+                                if (m) {
+                                  clearInterval(tId);
+                                  m.addEventListener('change', function () {
+                                    try {
+                                      const rows = table.getRows();
+                                      if (m.checked) rows.forEach(r => r.select && r.select());
+                                      else rows.forEach(r => r.deselect && r.deselect());
+                                    } catch (err) {}
+                                  });
+                                } else if (tries > 20) clearInterval(tId);
+                              }, 100);
+                            }
+                          }
+                        } catch (err) { console.warn('attach master-select', err); }
 
+                        // --- ATTACH : écoute Enter sur la table (one-time) ---
+                        try {
+                          const tblEl = (table && typeof table.getElement === 'function') ? table.getElement() : null;
+                          const targetEl = tblEl || document;
+                          if (targetEl && !targetEl._enterListenerVentesAttached) {
+                            targetEl._enterListenerVentesAttached = true;
+                            targetEl.addEventListener('keydown', function (evt) {
+                              // Ignore si focus dans un input/textarea/select (sauf si c'est la colonne où on veut intercepter)
+                              const tag = (evt.target && evt.target.tagName) ? evt.target.tagName.toLowerCase() : null;
+                              if (tag === 'input' || tag === 'textarea' || tag === 'select' || evt.target && evt.target.isContentEditable) {
+                                // si tu veux que Enter depuis la pj-input déclenche l'enregistrement, adapte ici
+                                return;
+                              }
+                              if (evt.key === 'Enter') {
+                                try {
+                                  // appel ecouterEntrerVentes si défini (peut faire traitements avant save)
+                                  if (typeof ecouterEntrerVentes === 'function') {
+                                    try { ecouterEntrerVentes(table); } catch(e){ console.warn('ecouterEntrerVentes error', e); }
+                                  }
+                                  // appel enregistrement
+                                  if (typeof enregistrerLignesVentes === 'function') {
+                                    try { enregistrerLignesVentes(); } catch(e){ console.warn('enregistrerLignesVentes error', e); }
+                                  }
+                                } catch (err) {
+                                  console.error('Enter handler ventes error', err);
+                                }
+                              }
+                            }, true); // capture pour attraper Enter tôt
+                          }
+                        } catch (err) { console.warn('attach Enter handler ventes', err); }
 
-
-
-{ title: "Code_journal", field: "type_Journal", visible: false },
-{ title: "categorie", field: "categorie", visible: false },
+                      } // fin cellClick
+                    },
+                    { title: "Code_journal", field: "type_Journal", visible: false },
+                    { title: "categorie", field: "categorie", visible: false },
 
         ],
         rowFormatter: function(row) {
@@ -6643,7 +6612,73 @@ editor: function(cell, onRendered, success, cancel, editorParams) {
 
 
 });
+ tableVentes.on("cellEdited", async function(cell) {
+    const row = cell.getRow();
+    const rowData = row.getData();
+    const field = cell.getField();
 
+    
+    if (!rowData.id) {
+        console.log("⚠️ Ligne sans id ignorée :", rowData);
+        return;
+    }
+
+    console.log("🔄 Cellule modifiée, ligne :", rowData);
+
+    try {
+       
+        const result = await Swal.fire({
+            title: "Êtes-vous sûr ?",
+            text: `Voulez-vous modifier le champ : "${field}" ?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Oui",
+            cancelButtonText: "Non",
+            allowOutsideClick: false,
+            allowEscapeKey: false
+        });
+
+        if (!result.isConfirmed) {
+            console.log("❌ Modification annulée par l'utilisateur.");
+            
+            row.update({ [field]: cell.getOldValue() });
+            return;
+        }
+
+        
+        const response = await fetch("/achats/update-row", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify(rowData)
+        });
+
+        const resp = await response.json();
+        console.log("Réponse du serveur :", resp);
+
+        if (resp.id) {
+            row.update({ id: resp.id });
+        }
+
+        // await Swal.fire({
+        //     icon: "success",
+        //     title: "Modification enregistrée",
+        //     text: `Le champ "${field}" a été mis à jour avec succès.`
+            
+        // });
+    } catch (err) {
+        console.error("Erreur update ligne :", err);
+        await Swal.fire({
+            icon: "error",
+            title: "Erreur",
+            text: "Impossible d'enregistrer la modification."
+        });
+    }
+            updateTabulatorDataAchats();
+
+});
 ////////////Mise a jour ventes////////////////////////:
 
 /* ===== Navigation Enter entre filtres (zone #ventes) et intégration avec tableVentes =====
@@ -6947,8 +6982,10 @@ document.addEventListener('change', function(e){
 });
 
 document.querySelector("#journal-ventes").addEventListener("change", function (e) {
+    // console.log(e.target("#journal-ventes").value);
     const selectedCode = e.target.value;
-
+    const rubriquetva = e.target.options[e.target.selectedIndex].getAttribute('data-rubrique_tva') || '';
+    console.log("Journal ventes changé :", rubriquetva);
     let ligneSelectionnee = tableVentes.getSelectedRows()[0];
     if (ligneSelectionnee) {
         ligneSelectionnee.update({ type_Journal: selectedCode });
@@ -7189,152 +7226,152 @@ async function recupererDetailsTVA(rubriqueTva, compte, rowComponentOrElement = 
 
 
 
-async function calculerDebit(rowData, useAPIMethod = false) {
-  console.groupCollapsed("📌 calculerDebit début", {
-    numero_facture: rowData.numero_facture,
-    compte: rowData.compte,
-    rubrique_tva: rowData.rubrique_tva,
-  });
-  console.log("▶ rowData complet :", rowData);
+// async function calculerDebit(rowData, useAPIMethod = false) {
+//   console.groupCollapsed("📌 calculerDebit début", {
+//     numero_facture: rowData.numero_facture,
+//     compte: rowData.compte,
+//     rubrique_tva: rowData.rubrique_tva,
+//   });
+//   console.log("▶ rowData complet :", rowData);
 
-  // 1) Lecture du crédit TTC
-  const credit = parseFloat(rowData.credit);
-  if (!Number.isFinite(credit)) {
-    console.warn("❌ Crédit invalide :", rowData.credit);
-    console.groupEnd();
-    return;
-  }
-  console.log("🔢 Crédit =", credit);
+//   // 1) Lecture du crédit TTC
+//   const credit = parseFloat(rowData.credit);
+//   if (!Number.isFinite(credit)) {
+//     console.warn("❌ Crédit invalide :", rowData.credit);
+//     console.groupEnd();
+//     return;
+//   }
+//   console.log("🔢 Crédit =", credit);
 
-  // 2) Si prorata, récupérer la valeur depuis le back
-  const isProrata = (rowData.prorat_de_deduction || "").toString().toLowerCase() === "oui";
-  let prorata = 0;
-  if (isProrata) {
-    try {
-      const prResp = await fetch("/get-session-prorata", { credentials: 'same-origin' });
-      const pr = await prResp.json();
-      prorata = parseFloat(pr.prorata_de_deduction) || 0;
-      console.log("ℹ️ Prorata récupéré =", prorata, "%");
-    } catch (e) {
-      console.error("❌ Erreur récupération prorata :", e);
-      prorata = 0;
-    }
-  }
+//   // 2) Si prorata, récupérer la valeur depuis le back
+//   const isProrata = (rowData.prorat_de_deduction || "").toString().toLowerCase() === "oui";
+//   let prorata = 0;
+//   if (isProrata) {
+//     try {
+//       const prResp = await fetch("/get-session-prorata", { credentials: 'same-origin' });
+//       const pr = await prResp.json();
+//       prorata = parseFloat(pr.prorata_de_deduction) || 0;
+//       console.log("ℹ️ Prorata récupéré =", prorata, "%");
+//     } catch (e) {
+//       console.error("❌ Erreur récupération prorata :", e);
+//       prorata = 0;
+//     }
+//   }
 
-  // 3) On découpe la chaîne rubrique_tva en sous-codes (au cas où plusieurs)
-  const items = (rowData.rubrique_tva || "")
-    .split(/[;,\/]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  console.log("🔍 Rubriques extraites :", items);
+//   // 3) On découpe la chaîne rubrique_tva en sous-codes (au cas où plusieurs)
+//   const items = (rowData.rubrique_tva || "")
+//     .split(/[;,\/]/)
+//     .map((s) => s.trim())
+//     .filter(Boolean);
+//   console.log("🔍 Rubriques extraites :", items);
 
-  // Helper arrondi (2 décimales)
-  const round2 = (v) => Math.round((Number(v) + Number.EPSILON) * 100) / 100;
+//   // Helper arrondi (2 décimales)
+//   const round2 = (v) => Math.round((Number(v) + Number.EPSILON) * 100) / 100;
 
-  // ── Cas 1 seule rubrique ─────────────────────────────────────────────
-  if (items.length === 1) {
-    const code = items[0];
-    console.log("➡️ Cas simple pour rubrique :", code);
+//   // ── Cas 1 seule rubrique ─────────────────────────────────────────────
+//   if (items.length === 1) {
+//     const code = items[0];
+//     console.log("➡️ Cas simple pour rubrique :", code);
 
-    const { taux_tva, compte_tva, contre_partie } = await recupererDetailsTVA(code, rowData.compte);
-    console.log("📊 Détails TVA récupérés :", { taux_tva, compte_tva, contre_partie });
+//     const { taux_tva, compte_tva, contre_partie } = await recupererDetailsTVA(code, rowData.compte);
+//     console.log("📊 Détails TVA récupérés :", { taux_tva, compte_tva, contre_partie });
 
-    // Calcul base HT & TVA
-    const tauxNum = parseFloat(taux_tva) || 0;
-    const baseHT = tauxNum === 0 ? credit : credit / (1 + tauxNum / 100);
-    const montantTVA_total = round2(baseHT * (tauxNum / 100));
-    // si prorata => TVA déductible
-    const montantTVA_deductible = isProrata ? round2(montantTVA_total * (prorata / 100)) : montantTVA_total;
+//     // Calcul base HT & TVA
+//     const tauxNum = parseFloat(taux_tva) || 0;
+//     const baseHT = tauxNum === 0 ? credit : credit / (1 + tauxNum / 100);
+//     const montantTVA_total = round2(baseHT * (tauxNum / 100));
+//     // si prorata => TVA déductible
+//     const montantTVA_deductible = isProrata ? round2(montantTVA_total * (prorata / 100)) : montantTVA_total;
 
-    // ligne TVA (même si compte_tva == null, on génère la ligne avec compte vide)
-    rowData.lignesTVA = [
-      {
-        compte_tva: compte_tva || "",
-        taux_tva: tauxNum,
-        debit_tva: montantTVA_deductible,
-        montant_tva_total: montantTVA_total, // info utile si tu veux tracer la TVA non-déductible
-      },
-    ];
+//     // ligne TVA (même si compte_tva == null, on génère la ligne avec compte vide)
+//     rowData.lignesTVA = [
+//       {
+//         compte_tva: compte_tva || "",
+//         taux_tva: tauxNum,
+//         debit_tva: montantTVA_deductible,
+//         montant_tva_total: montantTVA_total, // info utile si tu veux tracer la TVA non-déductible
+//       },
+//     ];
 
-    // Ligne charge HT (débit = TTC - TVA déductible)
-    rowData.debit_contrepartie = round2(credit - montantTVA_deductible);
-    rowData.compte_debit_charge = contre_partie || null;
+//     // Ligne charge HT (débit = TTC - TVA déductible)
+//     rowData.debit_contrepartie = round2(credit - montantTVA_deductible);
+//     rowData.compte_debit_charge = contre_partie || null;
 
-    console.log("✅ Ligne chargeHT : compte =", rowData.compte_debit_charge, "débit =", rowData.debit_contrepartie);
-    console.log("✅ Ligne TVA      : compte =", compte_tva || "(vide)", "debit_tva =", montantTVA_deductible);
-    console.groupEnd();
-    return;
-  }
+//     console.log("✅ Ligne chargeHT : compte =", rowData.compte_debit_charge, "débit =", rowData.debit_contrepartie);
+//     console.log("✅ Ligne TVA      : compte =", compte_tva || "(vide)", "debit_tva =", montantTVA_deductible);
+//     console.groupEnd();
+//     return;
+//   }
 
-  // ── Cas plusieurs rubriques ───────────────────────────────────────────
-  console.log("➡️ Cas multiple pour rubriques :", items);
+//   // ── Cas plusieurs rubriques ───────────────────────────────────────────
+//   console.log("➡️ Cas multiple pour rubriques :", items);
 
-  // Si tu as une répartition définie (rowData.repartition = [0.6,0.4] ou montants),
-  // on l'utilisera. Sinon on répartit TTC également entre les rubriques.
-  let repartition = null;
-  if (Array.isArray(rowData.repartition) && rowData.repartition.length === items.length) {
-    // si totaux relatifs (somme != 1) on normalise pour obtenir proportions
-    const sumParts = rowData.repartition.reduce((s, v) => s + Number(v || 0), 0) || 0;
-    if (sumParts > 0) {
-      repartition = rowData.repartition.map(v => Number(v || 0) / sumParts);
-    }
-  }
-  if (!repartition) {
-    repartition = new Array(items.length).fill(1 / items.length); // distribution égale
-  }
-  console.log("ℹ️ Répartition utilisée :", repartition);
+//   // Si tu as une répartition définie (rowData.repartition = [0.6,0.4] ou montants),
+//   // on l'utilisera. Sinon on répartit TTC également entre les rubriques.
+//   let repartition = null;
+//   if (Array.isArray(rowData.repartition) && rowData.repartition.length === items.length) {
+//     // si totaux relatifs (somme != 1) on normalise pour obtenir proportions
+//     const sumParts = rowData.repartition.reduce((s, v) => s + Number(v || 0), 0) || 0;
+//     if (sumParts > 0) {
+//       repartition = rowData.repartition.map(v => Number(v || 0) / sumParts);
+//     }
+//   }
+//   if (!repartition) {
+//     repartition = new Array(items.length).fill(1 / items.length); // distribution égale
+//   }
+//   console.log("ℹ️ Répartition utilisée :", repartition);
 
-  const lignesTVA = [];
-  let sumDebitTVA = 0;
-  // stocker contre_partie prioritaire si trouvée
-  let firstContrePartie = null;
+//   const lignesTVA = [];
+//   let sumDebitTVA = 0;
+//   // stocker contre_partie prioritaire si trouvée
+//   let firstContrePartie = null;
 
-  for (let i = 0; i < items.length; i++) {
-    const rub = items[i];
-    const share = repartition[i];
-    // Montant TTC alloué à cette rubrique
-    const ttcShare = round2(credit * share);
-    console.log(`  • Rubrique ${rub} => TTC part = ${ttcShare} (share=${share})`);
+//   for (let i = 0; i < items.length; i++) {
+//     const rub = items[i];
+//     const share = repartition[i];
+//     // Montant TTC alloué à cette rubrique
+//     const ttcShare = round2(credit * share);
+//     console.log(`  • Rubrique ${rub} => TTC part = ${ttcShare} (share=${share})`);
 
-    const { taux_tva, compte_tva, contre_partie } = await recupererDetailsTVA(rub, rowData.compte);
-    const tauxNum = parseFloat(taux_tva) || 0;
-    console.log("    Détails reçus :", { taux_tva: tauxNum, compte_tva, contre_partie });
+//     const { taux_tva, compte_tva, contre_partie } = await recupererDetailsTVA(rub, rowData.compte);
+//     const tauxNum = parseFloat(taux_tva) || 0;
+//     console.log("    Détails reçus :", { taux_tva: tauxNum, compte_tva, contre_partie });
 
-    // garder première contre_partie non vide comme compte d'achat (si existant)
-    if (!firstContrePartie && contre_partie) firstContrePartie = contre_partie;
+//     // garder première contre_partie non vide comme compte d'achat (si existant)
+//     if (!firstContrePartie && contre_partie) firstContrePartie = contre_partie;
 
-    // calcul baseHT et TVA pour cette part
-    const baseHT = tauxNum === 0 ? ttcShare : ttcShare / (1 + tauxNum / 100);
-    const montantTVA_total = round2(baseHT * (tauxNum / 100));
-    const montantTVA_deductible = isProrata ? round2(montantTVA_total * (prorata / 100)) : montantTVA_total;
+//     // calcul baseHT et TVA pour cette part
+//     const baseHT = tauxNum === 0 ? ttcShare : ttcShare / (1 + tauxNum / 100);
+//     const montantTVA_total = round2(baseHT * (tauxNum / 100));
+//     const montantTVA_deductible = isProrata ? round2(montantTVA_total * (prorata / 100)) : montantTVA_total;
 
-    lignesTVA.push({
-      compte_tva: compte_tva || "",
-      taux_tva: tauxNum,
-      debit_tva: montantTVA_deductible,
-      montant_ttc_part: ttcShare,
-      montant_tva_total: montantTVA_total,
-    });
+//     lignesTVA.push({
+//       compte_tva: compte_tva || "",
+//       taux_tva: tauxNum,
+//       debit_tva: montantTVA_deductible,
+//       montant_ttc_part: ttcShare,
+//       montant_tva_total: montantTVA_total,
+//     });
 
-    sumDebitTVA = round2(sumDebitTVA + montantTVA_deductible);
-  }
+//     sumDebitTVA = round2(sumDebitTVA + montantTVA_deductible);
+//   }
 
-  // Calcul du debit_contrepartie (HT total) = TTC total - somme TVA déductible
-  let debitContre = round2(credit - sumDebitTVA);
+//   // Calcul du debit_contrepartie (HT total) = TTC total - somme TVA déductible
+//   let debitContre = round2(credit - sumDebitTVA);
 
-  // Correction d'arrondi : s'il y a un écart minime, on l'applique sur la première ligne HT (non TVA)
-  // Ici on ne manipule pas explicitement les lignes HT dans rowData (car ajouterLigne() créera HT),
-  // mais on met à jour debit_contrepartie pour être cohérent.
-  // Si tu veux, on peut ajuster également la première ligneTVA ou créer des HT détaillées.
-  // Enregistrement des résultats
-  rowData.lignesTVA = lignesTVA;
-  rowData.debit_contrepartie = debitContre;
-  rowData.compte_debit_charge = firstContrePartie || null;
+//   // Correction d'arrondi : s'il y a un écart minime, on l'applique sur la première ligne HT (non TVA)
+//   // Ici on ne manipule pas explicitement les lignes HT dans rowData (car ajouterLigne() créera HT),
+//   // mais on met à jour debit_contrepartie pour être cohérent.
+//   // Si tu veux, on peut ajuster également la première ligneTVA ou créer des HT détaillées.
+//   // Enregistrement des résultats
+//   rowData.lignesTVA = lignesTVA;
+//   rowData.debit_contrepartie = debitContre;
+//   rowData.compte_debit_charge = firstContrePartie || null;
 
-  console.log("🔢 Somme TVA (déductible) =", sumDebitTVA.toFixed(2));
-  console.log("✅ Ligne chargeHT :", rowData.compte_debit_charge || "(vide)", "débit =", rowData.debit_contrepartie);
-  console.groupEnd();
-}
+//   console.log("🔢 Somme TVA (déductible) =", sumDebitTVA.toFixed(2));
+//   console.log("✅ Ligne chargeHT :", rowData.compte_debit_charge || "(vide)", "débit =", rowData.debit_contrepartie);
+//   console.groupEnd();
+// }
 
 
 
@@ -8449,7 +8486,7 @@ async function ajouterLignePreRemplieVentes(idCounter, ligneActive, codeJournal,
             const typeLigne = (i === 0) ? "ligne1" : "ligne2";
             console.log(`Calcul du crédit pour ${typeLigne} (Ventes):`, lignes[i]);
             // Ici calculerCredit regardera rubrique_tva_taux / compte_tva injectés ci-dessus
-            await calculerCredit(lignes[i], typeLigne, netAmount);
+            // await calculerCredit(lignes[i], typeLigne, netAmount);
             console.log(`Crédit calculé pour ${typeLigne} (Ventes):`, lignes[i].credit);
         }
     } else {
@@ -8462,206 +8499,206 @@ async function ajouterLignePreRemplieVentes(idCounter, ligneActive, codeJournal,
 
 // --- calculerCredit : préfère rubrique_tva_taux stocké si présent ---
 // --- calculerCredit : utilise rubrique_tva_taux et compte_tva si présents ---
-async function calculerCredit(rowData, typeLigne, debit) {
-    // priorise un taux explicite stocké (ex: renseigné par l'API depuis l'éditeur)
-    let tauxTVA = null;
-    if (typeof rowData.rubrique_tva_taux !== 'undefined' && rowData.rubrique_tva_taux !== null && rowData.rubrique_tva_taux !== '') {
-        tauxTVA = parseFloat(rowData.rubrique_tva_taux);
-        if (tauxTVA > 1) tauxTVA = tauxTVA / 100;
-    } else if (rowData.taux) {
-        tauxTVA = parseFloat(rowData.taux);
-        if (tauxTVA > 1) tauxTVA = tauxTVA / 100;
-    } else if (rowData.rubrique_tva) {
-        const m = String(rowData.rubrique_tva).match(/\(([\d\.]+)%\)/);
-        if (m && m[1]) tauxTVA = parseFloat(m[1]) / 100;
-        else {
-            const m2 = String(rowData.rubrique_tva).match(/([\d\.]+)/);
-            if (m2 && m2[1]) {
-                let v = parseFloat(m2[1]);
-                if (v > 1) v = v / 100;
-                tauxTVA = v;
-            }
-        }
-    }
+// async function calculerCredit(rowData, typeLigne, debit) {
+//     // priorise un taux explicite stocké (ex: renseigné par l'API depuis l'éditeur)
+//     let tauxTVA = null;
+//     if (typeof rowData.rubrique_tva_taux !== 'undefined' && rowData.rubrique_tva_taux !== null && rowData.rubrique_tva_taux !== '') {
+//         tauxTVA = parseFloat(rowData.rubrique_tva_taux);
+//         if (tauxTVA > 1) tauxTVA = tauxTVA / 100;
+//     } else if (rowData.taux) {
+//         tauxTVA = parseFloat(rowData.taux);
+//         if (tauxTVA > 1) tauxTVA = tauxTVA / 100;
+//     } else if (rowData.rubrique_tva) {
+//         const m = String(rowData.rubrique_tva).match(/\(([\d\.]+)%\)/);
+//         if (m && m[1]) tauxTVA = parseFloat(m[1]) / 100;
+//         else {
+//             const m2 = String(rowData.rubrique_tva).match(/([\d\.]+)/);
+//             if (m2 && m2[1]) {
+//                 let v = parseFloat(m2[1]);
+//                 if (v > 1) v = v / 100;
+//                 tauxTVA = v;
+//             }
+//         }
+//     }
 
-    if (tauxTVA === null || isNaN(tauxTVA)) tauxTVA = 0;
+//     if (tauxTVA === null || isNaN(tauxTVA)) tauxTVA = 0;
 
-    console.log(`Calcul du crédit pour ${typeLigne}: Débit = ${debit}, Taux TVA = ${tauxTVA}`);
+//     console.log(`Calcul du crédit pour ${typeLigne}: Débit = ${debit}, Taux TVA = ${tauxTVA}`);
 
-    if (isNaN(debit) || isNaN(tauxTVA)) {
-        console.error("Débit ou Taux TVA invalides !");
-        rowData.credit = 0;
-        if (typeof calculerSoldeCumuleVentes === 'function') calculerSoldeCumuleVentes();
-        return;
-    }
+//     if (isNaN(debit) || isNaN(tauxTVA)) {
+//         console.error("Débit ou Taux TVA invalides !");
+//         rowData.credit = 0;
+//         if (typeof calculerSoldeCumuleVentes === 'function') calculerSoldeCumuleVentes();
+//         return;
+//     }
 
-    rowData.debit = 0;
-    const montantNet = debit / (1 + tauxTVA);
+//     rowData.debit = 0;
+//     const montantNet = debit / (1 + tauxTVA);
 
-    let credit = 0;
-    if (typeLigne === "ligne1") credit = montantNet;
-    else if (typeLigne === "ligne2") credit = montantNet * tauxTVA;
+//     let credit = 0;
+//     if (typeLigne === "ligne1") credit = montantNet;
+//     else if (typeLigne === "ligne2") credit = montantNet * tauxTVA;
 
-    rowData.credit = parseFloat(credit.toFixed(2));
+//     rowData.credit = parseFloat(credit.toFixed(2));
 
-    // recalcul global si existe
-    if (typeof calculerSoldeCumuleVentes === 'function') {
-        try {
-            const res = calculerSoldeCumuleVentes();
-            if (res instanceof Promise) await res;
-        } catch (e) {
-            console.warn("Erreur lors de l'appel à calculerSoldeCumuleVentes:", e);
-        }
-    }
+//     // recalcul global si existe
+//     if (typeof calculerSoldeCumuleVentes === 'function') {
+//         try {
+//             const res = calculerSoldeCumuleVentes();
+//             if (res instanceof Promise) await res;
+//         } catch (e) {
+//             console.warn("Erreur lors de l'appel à calculerSoldeCumuleVentes:", e);
+//         }
+//     }
 
 
-}
+// }
 
-async function enregistrerLignesVentes() {
-  try {
-    const lignes = tableVentes.getData();
-    console.log("📌 [Ventes] Données récupérées :", lignes);
+// async function enregistrerLignesVentes() {
+//   try {
+//     const lignes = tableVentes.getData();
+//     console.log("📌 [Ventes] Données récupérées :", lignes);
 
-    const journalSelect = document.querySelector("#journal-ventes");
-    const codeJournal = journalSelect?.value?.trim() || "";
-    if (!codeJournal) {
-      alert("⚠️ Veuillez sélectionner un journal.");
-      return;
-    }
+//     const journalSelect = document.querySelector("#journal-ventes");
+//     const codeJournal = journalSelect?.value?.trim() || "";
+//     if (!codeJournal) {
+//       alert("⚠️ Veuillez sélectionner un journal.");
+//       return;
+//     }
 
-    const selectedOption = journalSelect.options[journalSelect.selectedIndex];
-    const categorie = selectedOption ? selectedOption.getAttribute("data-type") : "";
-    const selectedFilter = document.querySelector('input[name="filter-ventes"]:checked')?.value || null;
+//     const selectedOption = journalSelect.options[journalSelect.selectedIndex];
+//     const categorie = selectedOption ? selectedOption.getAttribute("data-type") : "";
+//     const selectedFilter = document.querySelector('input[name="filter-ventes"]:checked')?.value || null;
 
-    // Nettoyer les lignes avant envoi
-    const lignesAEnvoyer = lignes
-      .filter(ligne => (parseFloat(ligne.debit) > 0 || parseFloat(ligne.credit) > 0))
-      .map(ligne => ({
-        id: ligne.id || null,
-        date: ligne.date || new Date().toISOString().slice(0, 10),
-        numero_dossier: ligne.numero_dossier || ' ',
-        numero_facture: ligne.numero_facture || ' ',
-        compte: ligne.compte || '',
-        debit: parseFloat(ligne.debit) || 0,
-        credit: parseFloat(ligne.credit) || 0,
-        contre_partie: ligne.contre_partie || '',
-        rubrique_tva: ligne.rubrique_tva || '',
-        compte_tva: ligne.compte_tva || '',
-        type_journal: codeJournal,
-        categorie: categorie,
-        piece_justificative: ligne.piece_justificative || '',
-        file_id: ligne.file_id || '',
-        libelle: ligne.libelle || '',
-        filtre_selectionne: selectedFilter,
-        value: ligne.solde_cumule ?? ""
-      }));
+//     // Nettoyer les lignes avant envoi
+//     const lignesAEnvoyer = lignes
+//       .filter(ligne => (parseFloat(ligne.debit) > 0 || parseFloat(ligne.credit) > 0))
+//       .map(ligne => ({
+//         id: ligne.id || null,
+//         date: ligne.date || new Date().toISOString().slice(0, 10),
+//         numero_dossier: ligne.numero_dossier || ' ',
+//         numero_facture: ligne.numero_facture || ' ',
+//         compte: ligne.compte || '',
+//         debit: parseFloat(ligne.debit) || 0,
+//         credit: parseFloat(ligne.credit) || 0,
+//         contre_partie: ligne.contre_partie || '',
+//         rubrique_tva: ligne.rubrique_tva || '',
+//         compte_tva: ligne.compte_tva || '',
+//         type_journal: codeJournal,
+//         categorie: categorie,
+//         piece_justificative: ligne.piece_justificative || '',
+//         file_id: ligne.file_id || '',
+//         libelle: ligne.libelle || '',
+//         filtre_selectionne: selectedFilter,
+//         value: ligne.solde_cumule ?? ""
+//       }));
 
-    if (lignesAEnvoyer.length === 0) {
-      alert("⚠️ Aucune ligne valide à enregistrer.");
-      return;
-    }
+//     if (lignesAEnvoyer.length === 0) {
+//       alert("⚠️ Aucune ligne valide à enregistrer.");
+//       return;
+//     }
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const response = await fetch('/lignes', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': csrfToken
-      },
-      body: JSON.stringify({ lignes: lignesAEnvoyer })
-    });
+//     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+//     const response = await fetch('/lignes', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'X-CSRF-TOKEN': csrfToken
+//       },
+//       body: JSON.stringify({ lignes: lignesAEnvoyer })
+//     });
 
-    if (!response.ok) {
-      console.error("❌ [Ventes] Erreur serveur :", response.status, response.statusText);
-      alert(`Erreur lors de l'enregistrement : ${response.statusText}`);
-      return;
-    }
+//     if (!response.ok) {
+//       console.error("❌ [Ventes] Erreur serveur :", response.status, response.statusText);
+//       alert(`Erreur lors de l'enregistrement : ${response.statusText}`);
+//       return;
+//     }
 
-    const result = await response.json();
-    console.log("📥 [Ventes] Réponse serveur :", result);
+//     const result = await response.json();
+//     console.log("📥 [Ventes] Réponse serveur :", result);
 
-    // ✅ Recharge proprement le tableau
-    const newData = Array.isArray(result)
-      ? result
-      : (result?.data && Array.isArray(result.data) ? result.data : []);
+//     // ✅ Recharge proprement le tableau
+//     const newData = Array.isArray(result)
+//       ? result
+//       : (result?.data && Array.isArray(result.data) ? result.data : []);
 
-    tableVentes.setData(newData);
-    calculerSoldeCumuleVentes();
+//     tableVentes.setData(newData);
+//     calculerSoldeCumuleVentes();
 
-    // ✅ Ajoute UNE SEULE ligne vide à la fin (si aucune n'existe déjà)
-    const dataActuelle = tableVentes.getData();
-    const derniere = dataActuelle[dataActuelle.length - 1];
+//     // ✅ Ajoute UNE SEULE ligne vide à la fin (si aucune n'existe déjà)
+//     const dataActuelle = tableVentes.getData();
+//     const derniere = dataActuelle[dataActuelle.length - 1];
 
-    if (!derniere || (derniere.compte?.trim() || derniere.debit || derniere.credit)) {
-      tableVentes.addRow({
-        id: null,
-        compte: '',
-    contre_partie: contrePartie,              // valeur stockée (ex: code compte)
-        compte_tva: '',
-        debit: 0,
-        credit: 0,
-        piece_justificative: '',
-        file_id: '',
-        libelle: '',
-        rubrique_tva: '',
-        type_journal: codeJournal,
-        value: ''
-      });
-    }
+//     if (!derniere || (derniere.compte?.trim() || derniere.debit || derniere.credit)) {
+//       tableVentes.addRow({
+//         id: null,
+//         compte: '',
+//     contre_partie: contrePartie,              // valeur stockée (ex: code compte)
+//         compte_tva: '',
+//         debit: 0,
+//         credit: 0,
+//         piece_justificative: '',
+//         file_id: '',
+//         libelle: '',
+//         rubrique_tva: '',
+//         type_journal: codeJournal,
+//         value: ''
+//       });
+//     }
 
-  } catch (error) {
-    console.error("🚨 [Ventes] Erreur :", error);
-    alert("❌ Une erreur s'est produite pendant l'enregistrement.");
-  }
-}
+//   } catch (error) {
+//     console.error("🚨 [Ventes] Erreur :", error);
+//     alert("❌ Une erreur s'est produite pendant l'enregistrement.");
+//   }
+// }
 
-async function ecouterEntrerVentes(table) {
-  table.element.addEventListener("keydown", async function (event) {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
+// async function ecouterEntrerVentes(table) {
+//   table.element.addEventListener("keydown", async function (event) {
+//     if (event.key !== "Enter") return;
+//     event.preventDefault();
 
-    const selectedRows = table.getSelectedRows();
-    if (selectedRows.length === 0) {
-      console.warn("Aucune ligne sélectionnée (Ventes)");
-      return;
-    }
+//     const selectedRows = table.getSelectedRows();
+//     if (selectedRows.length === 0) {
+//       console.warn("Aucune ligne sélectionnée (Ventes)");
+//       return;
+//     }
 
-    const ligneActive = selectedRows[0].getData();
-    let nouvellesLignes = await ajouterLigneVentes(table, true, ligneActive);
+//     const ligneActive = selectedRows[0].getData();
+//     let nouvellesLignes = await ajouterLigneVentes(table, true, ligneActive);
 
-    if (!Array.isArray(nouvellesLignes)) {
-      nouvellesLignes = [nouvellesLignes];
-    }
+//     if (!Array.isArray(nouvellesLignes)) {
+//       nouvellesLignes = [nouvellesLignes];
+//     }
 
-    console.log("✅ Lignes ajoutées (Ventes) :", nouvellesLignes);
+//     console.log("✅ Lignes ajoutées (Ventes) :", nouvellesLignes);
 
-    // Rafraîchir sans doublons
-    const dataActuelle = table.getData();
-    table.setData(dataActuelle);
+//     // Rafraîchir sans doublons
+//     const dataActuelle = table.getData();
+//     table.setData(dataActuelle);
 
-    // Vérifie proprement s'il y a déjà une ligne vide
-    const hasEmptyLine = dataActuelle.some(l =>
-      !l.compte && !parseFloat(l.debit) && !parseFloat(l.credit)
-    );
+//     // Vérifie proprement s'il y a déjà une ligne vide
+//     const hasEmptyLine = dataActuelle.some(l =>
+//       !l.compte && !parseFloat(l.debit) && !parseFloat(l.credit)
+//     );
 
-    if (!hasEmptyLine) {
-      tableVentes.addRow({
-        id: null,
-        compte: '',
-    contre_partie: contrePartie,              // valeur stockée (ex: code compte)
-        compte_tva: '',
-        debit: 0,
-        credit: 0,
-        piece_justificative: '',
-        type_journal: document.querySelector("#journal-ventes")?.value || '',
-        value: ''
-      });
-    }
+//     if (!hasEmptyLine) {
+//       tableVentes.addRow({
+//         id: null,
+//         compte: '',
+//     contre_partie: contrePartie,              // valeur stockée (ex: code compte)
+//         compte_tva: '',
+//         debit: 0,
+//         credit: 0,
+//         piece_justificative: '',
+//         type_journal: document.querySelector("#journal-ventes")?.value || '',
+//         value: ''
+//       });
+//     }
 
-    // Enregistrement automatique
-    await enregistrerLignesVentes();
-  });
-}
+//     // Enregistrement automatique
+//     await enregistrerLignesVentes();
+//   });
+// }
 
 // Fonction de mise à jour des données du tableau Ventes en fonction des filtres
 function updateTabulatorDataVentes() {
@@ -8838,7 +8875,7 @@ document.addEventListener("DOMContentLoaded", function() {
     calculerSoldeCumule();
 });
 // Initialiser l'écouteur d'événements pour chaque table
-ecouterEntrerVentes(tableVentes);
+// ecouterEntrerVentes(tableVentes);
 // ecouterEntrer(tableAch);
 
 // tabulatorManager.applyToTabulator(tableAch);
@@ -11442,6 +11479,58 @@ $(document).on('keydown', function(e) {
 });
 
 
+
+$(document).on('keydown', function(e) {
+    if (e.key === "Enter" && $(e.target).is('input[type="checkbox"]')) {
+        const checkboxElement = e.target;
+
+        // Si tableBanque est définie, on l'utilise
+        if (window.tableVentes) {
+            const rows = window.tableVentes.getRows();
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const rowElement = row.getElement();
+
+                if (rowElement.contains(checkboxElement)) {
+                    const rowData = row.getData();
+                    console.log("Donnée de la ligne active :", rowData);
+
+                    sendDataToControllerVente([rowData]); 
+                    return; // stop boucle dès qu'on trouve la ligne
+                }
+            }
+            console.log("Aucune ligne correspondante trouvée dans tableVente.");
+        } else {
+            // Si tableVentes n'existe pas, on initialise tableVentes si besoin
+            if (!window.tableVentes) {
+                window.tableVentes = new Tabulator("#table-Vente", {
+                    // tes options Tabulator ici
+                });
+            }
+
+            // Puis on récupère les lignes de tableVentes
+            const rows = window.tableVentes.getRows();
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const rowElement = row.getElement();
+
+                if (rowElement.contains(checkboxElement)) {
+                    const rowData = row.getData();
+                    console.log("Donnée de la ligne active (Vente) :", rowData);
+
+                    sendDataToControllerVente([rowData]); // Appel fonction vente
+                    return; // stop boucle dès qu'on trouve la ligne
+                }
+            }
+
+            console.log("Aucune ligne correspondante trouvée dans tableVente.");
+        }
+    }
+});
+
+
 document.querySelectorAll('.achatModal_file-card').forEach(function(cardWrapper) {
   cardWrapper.addEventListener('dblclick', function () {
     console.log("✅ Double-click sur fichier détecté");
@@ -11547,7 +11636,29 @@ function sendDataToControllerAchat(data) {
       compteValue = compteObj ? compteObj.compte : row.compte;
     }
     console.log('Compte value :', compteValue);
-
+    let factLettrerString = '';
+    if (row.fact_lettrer) {
+      if (Array.isArray(row.fact_lettrer) && row.fact_lettrer.length > 0) {
+        factLettrerString = row.fact_lettrer
+          .map(item => {
+            const [id, numero, montant, date] = item.split('|');
+            return `${id}|${numero}|${montant}|${date}`;
+          })
+          .join(' & ');
+      } else if (typeof row.fact_lettrer === 'string') {
+        // Normalize string (remove extra spaces around & and trim parts)
+        factLettrerString = row.fact_lettrer
+          .split(/\s*&\s*/)
+          .map(s => s.trim())
+          .filter(Boolean)
+          .map(item => {
+            const parts = item.split('|').map(p => p.trim());
+            if (parts.length === 4) return `${parts[0]}|${parts[1]}|${parts[2]}|${parts[3]}`;
+            return item; // if unexpected format, keep as-is
+          })
+          .join(' & ');
+      }
+    }
     $.ajax({
       url: '/operation-courante-achat-store',
       method: 'POST',
@@ -11561,6 +11672,7 @@ function sendDataToControllerAchat(data) {
         libelle: row.libelle,
         debit: row.debit,
         credit: row.credit,
+        fact_lettrer: factLettrerString,
         contre_partie: row.contre_partie,
         piece_justificative: row.piece_justificative,
         taux_ras_tva: row.taux_ras_tva,
@@ -11581,16 +11693,131 @@ function sendDataToControllerAchat(data) {
     });
   });
 }
+function sendDataToControllerVente(data) {
+  const selectedJournalCodeVente = $('#journal-ventes').val();
+  console.log("Code journal sélectionné :", selectedJournalCodeVente);
 
+  isSending = true;
+
+  console.log("Données à envoyer :", data);
+
+  // Formatage des dates
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('/');
+    if (parts.length !== 3) return dateStr;
+    let [day, month, year] = parts;
+    day = day.padStart(2, '0');
+    month = month.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  data.forEach(row => {
+   
+    const formattedDate = formatDate(row.date);
+    const formattedDeliveryDate = formatDate(row.date_livraison || row.date);
+
+    let compteValue = '';
+    if (row.compte) {
+      const compteObj = planComptable.find(c => c.id == row.compte);
+      compteValue = compteObj ? compteObj.compte : row.compte;
+    }
+    console.log('Compte value :', compteValue);
+    let factLettrerString = '';
+    if (row.fact_lettrer) {
+      if (Array.isArray(row.fact_lettrer) && row.fact_lettrer.length > 0) {
+        factLettrerString = row.fact_lettrer
+          .map(item => {
+            const [id, numero, montant, date] = item.split('|');
+            return `${id}|${numero}|${montant}|${date}`;
+          })
+          .join(' & ');
+      } else if (typeof row.fact_lettrer === 'string') {
+        // Normalize string (remove extra spaces around & and trim parts)
+        factLettrerString = row.fact_lettrer
+          .split(/\s*&\s*/)
+          .map(s => s.trim())
+          .filter(Boolean)
+          .map(item => {
+            const parts = item.split('|').map(p => p.trim());
+            if (parts.length === 4) return `${parts[0]}|${parts[1]}|${parts[2]}|${parts[3]}`;
+            return item; // if unexpected format, keep as-is
+          })
+          .join(' & ');
+      }
+    }
+    $.ajax({
+      url: '/operation-courante-vente-store',
+      method: 'POST',
+      data: {
+        _token: $('meta[name="csrf-token"]').attr('content'),
+        date: formattedDate,
+        date_livraison: formattedDeliveryDate,
+        numero_facture: row.numero_facture,
+        numero_dossier: row.numero_dossier,
+        compte: compteValue,
+        libelle: row.libelle,
+        debit: row.debit,
+        credit: row.credit,
+        fact_lettrer: factLettrerString,
+        contre_partie: row.contre_partie,
+        piece_justificative: row.piece_justificative,
+        taux_ras_tva: row.taux_ras_tva,
+        nature_op: row.nature_op,
+        prorat_de_deduction: row.prorat_de_deduction ? row.prorat_de_deduction : "Non",
+        mode_pay: row.mode_pay,
+        code_journal: selectedJournalCodeVente,
+        saisie_choisie: getSaisieChoisieVente(),
+        file_id: row.file_id,
+      },
+      success: function(response) {
+        updateTabulatorDataAchats();
+      },
+      error: function(xhr, status, error) {
+        console.error("Erreur AJAX :", xhr, status, error);
+        alert("Erreur lors de l'envoi des données : " + error);
+      }
+    });
+  });
+}
 
 function getSaisieChoisieAchat() {
     return $('input[name="filter-achats"]:checked').val(); // Récupérer la valeur du bouton radio sélectionné
+
+}
+function getSaisieChoisieVente() {
+    return $('input[name="filter-ventes"]:checked').val(); // Récupérer la valeur du bouton radio sélectionné
 
 }
 // tabulatorManager.applyToTabulator(tableOP);
 
        });
 
+$(document).on('keydown', '#upload-icon-ventes', function(e) {
+    if (e.key === "Enter") {
+        // Ouvre la popup
+        $('#files_ventes_Modal').show();
+        // Mémorise la cellule courante pour l'upload
+        const $cell = $(this).closest('.tabulator-cell')[0];
+        if ($cell && tableVentes) {
+            // Trouve la cellule Tabulator correspondante
+            const rowEl = $cell.closest('.tabulator-row');
+            if (rowEl) {
+                const row = tableVentes.getRow(rowEl.getAttribute('data-row-index'));
+                if (row) {
+                    currentPieceCellVentes = row.getCell("piece_justificative");
+                }
+            }
+        }
+    } else if (e.key === "ArrowRight") {
+        // Focus sur la checkbox de la même ligne
+        const $row = $(this).closest('.tabulator-row');
+        const $checkbox = $row.find('.select-row[type="checkbox"]');
+        if ($checkbox.length) {
+            $checkbox.focus();
+        }
+    }
+});
 
 
 // Gestion des onglets
@@ -11854,7 +12081,9 @@ document.querySelectorAll('.file-card').forEach(function(cardWrapper) {
     console.log("Chemin du fichier sélectionné :", selectedFilePath);
 
     $('#files_banque_Modal').hide();
-
+    $('#files_ventes_Modal').hide();
+    
+    
     if (currentPieceCellBanque) {
         const cellElement = currentPieceCellBanque.getElement();
         let viewIcon = cellElement.querySelector('.fas.fa-eye.view-icon');
@@ -12363,133 +12592,270 @@ $('#journal-Banque').on('change', function() {
                     }
                 }
                 },
-                { title: "N° facture lettrée",
-                      field: "fact_lettrer",
-                      width: 200,
-                      headerFilter: "input",
+                // { title: "N° facture lettrée",
+                //       field: "fact_lettrer",
+                //       width: 200,
+                //       headerFilter: "input",
 
-                      formatter: function(cell) {
-                          const value = cell.getValue();
-                          if (Array.isArray(value)) {
-                              return value.map(item => {
-                                  const [id, numero, montant, date] = item.split('|');
-                                  return `${numero} / ${montant} / ${date}`;
-                              }).join(", ");
-                          }
-                          return value || "";
-                      },
+                //       formatter: function(cell) {
+                //           const value = cell.getValue();
+                //           if (Array.isArray(value)) {
+                //               return value.map(item => {
+                //                   const [id, numero, montant, date] = item.split('|');
+                //                   return `${numero} / ${montant} / ${date}`;
+                //               }).join(", ");
+                //           }
+                //           return value || "";
+                //       },
 
                     
-                     editor: function(cell, onRendered, success, cancel) {
-                      const select = document.createElement("select");
-                      select.style.width = "350px";
-                      select.multiple = true;
+                //      editor: function(cell, onRendered, success, cancel) {
+                //       const select = document.createElement("select");
+                //       select.style.width = "350px";
+                //       select.multiple = true;
 
-                      const row = cell.getRow();
-                      const compte = row.getCell("compte").getValue();
-                      const debit = row.getCell("debit").getValue();
-                      const credit = row.getCell("credit").getValue();
+                //       const row = cell.getRow();
+                //       const compte = row.getCell("compte").getValue();
+                //       const debit = row.getCell("debit").getValue();
+                //       const credit = row.getCell("credit").getValue();
 
-                      if (!debit && !credit) {
-                          alert("Veuillez remplir une valeur de débit ou crédit.");
-                          cancel();
-                          return select;
-                      }
+                //       if (!debit && !credit) {
+                //           alert("Veuillez remplir une valeur de débit ou crédit.");
+                //           cancel();
+                //           return select;
+                //       }
 
-                      const existingValues = cell.getValue() || [];
-                      let committed = false;
+                //       const existingValues = cell.getValue() || [];
+                //       let committed = false;
 
-                      function commit(vals) {
-                          if (committed) return;
-                          committed = true;
-                          try { 
-                              success(vals); 
-                          } catch (e) {}
+                //       function commit(vals) {
+                //           if (committed) return;
+                //           committed = true;
+                //           try { 
+                //               success(vals); 
+                //           } catch (e) {}
 
-                          // Focus sur la cellule "date_lettrage"
-                          const nextCell = row.getCell("date_lettrage");
-                          if(nextCell) nextCell.edit();
-                      }
+                //           // Focus sur la cellule "date_lettrage"
+                //           const nextCell = row.getCell("date_lettrage");
+                //           if(nextCell) nextCell.edit();
+                //       }
 
-                      // Récupération des options via AJAX
-                      $.ajax({
-                          url: `/get-nfacturelettree?debit=${encodeURIComponent(debit)}&credit=${encodeURIComponent(credit)}&compte=${encodeURIComponent(compte)}`,
-                          method: 'GET',
-                          success: function(response) {
-                              if(response.length === 0){
-                                  // Si aucune option, on commit immédiatement pour aller à date_lettrage
-                                  commit([]);
-                              }
+                //       // Récupération des options via AJAX
+                //       $.ajax({
+                //           url: `/get-nfacturelettree?debit=${encodeURIComponent(debit)}&credit=${encodeURIComponent(credit)}&compte=${encodeURIComponent(compte)}`,
+                //           method: 'GET',
+                //           success: function(response) {
+                //               if(response.length === 0){
+                //                   // Si aucune option, on commit immédiatement pour aller à date_lettrage
+                //                   commit([]);
+                //               }
 
-                              response.forEach(item => {
-                                  const montant = item.debit != null ? item.debit : item.credit;
-                                  const valeur = `${item.id}|${item.numero_facture}|${montant}|${item.date}`;
-                                  const option = new Option(
-                                      `${item.numero_facture} / ${montant} / ${item.date}`,
-                                      valeur,
-                                      existingValues.includes(valeur),
-                                      existingValues.includes(valeur)
-                                  );
-                                  select.appendChild(option);
-                              });
+                //               response.forEach(item => {
+                //                   const montant = item.debit != null ? item.debit : item.credit;
+                //                   const valeur = `${item.id}|${item.numero_facture}|${montant}|${item.date}`;
+                //                   const option = new Option(
+                //                       `${item.numero_facture} / ${montant} / ${item.date}`,
+                //                       valeur,
+                //                       existingValues.includes(valeur),
+                //                       existingValues.includes(valeur)
+                //                   );
+                //                   select.appendChild(option);
+                //               });
 
-                              $(select).select2({
-                                  placeholder: "-- Sélectionnez une ou plusieurs factures --",
-                                  closeOnSelect: false,
-                                  width: '350px',
-                              });
+                //               $(select).select2({
+                //                   placeholder: "-- Sélectionnez une ou plusieurs factures --",
+                //                   closeOnSelect: false,
+                //                   width: '350px',
+                //               });
 
-                              $(select).select2('open');
+                //               $(select).select2('open');
 
-                              setTimeout(() => {
-                                  const search = document.querySelector('.select2-container--open .select2-search__field');
-                                  if (search) {
-                                      search.addEventListener('keydown', function (e) {
-                                          if (e.key === 'Enter') {
-                                              e.preventDefault();
-                                              const vals = $(select).val() ?? [];
-                                              try { $(select).select2('close'); } catch (err) {}
-                                              commit(vals);
-                                          }
-                                      });
-                                  }
-                              }, 50);
-                          },
-                          error: function(error) {
-                              console.error("Erreur AJAX :", error);
-                              // Si erreur et pas d'options, commit pour aller à date_lettrage
-                              commit([]);
-                          }
-                      });
+                //               setTimeout(() => {
+                //                   const search = document.querySelector('.select2-container--open .select2-search__field');
+                //                   if (search) {
+                //                       search.addEventListener('keydown', function (e) {
+                //                           if (e.key === 'Enter') {
+                //                               e.preventDefault();
+                //                               const vals = $(select).val() ?? [];
+                //                               try { $(select).select2('close'); } catch (err) {}
+                //                               commit(vals);
+                //                           }
+                //                       });
+                //                   }
+                //               }, 50);
+                //           },
+                //           error: function(error) {
+                //               console.error("Erreur AJAX :", error);
+                //               // Si erreur et pas d'options, commit pour aller à date_lettrage
+                //               commit([]);
+                //           }
+                //       });
 
-                      // Commit quand on change la sélection
-                      $(select).on('change', function() {
-                          const vals = $(select).val() ?? [];
-                          try { cell.setValue(vals); } catch(e){}
-                          commit(vals);
-                      });
+                //       // Commit quand on change la sélection
+                //       $(select).on('change', function() {
+                //           const vals = $(select).val() ?? [];
+                //           try { cell.setValue(vals); } catch(e){}
+                //           commit(vals);
+                //       });
 
-                      // ESC => annuler
-                      select.addEventListener('keydown', function(e){
-                          if (e.key === 'Escape') {
-                              try { cancel(); } catch(ex) {}
-                          }
-                      });
+                //       // ESC => annuler
+                //       select.addEventListener('keydown', function(e){
+                //           if (e.key === 'Escape') {
+                //               try { cancel(); } catch(ex) {}
+                //           }
+                //       });
 
-                      onRendered(() => {
-                          setTimeout(() => {
-                              try {
-                                  const search = document.querySelector('.select2-container--open .select2-search__field');
-                                  if (search) search.focus();
-                              } catch (err) {}
-                          }, 80);
-                      });
+                //       onRendered(() => {
+                //           setTimeout(() => {
+                //               try {
+                //                   const search = document.querySelector('.select2-container--open .select2-search__field');
+                //                   if (search) search.focus();
+                //               } catch (err) {}
+                //           }, 80);
+                //       });
 
-                      return select;
-                  }
+                //       return select;
+                //   }
 
 
-                },
+                // },
+                                { title: "N° facture lettrée",
+    field: "fact_lettrer",
+    width: 200,
+    headerFilter: "input",
+
+    // =========================
+    // FORMATTER : afficher seulement les numéros de facture
+    // =========================
+    formatter: function(cell) {
+        const value = cell.getValue();
+        if (!value) return "";
+
+        // Normaliser en tableau (séparateur : & ou tableau)
+        const values = typeof value === "string"
+            ? value.split(/\s*&\s*/).filter(Boolean)
+            : Array.isArray(value) ? value : [];
+
+        // Retourner uniquement les numéros de facture
+        return values
+            .map(v => {
+                const parts = v.split("|");
+                return parts[1] || ""; // numero_facture
+            })
+            .filter(Boolean)
+            .join(" | ");
+    },
+
+    // =========================
+    // EDITOR : modal avec checkboxes
+    // =========================
+    editor: function(cell, onRendered, success, cancel) {
+        const row = cell.getRow();
+        const compte = row.getCell("compte").getValue();
+        const debit = row.getCell("debit").getValue();
+        const credit = row.getCell("credit").getValue();
+
+        if (!debit && !credit) {
+            alert("Veuillez remplir une valeur de débit ou crédit.");
+            cancel();
+            return document.createElement("div");
+        }
+
+        // Création overlay/modal
+        const overlay = document.createElement("div");
+        overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:flex;justify-content:center;align-items:center;z-index:10002;";
+
+        const modal = document.createElement("div");
+        modal.style = "background:#fff;padding:15px;border-radius:6px;min-width:360px;box-shadow:0 6px 20px rgba(0,0,0,0.2);";
+        modal.innerHTML = "<h4>Sélection des factures lettrées</h4>";
+
+        const checkboxContainer = document.createElement("div");
+        checkboxContainer.style = "max-height:260px;overflow-y:auto;border:1px solid #ddd;padding:6px;margin-top:6px;";
+        modal.appendChild(checkboxContainer);
+
+        const btnRow = document.createElement("div");
+        btnRow.style = "margin-top:10px;display:flex;justify-content:flex-end;gap:8px;";
+
+        const cancelBtn = document.createElement("button"); 
+        cancelBtn.textContent = "Annuler"; 
+        cancelBtn.className = "btn btn-secondary";
+
+        const saveBtn = document.createElement("button"); 
+        saveBtn.textContent = "Valider"; 
+        saveBtn.className = "btn btn-primary";
+
+        btnRow.append(cancelBtn, saveBtn); 
+        modal.appendChild(btnRow);
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // Valeurs existantes
+        const existingRaw = cell.getValue() ?? [];
+        let existingValues = typeof existingRaw === "string" 
+            ? existingRaw.split(/\s*&\s*/).filter(Boolean)
+            : existingRaw;
+
+        // Récupération via AJAX
+        $.ajax({
+            url: `/get-nfacturelettree?debit=${encodeURIComponent(debit)}&credit=${encodeURIComponent(credit)}&compte=${encodeURIComponent(compte)}`,
+            method: 'GET',
+            success: function(response) {
+                if (!response) response = [];
+                const dispoMap = {};
+                response.forEach(item => {
+                    const montantVal = item.debit ?? item.credit;
+                    const valeur = `${item.id}|${item.numero_facture}|${montantVal}|${item.date}`;
+                    dispoMap[valeur] = `${item.numero_facture} / ${montantVal} / ${item.date}`;
+                });
+
+                // Pré-cocher les valeurs existantes
+                existingValues.forEach(v => {
+                    const parts = v.split('|');
+                    const label = `${parts[1] || ''} / ${parts[2] || ''} / ${parts[3] || ''}`;
+                    const cb = document.createElement('div');
+                    cb.innerHTML = `<label><input type="checkbox" value="${v}" checked> ${label}</label>`;
+                    checkboxContainer.appendChild(cb);
+                    delete dispoMap[v];
+                });
+
+                // Ajouter les autres options
+                Object.keys(dispoMap).forEach(val => {
+                    const cb = document.createElement('div');
+                    cb.innerHTML = `<label><input type="checkbox" value="${val}"> ${dispoMap[val]}</label>`;
+                    checkboxContainer.appendChild(cb);
+                });
+
+                // Boutons
+                saveBtn.onclick = function() {
+                    const checked = [];
+                    checkboxContainer.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => checked.push(cb.value));
+                    const joined = checked.join(' & ');
+                    cell.setValue(joined);
+                    success(joined);
+
+                    // Focus automatique sur date_lettrage si nécessaire
+                    const dateCell = row.getCell("date_lettrage");
+                    if (dateCell) dateCell.edit();
+                    
+                    document.body.removeChild(overlay);
+                };
+
+                cancelBtn.onclick = function() {
+                    document.body.removeChild(overlay);
+                    cancel();
+                };
+            },
+            error: function(err) {
+                console.error("Erreur AJAX :", err);
+                document.body.removeChild(overlay);
+                cancel();
+            }
+        });
+
+        return document.createElement("div"); // nécessaire pour Tabulator
+    }
+}
+,
                 { title: "Taux RAS TVA",
     field: "taux_ras_tva",
     width: 100,
@@ -12730,15 +13096,24 @@ tableBanque.on("cellEdited", function(cell) {
                      ? row._oldValues[field] 
                      : "";
 
-    // Si la cellule était vide avant édition, ne rien faire
-    if (oldValue === "" || oldValue === null) {
-        return; // Ne pas afficher de confirmation et laisser le passage entre les champs fonctionner
+    // Ne pas tenter une mise à jour si la ligne n'a pas d'ID (nouvelle saisie -> gestion ailleurs)
+    if (!rowData || !rowData.id) {
+        return;
     }
 
-    const confirmation = confirm("Voulez-vous vraiment modifier cette donnée ?");
+    // Normaliser fact_lettrer si nécessaire (accepte tableau ou chaîne)
+    function normalizeFactLettrer(val) {
+        if (!val) return val;
+        if (Array.isArray(val)) return val.map(item => String(item).trim()).join(' & ');
+        if (typeof val === 'string') return val.split(/\s*&\s*/).map(s => s.trim()).filter(Boolean).join(' & ');
+        return val;
+    }
 
-    if (confirmation) {
-        // Envoi AJAX
+    if (field === 'fact_lettrer') {
+        rowData.fact_lettrer = normalizeFactLettrer(rowData.fact_lettrer);
+    }
+
+    function sendAjaxUpdate() {
         $.ajax({
             url: '/update-banque-operation',
             method: 'POST',
@@ -12759,6 +13134,18 @@ tableBanque.on("cellEdited", function(cell) {
                 alert("Erreur lors de la mise à jour, valeur restaurée !");
             }
         });
+    }
+
+    // Si l'ancienne valeur est vide, on envoie sans confirmation (cas: ajout d'une valeur sur une ligne existante)
+    if (oldValue === "" || oldValue === null) {
+        sendAjaxUpdate();
+        return;
+    }
+
+    const confirmation = confirm("Voulez-vous vraiment modifier cette donnée ?");
+
+    if (confirmation) {
+        sendAjaxUpdate();
     } else {
         // Annulation immédiate
         restoringValue = true;
@@ -13149,117 +13536,514 @@ var modePaiement = row.getCell("mode_paiement").getValue();
                         }
                     }
                     },    
-                    { title: "N° facture lettrée",
-    field: "fact_lettrer",
-    width: 200,
-    headerFilter: "input",
+    //                 { title: "N° facture lettrée",
+    // field: "fact_lettrer",
+    // width: 200,
+    // headerFilter: "input",
 
-    formatter: function(cell) {
-        const value = cell.getValue();
-        if (Array.isArray(value)) {
-            return value.map(item => {
-                const [id, numero, montant, date] = item.split('|');
-                return `${numero} / ${montant} / ${date}`;
-            }).join(", ");
-        }
-        return value || "";
-    },
+    // formatter: function(cell) {
+    //     const value = cell.getValue();
+    //     if (Array.isArray(value)) {
+    //         return value.map(item => {
+    //             const [id, numero, montant, date] = item.split('|');
+    //             return `${numero} / ${montant} / ${date}`;
+    //         }).join(", ");
+    //     }
+    //     return value || "";
+    // },
 
-    editor: function(cell, onRendered, success, cancel) {
-        const select = document.createElement("select");
-        select.style.width = "350px";
-        select.multiple = true;
+    // editor: function(cell, onRendered, success, cancel) {
+    //     const row = cell.getRow();
+    //     const rowData = row.getData();
+    //     // Sauvegarder l'ancienne valeur pour permettre une comparaison fiable lors du cellEdited
+    //     row._oldFactLettrer = (cell.getValue() !== undefined && cell.getValue() !== null) ? String(cell.getValue()) : '';
+    //     const compte = row.getCell("compte").getValue();
+    //     const debit = row.getCell("debit").getValue();
+    //     const credit = row.getCell("credit").getValue();
 
-        const row = cell.getRow();
-        const compte = row.getCell("compte").getValue();
-        const debit = row.getCell("debit").getValue();
-        const credit = row.getCell("credit").getValue();
+    //     // Si pas de montant, on annule
+    //     if (!debit && !credit) {
+    //         alert("Veuillez remplir une valeur de débit ou crédit.");
+    //         cancel();
+    //         return document.createElement("div");
+    //     }
 
-        if (!debit && !credit) {
-            alert("Veuillez remplir une valeur de débit ou crédit.");
-            cancel();
-            return select;
-        }
+    //     // Fonction pour déplacer le focus après validation
+    //     function moveFocus(selectedValues) {
+    //         const tauxCell = row.getCell("taux_ras_tva");
+    //         const tauxElement = tauxCell.getElement();
+    //         const isTauxDisabled = tauxElement.style.pointerEvents === "none";
 
-        const existingValues = cell.getValue() || [];
+    //         if (!selectedValues.length || isTauxDisabled) {
+    //             const dateCell = row.getCell("date_lettrage");
+    //             dateCell.edit();
+    //             setTimeout(() => {
+    //                 const input = dateCell.getElement().querySelector("input");
+    //                 if (input) input.focus();
+    //             }, 10);
+    //         } else {
+    //             tauxCell.edit();
+    //             setTimeout(() => {
+    //                 const input = tauxElement.querySelector("input, select");
+    //                 if (input) input.focus();
+    //             }, 10);
+    //         }
+    //     }
 
-        // Fonction pour déplacer le focus après validation
-        function moveFocus(selectedValues) {
-            const tauxCell = row.getCell("taux_ras_tva");
-            const tauxElement = tauxCell.getElement();
-            const isTauxDisabled = tauxElement.style.pointerEvents === "none";
+    //     // Création d'une modal pour la sélection des factures
+    //     const overlay = document.createElement("div");
+    //     overlay.style.position = "fixed";
+    //     overlay.style.top = 0;
+    //     overlay.style.left = 0;
+    //     overlay.style.width = "100%";
+    //     overlay.style.height = "100%";
+    //     overlay.style.backgroundColor = "rgba(0,0,0,0.4)";
+    //     overlay.style.display = "flex";
+    //     overlay.style.justifyContent = "center";
+    //     overlay.style.alignItems = "center";
+    //     overlay.style.zIndex = 10002;
 
-            if (!selectedValues.length || isTauxDisabled) {
-                const dateCell = row.getCell("date_lettrage");
-                dateCell.edit();
-                setTimeout(() => {
-                    const input = dateCell.getElement().querySelector("input");
-                    if (input) input.focus();
-                }, 10);
-            } else {
-                tauxCell.edit();
-                setTimeout(() => {
-                    const input = tauxElement.querySelector("input, select");
-                    if (input) input.focus();
-                }, 10);
-            }
-        }
+    //     const modal = document.createElement("div");
+    //     modal.style.background = "#fff";
+    //     modal.style.padding = "15px";
+    //     modal.style.borderRadius = "6px";
+    //     modal.style.minWidth = "360px";
+    //     modal.style.boxShadow = "0 6px 20px rgba(0,0,0,0.2)";
 
-        // Récupération des factures via AJAX
-        $.ajax({
-            url: `/get-nfacturelettree?debit=${encodeURIComponent(debit)}&credit=${encodeURIComponent(credit)}&compte=${encodeURIComponent(compte)}`,
-            method: 'GET',
-            success: function(response) {
-                if (!response || response.length === 0) {
-                    const dateCell = row.getCell("date_lettrage");
-                    dateCell.edit();
-                    setTimeout(() => {
-                        const input = dateCell.getElement().querySelector("input");
-                        if (input) input.focus();
-                    }, 10);
-                    success([]);
-                    return;
-                }
+    //     const title = document.createElement("h4");
+    //     title.textContent = "Sélection des factures lettrées";
+    //     title.style.marginTop = 0;
+    //     modal.appendChild(title);
 
-                response.forEach(item => {
-                    const montant = item.debit != null ? item.debit : item.credit;
-                    const valeur = `${item.id}|${item.numero_facture}|${montant}|${item.date}`;
-                    const option = new Option(
-                        `${item.numero_facture} / ${montant} / ${item.date}`,
-                        valeur,
-                        existingValues.includes(valeur),
-                        existingValues.includes(valeur)
-                    );
-                    select.appendChild(option);
-                });
+    //     // Afficher ancienne valeur (si présente) — normaliser la valeur en tableau
+    //     const existingDisplay = document.createElement('div');
+    //     existingDisplay.style.marginBottom = '8px';
+    //     const existingRaw = cell.getValue() ?? [];
+    //     let existingValues = [];
+    //     if (typeof existingRaw === 'string') {
+    //         // format ancien possible: "val1 & val2" ou simple "val"
+    //         existingValues = existingRaw.indexOf('&') !== -1 ? existingRaw.split(/\s*&\s*/).map(s => s.trim()).filter(Boolean) : (existingRaw.trim() ? [existingRaw.trim()] : []);
+    //     } else if (Array.isArray(existingRaw)) {
+    //         existingValues = existingRaw;
+    //     } else {
+    //         existingValues = [];
+    //     }
 
-                $(select).select2({
-                    placeholder: "-- Sélectionnez une ou plusieurs factures --",
-                    closeOnSelect: false,
-                    width: '350px',
-                }).select2('open');
+    //     if (existingValues.length) {
+    //         existingDisplay.innerHTML = '<strong>Valeur actuelle :</strong> ' + existingValues.map(v => {
+    //             const parts = (''+v).split('|');
+    //             return (parts[1] || parts[0] || '') + ' / ' + (parts[2] || '') + ' / ' + (parts[3] || '');
+    //         }).join(', ');
+    //         modal.appendChild(existingDisplay);
+    //     }
 
-                // Valider et déplacer le focus à chaque changement ou fermeture
-                $(select).on('change select2:close', () => {
-                    const selectedValues = $(select).val() ?? [];
-                    cell.setValue(selectedValues);
-                    success(selectedValues);
-                    moveFocus(selectedValues);
-                });
-            },
-            error: function(error) {
-                console.error("Erreur AJAX :", error);
-            }
-        });
+    //     // Avertissement pour ligne de saisie (si applicable)
+    //     if (rowData.id === undefined || rowData.id === null) {
+    //         const warn = document.createElement('p');
+    //         warn.style.color = '#b33';
+    //         warn.style.marginTop = 0;
+    //         warn.textContent = "Note : ligne de saisie — modifications appliquées au tableau mais non sauvegardées côté serveur tant que la ligne n'a pas d'ID.";
+    //         modal.appendChild(warn);
 
-        // Gestion touche ESC pour annuler
-        select.addEventListener("keydown", e => {
-            if (e.key === "Escape") cancel();
-        });
+    //         // Pour la ligne de saisie : afficher un select inline multi-sélection (select2 si disponible)
+    //         const selectInline = document.createElement('select');
+    //         selectInline.style.width = '100%';
+    //         selectInline.multiple = true; // permettre multi-sélection
+    //         selectInline.size = 6; // fallback natif : montrer plusieurs lignes
 
-        return select;
-    }
-                    },
+    //         onRendered(() => {
+    //             // init UI
+    //             try {
+    //                 $(selectInline).select2({
+    //                     placeholder: '-- Sélectionnez une ou plusieurs factures --',
+    //                     dropdownParent: $(document.body),
+    //                     width: '100%',
+    //                     closeOnSelect: false,
+    //                     allowClear: true
+    //                 });
+    //                 setTimeout(() => { try { $(selectInline).select2('open'); } catch(e){} }, 0);
+    //             } catch (e) {
+    //                 // select2 peut ne pas être disponible, focus sur le select natif
+    //                 selectInline.focus();
+    //             }
+    //         });
+
+    //         // Remplir le select via AJAX
+    //         $.ajax({
+    //             url: `/get-nfacturelettree?debit=${encodeURIComponent(debit)}&credit=${encodeURIComponent(credit)}&compte=${encodeURIComponent(compte)}`,
+    //             method: 'GET',
+    //             success: function(response) {
+    //                 if (!response) response = [];
+    //                 response.forEach(item => {
+    //                     const montantVal = item.debit != null ? item.debit : item.credit;
+    //                     const valeur = `${item.id}|${item.numero_facture}|${montantVal}|${item.date}`;
+    //                     const opt = new Option(`${item.numero_facture} / ${montantVal} / ${item.date}`, valeur, false, false);
+    //                     selectInline.appendChild(opt);
+    //                 });
+
+    //                 // pré-sélectionner les valeurs existantes (si présentes)
+    //                 if (existingValues && existingValues.length) {
+    //                     const present = existingValues.filter(v => Array.from(selectInline.options).some(o => o.value === v));
+    //                     if (present.length) {
+    //                         try { $(selectInline).val(present).trigger('change'); } catch(e) {
+    //                             Array.from(selectInline.options).forEach(o => { if (present.includes(o.value)) o.selected = true; });
+    //                         }
+    //                     }
+    //                 }
+    //             },
+    //             error: function(err) {
+    //                 console.error('Erreur chargement liste inline :', err);
+    //             }
+    //         });
+
+    //         // Appliquer la sélection
+    //         function applyInlineSelection() {
+    //             let vals = [];
+    //             try {
+    //                 vals = $(selectInline).val() || [];
+    //             } catch(e) {
+    //                 vals = Array.from(selectInline.selectedOptions || []).map(o => o.value);
+    //             }
+
+    //             // Convertir au format attendu
+    //             const joined = Array.isArray(vals) ? vals.join(' & ') : (vals || '');
+    //             cell.setValue(joined);
+    //             success(joined);
+    //             try { $(selectInline).select2('destroy'); } catch(e){}
+    //             moveFocus(vals);
+    //         }
+
+    //         // Événements
+    //         $(selectInline).on('change', function() {
+    //             applyInlineSelection();
+    //         });
+
+    //         selectInline.addEventListener('keydown', function(e) {
+    //             if (e.key === 'Enter') {
+    //                 e.preventDefault();
+    //                 applyInlineSelection();
+    //             } else if (e.key === 'Escape') {
+    //                 try { $(selectInline).select2('destroy'); } catch(e){}
+    //                 cancel();
+    //             }
+    //         });
+
+    //         selectInline.addEventListener('blur', function() {
+    //             try { $(selectInline).select2('destroy'); } catch(e){}
+    //         });
+
+    //         return selectInline;
+    //     }
+
+    //     // Zone d'affichage: checklist (checkboxes)
+    //     const checkboxContainer = document.createElement('div');
+    //     checkboxContainer.style.maxHeight = '260px';
+    //     checkboxContainer.style.overflowY = 'auto';
+    //     checkboxContainer.style.border = '1px solid #ddd';
+    //     checkboxContainer.style.padding = '6px';
+    //     checkboxContainer.style.marginTop = '6px';
+    //     modal.appendChild(checkboxContainer);
+
+    //     // Instruction: seul les checkboxes (sélection/désélection)
+    //     const infoPara = document.createElement('p');
+    //     infoPara.style.marginTop = '8px';
+    //     infoPara.textContent = 'Sélectionnez ou désélectionnez les factures ci-dessous.';
+    //     modal.appendChild(infoPara);
+
+    //     const btnRow = document.createElement("div");
+    //     btnRow.style.marginTop = "10px";
+    //     btnRow.style.display = "flex";
+    //     btnRow.style.justifyContent = "flex-end";
+    //     btnRow.style.gap = "8px";
+
+    //     const cancelBtn = document.createElement("button");
+    //     cancelBtn.textContent = "Annuler";
+    //     cancelBtn.className = "btn btn-secondary";
+
+    //     const saveBtn = document.createElement("button");
+    //     saveBtn.textContent = "Valider";
+    //     saveBtn.className = "btn btn-primary";
+
+    //     btnRow.appendChild(cancelBtn);
+    //     btnRow.appendChild(saveBtn);
+    //     modal.appendChild(btnRow);
+    //     overlay.appendChild(modal);
+    //     document.body.appendChild(overlay);
+
+    //     // Fermeture propre
+    //     function closeModal() {
+    //         document.body.removeChild(overlay);
+    //         document.removeEventListener('keydown', escHandler);
+    //     }
+
+    //     function escHandler(e) {
+    //         if (e.key === 'Escape') {
+    //             closeModal();
+    //             cancel();
+    //         }
+    //     }
+
+    //     document.addEventListener('keydown', escHandler);
+
+    //     // Récupération des factures via AJAX
+    //     $.ajax({
+    //         url: `/get-nfacturelettree?debit=${encodeURIComponent(debit)}&credit=${encodeURIComponent(credit)}&compte=${encodeURIComponent(compte)}`,
+    //         method: 'GET',
+    //         success: function(response) {
+    //             if (!response) response = [];
+
+    //             // construire map des items dispo
+    //             const dispoMap = {};
+    //             response.forEach(item => {
+    //                 const montantVal = item.debit != null ? item.debit : item.credit;
+    //                 const valeur = `${item.id}|${item.numero_facture}|${montantVal}|${item.date}`;
+    //                 dispoMap[valeur] = `${item.numero_facture} / ${montantVal} / ${item.date}`;
+    //             });
+
+    //             // existingValues est défini plus haut
+    //             // Ajouter checkbox pour valeurs existantes (y compris manuelles)
+    //             const existSet = new Set(existingValues);
+    //             existingValues.forEach(v => {
+    //                 const parts = v.split('|');
+    //                 const label = (parts[1] || '') + ' / ' + (parts[2] || '') + ' / ' + (parts[3] || '');
+    //                 const cb = document.createElement('div');
+    //                 cb.innerHTML = `<label style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="${v}" checked> <span>${label}</span></label>`;
+    //                 checkboxContainer.appendChild(cb);
+    //                 // remove from dispoMap candidate so it doesn't appear in availableSelect
+    //                 if (dispoMap[v]) delete dispoMap[v];
+    //             });
+
+    //             // Ajouter le reste des dispo comme unchecked
+    //             Object.keys(dispoMap).forEach(val => {
+    //                 const cb = document.createElement('div');
+    //                 cb.innerHTML = `<label style="display:flex; gap:8px; align-items:center;"><input type="checkbox" value="${val}"> <span>${dispoMap[val]}</span></label>`;
+    //                 checkboxContainer.appendChild(cb);
+    //             });
+
+
+
+    //             // valider à la fermeture ou clic sur Valider
+    //             saveBtn.addEventListener('click', function() {
+    //                 // collect checked values
+    //                 const checked = [];
+    //                 checkboxContainer.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+    //                     checked.push(cb.value);
+    //                 });
+
+    //                 // Convertir au format attendu par l'app (ancienne impl. : 'val1 & val2')
+    //                 const joined = Array.isArray(checked) ? checked.join(' & ') : (checked || '');
+
+    //                 // Appliquer la valeur jointe au tableau (compatible server)
+    //                 cell.setValue(joined);
+    //                 success(joined);
+    //                 closeModal();
+    //                 // moveFocus s'attend à un tableau ou longueur -> on passe le tableau
+    //                 moveFocus(checked);
+    //             });
+
+    //             cancelBtn.addEventListener('click', function() {
+    //                 closeModal();
+    //                 cancel();
+    //             });
+
+    //         },
+    //         error: function(error) {
+    //             console.error("Erreur AJAX :", error);
+    //             closeModal();
+    //             cancel();
+    //         }
+    //     });
+    //     // Retourner un élément factice car l'édition est gérée dans la modal
+    //     return document.createElement("div");
+    // }
+    //                 },
+                    {title: "N° facture lettrée",
+                        field: "fact_lettrer",
+                        width: 200,
+                        headerFilter: "input",
+
+                        // =========================
+                        // FORMATTER (MODIFIÉ)
+                        // =========================
+                        formatter: function (cell) {
+                            const value = cell.getValue();
+                            if (!value) return "";
+
+                            // Normaliser en tableau (format : "val1 & val2")
+                            const values = typeof value === "string"
+                                ? value.split(/\s*&\s*/).filter(Boolean)
+                                : Array.isArray(value) ? value : [];
+
+                            // Afficher uniquement les numéros de facture
+                            return values
+                                .map(v => {
+                                    const parts = v.split("|");
+                                    return parts[1] || ""; // numero_facture
+                                })
+                                .filter(Boolean)
+                                .join(" | ");
+                        },
+
+                        // =========================
+                        // EDITOR (INCHANGÉ)
+                        // =========================
+                        editor: function(cell, onRendered, success, cancel) {
+                            const row = cell.getRow();
+                            const rowData = row.getData();
+
+                            row._oldFactLettrer = (cell.getValue() !== undefined && cell.getValue() !== null)
+                                ? String(cell.getValue())
+                                : '';
+
+                            const compte = row.getCell("compte").getValue();
+                            const debit = row.getCell("debit").getValue();
+                            const credit = row.getCell("credit").getValue();
+
+                            if (!debit && !credit) {
+                                alert("Veuillez remplir une valeur de débit ou crédit.");
+                                cancel();
+                                return document.createElement("div");
+                            }
+
+                            function moveFocus(selectedValues) {
+                                const tauxCell = row.getCell("taux_ras_tva");
+                                const tauxElement = tauxCell.getElement();
+                                const isTauxDisabled = tauxElement.style.pointerEvents === "none";
+
+                                if (!selectedValues.length || isTauxDisabled) {
+                                    const dateCell = row.getCell("date_lettrage");
+                                    dateCell.edit();
+                                    setTimeout(() => {
+                                        const input = dateCell.getElement().querySelector("input");
+                                        if (input) input.focus();
+                                    }, 10);
+                                } else {
+                                    tauxCell.edit();
+                                    setTimeout(() => {
+                                        const input = tauxElement.querySelector("input, select");
+                                        if (input) input.focus();
+                                    }, 10);
+                                }
+                            }
+
+                            const overlay = document.createElement("div");
+                            overlay.style.position = "fixed";
+                            overlay.style.top = 0;
+                            overlay.style.left = 0;
+                            overlay.style.width = "100%";
+                            overlay.style.height = "100%";
+                            overlay.style.backgroundColor = "rgba(0,0,0,0.4)";
+                            overlay.style.display = "flex";
+                            overlay.style.justifyContent = "center";
+                            overlay.style.alignItems = "center";
+                            overlay.style.zIndex = 10002;
+
+                            const modal = document.createElement("div");
+                            modal.style.background = "#fff";
+                            modal.style.padding = "15px";
+                            modal.style.borderRadius = "6px";
+                            modal.style.minWidth = "360px";
+                            modal.style.boxShadow = "0 6px 20px rgba(0,0,0,0.2)";
+
+                            const title = document.createElement("h4");
+                            title.textContent = "Sélection des factures lettrées";
+                            title.style.marginTop = 0;
+                            modal.appendChild(title);
+
+                            const existingRaw = cell.getValue() ?? [];
+                            let existingValues = [];
+
+                            if (typeof existingRaw === 'string') {
+                                existingValues = existingRaw.indexOf('&') !== -1
+                                    ? existingRaw.split(/\s*&\s*/).map(s => s.trim()).filter(Boolean)
+                                    : (existingRaw.trim() ? [existingRaw.trim()] : []);
+                            } else if (Array.isArray(existingRaw)) {
+                                existingValues = existingRaw;
+                            }
+
+                            const checkboxContainer = document.createElement('div');
+                            checkboxContainer.style.maxHeight = '260px';
+                            checkboxContainer.style.overflowY = 'auto';
+                            checkboxContainer.style.border = '1px solid #ddd';
+                            checkboxContainer.style.padding = '6px';
+                            checkboxContainer.style.marginTop = '6px';
+                            modal.appendChild(checkboxContainer);
+
+                            const btnRow = document.createElement("div");
+                            btnRow.style.marginTop = "10px";
+                            btnRow.style.display = "flex";
+                            btnRow.style.justifyContent = "flex-end";
+                            btnRow.style.gap = "8px";
+
+                            const cancelBtn = document.createElement("button");
+                            cancelBtn.textContent = "Annuler";
+                            cancelBtn.className = "btn btn-secondary";
+
+                            const saveBtn = document.createElement("button");
+                            saveBtn.textContent = "Valider";
+                            saveBtn.className = "btn btn-primary";
+
+                            btnRow.appendChild(cancelBtn);
+                            btnRow.appendChild(saveBtn);
+                            modal.appendChild(btnRow);
+                            overlay.appendChild(modal);
+                            document.body.appendChild(overlay);
+
+                            function closeModal() {
+                                document.body.removeChild(overlay);
+                            }
+
+                            $.ajax({
+                                url: `/get-nfacturelettree?debit=${encodeURIComponent(debit)}&credit=${encodeURIComponent(credit)}&compte=${encodeURIComponent(compte)}`,
+                                method: 'GET',
+                                success: function(response) {
+                                    if (!response) response = [];
+
+                                    const dispoMap = {};
+                                    response.forEach(item => {
+                                        const montantVal = item.debit != null ? item.debit : item.credit;
+                                        const valeur = `${item.id}|${item.numero_facture}|${montantVal}|${item.date}`;
+                                        dispoMap[valeur] = `${item.numero_facture} / ${montantVal} / ${item.date}`;
+                                    });
+
+                                    existingValues.forEach(v => {
+                                        const parts = v.split('|');
+                                        const label = `${parts[1] || ''} / ${parts[2] || ''} / ${parts[3] || ''}`;
+                                        const cb = document.createElement('div');
+                                        cb.innerHTML = `<label><input type="checkbox" value="${v}" checked> ${label}</label>`;
+                                        checkboxContainer.appendChild(cb);
+                                        delete dispoMap[v];
+                                    });
+
+                                    Object.keys(dispoMap).forEach(val => {
+                                        const cb = document.createElement('div');
+                                        cb.innerHTML = `<label><input type="checkbox" value="${val}"> ${dispoMap[val]}</label>`;
+                                        checkboxContainer.appendChild(cb);
+                                    });
+
+                                    saveBtn.onclick = function() {
+                                        const checked = [];
+                                        checkboxContainer.querySelectorAll('input[type="checkbox"]:checked')
+                                            .forEach(cb => checked.push(cb.value));
+
+                                        const joined = checked.join(' & ');
+                                        cell.setValue(joined);
+                                        success(joined);
+                                        closeModal();
+                                        moveFocus(checked);
+                                    };
+
+                                    cancelBtn.onclick = function() {
+                                        closeModal();
+                                        cancel();
+                                    };
+                                }
+                            });
+
+                            return document.createElement("div");
+                        }
+                    }
+                    ,
                     { title: "Taux RAS TVA",
         field: "taux_ras_tva",
         width: 100,
@@ -13306,7 +14090,40 @@ var modePaiement = row.getCell("mode_paiement").getValue();
                         editor: customListEditor2, 
                         headerFilter: "input"
                     },
-                    { title: "Date lettrage", field: "date_lettrage", editor: "input", headerFilter: "input" },
+                    { title: "Date lettrage", 
+                        field: "date_lettrage", 
+                        headerFilter: "input",
+                        editor: function(cell, onRendered, success, cancel) {
+                            const input = document.createElement("input");
+                            input.type = "text";
+                            input.style.width = "100%";
+                            input.value = cell.getValue() || "";
+
+                            onRendered(() => {
+                                input.focus();
+                                input.setSelectionRange(input.value.length, input.value.length);
+                            });
+
+                            // Gérer Enter pour passer au champ "Pièce justificative"
+                            input.addEventListener("keydown", function(e) {
+                                if (e.key === "Enter") {
+                                    success(input.value); // valide la cellule
+                                    setTimeout(() => {
+                                        const row = cell.getRow();
+                                        const pieceCell = row.getCell("piece_justificative");
+                                        if (pieceCell) {
+                                            const pieceInput = pieceCell.getElement().querySelector("input");
+                                            if (pieceInput) pieceInput.focus();
+                                        }
+                                    }, 10); // petit délai pour s'assurer que l'édition est terminée
+                                } else if (e.key === "Escape") {
+                                    cancel();
+                                }
+                            });
+
+                            return input;
+                        }
+                    },
                     { title: "Contre-Partie", 
                     field: "contre_partie", 
                     width: 100, 
@@ -13428,15 +14245,44 @@ var modePaiement = row.getCell("mode_paiement").getValue();
                 return; // ne rien faire pour la ligne vide d'ajout
             }
 
-            const oldPieceJustificative = row._oldPieceJustificative || "";
-            const newValue = cell.getValue();
+                // Déterminer l'ancienne valeur selon le champ édité (prise en charge de fact_lettrer)
+            const field = cell.getField();
+            let oldValue = "";
+            if (field === 'piece_justificative') {
+                oldValue = row._oldPieceJustificative || "";
+            } else if (field === 'fact_lettrer') {
+                oldValue = row._oldFactLettrer || "";
+            } else {
+                // fallback générique si nécessaire
+                oldValue = row[`_old_${field}`] || "";
+            }
 
-            // Ignorer si la cellule n'a pas vraiment changé
-            if ((oldPieceJustificative === "" && newValue === "") || oldPieceJustificative === newValue) {
+            // Normalisation client-side pour comparaison (tolère espaces autour de '&')
+            const normalizeLettrageClient = function(val) {
+                if (val === null || val === undefined) return '';
+                if (Array.isArray(val)) {
+                    return val.map(function(s){ return (s||'').toString().trim(); }).filter(Boolean).join(' & ');
+                }
+                return (''+val).toString().split(/\s*&\s*/).map(function(s){ return s.trim(); }).filter(Boolean).join(' & ');
+            };
+
+            const newValue = cell.getValue();
+            const oldValueNorm = normalizeLettrageClient(oldValue);
+            const newValueNorm = normalizeLettrageClient(newValue);
+
+            // Ignorer si la cellule n'a pas vraiment changé après normalisation
+            if ((oldValueNorm === "" && newValueNorm === "") || oldValueNorm === newValueNorm) {
                 return;
             }
 
+            // remplacer oldValue par la valeur normalisée pour restaurations/fallback
+            oldValue = oldValueNorm;
+            // garder newValue tel qu'envoyé (on laisse cell.getValue())
+
             if (confirm("Voulez-vous enregistrer cette modification ?")) {
+                // conserver l'ancienne piece justificative si existante (API attend ce paramètre)
+                const oldPieceJustificative = row._oldPieceJustificative || '';
+
                 $.ajax({
                     url: '/update-banque-operation',
                     method: 'POST',
@@ -13451,14 +14297,16 @@ var modePaiement = row.getCell("mode_paiement").getValue();
                     error: function(xhr) {
                         console.error("❌ Erreur lors de la mise à jour Caisse :", xhr.responseText);
                         isProgrammaticEdit = true;
-                        cell.setValue(oldPieceJustificative);
+                        // restaurer la valeur précédente du champ édité
+                        cell.setValue(oldValue);
                         isProgrammaticEdit = false;
                         alert("Erreur lors de la mise à jour, valeur restaurée !");
                     }
                 });
             } else {
                 isProgrammaticEdit = true;
-                cell.setValue(oldPieceJustificative);
+                // restaurer la valeur précédente du champ édité
+                cell.setValue(oldValue);
                 isProgrammaticEdit = false;
                 console.log("Modification annulée");
             }
@@ -14339,11 +15187,11 @@ $('#journal-Caisse').on('change', function() {
     fetchOperationsCaisse(selectedJournalCode);
     updateFooterCaisse();
   });
-$(document).on('click', '.upload-icon[data-action="open-modal"]', function(e) {
-    e.stopPropagation();
-    $('#files_banque_Modal').show();
+// $(document).on('click', '.upload-icon[data-action="open-modal"]', function(e) {
+//     e.stopPropagation();
+//     $('#files_banque_Modal').show();
 
-});
+// });
 
 function JoindreReleveBancaire(){
     $('#banqueModal_main').show();
@@ -15176,15 +16024,29 @@ function sendDataToController(data) {
     }
     console.log('compte value:' + compteValue);
 
-    // Traiter fact_lettrer seulement si elle existe
+    // Traiter fact_lettrer : accepter tableau (ancienne logique) OU chaîne (édition via modal)
     let factLettrerString = '';
-    if (row.fact_lettrer && Array.isArray(row.fact_lettrer) && row.fact_lettrer.length > 0) {
-      factLettrerString = row.fact_lettrer
-        .map(item => {
-          const [id, numero, montant, date] = item.split('|');
-          return `${id}|${numero}|${montant}|${date}`;
-        })
-        .join(' & ');
+    if (row.fact_lettrer) {
+      if (Array.isArray(row.fact_lettrer) && row.fact_lettrer.length > 0) {
+        factLettrerString = row.fact_lettrer
+          .map(item => {
+            const [id, numero, montant, date] = item.split('|');
+            return `${id}|${numero}|${montant}|${date}`;
+          })
+          .join(' & ');
+      } else if (typeof row.fact_lettrer === 'string') {
+        // Normalize string (remove extra spaces around & and trim parts)
+        factLettrerString = row.fact_lettrer
+          .split(/\s*&\s*/)
+          .map(s => s.trim())
+          .filter(Boolean)
+          .map(item => {
+            const parts = item.split('|').map(p => p.trim());
+            if (parts.length === 4) return `${parts[0]}|${parts[1]}|${parts[2]}|${parts[3]}`;
+            return item; // if unexpected format, keep as-is
+          })
+          .join(' & ');
+      }
     }
 
     $.ajax({
